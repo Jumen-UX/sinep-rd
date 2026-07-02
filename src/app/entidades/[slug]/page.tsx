@@ -34,12 +34,7 @@ type Entity = {
   email: string | null
   phone: string | null
   website: string | null
-  facebook_url: string | null
-  instagram_url: string | null
-  youtube_url: string | null
   erected_at: string | null
-  created_at: string
-  updated_at: string
 }
 
 type Relationship = {
@@ -52,7 +47,6 @@ type Relationship = {
   is_current: boolean
   status: string | null
   notes: string | null
-  created_at: string
 }
 
 type RelatedEntity = {
@@ -70,12 +64,33 @@ type Appointment = {
   notes_public: string | null
 }
 
+type AppointmentHistory = Appointment & {
+  id: string
+  person_id: string
+  office_id: string
+  entity_id: string
+  office_key: string | null
+  person_type: string | null
+  end_date: string | null
+  is_current: boolean
+}
+
 type EntityResponse = {
   entity: Entity
   relationships: Relationship[]
   related_entities: RelatedEntity[]
   appointments: Appointment[]
+  appointment_history: AppointmentHistory[]
 }
+
+const ordinaryOfficeKeys = new Set([
+  'metropolitan_archbishop',
+  'coadjutor_archbishop',
+  'diocesan_bishop',
+  'auxiliary_bishop',
+  'apostolic_administrator',
+  'bishop_emeritus',
+])
 
 function formatNumber(value: number | null) {
   if (value === null || value === undefined) return '—'
@@ -88,8 +103,12 @@ function formatArea(value: number | null) {
 }
 
 function formatDate(value: string | null) {
-  if (!value) return 'Sin fecha'
+  if (!value) return '—'
   return new Intl.DateTimeFormat('es-DO', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
+}
+
+function formatRange(start: string | null, end: string | null) {
+  return `${formatDate(start)} – ${end ? formatDate(end) : 'actual'}`
 }
 
 export default function EntityDetailPage() {
@@ -136,7 +155,7 @@ export default function EntityDetailPage() {
     )
   }
 
-  const { entity, relationships, related_entities: relatedEntities, appointments } = data
+  const { entity, relationships, related_entities: relatedEntities, appointments, appointment_history: appointmentHistory } = data
 
   function getRelatedName(id: string) {
     return relatedEntities.find((item) => item.id === id)?.name ?? 'Entidad relacionada'
@@ -146,120 +165,181 @@ export default function EntityDetailPage() {
     return relatedEntities.find((item) => item.id === id)?.slug
   }
 
+  const currentBishops = appointmentHistory
+    .filter((appointment) => appointment.is_current && ordinaryOfficeKeys.has(appointment.office_key ?? ''))
+    .sort((a, b) => (a.office_key ?? '').localeCompare(b.office_key ?? ''))
+
+  const pastOrdinaries = appointmentHistory
+    .filter((appointment) => !appointment.is_current && ordinaryOfficeKeys.has(appointment.office_key ?? ''))
+    .sort((a, b) => (a.start_date ?? '').localeCompare(b.start_date ?? ''))
+
+  const fallbackCurrent = currentBishops.length > 0 ? [] : appointments
+  const currentRelationships = relationships.filter((item) => item.is_current)
+
   return (
-    <main className="container detail-page">
+    <main className="container detail-page hierarchy-page">
       <div className="detail-backlink">
         <Link href="/diocesis">← Volver al dashboard</Link>
       </div>
 
-      <section className="detail-hero card">
+      <section className="hierarchy-title card">
         <p className="eyebrow">{entity.entity_type_name ?? 'Entidad eclesiástica'}</p>
-        <h1>{entity.name}</h1>
-        {entity.latin_name && <p className="lead italic-meta">{entity.latin_name}</p>}
-        {entity.description && <p className="lead">{entity.description}</p>}
+        <h1>{entity.official_name ?? entity.name}</h1>
+        {entity.latin_name && <p className="latin-title">{entity.latin_name}</p>}
+        {entity.description && <p className="meta hierarchy-description">{entity.description}</p>}
       </section>
 
-      <section className="detail-grid">
-        <article className="card detail-section">
+      <section className="hierarchy-grid">
+        <article className="card compact-section">
+          <h2>Obispo(s)</h2>
+          {currentBishops.length === 0 && fallbackCurrent.length === 0 ? (
+            <p className="meta">No hay obispos o responsables actuales registrados.</p>
+          ) : (
+            <ul className="simple-list">
+              {currentBishops.map((appointment) => (
+                <li key={appointment.id}>
+                  <span>{appointment.office_name ?? 'Cargo'}</span>
+                  {appointment.person_slug ? (
+                    <Link href={`/personas/${appointment.person_slug}`}>{appointment.person_name}</Link>
+                  ) : (
+                    <strong>{appointment.person_name ?? 'No indicado'}</strong>
+                  )}
+                </li>
+              ))}
+              {fallbackCurrent.map((appointment) => (
+                <li key={`${appointment.person_name}-${appointment.office_name}`}>
+                  <span>{appointment.office_name ?? 'Cargo'}</span>
+                  {appointment.person_slug ? (
+                    <Link href={`/personas/${appointment.person_slug}`}>{appointment.person_name}</Link>
+                  ) : (
+                    <strong>{appointment.person_name ?? 'No indicado'}</strong>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+
+        <article className="card compact-section">
           <h2>Información general</h2>
-          <dl className="detail-list">
-            <div><dt>Nombre oficial</dt><dd>{entity.official_name ?? entity.name}</dd></div>
-            <div><dt>Tipo</dt><dd>{entity.entity_type_name ?? 'No indicado'}</dd></div>
+          <dl className="info-table">
+            <div><dt>Tipo de jurisdicción</dt><dd>{entity.entity_type_name ?? 'No indicado'}</dd></div>
+            <div><dt>Nombre latino</dt><dd>{entity.latin_name ?? 'No indicado'}</dd></div>
             <div><dt>Catedral / sede</dt><dd>{entity.cathedral_name ?? 'No indicada'}</dd></div>
-            <div><dt>Ordinario actual</dt><dd>{entity.current_ordinary_name ?? 'No indicado'}</dd></div>
-            <div><dt>Título</dt><dd>{entity.current_ordinary_title ?? 'No indicado'}</dd></div>
-            <div><dt>Fecha de erección</dt><dd>{formatDate(entity.erected_at)}</dd></div>
-          </dl>
-        </article>
-
-        <article className="card detail-section">
-          <h2>Territorio y contacto</h2>
-          <dl className="detail-list">
-            <div><dt>Territorio</dt><dd>{entity.territory_summary ?? 'No indicado'}</dd></div>
-            <div><dt>Provincia civil</dt><dd>{entity.province ?? 'No indicada'}</dd></div>
-            <div><dt>Municipio</dt><dd>{entity.municipality ?? 'No indicado'}</dd></div>
-            <div><dt>Sector</dt><dd>{entity.sector ?? 'No indicado'}</dd></div>
-            <div><dt>Dirección</dt><dd>{entity.address ?? 'No indicada'}</dd></div>
+            <div><dt>Rito</dt><dd>Latino (o Romano)</dd></div>
+            <div><dt>País</dt><dd>{entity.country ?? 'República Dominicana'}</dd></div>
+            <div><dt>Superficie</dt><dd>{formatArea(entity.area_km2)}</dd></div>
+            <div><dt>Sitio web oficial</dt><dd>{entity.website ?? 'No indicado'}</dd></div>
+            <div><dt>Dirección postal</dt><dd>{entity.address ?? 'No indicada'}</dd></div>
             <div><dt>Teléfono</dt><dd>{entity.phone ?? 'No indicado'}</dd></div>
-            <div><dt>Email</dt><dd>{entity.email ?? 'No indicado'}</dd></div>
-            <div><dt>Web</dt><dd>{entity.website ?? 'No indicada'}</dd></div>
           </dl>
         </article>
       </section>
 
-      <section className="card detail-section">
-        <h2>Estadísticas pastorales</h2>
-        <div className="diocese-stats detail-stats">
-          <div><strong>{formatArea(entity.area_km2)}</strong><span>Superficie</span></div>
-          <div><strong>{formatNumber(entity.population_total)}</strong><span>Población total</span></div>
-          <div><strong>{formatNumber(entity.catholics_total)}</strong><span>Fieles católicos</span></div>
-          <div><strong>{entity.catholics_percent ?? '—'}%</strong><span>% católicos</span></div>
-          <div><strong>{formatNumber(entity.parishes_count)}</strong><span>Parroquias</span></div>
-          <div><strong>{entity.statistics_year ?? '—'}</strong><span>Año estadístico</span></div>
+      <section className="card compact-section">
+        <h2>Detalles históricos</h2>
+        <dl className="info-table two-column-info">
+          <div><dt>Erigido</dt><dd>{formatDate(entity.erected_at)}</dd></div>
+          <div><dt>Territorio</dt><dd>{entity.territory_summary ?? 'No indicado'}</dd></div>
+          <div><dt>Provincia civil</dt><dd>{entity.province ?? 'No indicada'}</dd></div>
+          <div><dt>Municipio</dt><dd>{entity.municipality ?? 'No indicado'}</dd></div>
+          <div><dt>Fuente</dt><dd>{entity.source_name ?? 'No indicada'}</dd></div>
+          <div><dt>Revisión</dt><dd>{formatDate(entity.source_checked_at)}</dd></div>
+        </dl>
+      </section>
+
+      <section className="card compact-section">
+        <h2>Ordinarios del pasado y del presente</h2>
+        {pastOrdinaries.length === 0 && currentBishops.length === 0 ? (
+          <p className="meta">Todavía no hay ordinarios históricos registrados.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Cargo</th>
+                  <th>Periodo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...pastOrdinaries, ...currentBishops].map((appointment) => (
+                  <tr key={appointment.id}>
+                    <td>
+                      {appointment.person_slug ? (
+                        <Link href={`/personas/${appointment.person_slug}`}>{appointment.person_name}</Link>
+                      ) : (
+                        appointment.person_name ?? 'No indicado'
+                      )}
+                    </td>
+                    <td>{appointment.office_name ?? 'No indicado'}</td>
+                    <td>{formatRange(appointment.start_date, appointment.end_date)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card compact-section">
+        <h2>Estadística</h2>
+        <div className="table-wrap">
+          <table className="data-table stats-table">
+            <thead>
+              <tr>
+                <th>Año</th>
+                <th>Católicos</th>
+                <th>Población total</th>
+                <th>% católicos</th>
+                <th>Parroquias</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{entity.statistics_year ?? '—'}</td>
+                <td>{formatNumber(entity.catholics_total)}</td>
+                <td>{formatNumber(entity.population_total)}</td>
+                <td>{entity.catholics_percent ?? '—'}%</td>
+                <td>{formatNumber(entity.parishes_count)}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <section className="detail-grid">
-        <article className="card detail-section">
-          <h2>Responsables actuales</h2>
-          {appointments.length === 0 ? (
-            <p className="meta">Todavía no hay nombramientos públicos registrados.</p>
-          ) : (
-            <div className="timeline-list">
-              {appointments.map((appointment) => (
-                <div className="timeline-item" key={`${appointment.person_name}-${appointment.office_name}-${appointment.start_date}`}>
-                  <strong>{appointment.office_name ?? 'Cargo'}</strong>
-                  {appointment.person_slug ? (
-                    <Link href={`/personas/${appointment.person_slug}`}>{appointment.person_name ?? 'Persona no indicada'}</Link>
-                  ) : (
-                    <span>{appointment.person_name ?? 'Persona no indicada'}</span>
-                  )}
-                  <small>Desde {formatDate(appointment.start_date)}</small>
-                </div>
-              ))}
-            </div>
-          )}
-        </article>
-
-        <article className="card detail-section">
-          <h2>Historial de relaciones</h2>
-          {relationships.length === 0 ? (
-            <p className="meta">Todavía no hay historial territorial registrado.</p>
-          ) : (
-            <div className="timeline-list">
-              {relationships.map((relationship) => {
-                const otherId = relationship.parent_entity_id === entity.id ? relationship.child_entity_id : relationship.parent_entity_id
-                const relatedSlug = getRelatedSlug(otherId)
-                const relatedName = getRelatedName(otherId)
-                return (
-                  <div className="timeline-item" key={relationship.id}>
-                    <strong>{relationship.relationship_type ?? 'Relación'}</strong>
-                    {relatedSlug ? (
-                      <Link href={`/entidades/${relatedSlug}`}>{relatedName}</Link>
-                    ) : (
-                      <span>{relatedName}</span>
-                    )}
-                    <small>
-                      {formatDate(relationship.start_date)} — {relationship.end_date ? formatDate(relationship.end_date) : 'actual'}
-                    </small>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </article>
-      </section>
-
-      <section className="card detail-section">
-        <h2>Fuente y revisión</h2>
-        <p className="meta">
-          {entity.source_name ?? 'Fuente no indicada'}
-          {entity.source_checked_at ? ` · Revisado: ${formatDate(entity.source_checked_at)}` : ''}
-        </p>
-        {entity.source_url && (
-          <a className="button button-secondary" href={entity.source_url} target="_blank" rel="noreferrer">
-            Ver fuente
-          </a>
+      <section className="card compact-section">
+        <h2>Resumen histórico y relaciones</h2>
+        {currentRelationships.length === 0 ? (
+          <p className="meta">Todavía no hay relaciones territoriales registradas.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Evento</th>
+                  <th>Entidad relacionada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentRelationships.map((relationship) => {
+                  const otherId = relationship.parent_entity_id === entity.id ? relationship.child_entity_id : relationship.parent_entity_id
+                  const relatedSlug = getRelatedSlug(otherId)
+                  const relatedName = getRelatedName(otherId)
+                  return (
+                    <tr key={relationship.id}>
+                      <td>{formatDate(relationship.start_date)}</td>
+                      <td>{relationship.relationship_type ?? 'Relación'}</td>
+                      <td>
+                        {relatedSlug ? <Link href={`/entidades/${relatedSlug}`}>{relatedName}</Link> : relatedName}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </main>
