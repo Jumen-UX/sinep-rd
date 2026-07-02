@@ -32,7 +32,8 @@ const statisticsColumns = [
 
 const positionColumns = [
   'id','person_id','person_name','person_slug','position_title','office_configuration_key','base_role_name','scope_name','category_name',
-  'organization_chart_name','organization_chart_key','organization_unit_name','ecclesiastical_entity_name','ecclesiastical_entity_slug',
+  'organization_chart_name','organization_chart_key','organization_unit_name','direct_entity_name','direct_entity_slug','direct_entity_type_name',
+  'parish_name','parish_slug','zone_name','zone_slug','vicariate_name','vicariate_slug','diocese_name','diocese_slug','hierarchy_path',
   'pastoral_entity_name','pastoral_entity_slug','predecessor_person_name','predecessor_person_slug','successor_person_name',
   'successor_person_slug','start_date','term_start_date','term_end_date','actual_end_date','is_current','assignment_status',
   'selection_method','notes_public'
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
 
     const entityId = String(entity.id)
     const entityTypeId = String(entity.entity_type_id)
+    const positionFilter = `or=(direct_entity_slug.eq.${encodedSlug},parish_slug.eq.${encodedSlug},zone_slug.eq.${encodedSlug},vicariate_slug.eq.${encodedSlug},diocese_slug.eq.${encodedSlug})`
 
     const [types, relationships, currentAppointments, appointmentRows, evolutionEvents, statisticsSnapshots, positions] = await Promise.all([
       fetchJson<Record<string, unknown>[]>(
@@ -119,7 +121,7 @@ export async function GET(request: NextRequest) {
         key
       ).catch(() => []),
       fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_position_assignments?ecclesiastical_entity_slug=eq.${encodedSlug}&select=${positionColumns}&order=start_date.desc.nullslast`,
+        `${url}/rest/v1/public_position_assignments_with_hierarchy?${positionFilter}&select=${positionColumns}&order=start_date.desc.nullslast`,
         key
       ).catch(() => [])
     ])
