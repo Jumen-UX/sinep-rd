@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import './globals.css'
 
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: ReactNode
 }>) {
   return (
     <html lang="es">
@@ -25,7 +26,6 @@ export default function RootLayout({
 
               <div className="nav-links">
                 <Link href="/diocesis">Diócesis</Link>
-                <Link href="/admin">Administración</Link>
               </div>
             </nav>
           </header>
