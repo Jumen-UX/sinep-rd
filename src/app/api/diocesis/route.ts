@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 
 const columns = [
   'id',
+  'slug',
   'name',
   'entity_type_name',
   'ecclesiastical_province_name',
