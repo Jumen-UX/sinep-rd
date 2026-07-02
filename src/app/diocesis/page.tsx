@@ -28,6 +28,8 @@ type Diocese = {
   erected_at: string | null
 }
 
+type DioceseFilter = 'all' | 'archdiocese' | 'diocese' | 'military' | string
+
 function formatNumber(value: number | null) {
   if (value === null || value === undefined) return '—'
   return new Intl.NumberFormat('es-DO').format(value)
@@ -43,10 +45,25 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat('es-DO', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
 }
 
+function isArchdiocese(item: Diocese) {
+  return item.entity_type_name?.toLowerCase().includes('arquidiócesis') ?? false
+}
+
+function isDiocese(item: Diocese) {
+  const name = item.entity_type_name?.toLowerCase() ?? ''
+  return name.includes('diócesis') && !name.includes('arquidiócesis')
+}
+
+function isMilitary(item: Diocese) {
+  const name = `${item.entity_type_name ?? ''} ${item.name}`.toLowerCase()
+  return name.includes('castrense') || name.includes('militar')
+}
+
 export default function DiocesisPage() {
   const [items, setItems] = useState<Diocese[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [filter, setFilter] = useState<DioceseFilter>('all')
 
   useEffect(() => {
     async function loadData() {
@@ -70,8 +87,9 @@ export default function DiocesisPage() {
   const dashboard = useMemo(() => {
     const totalCatholics = items.reduce((sum, item) => sum + (item.catholics_total ?? 0), 0)
     const totalParishes = items.reduce((sum, item) => sum + (item.parishes_count ?? 0), 0)
-    const archdioceses = items.filter((item) => item.entity_type_name?.toLowerCase().includes('arquidiócesis')).length
-    const dioceses = items.filter((item) => item.entity_type_name?.toLowerCase().includes('diócesis')).length
+    const archdioceses = items.filter(isArchdiocese).length
+    const dioceses = items.filter(isDiocese).length
+    const military = items.filter(isMilitary).length
     const provinces = Array.from(
       new Set(items.map((item) => item.ecclesiastical_province_name).filter(Boolean) as string[])
     )
@@ -80,11 +98,28 @@ export default function DiocesisPage() {
       total: items.length,
       archdioceses,
       dioceses,
+      military,
       totalCatholics,
       totalParishes,
       provinces,
     }
   }, [items])
+
+  const filteredItems = useMemo(() => {
+    if (filter === 'all') return items
+    if (filter === 'archdiocese') return items.filter(isArchdiocese)
+    if (filter === 'diocese') return items.filter(isDiocese)
+    if (filter === 'military') return items.filter(isMilitary)
+    return items.filter((item) => item.ecclesiastical_province_name === filter)
+  }, [filter, items])
+
+  function filterTitle() {
+    if (filter === 'all') return 'Todas las jurisdicciones'
+    if (filter === 'archdiocese') return 'Arquidiócesis'
+    if (filter === 'diocese') return 'Diócesis'
+    if (filter === 'military') return 'Jurisdicción castrense'
+    return filter
+  }
 
   return (
     <main className="container dashboard-page">
@@ -104,40 +139,45 @@ export default function DiocesisPage() {
       {!loading && !error && (
         <>
           <section className="dashboard-grid dashboard-summary">
-            <div className="metric-card">
+            <button className={`metric-card metric-button ${filter === 'all' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('all')}>
               <strong>{dashboard.total}</strong>
               <span>Jurisdicciones</span>
-            </div>
-            <div className="metric-card">
+            </button>
+            <button className={`metric-card metric-button ${filter === 'archdiocese' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('archdiocese')}>
               <strong>{dashboard.archdioceses}</strong>
               <span>Arquidiócesis</span>
-            </div>
-            <div className="metric-card">
-              <strong>{dashboard.totalParishes}</strong>
-              <span>Parroquias reportadas</span>
-            </div>
-            <div className="metric-card">
-              <strong>{formatNumber(dashboard.totalCatholics)}</strong>
-              <span>Fieles católicos</span>
-            </div>
+            </button>
+            <button className={`metric-card metric-button ${filter === 'diocese' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('diocese')}>
+              <strong>{dashboard.dioceses}</strong>
+              <span>Diócesis</span>
+            </button>
+            <button className={`metric-card metric-button ${filter === 'military' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('military')}>
+              <strong>{dashboard.military}</strong>
+              <span>Castrense</span>
+            </button>
           </section>
 
           <section className="card dashboard-section">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Provincias eclesiásticas</p>
+                <p className="eyebrow">Filtros</p>
                 <h2>Acceso rápido</h2>
               </div>
-              <span className="meta">{dashboard.provinces.length} provincias con jurisdicciones asociadas</span>
+              <span className="meta">Filtro activo: {filterTitle()}</span>
             </div>
             <div className="quick-link-grid">
               {dashboard.provinces.map((province) => {
                 const provinceItems = items.filter((item) => item.ecclesiastical_province_name === province)
                 return (
-                  <div className="quick-link-card" key={province}>
+                  <button
+                    className={`quick-link-card filter-card ${filter === province ? 'active-filter' : ''}`}
+                    key={province}
+                    type="button"
+                    onClick={() => setFilter(province)}
+                  >
                     <strong>{province}</strong>
                     <span>{provinceItems.length} jurisdicciones</span>
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -147,13 +187,13 @@ export default function DiocesisPage() {
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Fichas</p>
-                <h2>Directorio de jurisdicciones</h2>
+                <h2>{filterTitle()}</h2>
               </div>
-              <span className="meta">Haz clic para ver la ficha individual</span>
+              <span className="meta">{filteredItems.length} resultados · haz clic para ver la ficha individual</span>
             </div>
 
             <div className="grid diocese-grid">
-              {items.map((item) => {
+              {filteredItems.map((item) => {
                 const erectedAt = formatDate(item.erected_at)
                 return (
                   <Link className="entity-card diocese-card clickable-card" href={`/entidades/${item.slug}`} key={item.id}>
