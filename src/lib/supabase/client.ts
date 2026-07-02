@@ -1,18 +1,11 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-function getRequiredEnv(name: string) {
-  const value = process.env[name]
-
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`)
-  }
-
-  return value
-}
+const fallbackUrl = 'https://hrvgpceqaxujlttpimdz.supabase.co'
+const fallbackPublishableKey = 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP'
 
 export function createClient() {
   return createSupabaseClient(
-    getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
-    getRequiredEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
+    process.env.NEXT_PUBLIC_SUPABASE_URL || fallbackUrl,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || fallbackPublishableKey
   )
 }
