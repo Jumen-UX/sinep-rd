@@ -43,6 +43,45 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
   return role.roles
 }
 
+const adminModules = [
+  {
+    href: '/admin/nuevo',
+    type: 'Asistente',
+    title: 'Agregar nueva ficha',
+    description: 'Crear nueva persona, jurisdicción, parroquia o capilla mediante pasos guiados.',
+  },
+  {
+    href: '/admin/completitud',
+    type: 'Calidad de datos',
+    title: 'Completitud de fichas',
+    description: 'Ver porcentajes, datos faltantes y marcar campos como no identificados o no aplicables.',
+  },
+  {
+    href: '/admin/estructura',
+    type: 'Estructura',
+    title: 'Estructura institucional',
+    description: 'Administrar estructuras territorial, pastoral y administrativa por separado.',
+  },
+  {
+    href: '/admin/asignaciones',
+    type: 'Cargos',
+    title: 'Asignaciones de cargos',
+    description: 'Asignar personas a cargos, comisiones, entidades, períodos, predecesores y sucesores.',
+  },
+  {
+    href: '/admin/configuracion/cargos',
+    type: 'Configuración',
+    title: 'Catálogo de cargos',
+    description: 'Configurar cargos base, ámbitos, categorías y organigramas.',
+  },
+  {
+    href: '/admin/solicitudes',
+    type: 'Aprobaciones',
+    title: 'Solicitudes de cambio',
+    description: 'Revisar solicitudes pendientes y flujo editorial.',
+  },
+]
+
 export default function AdminPage() {
   const router = useRouter()
   const [client, setClient] = useState<SupabaseClient | null>(null)
@@ -129,12 +168,8 @@ export default function AdminPage() {
         <div className="card">
           <p className="eyebrow">Acceso pendiente</p>
           <h1>Usuario sin rol activo</h1>
-          <p className="lead">
-            Tu cuenta existe, pero todavía no tiene un rol administrativo activo.
-          </p>
-          <button className="button button-secondary" onClick={handleSignOut} type="button">
-            Cerrar sesión
-          </button>
+          <p className="lead">Tu cuenta existe, pero todavía no tiene un rol administrativo activo.</p>
+          <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
         </div>
       </main>
     )
@@ -146,11 +181,9 @@ export default function AdminPage() {
         <div>
           <p className="eyebrow">Panel administrativo</p>
           <h1>Bienvenido, {profile?.full_name ?? profile?.email}</h1>
-          <p className="lead">Gestión inicial de SINEP RD.</p>
+          <p className="lead">Gestiona SINEP RD desde botones y asistentes guiados.</p>
         </div>
-        <button className="button button-secondary" onClick={handleSignOut} type="button">
-          Cerrar sesión
-        </button>
+        <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
       </div>
 
       <section className="card admin-section">
@@ -158,51 +191,48 @@ export default function AdminPage() {
         <div className="role-list">
           {roles.map((role) => {
             const roleInfo = getRoleInfo(role)
-            return (
-              <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>
-                {roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}
-              </span>
-            )
+            return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span>
           })}
         </div>
       </section>
 
       {summary && (
         <section className="dashboard-grid">
-          <div className="metric-card">
-            <strong>{summary.active_dioceses}</strong>
-            <span>Diócesis y jurisdicciones</span>
-          </div>
-          <div className="metric-card">
-            <strong>{summary.active_entities}</strong>
-            <span>Entidades activas</span>
-          </div>
-          <div className="metric-card">
-            <strong>{summary.active_pastoral_areas}</strong>
-            <span>Áreas pastorales</span>
-          </div>
-          <div className="metric-card">
-            <strong>{summary.pending_change_requests}</strong>
-            <span>Solicitudes pendientes</span>
-          </div>
+          <div className="metric-card"><strong>{summary.active_dioceses}</strong><span>Diócesis y jurisdicciones</span></div>
+          <div className="metric-card"><strong>{summary.active_entities}</strong><span>Entidades activas</span></div>
+          <div className="metric-card"><strong>{summary.active_pastoral_areas}</strong><span>Áreas pastorales</span></div>
+          <div className="metric-card"><strong>{summary.pending_change_requests}</strong><span>Solicitudes pendientes</span></div>
         </section>
       )}
 
-      <section className="grid admin-modules">
-        <Link className="entity-card admin-module" href="/diocesis">
-          <p className="entity-type">Directorio</p>
-          <h2>Diócesis</h2>
-          <p className="meta">Ver directorio público conectado a Supabase.</p>
-        </Link>
-        <Link className="entity-card admin-module" href="/admin/solicitudes">
-          <p className="entity-type">Aprobaciones</p>
-          <h2>Solicitudes de cambio</h2>
-          <p className="meta">Revisar solicitudes pendientes y flujo editorial.</p>
-        </Link>
-        <div className="entity-card admin-module muted-module">
-          <p className="entity-type">Próximo</p>
-          <h2>Personas y clero</h2>
-          <p className="meta">Obispos, sacerdotes, diáconos y laicos.</p>
+      <section className="card admin-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Acciones principales</p>
+            <h2>Administración guiada</h2>
+          </div>
+        </div>
+        <div className="grid admin-modules">
+          {adminModules.map((module) => (
+            <Link className="entity-card admin-module" href={module.href} key={module.href}>
+              <p className="entity-type">{module.type}</p>
+              <h2>{module.title}</h2>
+              <p className="meta">{module.description}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Directorios públicos</p>
+            <h2>Consulta rápida</h2>
+          </div>
+        </div>
+        <div className="grid admin-modules">
+          <Link className="entity-card admin-module" href="/diocesis"><p className="entity-type">Directorio</p><h2>Diócesis</h2><p className="meta">Ver jurisdicciones y fichas públicas.</p></Link>
+          <Link className="entity-card admin-module" href="/personas"><p className="entity-type">Directorio</p><h2>Personas</h2><p className="meta">Ver obispos, sacerdotes, diáconos y laicos registrados.</p></Link>
         </div>
       </section>
     </main>
