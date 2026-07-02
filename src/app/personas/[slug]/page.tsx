@@ -46,6 +46,30 @@ type Appointment = {
   notes_public: string | null
 }
 
+type Position = {
+  id: string
+  position_title: string | null
+  organization_chart_name: string | null
+  organization_chart_key: string | null
+  organization_unit_name: string | null
+  ecclesiastical_entity_name: string | null
+  ecclesiastical_entity_slug: string | null
+  pastoral_entity_name: string | null
+  pastoral_entity_slug: string | null
+  predecessor_person_name: string | null
+  predecessor_person_slug: string | null
+  successor_person_name: string | null
+  successor_person_slug: string | null
+  start_date: string | null
+  term_start_date: string | null
+  term_end_date: string | null
+  actual_end_date: string | null
+  is_current: boolean
+  assignment_status: string | null
+  selection_method: string | null
+  notes_public: string | null
+}
+
 type Movement = {
   id: string
   entity_name: string | null
@@ -83,6 +107,7 @@ type PersonResponse = {
   person: Person
   clergy: Clergy | null
   appointments: Appointment[]
+  positions: Position[]
   movements: Movement[]
   episcopal_ordination: EpiscopalOrdination | null
 }
@@ -97,6 +122,21 @@ function personTypeLabel(value: string | null) {
   }
 
   if (!value) return 'Persona'
+  return labels[value] ?? value
+}
+
+function assignmentStatusLabel(value: string | null) {
+  const labels: Record<string, string> = {
+    active: 'Activo',
+    term_expired_still_serving: 'Período vencido, continúa en funciones',
+    renewed: 'Renovado',
+    replaced: 'Sustituido',
+    vacant: 'Vacante',
+    suspended: 'Suspendido',
+    ended: 'Finalizado',
+  }
+
+  if (!value) return 'No indicado'
   return labels[value] ?? value
 }
 
@@ -134,6 +174,18 @@ function ConsecratorLink({ name, slug }: { name: string | null; slug: string | n
   if (!name) return <span>No indicado</span>
   if (!slug) return <span>{name}</span>
   return <Link href={`/personas/${slug}`}>{name}</Link>
+}
+
+function PersonLink({ name, slug }: { name: string | null; slug: string | null }) {
+  if (!name) return <span>—</span>
+  if (!slug) return <span>{name}</span>
+  return <Link href={`/personas/${slug}`}>{name}</Link>
+}
+
+function EntityLink({ name, slug }: { name: string | null; slug: string | null }) {
+  if (!name) return <span>Entidad no indicada</span>
+  if (!slug) return <span>{name}</span>
+  return <Link href={`/entidades/${slug}`}>{name}</Link>
 }
 
 export default function PersonDetailPage() {
@@ -180,7 +232,7 @@ export default function PersonDetailPage() {
     )
   }
 
-  const { person, clergy, appointments, movements, episcopal_ordination: episcopalOrdination } = data
+  const { person, clergy, appointments, positions, movements, episcopal_ordination: episcopalOrdination } = data
 
   const principalConsecratorName = episcopalOrdination?.principal_consecrator_person_name ?? episcopalOrdination?.principal_consecrator_name ?? null
   const coConsecrator1Name = episcopalOrdination?.co_consecrator_1_person_name ?? episcopalOrdination?.co_consecrator_1_name ?? null
@@ -276,27 +328,53 @@ export default function PersonDetailPage() {
           <dl className="detail-list">
             <div><dt>Fecha de ordenación episcopal</dt><dd>{formatDate(episcopalOrdination.ordination_date)}</dd></div>
             <div><dt>Lugar</dt><dd>{episcopalOrdination.ordination_place ?? 'No indicado'}</dd></div>
-            <div>
-              <dt>Consagrante principal</dt>
-              <dd>
-                <ConsecratorLink name={principalConsecratorName} slug={episcopalOrdination.principal_consecrator_person_slug} />
-              </dd>
-            </div>
-            <div>
-              <dt>Co-consagrante 1</dt>
-              <dd>
-                <ConsecratorLink name={coConsecrator1Name} slug={episcopalOrdination.co_consecrator_1_person_slug} />
-              </dd>
-            </div>
-            <div>
-              <dt>Co-consagrante 2</dt>
-              <dd>
-                <ConsecratorLink name={coConsecrator2Name} slug={episcopalOrdination.co_consecrator_2_person_slug} />
-              </dd>
-            </div>
+            <div><dt>Consagrante principal</dt><dd><ConsecratorLink name={principalConsecratorName} slug={episcopalOrdination.principal_consecrator_person_slug} /></dd></div>
+            <div><dt>Co-consagrante 1</dt><dd><ConsecratorLink name={coConsecrator1Name} slug={episcopalOrdination.co_consecrator_1_person_slug} /></dd></div>
+            <div><dt>Co-consagrante 2</dt><dd><ConsecratorLink name={coConsecrator2Name} slug={episcopalOrdination.co_consecrator_2_person_slug} /></dd></div>
             <div><dt>Verificación</dt><dd>{episcopalOrdination.verification_status ?? 'No indicada'}</dd></div>
             <div><dt>Fuente</dt><dd>{episcopalOrdination.source_name ?? 'No indicada'}</dd></div>
           </dl>
+        )}
+      </section>
+
+      <section className="card detail-section">
+        <h2>Cargos configurados</h2>
+        {positions.length === 0 ? (
+          <p className="meta">Todavía no hay cargos configurados para esta persona.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table dashboard-list-table">
+              <thead>
+                <tr>
+                  <th>Cargo</th>
+                  <th>Organigrama</th>
+                  <th>Entidad / unidad</th>
+                  <th>Período</th>
+                  <th>Estado</th>
+                  <th>Predecesor</th>
+                  <th>Sucesor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {positions.map((position) => (
+                  <tr key={position.id}>
+                    <td><strong>{position.position_title ?? 'Cargo'}</strong><small>{position.selection_method ?? 'nombramiento'}</small></td>
+                    <td>{position.organization_chart_name ?? 'No indicado'}</td>
+                    <td>
+                      <EntityLink
+                        name={position.ecclesiastical_entity_name ?? position.pastoral_entity_name ?? position.organization_unit_name}
+                        slug={position.ecclesiastical_entity_slug ?? position.pastoral_entity_slug}
+                      />
+                    </td>
+                    <td>{formatDate(position.term_start_date ?? position.start_date)} – {position.actual_end_date ? formatDate(position.actual_end_date) : position.term_end_date ? formatDate(position.term_end_date) : 'actual'}</td>
+                    <td>{assignmentStatusLabel(position.assignment_status)}</td>
+                    <td><PersonLink name={position.predecessor_person_name} slug={position.predecessor_person_slug} /></td>
+                    <td><PersonLink name={position.successor_person_name} slug={position.successor_person_slug} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
