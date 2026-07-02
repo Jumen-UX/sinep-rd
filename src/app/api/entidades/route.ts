@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
     const [people, offices, clergyProfiles] = await Promise.all([
       personIds.length > 0
         ? fetchJson<Record<string, unknown>[]>(
-            `${url}/rest/v1/persons?id=in.(${personIds.join(',')})&select=id,display_name,slug,person_type,birth_date,death_date`,
+            `${url}/rest/v1/persons?id=in.(${personIds.join(',')})&select=id,display_name,slug,person_type,birth_date,death_date,age_text`,
             key
           ).catch(() => [])
         : Promise.resolve([]),
@@ -200,6 +200,7 @@ export async function GET(request: NextRequest) {
         person_type: person?.person_type ?? null,
         birth_date: person?.birth_date ?? null,
         death_date: person?.death_date ?? null,
+        age_text: person?.age_text ?? null,
         office_name: office?.name ?? null,
         office_key: office?.key ?? null,
         diaconal_ordination_date: clergy?.diaconal_ordination_date ?? null,
