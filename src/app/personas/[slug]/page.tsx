@@ -11,6 +11,8 @@ type Person = {
   person_type: string | null
   photo_url: string | null
   biography_public: string | null
+  birth_date: string | null
+  birth_place: string | null
   status: string | null
   death_date: string | null
   created_at: string
@@ -102,6 +104,25 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat('es-DO', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
 }
 
+function yearsSince(value: string | null, endValue?: string | null) {
+  if (!value) return null
+
+  const start = new Date(`${value}T00:00:00`)
+  const end = endValue ? new Date(`${endValue}T00:00:00`) : new Date()
+  let years = end.getFullYear() - start.getFullYear()
+  const beforeAnniversary =
+    end.getMonth() < start.getMonth() ||
+    (end.getMonth() === start.getMonth() && end.getDate() < start.getDate())
+
+  if (beforeAnniversary) years -= 1
+  return years >= 0 ? years : null
+}
+
+function metricYears(value: string | null, endValue?: string | null) {
+  const years = yearsSince(value, endValue)
+  return years === null ? '—' : `${years}`
+}
+
 function ConsecratorLink({ name, slug }: { name: string | null; slug: string | null }) {
   if (!name) return <span>No indicado</span>
   if (!slug) return <span>{name}</span>
@@ -157,6 +178,7 @@ export default function PersonDetailPage() {
   const principalConsecratorName = episcopalOrdination?.principal_consecrator_person_name ?? episcopalOrdination?.principal_consecrator_name ?? null
   const coConsecrator1Name = episcopalOrdination?.co_consecrator_1_person_name ?? episcopalOrdination?.co_consecrator_1_name ?? null
   const coConsecrator2Name = episcopalOrdination?.co_consecrator_2_person_name ?? episcopalOrdination?.co_consecrator_2_name ?? null
+  const primaryAppointment = appointments[0] ?? null
 
   return (
     <main className="container detail-page">
@@ -173,11 +195,32 @@ export default function PersonDetailPage() {
         </div>
       </section>
 
+      <section className="dashboard-grid dashboard-summary person-metrics">
+        <div className="metric-card">
+          <strong>{metricYears(person.birth_date, person.death_date)}</strong>
+          <span>Edad actual</span>
+        </div>
+        <div className="metric-card">
+          <strong>{metricYears(clergy?.priestly_ordination_date ?? null)}</strong>
+          <span>Años como sacerdote</span>
+        </div>
+        <div className="metric-card">
+          <strong>{metricYears(clergy?.episcopal_ordination_date ?? episcopalOrdination?.ordination_date ?? null)}</strong>
+          <span>Años como obispo</span>
+        </div>
+        <div className="metric-card">
+          <strong>{metricYears(primaryAppointment?.start_date ?? null)}</strong>
+          <span>En cargo actual</span>
+        </div>
+      </section>
+
       <section className="detail-grid">
         <article className="card detail-section">
           <h2>Información general</h2>
           <dl className="detail-list">
             <div><dt>Tipo</dt><dd>{personTypeLabel(person.person_type)}</dd></div>
+            <div><dt>Fecha de nacimiento</dt><dd>{formatDate(person.birth_date)}</dd></div>
+            <div><dt>Lugar de nacimiento</dt><dd>{person.birth_place ?? 'No indicado'}</dd></div>
             <div><dt>Estado</dt><dd>{person.status ?? 'No indicado'}</dd></div>
             <div><dt>Fallecimiento</dt><dd>{person.death_date ? formatDate(person.death_date) : 'No registrado'}</dd></div>
           </dl>
@@ -265,7 +308,7 @@ export default function PersonDetailPage() {
                   ) : (
                     <span>{appointment.entity_name ?? appointment.pastoral_entity_name ?? 'Entidad no indicada'}</span>
                   )}
-                  <small>Desde {formatDate(appointment.start_date)}</small>
+                  <small>Desde {formatDate(appointment.start_date)} · {metricYears(appointment.start_date)} años en el cargo</small>
                   {appointment.notes_public && <span className="meta">{appointment.notes_public}</span>}
                 </div>
               ))}
