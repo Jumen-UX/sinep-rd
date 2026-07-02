@@ -149,7 +149,7 @@ export default function EntityDetailPage() {
   return (
     <main className="container detail-page">
       <div className="detail-backlink">
-        <Link href="/diocesis">← Volver al directorio</Link>
+        <Link href="/diocesis">← Volver al dashboard</Link>
       </div>
 
       <section className="detail-hero card">
@@ -209,7 +209,11 @@ export default function EntityDetailPage() {
               {appointments.map((appointment) => (
                 <div className="timeline-item" key={`${appointment.person_name}-${appointment.office_name}-${appointment.start_date}`}>
                   <strong>{appointment.office_name ?? 'Cargo'}</strong>
-                  <span>{appointment.person_name ?? 'Persona no indicada'}</span>
+                  {appointment.person_slug ? (
+                    <Link href={`/personas/${appointment.person_slug}`}>{appointment.person_name ?? 'Persona no indicada'}</Link>
+                  ) : (
+                    <span>{appointment.person_name ?? 'Persona no indicada'}</span>
+                  )}
                   <small>Desde {formatDate(appointment.start_date)}</small>
                 </div>
               ))}
