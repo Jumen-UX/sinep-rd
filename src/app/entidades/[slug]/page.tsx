@@ -120,6 +120,32 @@ type StatisticsSnapshot = {
   source_code: string | null
 }
 
+type Position = {
+  id: string
+  person_name: string | null
+  person_slug: string | null
+  position_title: string | null
+  organization_chart_name: string | null
+  organization_chart_key: string | null
+  organization_unit_name: string | null
+  ecclesiastical_entity_name: string | null
+  ecclesiastical_entity_slug: string | null
+  pastoral_entity_name: string | null
+  pastoral_entity_slug: string | null
+  predecessor_person_name: string | null
+  predecessor_person_slug: string | null
+  successor_person_name: string | null
+  successor_person_slug: string | null
+  start_date: string | null
+  term_start_date: string | null
+  term_end_date: string | null
+  actual_end_date: string | null
+  is_current: boolean
+  assignment_status: string | null
+  selection_method: string | null
+  notes_public: string | null
+}
+
 type EntityResponse = {
   entity: Entity
   relationships: Relationship[]
@@ -128,6 +154,7 @@ type EntityResponse = {
   appointment_history: AppointmentHistory[]
   evolution_events: EvolutionEvent[]
   statistics_snapshots: StatisticsSnapshot[]
+  positions: Position[]
 }
 
 const ordinaryOfficeKeys = new Set([
@@ -213,6 +240,21 @@ function eventTypeLabel(value: string | null) {
   return labels[value] ?? value
 }
 
+function assignmentStatusLabel(value: string | null) {
+  const labels: Record<string, string> = {
+    active: 'Activo',
+    term_expired_still_serving: 'Período vencido, continúa en funciones',
+    renewed: 'Renovado',
+    replaced: 'Sustituido',
+    vacant: 'Vacante',
+    suspended: 'Suspendido',
+    ended: 'Finalizado',
+  }
+
+  if (!value) return 'No indicado'
+  return labels[value] ?? value
+}
+
 function sortCurrentAppointments(a: AppointmentHistory, b: AppointmentHistory) {
   const rankA = hierarchyRank[a.office_key ?? ''] ?? 99
   const rankB = hierarchyRank[b.office_key ?? ''] ?? 99
@@ -224,6 +266,134 @@ function entityLink(name: string | null, slug: string | null) {
   if (!name) return '—'
   if (!slug) return name
   return <Link href={`/entidades/${slug}`}>{name}</Link>
+}
+
+function personLink(name: string | null, slug: string | null) {
+  if (!name) return '—'
+  if (!slug) return name
+  return <Link href={`/personas/${slug}`}>{name}</Link>
+}
+
+function getEntityKind(entity: Entity) {
+  const key = entity.entity_type_key ?? ''
+  const name = (entity.entity_type_name ?? entity.name ?? '').toLowerCase()
+
+  if (['archdiocese', 'diocese', 'military_ordinariate'].includes(key)) return 'diocesan'
+  if (['parish', 'quasi_parish'].includes(key)) return 'parish'
+  if (['chapel', 'sanctuary'].includes(key)) return 'chapel'
+  if (key === 'vicariate') return 'vicariate'
+  if (['pastoral_zone', 'deanery', 'pastoral_region'].includes(key)) return 'zone'
+  if (key === 'curia_office') return 'administrative'
+  if (name.includes('parroquia')) return 'parish'
+  if (name.includes('capilla') || name.includes('santuario')) return 'chapel'
+  if (name.includes('vicar')) return 'vicariate'
+  if (name.includes('zona') || name.includes('decan')) return 'zone'
+
+  return 'generic'
+}
+
+function getEntityCopy(entity: Entity) {
+  const kind = getEntityKind(entity)
+
+  const copies = {
+    diocesan: {
+      responsibleTitle: 'Obispo(s)',
+      emptyResponsible: 'No hay obispos o responsables actuales registrados.',
+      historyTitle: 'Ordinarios del pasado y del presente',
+      emptyHistory: 'Todavía no hay ordinarios históricos registrados.',
+      typeLabel: 'Tipo de jurisdicción',
+      seatLabel: 'Catedral / sede',
+      createdLabel: 'Erección',
+      territoryLabel: 'Territorio',
+      statsTitle: 'Estadística histórica',
+      showStatistics: true,
+    },
+    parish: {
+      responsibleTitle: 'Responsables parroquiales',
+      emptyResponsible: 'No hay párroco, vicario o responsables actuales registrados.',
+      historyTitle: 'Responsables parroquiales del pasado y del presente',
+      emptyHistory: 'Todavía no hay historial parroquial registrado.',
+      typeLabel: 'Tipo de entidad',
+      seatLabel: 'Templo / sede',
+      createdLabel: 'Erección / creación',
+      territoryLabel: 'Jurisdicción / territorio',
+      statsTitle: 'Datos pastorales históricos',
+      showStatistics: false,
+    },
+    chapel: {
+      responsibleTitle: 'Responsables de la capilla',
+      emptyResponsible: 'No hay responsables actuales registrados.',
+      historyTitle: 'Responsables del pasado y del presente',
+      emptyHistory: 'Todavía no hay historial registrado.',
+      typeLabel: 'Tipo de entidad',
+      seatLabel: 'Templo / sede',
+      createdLabel: 'Creación',
+      territoryLabel: 'Sector / comunidad',
+      statsTitle: 'Datos pastorales históricos',
+      showStatistics: false,
+    },
+    vicariate: {
+      responsibleTitle: 'Responsables vicariales',
+      emptyResponsible: 'No hay responsables vicariales actuales registrados.',
+      historyTitle: 'Responsables vicariales del pasado y del presente',
+      emptyHistory: 'Todavía no hay historial vicarial registrado.',
+      typeLabel: 'Tipo de estructura',
+      seatLabel: 'Sede',
+      createdLabel: 'Creación',
+      territoryLabel: 'Territorio / zona de servicio',
+      statsTitle: 'Datos pastorales históricos',
+      showStatistics: false,
+    },
+    zone: {
+      responsibleTitle: 'Responsables zonales',
+      emptyResponsible: 'No hay responsables zonales actuales registrados.',
+      historyTitle: 'Responsables zonales del pasado y del presente',
+      emptyHistory: 'Todavía no hay historial zonal registrado.',
+      typeLabel: 'Tipo de estructura',
+      seatLabel: 'Sede',
+      createdLabel: 'Creación',
+      territoryLabel: 'Territorio / parroquias vinculadas',
+      statsTitle: 'Datos pastorales históricos',
+      showStatistics: false,
+    },
+    administrative: {
+      responsibleTitle: 'Responsables administrativos',
+      emptyResponsible: 'No hay responsables administrativos actuales registrados.',
+      historyTitle: 'Responsables administrativos del pasado y del presente',
+      emptyHistory: 'Todavía no hay historial administrativo registrado.',
+      typeLabel: 'Tipo de oficina',
+      seatLabel: 'Sede',
+      createdLabel: 'Creación',
+      territoryLabel: 'Ámbito de servicio',
+      statsTitle: 'Datos históricos',
+      showStatistics: false,
+    },
+    generic: {
+      responsibleTitle: 'Responsables actuales',
+      emptyResponsible: 'No hay responsables actuales registrados.',
+      historyTitle: 'Responsables del pasado y del presente',
+      emptyHistory: 'Todavía no hay historial registrado.',
+      typeLabel: 'Tipo de entidad',
+      seatLabel: 'Sede',
+      createdLabel: 'Creación',
+      territoryLabel: 'Ámbito / territorio',
+      statsTitle: 'Datos históricos',
+      showStatistics: false,
+    },
+  }
+
+  return copies[kind]
+}
+
+function appointmentMetrics(appointment: AppointmentHistory, isDiocesan: boolean) {
+  return (
+    <div className="tenure-grid">
+      <span>{formatCurrentAge(appointment.birth_date, appointment.age_text, appointment.death_date)}</span>
+      <span>{formatYears(appointment.priestly_ordination_date, 'Como sacerdote')}</span>
+      {isDiocesan && <span>{formatYears(appointment.episcopal_ordination_date, 'Como obispo')}</span>}
+      <span>{formatYears(appointment.start_date, 'En este cargo')}</span>
+    </div>
+  )
 }
 
 export default function EntityDetailPage() {
@@ -278,6 +448,7 @@ export default function EntityDetailPage() {
     appointment_history: appointmentHistory,
     evolution_events: evolutionEvents,
     statistics_snapshots: statisticsSnapshots,
+    positions,
   } = data
 
   function getRelatedName(id: string) {
@@ -288,16 +459,20 @@ export default function EntityDetailPage() {
     return relatedEntities.find((item) => item.id === id)?.slug
   }
 
-  const currentBishops = appointmentHistory
-    .filter((appointment) => appointment.is_current && ordinaryOfficeKeys.has(appointment.office_key ?? ''))
+  const copy = getEntityCopy(entity)
+  const isDiocesan = getEntityKind(entity) === 'diocesan'
+
+  const currentResponsibles = appointmentHistory
+    .filter((appointment) => appointment.is_current && (!isDiocesan || ordinaryOfficeKeys.has(appointment.office_key ?? '')))
     .sort(sortCurrentAppointments)
 
-  const pastOrdinaries = appointmentHistory
-    .filter((appointment) => !appointment.is_current && ordinaryOfficeKeys.has(appointment.office_key ?? ''))
+  const historicalResponsibles = appointmentHistory
+    .filter((appointment) => !isDiocesan || ordinaryOfficeKeys.has(appointment.office_key ?? ''))
     .sort((a, b) => (a.start_date ?? '').localeCompare(b.start_date ?? ''))
 
-  const fallbackCurrent = currentBishops.length > 0 ? [] : appointments
+  const fallbackCurrent = currentResponsibles.length > 0 ? [] : appointments
   const currentRelationships = relationships.filter((item) => item.is_current)
+  const showStatistics = copy.showStatistics || statisticsSnapshots.length > 0
   const snapshotRows = statisticsSnapshots.length > 0 ? statisticsSnapshots : [{
     id: 'current',
     statistics_year: entity.statistics_year ?? 0,
@@ -318,7 +493,7 @@ export default function EntityDetailPage() {
   return (
     <main className="container detail-page hierarchy-page">
       <div className="detail-backlink">
-        <Link href="/diocesis">← Volver al dashboard</Link>
+        <Link href={isDiocesan ? '/diocesis' : '/'}>← Volver al dashboard</Link>
       </div>
 
       <section className="hierarchy-title card">
@@ -330,12 +505,12 @@ export default function EntityDetailPage() {
 
       <section className="hierarchy-grid">
         <article className="card compact-section">
-          <h2>Obispo(s)</h2>
-          {currentBishops.length === 0 && fallbackCurrent.length === 0 ? (
-            <p className="meta">No hay obispos o responsables actuales registrados.</p>
+          <h2>{copy.responsibleTitle}</h2>
+          {currentResponsibles.length === 0 && fallbackCurrent.length === 0 ? (
+            <p className="meta">{copy.emptyResponsible}</p>
           ) : (
             <ul className="simple-list bishop-list">
-              {currentBishops.map((appointment) => (
+              {currentResponsibles.map((appointment) => (
                 <li key={appointment.id}>
                   <div className="bishop-line">
                     <span>{appointment.office_name ?? 'Cargo'}</span>
@@ -345,12 +520,7 @@ export default function EntityDetailPage() {
                       <strong>{appointment.person_name ?? 'No indicado'}</strong>
                     )}
                   </div>
-                  <div className="tenure-grid">
-                    <span>{formatCurrentAge(appointment.birth_date, appointment.age_text, appointment.death_date)}</span>
-                    <span>{formatYears(appointment.priestly_ordination_date, 'Como sacerdote')}</span>
-                    <span>{formatYears(appointment.episcopal_ordination_date, 'Como obispo')}</span>
-                    <span>{formatYears(appointment.start_date, 'En este cargo')}</span>
-                  </div>
+                  {appointmentMetrics(appointment, isDiocesan)}
                 </li>
               ))}
               {fallbackCurrent.map((appointment) => (
@@ -372,14 +542,14 @@ export default function EntityDetailPage() {
         <article className="card compact-section">
           <h2>Información general</h2>
           <dl className="info-table">
-            <div><dt>Tipo de jurisdicción</dt><dd>{entity.entity_type_name ?? 'No indicado'}</dd></div>
+            <div><dt>{copy.typeLabel}</dt><dd>{entity.entity_type_name ?? 'No indicado'}</dd></div>
             <div><dt>Nombre latino</dt><dd>{entity.latin_name ?? 'No indicado'}</dd></div>
-            <div><dt>Catedral / sede</dt><dd>{entity.cathedral_name ?? 'No indicada'}</dd></div>
-            <div><dt>Rito</dt><dd>Latino (o Romano)</dd></div>
+            <div><dt>{copy.seatLabel}</dt><dd>{entity.cathedral_name ?? 'No indicada'}</dd></div>
+            {isDiocesan && <div><dt>Rito</dt><dd>Latino (o Romano)</dd></div>}
             <div><dt>País</dt><dd>{entity.country ?? 'República Dominicana'}</dd></div>
-            <div><dt>Superficie</dt><dd>{formatArea(entity.area_km2)}</dd></div>
+            {isDiocesan && <div><dt>Superficie</dt><dd>{formatArea(entity.area_km2)}</dd></div>}
             <div><dt>Sitio web oficial</dt><dd>{entity.website ?? 'No indicado'}</dd></div>
-            <div><dt>Dirección postal</dt><dd>{entity.address ?? 'No indicada'}</dd></div>
+            <div><dt>Dirección</dt><dd>{entity.address ?? 'No indicada'}</dd></div>
             <div><dt>Teléfono</dt><dd>{entity.phone ?? 'No indicado'}</dd></div>
           </dl>
         </article>
@@ -388,8 +558,8 @@ export default function EntityDetailPage() {
       <section className="card compact-section">
         <h2>Detalles históricos</h2>
         <dl className="info-table two-column-info">
-          <div><dt>Erigido</dt><dd>{formatDate(entity.erected_at)}</dd></div>
-          <div><dt>Territorio</dt><dd>{entity.territory_summary ?? 'No indicado'}</dd></div>
+          <div><dt>{copy.createdLabel}</dt><dd>{formatDate(entity.erected_at)}</dd></div>
+          <div><dt>{copy.territoryLabel}</dt><dd>{entity.territory_summary ?? 'No indicado'}</dd></div>
           <div><dt>Provincia civil</dt><dd>{entity.province ?? 'No indicada'}</dd></div>
           <div><dt>Municipio</dt><dd>{entity.municipality ?? 'No indicado'}</dd></div>
           <div><dt>Fuente</dt><dd>{entity.source_name ?? 'No indicada'}</dd></div>
@@ -398,9 +568,9 @@ export default function EntityDetailPage() {
       </section>
 
       <section className="card compact-section">
-        <h2>Ordinarios del pasado y del presente</h2>
-        {pastOrdinaries.length === 0 && currentBishops.length === 0 ? (
-          <p className="meta">Todavía no hay ordinarios históricos registrados.</p>
+        <h2>{copy.historyTitle}</h2>
+        {historicalResponsibles.length === 0 ? (
+          <p className="meta">{copy.emptyHistory}</p>
         ) : (
           <div className="table-wrap">
             <table className="data-table ordinary-table">
@@ -413,7 +583,7 @@ export default function EntityDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {[...pastOrdinaries, ...currentBishops].map((appointment) => (
+                {historicalResponsibles.map((appointment) => (
                   <tr key={appointment.id}>
                     <td>
                       {appointment.person_slug ? (
@@ -432,6 +602,40 @@ export default function EntityDetailPage() {
           </div>
         )}
       </section>
+
+      {positions.length > 0 && (
+        <section className="card compact-section">
+          <h2>Organigrama y cargos</h2>
+          <div className="table-wrap">
+            <table className="data-table ordinary-table">
+              <thead>
+                <tr>
+                  <th>Cargo</th>
+                  <th>Persona</th>
+                  <th>Organigrama</th>
+                  <th>Período</th>
+                  <th>Estado</th>
+                  <th>Predecesor</th>
+                  <th>Sucesor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {positions.map((position) => (
+                  <tr key={position.id}>
+                    <td><strong>{position.position_title ?? 'Cargo'}</strong></td>
+                    <td>{personLink(position.person_name, position.person_slug)}</td>
+                    <td>{position.organization_chart_name ?? 'No indicado'}</td>
+                    <td>{formatDate(position.term_start_date ?? position.start_date)} – {position.actual_end_date ? formatDate(position.actual_end_date) : position.term_end_date ? formatDate(position.term_end_date) : 'actual'}</td>
+                    <td>{assignmentStatusLabel(position.assignment_status)}</td>
+                    <td>{personLink(position.predecessor_person_name, position.predecessor_person_slug)}</td>
+                    <td>{personLink(position.successor_person_name, position.successor_person_slug)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section className="card compact-section">
         <h2>Evolución histórica</h2>
@@ -470,41 +674,43 @@ export default function EntityDetailPage() {
         )}
       </section>
 
-      <section className="card compact-section">
-        <h2>Estadística histórica</h2>
-        <div className="table-wrap">
-          <table className="data-table stats-table-wide">
-            <thead>
-              <tr>
-                <th>Año</th>
-                <th>Católicos</th>
-                <th>Población</th>
-                <th>%</th>
-                <th>Sacerdotes</th>
-                <th>Diáconos</th>
-                <th>Religiosos/as</th>
-                <th>Parroquias</th>
-                <th>Fuente</th>
-              </tr>
-            </thead>
-            <tbody>
-              {snapshotRows.map((snapshot) => (
-                <tr key={snapshot.id}>
-                  <td>{snapshot.statistics_year || '—'}</td>
-                  <td>{formatNumber(snapshot.catholics_total)}</td>
-                  <td>{formatNumber(snapshot.population_total)}</td>
-                  <td>{snapshot.catholics_percent ?? '—'}%</td>
-                  <td>{formatNumber(snapshot.total_priests_count)}</td>
-                  <td>{formatNumber(snapshot.permanent_deacons_count)}</td>
-                  <td>{formatNumber((snapshot.male_religious_count ?? 0) + (snapshot.female_religious_count ?? 0))}</td>
-                  <td>{formatNumber(snapshot.parishes_count)}</td>
-                  <td>{snapshot.source_code ?? '—'}</td>
+      {showStatistics && (
+        <section className="card compact-section">
+          <h2>{copy.statsTitle}</h2>
+          <div className="table-wrap">
+            <table className="data-table stats-table-wide">
+              <thead>
+                <tr>
+                  <th>Año</th>
+                  <th>Católicos</th>
+                  <th>Población</th>
+                  <th>%</th>
+                  <th>Sacerdotes</th>
+                  <th>Diáconos</th>
+                  <th>Religiosos/as</th>
+                  <th>Parroquias</th>
+                  <th>Fuente</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody>
+                {snapshotRows.map((snapshot) => (
+                  <tr key={snapshot.id}>
+                    <td>{snapshot.statistics_year || '—'}</td>
+                    <td>{formatNumber(snapshot.catholics_total)}</td>
+                    <td>{formatNumber(snapshot.population_total)}</td>
+                    <td>{snapshot.catholics_percent ?? '—'}%</td>
+                    <td>{formatNumber(snapshot.total_priests_count)}</td>
+                    <td>{formatNumber(snapshot.permanent_deacons_count)}</td>
+                    <td>{formatNumber((snapshot.male_religious_count ?? 0) + (snapshot.female_religious_count ?? 0))}</td>
+                    <td>{formatNumber(snapshot.parishes_count)}</td>
+                    <td>{snapshot.source_code ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {evolutionEvents.length === 0 && currentRelationships.length > 0 && (
         <section className="card compact-section">
