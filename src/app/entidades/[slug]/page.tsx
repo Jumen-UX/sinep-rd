@@ -82,17 +82,58 @@ type AppointmentHistory = Appointment & {
   is_current: boolean
 }
 
+type EvolutionEvent = {
+  id: string
+  event_type: string | null
+  event_date: string | null
+  title: string | null
+  description: string | null
+  from_entity_display_name: string | null
+  from_entity_slug: string | null
+  from_entity_name: string | null
+  to_entity_display_name: string | null
+  to_entity_slug: string | null
+  to_entity_name: string | null
+  related_entity_display_name: string | null
+  related_entity_slug: string | null
+  related_entity_name: string | null
+  territory_summary: string | null
+  canonical_effect: string | null
+  source_name: string | null
+  verification_status: string | null
+}
+
+type StatisticsSnapshot = {
+  id: string
+  statistics_year: number
+  catholics_total: number | null
+  population_total: number | null
+  catholics_percent: number | null
+  diocesan_priests_count: number | null
+  religious_priests_count: number | null
+  total_priests_count: number | null
+  catholics_per_priest: number | null
+  permanent_deacons_count: number | null
+  male_religious_count: number | null
+  female_religious_count: number | null
+  parishes_count: number | null
+  source_code: string | null
+}
+
 type EntityResponse = {
   entity: Entity
   relationships: Relationship[]
   related_entities: RelatedEntity[]
   appointments: Appointment[]
   appointment_history: AppointmentHistory[]
+  evolution_events: EvolutionEvent[]
+  statistics_snapshots: StatisticsSnapshot[]
 }
 
 const ordinaryOfficeKeys = new Set([
   'metropolitan_archbishop',
   'coadjutor_archbishop',
+  'coadjutor_bishop',
   'diocesan_bishop',
   'auxiliary_bishop',
   'apostolic_administrator',
@@ -103,6 +144,7 @@ const hierarchyRank: Record<string, number> = {
   metropolitan_archbishop: 1,
   diocesan_bishop: 2,
   coadjutor_archbishop: 3,
+  coadjutor_bishop: 3,
   apostolic_administrator: 4,
   auxiliary_bishop: 5,
   bishop_emeritus: 6,
@@ -154,11 +196,34 @@ function formatCurrentAge(birthDate: string | null, ageText: string | null, deat
   return 'Edad actual: —'
 }
 
+function eventTypeLabel(value: string | null) {
+  const labels: Record<string, string> = {
+    erection: 'Erección',
+    elevation: 'Elevación',
+    dismemberment: 'Desmembramiento',
+    erection_by_dismemberment: 'Erección por desmembramiento',
+    territory_loss: 'Pérdida territorial',
+    territory_gain: 'Recepción territorial',
+    territorial_reorganization: 'Reorganización territorial',
+    name_change: 'Cambio de nombre',
+    province_change: 'Cambio de provincia',
+  }
+
+  if (!value) return 'Evento'
+  return labels[value] ?? value
+}
+
 function sortCurrentAppointments(a: AppointmentHistory, b: AppointmentHistory) {
   const rankA = hierarchyRank[a.office_key ?? ''] ?? 99
   const rankB = hierarchyRank[b.office_key ?? ''] ?? 99
   if (rankA !== rankB) return rankA - rankB
   return (a.start_date ?? '').localeCompare(b.start_date ?? '')
+}
+
+function entityLink(name: string | null, slug: string | null) {
+  if (!name) return '—'
+  if (!slug) return name
+  return <Link href={`/entidades/${slug}`}>{name}</Link>
 }
 
 export default function EntityDetailPage() {
@@ -205,7 +270,15 @@ export default function EntityDetailPage() {
     )
   }
 
-  const { entity, relationships, related_entities: relatedEntities, appointments, appointment_history: appointmentHistory } = data
+  const {
+    entity,
+    relationships,
+    related_entities: relatedEntities,
+    appointments,
+    appointment_history: appointmentHistory,
+    evolution_events: evolutionEvents,
+    statistics_snapshots: statisticsSnapshots,
+  } = data
 
   function getRelatedName(id: string) {
     return relatedEntities.find((item) => item.id === id)?.name ?? 'Entidad relacionada'
@@ -225,6 +298,22 @@ export default function EntityDetailPage() {
 
   const fallbackCurrent = currentBishops.length > 0 ? [] : appointments
   const currentRelationships = relationships.filter((item) => item.is_current)
+  const snapshotRows = statisticsSnapshots.length > 0 ? statisticsSnapshots : [{
+    id: 'current',
+    statistics_year: entity.statistics_year ?? 0,
+    catholics_total: entity.catholics_total,
+    population_total: entity.population_total,
+    catholics_percent: entity.catholics_percent,
+    diocesan_priests_count: null,
+    religious_priests_count: null,
+    total_priests_count: null,
+    catholics_per_priest: null,
+    permanent_deacons_count: null,
+    male_religious_count: null,
+    female_religious_count: null,
+    parishes_count: entity.parishes_count,
+    source_code: null,
+  }]
 
   return (
     <main className="container detail-page hierarchy-page">
@@ -345,42 +434,87 @@ export default function EntityDetailPage() {
       </section>
 
       <section className="card compact-section">
-        <h2>Estadística</h2>
+        <h2>Evolución histórica</h2>
+        {evolutionEvents.length === 0 ? (
+          <p className="meta">Todavía no hay eventos de evolución histórica registrados.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table evolution-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Evento</th>
+                  <th>De</th>
+                  <th>A / Relación</th>
+                  <th>Territorio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {evolutionEvents.map((event) => {
+                  const fromName = event.from_entity_display_name ?? event.from_entity_name
+                  const toName = event.to_entity_display_name ?? event.to_entity_name
+                  const relatedName = event.related_entity_display_name ?? event.related_entity_name
+                  return (
+                    <tr key={event.id}>
+                      <td>{formatDate(event.event_date)}</td>
+                      <td><strong>{eventTypeLabel(event.event_type)}</strong><br /><span className="meta">{event.title}</span></td>
+                      <td>{entityLink(fromName, event.from_entity_slug)}</td>
+                      <td>{entityLink(toName ?? relatedName, event.to_entity_slug ?? event.related_entity_slug)}</td>
+                      <td>{event.territory_summary ?? '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card compact-section">
+        <h2>Estadística histórica</h2>
         <div className="table-wrap">
-          <table className="data-table stats-table">
+          <table className="data-table stats-table-wide">
             <thead>
               <tr>
                 <th>Año</th>
                 <th>Católicos</th>
-                <th>Población total</th>
-                <th>% católicos</th>
+                <th>Población</th>
+                <th>%</th>
+                <th>Sacerdotes</th>
+                <th>Diáconos</th>
+                <th>Religiosos/as</th>
                 <th>Parroquias</th>
+                <th>Fuente</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>{entity.statistics_year ?? '—'}</td>
-                <td>{formatNumber(entity.catholics_total)}</td>
-                <td>{formatNumber(entity.population_total)}</td>
-                <td>{entity.catholics_percent ?? '—'}%</td>
-                <td>{formatNumber(entity.parishes_count)}</td>
-              </tr>
+              {snapshotRows.map((snapshot) => (
+                <tr key={snapshot.id}>
+                  <td>{snapshot.statistics_year || '—'}</td>
+                  <td>{formatNumber(snapshot.catholics_total)}</td>
+                  <td>{formatNumber(snapshot.population_total)}</td>
+                  <td>{snapshot.catholics_percent ?? '—'}%</td>
+                  <td>{formatNumber(snapshot.total_priests_count)}</td>
+                  <td>{formatNumber(snapshot.permanent_deacons_count)}</td>
+                  <td>{formatNumber((snapshot.male_religious_count ?? 0) + (snapshot.female_religious_count ?? 0))}</td>
+                  <td>{formatNumber(snapshot.parishes_count)}</td>
+                  <td>{snapshot.source_code ?? '—'}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </section>
 
-      <section className="card compact-section">
-        <h2>Resumen histórico y relaciones</h2>
-        {currentRelationships.length === 0 ? (
-          <p className="meta">Todavía no hay relaciones territoriales registradas.</p>
-        ) : (
+      {evolutionEvents.length === 0 && currentRelationships.length > 0 && (
+        <section className="card compact-section">
+          <h2>Relaciones actuales</h2>
           <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Fecha</th>
-                  <th>Evento</th>
+                  <th>Relación</th>
                   <th>Entidad relacionada</th>
                 </tr>
               </thead>
@@ -393,17 +527,15 @@ export default function EntityDetailPage() {
                     <tr key={relationship.id}>
                       <td>{formatDate(relationship.start_date)}</td>
                       <td>{relationship.relationship_type ?? 'Relación'}</td>
-                      <td>
-                        {relatedSlug ? <Link href={`/entidades/${relatedSlug}`}>{relatedName}</Link> : relatedName}
-                      </td>
+                      <td>{relatedSlug ? <Link href={`/entidades/${relatedSlug}`}>{relatedName}</Link> : relatedName}</td>
                     </tr>
                   )
                 })}
               </tbody>
             </table>
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </main>
   )
 }
