@@ -72,6 +72,7 @@ type AppointmentHistory = Appointment & {
   office_key: string | null
   person_type: string | null
   birth_date: string | null
+  age_text: string | null
   death_date: string | null
   diaconal_ordination_date: string | null
   priestly_ordination_date: string | null
@@ -144,6 +145,13 @@ function formatYears(value: string | null, label: string, endValue?: string | nu
   const years = yearsSince(value, endValue)
   if (years === null) return `${label}: —`
   return `${label}: ${years} años`
+}
+
+function formatCurrentAge(birthDate: string | null, ageText: string | null, deathDate?: string | null) {
+  const years = yearsSince(birthDate, deathDate)
+  if (years !== null) return `Edad actual: ${years} años`
+  if (ageText) return `Edad actual: ${ageText} años`
+  return 'Edad actual: —'
 }
 
 function sortCurrentAppointments(a: AppointmentHistory, b: AppointmentHistory) {
@@ -249,7 +257,7 @@ export default function EntityDetailPage() {
                     )}
                   </div>
                   <div className="tenure-grid">
-                    <span>{formatYears(appointment.birth_date, 'Edad actual', appointment.death_date)}</span>
+                    <span>{formatCurrentAge(appointment.birth_date, appointment.age_text, appointment.death_date)}</span>
                     <span>{formatYears(appointment.priestly_ordination_date, 'Como sacerdote')}</span>
                     <span>{formatYears(appointment.episcopal_ordination_date, 'Como obispo')}</span>
                     <span>{formatYears(appointment.start_date, 'En este cargo')}</span>
