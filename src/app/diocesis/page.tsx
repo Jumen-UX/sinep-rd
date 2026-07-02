@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 type Diocese = {
   id: string
+  slug: string
   name: string
   entity_type_name: string | null
   ecclesiastical_province_name: string | null
@@ -131,6 +133,10 @@ export default function DiocesisPage() {
                   {erectedAt && <span> · Erección: {erectedAt}</span>}
                   {item.source_name && <span> · Fuente: {item.source_name}</span>}
                 </div>
+
+                <Link className="button button-secondary card-action" href={`/entidades/${item.slug}`}>
+                  Ver ficha completa
+                </Link>
               </article>
             )
           })}
