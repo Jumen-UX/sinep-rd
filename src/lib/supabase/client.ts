@@ -1,25 +1,18 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-function getSupabaseUrl() {
-  const value = process.env.NEXT_PUBLIC_SUPABASE_URL
-
-  if (!value) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
-  }
-
-  return value
-}
-
-function getSupabasePublishableKey() {
-  const value = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+function getRequiredEnv(name: string) {
+  const value = process.env[name]
 
   if (!value) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY environment variable')
+    throw new Error(`Missing environment variable: ${name}`)
   }
 
   return value
 }
 
 export function createClient() {
-  return createBrowserClient(getSupabaseUrl(), getSupabasePublishableKey())
+  return createSupabaseClient(
+    getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    getRequiredEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
+  )
 }
