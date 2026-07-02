@@ -122,6 +122,37 @@ const episcopalOrdinationColumns = [
   'notes_public'
 ].join(',')
 
+const positionColumns = [
+  'id',
+  'person_id',
+  'person_name',
+  'person_slug',
+  'position_title',
+  'office_configuration_key',
+  'base_role_name',
+  'scope_name',
+  'category_name',
+  'organization_chart_name',
+  'organization_chart_key',
+  'organization_unit_name',
+  'ecclesiastical_entity_name',
+  'ecclesiastical_entity_slug',
+  'pastoral_entity_name',
+  'pastoral_entity_slug',
+  'predecessor_person_name',
+  'predecessor_person_slug',
+  'successor_person_name',
+  'successor_person_slug',
+  'start_date',
+  'term_start_date',
+  'term_end_date',
+  'actual_end_date',
+  'is_current',
+  'assignment_status',
+  'selection_method',
+  'notes_public'
+].join(',')
+
 function getApiKey() {
   return (
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
@@ -174,7 +205,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Persona no encontrada' }, { status: 404 })
     }
 
-    const [clergyRows, appointments, movements, episcopalOrdinations] = await Promise.all([
+    const [clergyRows, appointments, movements, episcopalOrdinations, positions] = await Promise.all([
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/public_clergy?slug=eq.${encodedSlug}&select=${clergyColumns}&limit=1`,
         key
@@ -190,6 +221,10 @@ export async function GET(request: NextRequest) {
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/public_episcopal_ordinations?bishop_slug=eq.${encodedSlug}&select=${episcopalOrdinationColumns}&limit=1`,
         key
+      ).catch(() => []),
+      fetchJson<Record<string, unknown>[]>(
+        `${url}/rest/v1/public_position_assignments?person_slug=eq.${encodedSlug}&select=${positionColumns}&order=start_date.desc.nullslast`,
+        key
       ).catch(() => [])
     ])
 
@@ -199,6 +234,7 @@ export async function GET(request: NextRequest) {
       appointments,
       movements,
       episcopal_ordination: episcopalOrdinations[0] ?? null,
+      positions,
     })
   } catch (error) {
     return NextResponse.json(
