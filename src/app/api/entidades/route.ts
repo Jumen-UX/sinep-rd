@@ -54,6 +54,20 @@ const relationshipColumns = [
   'created_at'
 ].join(',')
 
+const appointmentColumns = [
+  'id',
+  'person_id',
+  'office_id',
+  'entity_id',
+  'start_date',
+  'end_date',
+  'is_current',
+  'appointment_type',
+  'notes_public',
+  'status',
+  'visibility'
+].join(',')
+
 function getApiKey() {
   return (
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
@@ -77,6 +91,10 @@ async function fetchJson<T>(endpoint: string, key: string): Promise<T> {
   }
 
   return response.json() as Promise<T>
+}
+
+function byId(items: Record<string, unknown>[]) {
+  return new Map(items.map((item) => [String(item.id), item]))
 }
 
 export async function GET(request: NextRequest) {
@@ -105,7 +123,7 @@ export async function GET(request: NextRequest) {
     const entityId = String(entity.id)
     const entityTypeId = String(entity.entity_type_id)
 
-    const [types, relationships, appointments] = await Promise.all([
+    const [types, relationships, currentAppointments, appointmentRows] = await Promise.all([
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/entity_types?id=eq.${entityTypeId}&select=key,name&limit=1`,
         key
@@ -116,6 +134,10 @@ export async function GET(request: NextRequest) {
       ).catch(() => []),
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/public_current_appointments?entity_id=eq.${entityId}&select=person_name,person_slug,office_name,start_date,appointment_type,notes_public&order=start_date.desc.nullslast`,
+        key
+      ).catch(() => []),
+      fetchJson<Record<string, unknown>[]>(
+        `${url}/rest/v1/appointments?entity_id=eq.${entityId}&status=eq.active&visibility=eq.public&select=${appointmentColumns}&order=start_date.asc.nullslast`,
         key
       ).catch(() => [])
     ])
@@ -138,6 +160,41 @@ export async function GET(request: NextRequest) {
       ).catch(() => [])
     }
 
+    const personIds = Array.from(new Set(appointmentRows.map((item) => item.person_id).filter(Boolean).map(String)))
+    const officeIds = Array.from(new Set(appointmentRows.map((item) => item.office_id).filter(Boolean).map(String)))
+
+    const [people, offices] = await Promise.all([
+      personIds.length > 0
+        ? fetchJson<Record<string, unknown>[]>(
+            `${url}/rest/v1/persons?id=in.(${personIds.join(',')})&select=id,display_name,slug,person_type`,
+            key
+          ).catch(() => [])
+        : Promise.resolve([]),
+      officeIds.length > 0
+        ? fetchJson<Record<string, unknown>[]>(
+            `${url}/rest/v1/offices?id=in.(${officeIds.join(',')})&select=id,name,key`,
+            key
+          ).catch(() => [])
+        : Promise.resolve([])
+    ])
+
+    const peopleById = byId(people)
+    const officesById = byId(offices)
+
+    const appointmentHistory = appointmentRows.map((appointment) => {
+      const person = peopleById.get(String(appointment.person_id))
+      const office = officesById.get(String(appointment.office_id))
+
+      return {
+        ...appointment,
+        person_name: person?.display_name ?? null,
+        person_slug: person?.slug ?? null,
+        person_type: person?.person_type ?? null,
+        office_name: office?.name ?? null,
+        office_key: office?.key ?? null,
+      }
+    })
+
     return NextResponse.json({
       entity: {
         ...entity,
@@ -146,7 +203,8 @@ export async function GET(request: NextRequest) {
       },
       relationships,
       related_entities: relatedEntities,
-      appointments,
+      appointments: currentAppointments,
+      appointment_history: appointmentHistory,
     })
   } catch (error) {
     return NextResponse.json(
