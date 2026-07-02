@@ -1,3 +1,3 @@
-export default function DiocesisPage() {
-  return <main>Directorio de diocesis</main>
+export default function Page() {
+  return <main>Hola</main>
 }
