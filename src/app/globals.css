@@ -261,6 +261,102 @@ h2 {
   padding-top: 10px;
 }
 
+.card-action {
+  margin-top: 12px;
+}
+
+.detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.detail-backlink a {
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.detail-backlink a:hover {
+  color: var(--primary);
+}
+
+.detail-hero h1 {
+  max-width: 980px;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-section h2 {
+  font-size: 22px;
+}
+
+.detail-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.detail-list div {
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: 4px;
+  padding-bottom: 12px;
+}
+
+.detail-list div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.detail-list dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detail-list dd {
+  margin: 0;
+}
+
+.detail-stats {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.timeline-list {
+  display: grid;
+  gap: 12px;
+}
+
+.timeline-item {
+  border-left: 4px solid var(--gold);
+  display: grid;
+  gap: 4px;
+  padding-left: 14px;
+}
+
+.timeline-item a {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.timeline-item small {
+  color: var(--muted);
+}
+
 .empty-state,
 .error-box {
   background: white;
