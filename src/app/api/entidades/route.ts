@@ -68,6 +68,47 @@ const appointmentColumns = [
   'visibility'
 ].join(',')
 
+const evolutionColumns = [
+  'id',
+  'event_type',
+  'event_date',
+  'title',
+  'description',
+  'from_entity_display_name',
+  'from_entity_slug',
+  'from_entity_name',
+  'to_entity_display_name',
+  'to_entity_slug',
+  'to_entity_name',
+  'related_entity_display_name',
+  'related_entity_slug',
+  'related_entity_name',
+  'territory_summary',
+  'canonical_effect',
+  'source_name',
+  'source_checked_at',
+  'verification_status'
+].join(',')
+
+const statisticsColumns = [
+  'id',
+  'statistics_year',
+  'catholics_total',
+  'population_total',
+  'catholics_percent',
+  'diocesan_priests_count',
+  'religious_priests_count',
+  'total_priests_count',
+  'catholics_per_priest',
+  'permanent_deacons_count',
+  'male_religious_count',
+  'female_religious_count',
+  'parishes_count',
+  'source_code',
+  'source_name',
+  'verification_status'
+].join(',')
+
 function getApiKey() {
   return (
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
@@ -123,7 +164,7 @@ export async function GET(request: NextRequest) {
     const entityId = String(entity.id)
     const entityTypeId = String(entity.entity_type_id)
 
-    const [types, relationships, currentAppointments, appointmentRows] = await Promise.all([
+    const [types, relationships, currentAppointments, appointmentRows, evolutionEvents, statisticsSnapshots] = await Promise.all([
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/entity_types?id=eq.${entityTypeId}&select=key,name&limit=1`,
         key
@@ -138,6 +179,14 @@ export async function GET(request: NextRequest) {
       ).catch(() => []),
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/appointments?entity_id=eq.${entityId}&status=eq.active&visibility=eq.public&select=${appointmentColumns}&order=start_date.asc.nullslast`,
+        key
+      ).catch(() => []),
+      fetchJson<Record<string, unknown>[]>(
+        `${url}/rest/v1/public_entity_evolution_events?entity_id=eq.${entityId}&select=${evolutionColumns}&order=event_date.asc.nullslast`,
+        key
+      ).catch(() => []),
+      fetchJson<Record<string, unknown>[]>(
+        `${url}/rest/v1/public_entity_statistics_snapshots?entity_id=eq.${entityId}&select=${statisticsColumns}&order=statistics_year.asc`,
         key
       ).catch(() => [])
     ])
@@ -220,6 +269,8 @@ export async function GET(request: NextRequest) {
       related_entities: relatedEntities,
       appointments: currentAppointments,
       appointment_history: appointmentHistory,
+      evolution_events: evolutionEvents,
+      statistics_snapshots: statisticsSnapshots,
     })
   } catch (error) {
     return NextResponse.json(
