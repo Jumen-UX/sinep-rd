@@ -26,6 +26,7 @@ export default function RootLayout({
 
               <div className="nav-links">
                 <Link href="/diocesis">Diócesis</Link>
+                <Link href="/admin">Administración</Link>
               </div>
             </nav>
           </header>
