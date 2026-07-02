@@ -12,6 +12,7 @@ type Person = {
   photo_url: string | null
   biography_public: string | null
   birth_date: string | null
+  age_text: string | null
   birth_place: string | null
   status: string | null
   death_date: string | null
@@ -123,6 +124,12 @@ function metricYears(value: string | null, endValue?: string | null) {
   return years === null ? '—' : `${years}`
 }
 
+function metricAge(birthDate: string | null, ageText: string | null, deathDate?: string | null) {
+  const years = yearsSince(birthDate, deathDate)
+  if (years !== null) return `${years}`
+  return ageText ?? '—'
+}
+
 function ConsecratorLink({ name, slug }: { name: string | null; slug: string | null }) {
   if (!name) return <span>No indicado</span>
   if (!slug) return <span>{name}</span>
@@ -197,7 +204,7 @@ export default function PersonDetailPage() {
 
       <section className="dashboard-grid dashboard-summary person-metrics">
         <div className="metric-card">
-          <strong>{metricYears(person.birth_date, person.death_date)}</strong>
+          <strong>{metricAge(person.birth_date, person.age_text, person.death_date)}</strong>
           <span>Edad actual</span>
         </div>
         <div className="metric-card">
