@@ -10,13 +10,15 @@ type Profile = {
   email: string | null
 }
 
+type RoleInfo = {
+  key: string
+  name: string
+}
+
 type RoleRow = {
   scope_type: string | null
   status: string
-  roles: {
-    key: string
-    name: string
-  } | null
+  roles: RoleInfo[] | RoleInfo | null
 }
 
 type Summary = {
@@ -31,6 +33,12 @@ type Summary = {
   active_pastoral_entities: number
   pending_change_requests: number
   pending_documents: number
+}
+
+function getRoleInfo(role: RoleRow): RoleInfo | null {
+  if (!role.roles) return null
+  if (Array.isArray(role.roles)) return role.roles[0] ?? null
+  return role.roles
 }
 
 export default function AdminPage() {
@@ -80,7 +88,7 @@ export default function AdminPage() {
         full_name: userData.user.email ?? null,
         email: userData.user.email ?? null,
       })
-      setRoles((roleData ?? []) as RoleRow[])
+      setRoles((roleData ?? []) as unknown as RoleRow[])
       setSummary((summaryData as Summary | null) ?? null)
       setLoading(false)
     }
@@ -142,11 +150,14 @@ export default function AdminPage() {
       <section className="card admin-section">
         <h2>Roles activos</h2>
         <div className="role-list">
-          {roles.map((role) => (
-            <span className="role-pill" key={`${role.roles?.key}-${role.scope_type}`}>
-              {role.roles?.name ?? role.roles?.key} · {role.scope_type}
-            </span>
-          ))}
+          {roles.map((role) => {
+            const roleInfo = getRoleInfo(role)
+            return (
+              <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>
+                {roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}
+              </span>
+            )
+          })}
         </div>
       </section>
 
