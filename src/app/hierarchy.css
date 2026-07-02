@@ -161,12 +161,24 @@
   text-decoration: none;
 }
 
+.data-table strong {
+  font-size: 13px;
+}
+
 .ordinary-table {
   min-width: 760px;
 }
 
+.evolution-table {
+  min-width: 980px;
+}
+
 .stats-table {
   min-width: 520px;
+}
+
+.stats-table-wide {
+  min-width: 980px;
 }
 
 .metric-button,
