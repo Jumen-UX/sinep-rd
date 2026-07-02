@@ -56,11 +56,32 @@ type Movement = {
   end_date: string | null
 }
 
+type EpiscopalOrdination = {
+  id: string
+  ordination_date: string | null
+  ordination_place: string | null
+  principal_consecrator_person_name: string | null
+  principal_consecrator_person_slug: string | null
+  principal_consecrator_name: string | null
+  co_consecrator_1_person_name: string | null
+  co_consecrator_1_person_slug: string | null
+  co_consecrator_1_name: string | null
+  co_consecrator_2_person_name: string | null
+  co_consecrator_2_person_slug: string | null
+  co_consecrator_2_name: string | null
+  source_name: string | null
+  source_url: string | null
+  source_checked_at: string | null
+  verification_status: string | null
+  notes_public: string | null
+}
+
 type PersonResponse = {
   person: Person
   clergy: Clergy | null
   appointments: Appointment[]
   movements: Movement[]
+  episcopal_ordination: EpiscopalOrdination | null
 }
 
 function personTypeLabel(value: string | null) {
@@ -79,6 +100,12 @@ function personTypeLabel(value: string | null) {
 function formatDate(value: string | null) {
   if (!value) return 'Sin fecha'
   return new Intl.DateTimeFormat('es-DO', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
+}
+
+function ConsecratorLink({ name, slug }: { name: string | null; slug: string | null }) {
+  if (!name) return <span>No indicado</span>
+  if (!slug) return <span>{name}</span>
+  return <Link href={`/personas/${slug}`}>{name}</Link>
 }
 
 export default function PersonDetailPage() {
@@ -125,12 +152,16 @@ export default function PersonDetailPage() {
     )
   }
 
-  const { person, clergy, appointments, movements } = data
+  const { person, clergy, appointments, movements, episcopal_ordination: episcopalOrdination } = data
+
+  const principalConsecratorName = episcopalOrdination?.principal_consecrator_person_name ?? episcopalOrdination?.principal_consecrator_name ?? null
+  const coConsecrator1Name = episcopalOrdination?.co_consecrator_1_person_name ?? episcopalOrdination?.co_consecrator_1_name ?? null
+  const coConsecrator2Name = episcopalOrdination?.co_consecrator_2_person_name ?? episcopalOrdination?.co_consecrator_2_name ?? null
 
   return (
     <main className="container detail-page">
       <div className="detail-backlink">
-        <Link href="/personas">← Volver al directorio de personas</Link>
+        <Link href="/personas">← Volver al dashboard de personas</Link>
       </div>
 
       <section className="detail-hero card person-hero">
@@ -185,6 +216,38 @@ export default function PersonDetailPage() {
             </dl>
           )}
         </article>
+      </section>
+
+      <section className="card detail-section">
+        <h2>Sucesión apostólica</h2>
+        {!episcopalOrdination ? (
+          <p className="meta">Todavía no hay datos públicos de ordenación episcopal para esta persona.</p>
+        ) : (
+          <dl className="detail-list">
+            <div><dt>Fecha de ordenación episcopal</dt><dd>{formatDate(episcopalOrdination.ordination_date)}</dd></div>
+            <div><dt>Lugar</dt><dd>{episcopalOrdination.ordination_place ?? 'No indicado'}</dd></div>
+            <div>
+              <dt>Consagrante principal</dt>
+              <dd>
+                <ConsecratorLink name={principalConsecratorName} slug={episcopalOrdination.principal_consecrator_person_slug} />
+              </dd>
+            </div>
+            <div>
+              <dt>Co-consagrante 1</dt>
+              <dd>
+                <ConsecratorLink name={coConsecrator1Name} slug={episcopalOrdination.co_consecrator_1_person_slug} />
+              </dd>
+            </div>
+            <div>
+              <dt>Co-consagrante 2</dt>
+              <dd>
+                <ConsecratorLink name={coConsecrator2Name} slug={episcopalOrdination.co_consecrator_2_person_slug} />
+              </dd>
+            </div>
+            <div><dt>Verificación</dt><dd>{episcopalOrdination.verification_status ?? 'No indicada'}</dd></div>
+            <div><dt>Fuente</dt><dd>{episcopalOrdination.source_name ?? 'No indicada'}</dd></div>
+          </dl>
+        )}
       </section>
 
       <section className="detail-grid">
