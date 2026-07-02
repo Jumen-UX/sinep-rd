@@ -1,6 +1,11 @@
+import { createClient } from '@/lib/supabase/server'
+
 export const dynamic = 'force-dynamic'
 
-export default function DiocesisPage() {
+export default async function DiocesisPage() {
+  const supabase = await createClient()
+  void supabase
+
   return (
     <main className="container">
       <div className="page-heading">
