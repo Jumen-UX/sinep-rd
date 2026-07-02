@@ -1,37 +1,69 @@
-const items = [
-  { name: 'Arquidiocesis Metropolitana de Santiago de los Caballeros', type: 'Arquidiocesis', province: 'Provincia Eclesiastica de Santiago de los Caballeros', location: 'Santiago de los Caballeros, Santiago' },
-  { name: 'Arquidiocesis Metropolitana de Santo Domingo', type: 'Arquidiocesis', province: 'Provincia Eclesiastica de Santo Domingo', location: 'Santo Domingo, Distrito Nacional' },
-  { name: 'Diocesis de Bani', type: 'Diocesis', province: 'Provincia Eclesiastica de Santo Domingo', location: 'Bani, Peravia' },
-  { name: 'Diocesis de Barahona', type: 'Diocesis', province: 'Provincia Eclesiastica de Santo Domingo', location: 'Barahona, Barahona' },
-  { name: 'Diocesis de La Vega', type: 'Diocesis', province: 'Provincia Eclesiastica de Santiago de los Caballeros', location: 'La Vega, La Vega' },
-  { name: 'Diocesis de Mao-Monte Cristi', type: 'Diocesis', province: 'Provincia Eclesiastica de Santiago de los Caballeros', location: 'Mao, Valverde' },
-  { name: 'Diocesis de Nuestra Senora de la Altagracia en Higuey', type: 'Diocesis', province: 'Provincia Eclesiastica de Santo Domingo', location: 'Higuey, La Altagracia' },
-  { name: 'Diocesis de Puerto Plata', type: 'Diocesis', province: 'Provincia Eclesiastica de Santiago de los Caballeros', location: 'Puerto Plata, Puerto Plata' },
-  { name: 'Diocesis de San Francisco de Macoris', type: 'Diocesis', province: 'Provincia Eclesiastica de Santiago de los Caballeros', location: 'San Francisco de Macoris, Duarte' },
-  { name: 'Diocesis de San Juan de la Maguana', type: 'Diocesis', province: 'Provincia Eclesiastica de Santo Domingo', location: 'San Juan de la Maguana, San Juan' },
-  { name: 'Diocesis de San Pedro de Macoris', type: 'Diocesis', province: 'Provincia Eclesiastica de Santo Domingo', location: 'San Pedro de Macoris, San Pedro de Macoris' },
-  { name: 'Diocesis de Stella Maris', type: 'Diocesis', province: 'Provincia Eclesiastica de Santo Domingo', location: 'Santo Domingo Este, Santo Domingo' },
-  { name: 'Obispado Castrense de Republica Dominicana', type: 'Ordinariato Militar', province: 'Jurisdiccion nacional', location: 'Republica Dominicana' }
-]
+'use client'
+
+import { useEffect, useState } from 'react'
+
+type Diocese = {
+  id: string
+  name: string
+  entity_type_name: string | null
+  ecclesiastical_province_name: string | null
+  province: string | null
+  municipality: string | null
+}
 
 export default function DiocesisPage() {
+  const [items, setItems] = useState<Diocese[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const response = await fetch('/api/diocesis')
+        if (!response.ok) {
+          throw new Error('No se pudo cargar el directorio')
+        }
+        const data = (await response.json()) as Diocese[]
+        setItems(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+
   return (
     <main className="container">
       <div className="page-heading">
         <p className="eyebrow">Directorio</p>
-        <h1>Diocesis</h1>
-        <p className="lead">Listado inicial de arquidiocesis, diocesis y jurisdicciones especiales.</p>
+        <h1>Diócesis</h1>
+        <p className="lead">Listado inicial de arquidiócesis, diócesis y jurisdicciones especiales.</p>
       </div>
-      <section className="grid">
-        {items.map((item) => (
-          <article className="entity-card" key={item.name}>
-            <p className="entity-type">{item.type}</p>
-            <h2>{item.name}</h2>
-            <p className="meta">{item.province}</p>
-            <p className="meta">{item.location}</p>
-          </article>
-        ))}
-      </section>
+
+      {loading && <div className="empty-state">Cargando directorio...</div>}
+      {error && <div className="error-box">{error}</div>}
+
+      {!loading && !error && (
+        <section className="grid">
+          {items.map((item) => (
+            <article className="entity-card" key={item.id}>
+              <p className="entity-type">{item.entity_type_name ?? 'Jurisdicción'}</p>
+              <h2>{item.name}</h2>
+              {item.ecclesiastical_province_name && (
+                <p className="meta">{item.ecclesiastical_province_name}</p>
+              )}
+              {(item.municipality || item.province) && (
+                <p className="meta">
+                  {[item.municipality, item.province].filter(Boolean).join(', ')}
+                </p>
+              )}
+            </article>
+          ))}
+        </section>
+      )}
     </main>
   )
 }
