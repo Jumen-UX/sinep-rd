@@ -3,11 +3,11 @@
 import Link from 'next/link'
 
 const items = [
-  ['Nueva persona episcopal', 'Persona', 'Datos personales, perfil clerical, consagración, nombramiento y fuentes.'],
-  ['Nuevo sacerdote', 'Persona', 'Datos personales, ordenación, cargo actual, historial y fuentes.'],
-  ['Nueva jurisdicción', 'Entidad', 'Identidad, territorio, responsable principal, estadísticas y estructura.'],
-  ['Nueva parroquia', 'Entidad', 'Identidad, dependencia territorial, responsables, contacto y pastorales.'],
-  ['Nueva capilla', 'Entidad', 'Identidad, dependencia, responsable, ubicación y notas.'],
+  { title: 'Nueva persona episcopal', type: 'Persona', description: 'Datos personales, perfil clerical, consagración, nombramiento y fuentes.', href: null },
+  { title: 'Nuevo sacerdote', type: 'Persona', description: 'Datos personales, ordenación, cargo actual, historial y fuentes.', href: null },
+  { title: 'Nueva jurisdicción', type: 'Entidad', description: 'Identidad, territorio, responsable principal, estadísticas y estructura.', href: null },
+  { title: 'Nueva parroquia', type: 'Entidad', description: 'Identidad, dependencia territorial, responsables, contacto y pastorales.', href: '/admin/nuevo/parroquia' },
+  { title: 'Nueva capilla', type: 'Entidad', description: 'Identidad, dependencia, responsable, ubicación y notas.', href: null },
 ]
 
 export default function AdminNuevoPage() {
@@ -22,12 +22,16 @@ export default function AdminNuevoPage() {
         </div>
       </section>
       <section className="grid admin-modules">
-        {items.map(([title, type, description]) => (
-          <article className="entity-card admin-module" key={title}>
-            <p className="entity-type">{type}</p>
-            <h2>{title}</h2>
-            <p className="meta">{description}</p>
-            <button className="button button-secondary" type="button" disabled>Asistente en preparación</button>
+        {items.map((item) => (
+          <article className="entity-card admin-module" key={item.title}>
+            <p className="entity-type">{item.type}</p>
+            <h2>{item.title}</h2>
+            <p className="meta">{item.description}</p>
+            {item.href ? (
+              <Link className="button button-primary" href={item.href}>Iniciar asistente</Link>
+            ) : (
+              <button className="button button-secondary" type="button" disabled>Asistente en preparación</button>
+            )}
           </article>
         ))}
       </section>
