@@ -69,7 +69,7 @@ export default function NuevaParroquiaPage() {
     }
 
     const [typeRes, parentRes] = await Promise.all([
-      supabase.from('entity_types').select('id,key,name').in('key', ['archdiocese', 'diocese', 'military_ordinariate', 'vicariate', 'pastoral_zone', 'deanery', 'pastoral_region', 'parish']).order('sort_order'),
+      supabase.from('entity_types').select('id,key,name').in('key', ['archdiocese', 'diocese', 'military_ordinariate', 'vicariate', 'pastoral_zone', 'deanery', 'pastoral_region', 'parish']).order('default_level_order'),
       supabase.from('public_entity_hierarchy_paths').select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,hierarchy_path').order('direct_entity_name'),
     ])
 
