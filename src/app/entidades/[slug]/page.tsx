@@ -71,6 +71,12 @@ type AppointmentHistory = Appointment & {
   entity_id: string
   office_key: string | null
   person_type: string | null
+  birth_date: string | null
+  death_date: string | null
+  diaconal_ordination_date: string | null
+  priestly_ordination_date: string | null
+  episcopal_ordination_date: string | null
+  canonical_status: string | null
   end_date: string | null
   is_current: boolean
 }
@@ -92,6 +98,15 @@ const ordinaryOfficeKeys = new Set([
   'bishop_emeritus',
 ])
 
+const hierarchyRank: Record<string, number> = {
+  metropolitan_archbishop: 1,
+  diocesan_bishop: 2,
+  coadjutor_archbishop: 3,
+  apostolic_administrator: 4,
+  auxiliary_bishop: 5,
+  bishop_emeritus: 6,
+}
+
 function formatNumber(value: number | null) {
   if (value === null || value === undefined) return '—'
   return new Intl.NumberFormat('es-DO').format(value)
@@ -109,6 +124,33 @@ function formatDate(value: string | null) {
 
 function formatRange(start: string | null, end: string | null) {
   return `${formatDate(start)} – ${end ? formatDate(end) : 'actual'}`
+}
+
+function yearsSince(value: string | null, endValue?: string | null) {
+  if (!value) return null
+
+  const start = new Date(`${value}T00:00:00`)
+  const end = endValue ? new Date(`${endValue}T00:00:00`) : new Date()
+  let years = end.getFullYear() - start.getFullYear()
+  const beforeAnniversary =
+    end.getMonth() < start.getMonth() ||
+    (end.getMonth() === start.getMonth() && end.getDate() < start.getDate())
+
+  if (beforeAnniversary) years -= 1
+  return years >= 0 ? years : null
+}
+
+function formatYears(value: string | null, label: string, endValue?: string | null) {
+  const years = yearsSince(value, endValue)
+  if (years === null) return `${label}: —`
+  return `${label}: ${years} años`
+}
+
+function sortCurrentAppointments(a: AppointmentHistory, b: AppointmentHistory) {
+  const rankA = hierarchyRank[a.office_key ?? ''] ?? 99
+  const rankB = hierarchyRank[b.office_key ?? ''] ?? 99
+  if (rankA !== rankB) return rankA - rankB
+  return (a.start_date ?? '').localeCompare(b.start_date ?? '')
 }
 
 export default function EntityDetailPage() {
@@ -167,7 +209,7 @@ export default function EntityDetailPage() {
 
   const currentBishops = appointmentHistory
     .filter((appointment) => appointment.is_current && ordinaryOfficeKeys.has(appointment.office_key ?? ''))
-    .sort((a, b) => (a.office_key ?? '').localeCompare(b.office_key ?? ''))
+    .sort(sortCurrentAppointments)
 
   const pastOrdinaries = appointmentHistory
     .filter((appointment) => !appointment.is_current && ordinaryOfficeKeys.has(appointment.office_key ?? ''))
@@ -195,25 +237,35 @@ export default function EntityDetailPage() {
           {currentBishops.length === 0 && fallbackCurrent.length === 0 ? (
             <p className="meta">No hay obispos o responsables actuales registrados.</p>
           ) : (
-            <ul className="simple-list">
+            <ul className="simple-list bishop-list">
               {currentBishops.map((appointment) => (
                 <li key={appointment.id}>
-                  <span>{appointment.office_name ?? 'Cargo'}</span>
-                  {appointment.person_slug ? (
-                    <Link href={`/personas/${appointment.person_slug}`}>{appointment.person_name}</Link>
-                  ) : (
-                    <strong>{appointment.person_name ?? 'No indicado'}</strong>
-                  )}
+                  <div className="bishop-line">
+                    <span>{appointment.office_name ?? 'Cargo'}</span>
+                    {appointment.person_slug ? (
+                      <Link href={`/personas/${appointment.person_slug}`}>{appointment.person_name}</Link>
+                    ) : (
+                      <strong>{appointment.person_name ?? 'No indicado'}</strong>
+                    )}
+                  </div>
+                  <div className="tenure-grid">
+                    <span>{formatYears(appointment.birth_date, 'Edad actual', appointment.death_date)}</span>
+                    <span>{formatYears(appointment.priestly_ordination_date, 'Como sacerdote')}</span>
+                    <span>{formatYears(appointment.episcopal_ordination_date, 'Como obispo')}</span>
+                    <span>{formatYears(appointment.start_date, 'En este cargo')}</span>
+                  </div>
                 </li>
               ))}
               {fallbackCurrent.map((appointment) => (
                 <li key={`${appointment.person_name}-${appointment.office_name}`}>
-                  <span>{appointment.office_name ?? 'Cargo'}</span>
-                  {appointment.person_slug ? (
-                    <Link href={`/personas/${appointment.person_slug}`}>{appointment.person_name}</Link>
-                  ) : (
-                    <strong>{appointment.person_name ?? 'No indicado'}</strong>
-                  )}
+                  <div className="bishop-line">
+                    <span>{appointment.office_name ?? 'Cargo'}</span>
+                    {appointment.person_slug ? (
+                      <Link href={`/personas/${appointment.person_slug}`}>{appointment.person_name}</Link>
+                    ) : (
+                      <strong>{appointment.person_name ?? 'No indicado'}</strong>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -254,12 +306,13 @@ export default function EntityDetailPage() {
           <p className="meta">Todavía no hay ordinarios históricos registrados.</p>
         ) : (
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table ordinary-table">
               <thead>
                 <tr>
                   <th>Nombre</th>
                   <th>Cargo</th>
                   <th>Periodo</th>
+                  <th>Tiempo</th>
                 </tr>
               </thead>
               <tbody>
@@ -274,6 +327,7 @@ export default function EntityDetailPage() {
                     </td>
                     <td>{appointment.office_name ?? 'No indicado'}</td>
                     <td>{formatRange(appointment.start_date, appointment.end_date)}</td>
+                    <td>{formatYears(appointment.start_date, 'En cargo', appointment.end_date).replace('En cargo: ', '')}</td>
                   </tr>
                 ))}
               </tbody>
