@@ -163,10 +163,10 @@ export async function GET(request: NextRequest) {
     const personIds = Array.from(new Set(appointmentRows.map((item) => item.person_id).filter(Boolean).map(String)))
     const officeIds = Array.from(new Set(appointmentRows.map((item) => item.office_id).filter(Boolean).map(String)))
 
-    const [people, offices] = await Promise.all([
+    const [people, offices, clergyProfiles] = await Promise.all([
       personIds.length > 0
         ? fetchJson<Record<string, unknown>[]>(
-            `${url}/rest/v1/persons?id=in.(${personIds.join(',')})&select=id,display_name,slug,person_type`,
+            `${url}/rest/v1/persons?id=in.(${personIds.join(',')})&select=id,display_name,slug,person_type,birth_date,death_date`,
             key
           ).catch(() => [])
         : Promise.resolve([]),
@@ -175,23 +175,37 @@ export async function GET(request: NextRequest) {
             `${url}/rest/v1/offices?id=in.(${officeIds.join(',')})&select=id,name,key`,
             key
           ).catch(() => [])
+        : Promise.resolve([]),
+      personIds.length > 0
+        ? fetchJson<Record<string, unknown>[]>(
+            `${url}/rest/v1/clergy_profiles?person_id=in.(${personIds.join(',')})&select=person_id,diaconal_ordination_date,priestly_ordination_date,episcopal_ordination_date,canonical_status`,
+            key
+          ).catch(() => [])
         : Promise.resolve([])
     ])
 
     const peopleById = byId(people)
     const officesById = byId(offices)
+    const clergyByPersonId = new Map(clergyProfiles.map((item) => [String(item.person_id), item]))
 
     const appointmentHistory = appointmentRows.map((appointment) => {
       const person = peopleById.get(String(appointment.person_id))
       const office = officesById.get(String(appointment.office_id))
+      const clergy = clergyByPersonId.get(String(appointment.person_id))
 
       return {
         ...appointment,
         person_name: person?.display_name ?? null,
         person_slug: person?.slug ?? null,
         person_type: person?.person_type ?? null,
+        birth_date: person?.birth_date ?? null,
+        death_date: person?.death_date ?? null,
         office_name: office?.name ?? null,
         office_key: office?.key ?? null,
+        diaconal_ordination_date: clergy?.diaconal_ordination_date ?? null,
+        priestly_ordination_date: clergy?.priestly_ordination_date ?? null,
+        episcopal_ordination_date: clergy?.episcopal_ordination_date ?? null,
+        canonical_status: clergy?.canonical_status ?? null,
       }
     })
 
