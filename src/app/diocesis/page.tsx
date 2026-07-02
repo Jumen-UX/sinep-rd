@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 
 type Diocese = {
@@ -67,80 +67,146 @@ export default function DiocesisPage() {
     loadData()
   }, [])
 
+  const dashboard = useMemo(() => {
+    const totalCatholics = items.reduce((sum, item) => sum + (item.catholics_total ?? 0), 0)
+    const totalParishes = items.reduce((sum, item) => sum + (item.parishes_count ?? 0), 0)
+    const archdioceses = items.filter((item) => item.entity_type_name?.toLowerCase().includes('arquidiócesis')).length
+    const dioceses = items.filter((item) => item.entity_type_name?.toLowerCase().includes('diócesis')).length
+    const provinces = Array.from(
+      new Set(items.map((item) => item.ecclesiastical_province_name).filter(Boolean) as string[])
+    )
+
+    return {
+      total: items.length,
+      archdioceses,
+      dioceses,
+      totalCatholics,
+      totalParishes,
+      provinces,
+    }
+  }, [items])
+
   return (
-    <main className="container">
-      <div className="page-heading">
-        <p className="eyebrow">Directorio</p>
-        <h1>Diócesis</h1>
-        <p className="lead">
-          Directorio enriquecido de arquidiócesis, diócesis y jurisdicciones especiales de República Dominicana.
-        </p>
+    <main className="container dashboard-page">
+      <div className="dashboard-hero card">
+        <div>
+          <p className="eyebrow">Dashboard nacional</p>
+          <h1>Diócesis y jurisdicciones</h1>
+          <p className="lead">
+            Vista general de la estructura eclesiástica dominicana. Cada tarjeta abre su ficha completa con información, estadísticas e historial.
+          </p>
+        </div>
       </div>
 
       {loading && <div className="empty-state">Cargando directorio...</div>}
       {error && <div className="error-box">{error}</div>}
 
       {!loading && !error && (
-        <section className="grid diocese-grid">
-          {items.map((item) => {
-            const erectedAt = formatDate(item.erected_at)
-            return (
-              <article className="entity-card diocese-card" key={item.id}>
-                <p className="entity-type">{item.entity_type_name ?? 'Jurisdicción'}</p>
-                <h2>{item.name}</h2>
+        <>
+          <section className="dashboard-grid dashboard-summary">
+            <div className="metric-card">
+              <strong>{dashboard.total}</strong>
+              <span>Jurisdicciones</span>
+            </div>
+            <div className="metric-card">
+              <strong>{dashboard.archdioceses}</strong>
+              <span>Arquidiócesis</span>
+            </div>
+            <div className="metric-card">
+              <strong>{dashboard.totalParishes}</strong>
+              <span>Parroquias reportadas</span>
+            </div>
+            <div className="metric-card">
+              <strong>{formatNumber(dashboard.totalCatholics)}</strong>
+              <span>Fieles católicos</span>
+            </div>
+          </section>
 
-                {item.latin_name && <p className="meta italic-meta">{item.latin_name}</p>}
-
-                {item.ecclesiastical_province_name && (
-                  <p className="meta"><strong>Provincia eclesiástica:</strong> {item.ecclesiastical_province_name}</p>
-                )}
-
-                {(item.current_ordinary_name || item.current_ordinary_title) && (
-                  <p className="meta">
-                    <strong>{item.current_ordinary_title ?? 'Ordinario'}:</strong> {item.current_ordinary_name ?? 'No indicado'}
-                  </p>
-                )}
-
-                {item.cathedral_name && (
-                  <p className="meta"><strong>Catedral:</strong> {item.cathedral_name}</p>
-                )}
-
-                {item.territory_summary && (
-                  <p className="meta"><strong>Territorio:</strong> {item.territory_summary}</p>
-                )}
-
-                <div className="diocese-stats">
-                  <div>
-                    <strong>{formatArea(item.area_km2)}</strong>
-                    <span>Superficie</span>
+          <section className="card dashboard-section">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Provincias eclesiásticas</p>
+                <h2>Acceso rápido</h2>
+              </div>
+              <span className="meta">{dashboard.provinces.length} provincias con jurisdicciones asociadas</span>
+            </div>
+            <div className="quick-link-grid">
+              {dashboard.provinces.map((province) => {
+                const provinceItems = items.filter((item) => item.ecclesiastical_province_name === province)
+                return (
+                  <div className="quick-link-card" key={province}>
+                    <strong>{province}</strong>
+                    <span>{provinceItems.length} jurisdicciones</span>
                   </div>
-                  <div>
-                    <strong>{formatNumber(item.parishes_count)}</strong>
-                    <span>Parroquias</span>
-                  </div>
-                  <div>
-                    <strong>{formatNumber(item.catholics_total)}</strong>
-                    <span>Fieles católicos</span>
-                  </div>
-                  <div>
-                    <strong>{item.catholics_percent ?? '—'}%</strong>
-                    <span>% católicos</span>
-                  </div>
-                </div>
+                )
+              })}
+            </div>
+          </section>
 
-                <div className="meta source-line">
-                  {item.statistics_year && <span>Estadísticas: {item.statistics_year}</span>}
-                  {erectedAt && <span> · Erección: {erectedAt}</span>}
-                  {item.source_name && <span> · Fuente: {item.source_name}</span>}
-                </div>
+          <section className="dashboard-section">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Fichas</p>
+                <h2>Directorio de jurisdicciones</h2>
+              </div>
+              <span className="meta">Haz clic para ver la ficha individual</span>
+            </div>
 
-                <Link className="button button-secondary card-action" href={`/entidades/${item.slug}`}>
-                  Ver ficha completa
-                </Link>
-              </article>
-            )
-          })}
-        </section>
+            <div className="grid diocese-grid">
+              {items.map((item) => {
+                const erectedAt = formatDate(item.erected_at)
+                return (
+                  <Link className="entity-card diocese-card clickable-card" href={`/entidades/${item.slug}`} key={item.id}>
+                    <p className="entity-type">{item.entity_type_name ?? 'Jurisdicción'}</p>
+                    <h2>{item.name}</h2>
+
+                    {item.latin_name && <p className="meta italic-meta">{item.latin_name}</p>}
+
+                    {item.ecclesiastical_province_name && (
+                      <p className="meta"><strong>Provincia eclesiástica:</strong> {item.ecclesiastical_province_name}</p>
+                    )}
+
+                    {(item.current_ordinary_name || item.current_ordinary_title) && (
+                      <p className="meta">
+                        <strong>{item.current_ordinary_title ?? 'Ordinario'}:</strong> {item.current_ordinary_name ?? 'No indicado'}
+                      </p>
+                    )}
+
+                    {item.cathedral_name && (
+                      <p className="meta"><strong>Catedral:</strong> {item.cathedral_name}</p>
+                    )}
+
+                    <div className="diocese-stats">
+                      <div>
+                        <strong>{formatArea(item.area_km2)}</strong>
+                        <span>Superficie</span>
+                      </div>
+                      <div>
+                        <strong>{formatNumber(item.parishes_count)}</strong>
+                        <span>Parroquias</span>
+                      </div>
+                      <div>
+                        <strong>{formatNumber(item.catholics_total)}</strong>
+                        <span>Fieles católicos</span>
+                      </div>
+                      <div>
+                        <strong>{item.catholics_percent ?? '—'}%</strong>
+                        <span>% católicos</span>
+                      </div>
+                    </div>
+
+                    <div className="meta source-line">
+                      {item.statistics_year && <span>Estadísticas: {item.statistics_year}</span>}
+                      {erectedAt && <span> · Erección: {erectedAt}</span>}
+                    </div>
+
+                    <span className="card-link-label">Ver ficha completa →</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        </>
       )}
     </main>
   )
