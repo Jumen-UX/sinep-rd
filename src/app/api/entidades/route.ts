@@ -3,110 +3,39 @@ import { NextRequest, NextResponse } from 'next/server'
 const fallbackUrl = 'https://hrvgpceqaxujlttpimdz.supabase.co'
 
 const entityColumns = [
-  'id',
-  'entity_type_id',
-  'name',
-  'official_name',
-  'slug',
-  'description',
-  'latin_name',
-  'cathedral_name',
-  'current_ordinary_name',
-  'current_ordinary_title',
-  'territory_summary',
-  'area_km2',
-  'statistics_year',
-  'population_total',
-  'catholics_total',
-  'catholics_percent',
-  'parishes_count',
-  'source_name',
-  'source_url',
-  'source_checked_at',
-  'country',
-  'province',
-  'municipality',
-  'sector',
-  'address',
-  'email',
-  'phone',
-  'website',
-  'facebook_url',
-  'instagram_url',
-  'youtube_url',
-  'status',
-  'visibility',
-  'erected_at',
-  'created_at',
-  'updated_at'
+  'id','entity_type_id','name','official_name','slug','description','latin_name','cathedral_name',
+  'current_ordinary_name','current_ordinary_title','territory_summary','area_km2','statistics_year',
+  'population_total','catholics_total','catholics_percent','parishes_count','source_name','source_url',
+  'source_checked_at','country','province','municipality','sector','address','email','phone','website',
+  'facebook_url','instagram_url','youtube_url','status','visibility','erected_at','created_at','updated_at'
 ].join(',')
 
 const relationshipColumns = [
-  'id',
-  'parent_entity_id',
-  'child_entity_id',
-  'relationship_type',
-  'start_date',
-  'end_date',
-  'is_current',
-  'status',
-  'notes',
-  'created_at'
+  'id','parent_entity_id','child_entity_id','relationship_type','start_date','end_date','is_current','status','notes','created_at'
 ].join(',')
 
 const appointmentColumns = [
-  'id',
-  'person_id',
-  'office_id',
-  'entity_id',
-  'start_date',
-  'end_date',
-  'is_current',
-  'appointment_type',
-  'notes_public',
-  'status',
-  'visibility'
+  'id','person_id','office_id','entity_id','start_date','end_date','is_current','appointment_type','notes_public','status','visibility'
 ].join(',')
 
 const evolutionColumns = [
-  'id',
-  'event_type',
-  'event_date',
-  'title',
-  'description',
-  'from_entity_display_name',
-  'from_entity_slug',
-  'from_entity_name',
-  'to_entity_display_name',
-  'to_entity_slug',
-  'to_entity_name',
-  'related_entity_display_name',
-  'related_entity_slug',
-  'related_entity_name',
-  'territory_summary',
-  'canonical_effect',
-  'source_name',
-  'source_checked_at',
-  'verification_status'
+  'id','event_type','event_date','title','description','from_entity_display_name','from_entity_slug','from_entity_name',
+  'to_entity_display_name','to_entity_slug','to_entity_name','related_entity_display_name','related_entity_slug','related_entity_name',
+  'territory_summary','canonical_effect','source_name','source_checked_at','verification_status'
 ].join(',')
 
 const statisticsColumns = [
-  'id',
-  'statistics_year',
-  'catholics_total',
-  'population_total',
-  'catholics_percent',
-  'diocesan_priests_count',
-  'religious_priests_count',
-  'total_priests_count',
-  'catholics_per_priest',
-  'permanent_deacons_count',
-  'male_religious_count',
-  'female_religious_count',
-  'parishes_count',
-  'source_code',
-  'source_name',
-  'verification_status'
+  'id','statistics_year','catholics_total','population_total','catholics_percent','diocesan_priests_count',
+  'religious_priests_count','total_priests_count','catholics_per_priest','permanent_deacons_count',
+  'male_religious_count','female_religious_count','parishes_count','source_code','source_name','verification_status'
+].join(',')
+
+const positionColumns = [
+  'id','person_id','person_name','person_slug','position_title','office_configuration_key','base_role_name','scope_name','category_name',
+  'organization_chart_name','organization_chart_key','organization_unit_name','ecclesiastical_entity_name','ecclesiastical_entity_slug',
+  'pastoral_entity_name','pastoral_entity_slug','predecessor_person_name','predecessor_person_slug','successor_person_name',
+  'successor_person_slug','start_date','term_start_date','term_end_date','actual_end_date','is_current','assignment_status',
+  'selection_method','notes_public'
 ].join(',')
 
 function getApiKey() {
@@ -164,7 +93,7 @@ export async function GET(request: NextRequest) {
     const entityId = String(entity.id)
     const entityTypeId = String(entity.entity_type_id)
 
-    const [types, relationships, currentAppointments, appointmentRows, evolutionEvents, statisticsSnapshots] = await Promise.all([
+    const [types, relationships, currentAppointments, appointmentRows, evolutionEvents, statisticsSnapshots, positions] = await Promise.all([
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/entity_types?id=eq.${entityTypeId}&select=key,name&limit=1`,
         key
@@ -187,6 +116,10 @@ export async function GET(request: NextRequest) {
       ).catch(() => []),
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/public_entity_statistics_snapshots?entity_id=eq.${entityId}&select=${statisticsColumns}&order=statistics_year.asc`,
+        key
+      ).catch(() => []),
+      fetchJson<Record<string, unknown>[]>(
+        `${url}/rest/v1/public_position_assignments?ecclesiastical_entity_slug=eq.${encodedSlug}&select=${positionColumns}&order=start_date.desc.nullslast`,
         key
       ).catch(() => [])
     ])
@@ -271,6 +204,7 @@ export async function GET(request: NextRequest) {
       appointment_history: appointmentHistory,
       evolution_events: evolutionEvents,
       statistics_snapshots: statisticsSnapshots,
+      positions,
     })
   } catch (error) {
     return NextResponse.json(
