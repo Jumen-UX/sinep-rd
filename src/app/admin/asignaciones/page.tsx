@@ -33,11 +33,16 @@ type Unit = {
   organization_chart_id: string
 }
 
-type Entity = {
-  id: string
-  name: string
-  slug: string
-  entity_type_id: string | null
+type EntityPath = {
+  direct_entity_id: string
+  direct_entity_name: string
+  direct_entity_slug: string
+  direct_entity_type_name: string | null
+  parish_name: string | null
+  zone_name: string | null
+  vicariate_name: string | null
+  diocese_name: string | null
+  hierarchy_path: string | null
 }
 
 type PastoralEntity = {
@@ -52,8 +57,9 @@ type AssignmentRow = {
   person_slug: string | null
   position_title: string | null
   organization_chart_name: string | null
-  ecclesiastical_entity_name: string | null
+  direct_entity_name: string | null
   pastoral_entity_name: string | null
+  hierarchy_path: string | null
   predecessor_person_name: string | null
   successor_person_name: string | null
   start_date: string | null
@@ -104,6 +110,11 @@ function addMonths(dateValue: string, months: number) {
   return date.toISOString().slice(0, 10)
 }
 
+function buildRoute(entity: EntityPath | null) {
+  if (!entity) return 'Selecciona una entidad para ver su ruta jerárquica.'
+  return entity.hierarchy_path || [entity.diocese_name, entity.vicariate_name, entity.zone_name, entity.parish_name ?? entity.direct_entity_name].filter(Boolean).join(' / ')
+}
+
 export default function AdminAsignacionesPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -112,7 +123,7 @@ export default function AdminAsignacionesPage() {
   const [configs, setConfigs] = useState<OfficeConfiguration[]>([])
   const [charts, setCharts] = useState<Chart[]>([])
   const [units, setUnits] = useState<Unit[]>([])
-  const [entities, setEntities] = useState<Entity[]>([])
+  const [entityPaths, setEntityPaths] = useState<EntityPath[]>([])
   const [pastoralEntities, setPastoralEntities] = useState<PastoralEntity[]>([])
   const [assignments, setAssignments] = useState<AssignmentRow[]>([])
   const [rawAssignments, setRawAssignments] = useState<RawAssignment[]>([])
@@ -124,8 +135,10 @@ export default function AdminAsignacionesPage() {
   const [selectedConfigId, setSelectedConfigId] = useState('')
   const [selectedStartDate, setSelectedStartDate] = useState('')
   const [selectedChartId, setSelectedChartId] = useState('')
+  const [selectedEntityId, setSelectedEntityId] = useState('')
 
   const selectedConfig = configs.find((item) => item.id === selectedConfigId)
+  const selectedEntityPath = entityPaths.find((item) => item.direct_entity_id === selectedEntityId) ?? null
   const defaultTermEnd = selectedConfig?.default_term_months && selectedStartDate
     ? addMonths(selectedStartDate, selectedConfig.default_term_months)
     : ''
@@ -139,18 +152,18 @@ export default function AdminAsignacionesPage() {
       return
     }
 
-    const [peopleRes, configRes, chartRes, unitRes, entityRes, pastoralRes, assignmentRes, rawAssignmentRes] = await Promise.all([
+    const [peopleRes, configRes, chartRes, unitRes, entityPathRes, pastoralRes, assignmentRes, rawAssignmentRes] = await Promise.all([
       supabase.from('persons').select('id,display_name,slug,person_type').eq('status', 'active').order('display_name'),
       supabase.from('office_configurations').select('id,key,display_name,organization_chart_id,default_term_months,continues_until_replaced').eq('status', 'active').order('display_name'),
       supabase.from('organization_charts').select('id,key,name').eq('status', 'active').order('sort_order'),
       supabase.from('organization_units').select('id,name,organization_chart_id').eq('status', 'active').order('name'),
-      supabase.from('ecclesiastical_entities').select('id,name,slug,entity_type_id').eq('status', 'active').order('name'),
+      supabase.from('public_entity_hierarchy_paths').select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,zone_name,vicariate_name,diocese_name,hierarchy_path').order('direct_entity_name'),
       supabase.from('pastoral_entities').select('id,name,slug').eq('status', 'active').order('name'),
-      supabase.from('public_position_assignments').select('id,person_name,person_slug,position_title,organization_chart_name,ecclesiastical_entity_name,pastoral_entity_name,predecessor_person_name,successor_person_name,start_date,term_start_date,term_end_date,actual_end_date,assignment_status').order('start_date', { ascending: false, nullsFirst: false }).limit(100),
+      supabase.from('public_position_assignments_with_hierarchy').select('id,person_name,person_slug,position_title,organization_chart_name,direct_entity_name,pastoral_entity_name,hierarchy_path,predecessor_person_name,successor_person_name,start_date,term_start_date,term_end_date,actual_end_date,assignment_status').order('start_date', { ascending: false, nullsFirst: false }).limit(100),
       supabase.from('position_assignments').select('id,person_id,office_configuration_id,title_override').order('created_at', { ascending: false }).limit(300),
     ])
 
-    const failed = [peopleRes, configRes, chartRes, unitRes, entityRes, pastoralRes, assignmentRes, rawAssignmentRes].find((item) => item.error)
+    const failed = [peopleRes, configRes, chartRes, unitRes, entityPathRes, pastoralRes, assignmentRes, rawAssignmentRes].find((item) => item.error)
     if (failed?.error) {
       setError(failed.error.message)
     } else {
@@ -158,7 +171,7 @@ export default function AdminAsignacionesPage() {
       setConfigs((configRes.data ?? []) as OfficeConfiguration[])
       setCharts((chartRes.data ?? []) as Chart[])
       setUnits((unitRes.data ?? []) as Unit[])
-      setEntities((entityRes.data ?? []) as Entity[])
+      setEntityPaths((entityPathRes.data ?? []) as EntityPath[])
       setPastoralEntities((pastoralRes.data ?? []) as PastoralEntity[])
       setAssignments((assignmentRes.data ?? []) as AssignmentRow[])
       setRawAssignments((rawAssignmentRes.data ?? []) as RawAssignment[])
@@ -249,6 +262,7 @@ export default function AdminAsignacionesPage() {
     setSelectedConfigId('')
     setSelectedStartDate('')
     setSelectedChartId('')
+    setSelectedEntityId('')
     await loadData()
     setSaving(false)
   }
@@ -281,7 +295,7 @@ export default function AdminAsignacionesPage() {
           <p className="eyebrow">Administración</p>
           <h1>Asignaciones de cargos</h1>
           <p className="lead">
-            Asigna personas a cargos configurados dentro de un organigrama, entidad o unidad. Aquí se controla período, estado, predecesor y sucesor.
+            Asigna personas a cargos configurados dentro de un organigrama, entidad o unidad. Si seleccionas una parroquia, el sistema resuelve automáticamente su zona, vicaría y diócesis.
           </p>
         </div>
       </section>
@@ -320,10 +334,19 @@ export default function AdminAsignacionesPage() {
             {filteredUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
           </select>
 
-          <select name="ecclesiastical_entity_id" defaultValue="">
+          <select name="ecclesiastical_entity_id" value={selectedEntityId} onChange={(event) => setSelectedEntityId(event.target.value)}>
             <option value="">Entidad eclesiástica</option>
-            {entities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}
+            {entityPaths.map((entity) => (
+              <option key={entity.direct_entity_id} value={entity.direct_entity_id}>
+                {entity.direct_entity_name} {entity.direct_entity_type_name ? `· ${entity.direct_entity_type_name}` : ''}
+              </option>
+            ))}
           </select>
+
+          <div className="empty-state hierarchy-route-note">
+            <strong>Ruta jerárquica</strong>
+            <span>{buildRoute(selectedEntityPath)}</span>
+          </div>
 
           <select name="pastoral_entity_id" defaultValue="">
             <option value="">Entidad pastoral</option>
@@ -392,7 +415,8 @@ export default function AdminAsignacionesPage() {
                 <th>Persona</th>
                 <th>Cargo</th>
                 <th>Organigrama</th>
-                <th>Entidad</th>
+                <th>Entidad directa</th>
+                <th>Ruta</th>
                 <th>Período</th>
                 <th>Estado</th>
                 <th>Predecesor</th>
@@ -405,7 +429,8 @@ export default function AdminAsignacionesPage() {
                   <td>{assignment.person_slug ? <Link href={`/personas/${assignment.person_slug}`}>{assignment.person_name}</Link> : assignment.person_name ?? 'Vacante'}</td>
                   <td><strong>{assignment.position_title ?? 'Cargo'}</strong></td>
                   <td>{assignment.organization_chart_name ?? '—'}</td>
-                  <td>{assignment.ecclesiastical_entity_name ?? assignment.pastoral_entity_name ?? '—'}</td>
+                  <td>{assignment.direct_entity_name ?? assignment.pastoral_entity_name ?? '—'}</td>
+                  <td>{assignment.hierarchy_path ?? '—'}</td>
                   <td>{formatDate(assignment.term_start_date ?? assignment.start_date)} – {assignment.actual_end_date ? formatDate(assignment.actual_end_date) : assignment.term_end_date ? formatDate(assignment.term_end_date) : 'actual'}</td>
                   <td>{statusOptions.find(([value]) => value === assignment.assignment_status)?.[1] ?? assignment.assignment_status ?? '—'}</td>
                   <td>{assignment.predecessor_person_name ?? '—'}</td>
