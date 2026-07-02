@@ -94,6 +94,29 @@ const movementColumns = [
   'visibility'
 ].join(',')
 
+const episcopalOrdinationColumns = [
+  'id',
+  'bishop_person_id',
+  'bishop_name',
+  'bishop_slug',
+  'ordination_date',
+  'ordination_place',
+  'principal_consecrator_person_name',
+  'principal_consecrator_person_slug',
+  'principal_consecrator_name',
+  'co_consecrator_1_person_name',
+  'co_consecrator_1_person_slug',
+  'co_consecrator_1_name',
+  'co_consecrator_2_person_name',
+  'co_consecrator_2_person_slug',
+  'co_consecrator_2_name',
+  'source_name',
+  'source_url',
+  'source_checked_at',
+  'verification_status',
+  'notes_public'
+].join(',')
+
 function getApiKey() {
   return (
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
@@ -146,7 +169,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Persona no encontrada' }, { status: 404 })
     }
 
-    const [clergyRows, appointments, movements] = await Promise.all([
+    const [clergyRows, appointments, movements, episcopalOrdinations] = await Promise.all([
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/public_clergy?slug=eq.${encodedSlug}&select=${clergyColumns}&limit=1`,
         key
@@ -158,6 +181,10 @@ export async function GET(request: NextRequest) {
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/public_person_movements?person_slug=eq.${encodedSlug}&select=${movementColumns}&order=effective_date.desc.nullslast`,
         key
+      ).catch(() => []),
+      fetchJson<Record<string, unknown>[]>(
+        `${url}/rest/v1/public_episcopal_ordinations?bishop_slug=eq.${encodedSlug}&select=${episcopalOrdinationColumns}&limit=1`,
+        key
       ).catch(() => [])
     ])
 
@@ -166,6 +193,7 @@ export async function GET(request: NextRequest) {
       clergy: clergyRows[0] ?? null,
       appointments,
       movements,
+      episcopal_ordination: episcopalOrdinations[0] ?? null,
     })
   } catch (error) {
     return NextResponse.json(
