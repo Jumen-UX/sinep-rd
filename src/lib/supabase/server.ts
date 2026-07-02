@@ -1,43 +1,18 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-function getSupabaseUrl() {
-  const value = process.env.NEXT_PUBLIC_SUPABASE_URL
-
-  if (!value) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
-  }
-
-  return value
-}
-
-function getSupabasePublishableKey() {
-  const value = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+function getRequiredEnv(name: string) {
+  const value = process.env[name]
 
   if (!value) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY environment variable')
+    throw new Error(`Missing environment variable: ${name}`)
   }
 
   return value
 }
 
 export async function createClient() {
-  const cookieStore = await cookies()
-
-  return createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll()
-      },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        } catch {
-          // Server Components cannot always write cookies. Middleware/login routes will handle that later.
-        }
-      },
-    },
-  })
+  return createSupabaseClient(
+    getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    getRequiredEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
+  )
 }
