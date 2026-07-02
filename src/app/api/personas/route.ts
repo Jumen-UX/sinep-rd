@@ -10,9 +10,10 @@ const listColumns = [
   'photo_url',
   'photo_path',
   'biography_public',
+  'birth_date',
+  'death_date',
   'status',
   'visibility',
-  'death_date',
   'created_at',
   'updated_at'
 ].join(',')
@@ -25,9 +26,11 @@ const personColumns = [
   'photo_url',
   'photo_path',
   'biography_public',
+  'birth_date',
+  'birth_place',
+  'death_date',
   'status',
   'visibility',
-  'death_date',
   'created_at',
   'updated_at'
 ].join(',')
@@ -150,7 +153,7 @@ export async function GET(request: NextRequest) {
   try {
     if (!slug) {
       const people = await fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_people?select=${listColumns}&order=display_name.asc`,
+        `${url}/rest/v1/persons?status=eq.active&visibility=eq.public&select=${listColumns}&order=display_name.asc`,
         key
       )
       return NextResponse.json(people)
@@ -159,7 +162,7 @@ export async function GET(request: NextRequest) {
     const encodedSlug = encodeURIComponent(slug)
 
     const people = await fetchJson<Record<string, unknown>[]>(
-      `${url}/rest/v1/public_people?slug=eq.${encodedSlug}&select=${personColumns}&limit=1`,
+      `${url}/rest/v1/persons?slug=eq.${encodedSlug}&status=eq.active&visibility=eq.public&select=${personColumns}&limit=1`,
       key
     )
 
