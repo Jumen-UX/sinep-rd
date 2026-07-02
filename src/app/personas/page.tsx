@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 
 type Person = {
@@ -53,37 +53,95 @@ export default function PersonasPage() {
     loadPeople()
   }, [])
 
+  const dashboard = useMemo(() => {
+    const countByType = (type: string) => items.filter((item) => item.person_type === type).length
+    return {
+      total: items.length,
+      bishops: countByType('bishop'),
+      priests: countByType('priest'),
+      deacons: countByType('deacon'),
+      active: items.filter((item) => item.status === 'active' && !item.death_date).length,
+    }
+  }, [items])
+
   return (
-    <main className="container">
-      <div className="page-heading">
-        <p className="eyebrow">Directorio</p>
-        <h1>Personas</h1>
-        <p className="lead">
-          Directorio inicial de obispos, sacerdotes, diáconos, religiosos y laicos responsables.
-        </p>
+    <main className="container dashboard-page">
+      <div className="dashboard-hero card">
+        <div>
+          <p className="eyebrow">Dashboard pastoral</p>
+          <h1>Personas</h1>
+          <p className="lead">
+            Directorio de obispos, sacerdotes, diáconos, religiosos y laicos responsables. Cada tarjeta conduce a su ficha personal con nombramientos e historial.
+          </p>
+        </div>
       </div>
 
       {loading && <div className="empty-state">Cargando personas...</div>}
       {error && <div className="error-box">{error}</div>}
 
-      {!loading && !error && items.length === 0 && (
-        <div className="empty-state">Todavía no hay personas públicas registradas.</div>
-      )}
+      {!loading && !error && (
+        <>
+          <section className="dashboard-grid dashboard-summary">
+            <div className="metric-card">
+              <strong>{dashboard.total}</strong>
+              <span>Personas públicas</span>
+            </div>
+            <div className="metric-card">
+              <strong>{dashboard.bishops}</strong>
+              <span>Obispos</span>
+            </div>
+            <div className="metric-card">
+              <strong>{dashboard.priests}</strong>
+              <span>Sacerdotes</span>
+            </div>
+            <div className="metric-card">
+              <strong>{dashboard.deacons}</strong>
+              <span>Diáconos</span>
+            </div>
+          </section>
 
-      {!loading && !error && items.length > 0 && (
-        <section className="grid">
-          {items.map((item) => (
-            <article className="entity-card person-card" key={item.id}>
-              <p className="entity-type">{personTypeLabel(item.person_type)}</p>
-              <h2>{item.display_name}</h2>
-              {item.biography_public && <p className="meta">{item.biography_public}</p>}
-              {item.death_date && <p className="meta">Fallecido</p>}
-              <Link className="button button-secondary card-action" href={`/personas/${item.slug}`}>
-                Ver ficha completa
-              </Link>
-            </article>
-          ))}
-        </section>
+          <section className="card dashboard-section">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Categorías</p>
+                <h2>Acceso rápido</h2>
+              </div>
+              <span className="meta">Las categorías se actualizan con los datos cargados</span>
+            </div>
+            <div className="quick-link-grid">
+              <div className="quick-link-card"><strong>Obispos</strong><span>{dashboard.bishops} registrados</span></div>
+              <div className="quick-link-card"><strong>Sacerdotes</strong><span>{dashboard.priests} registrados</span></div>
+              <div className="quick-link-card"><strong>Diáconos</strong><span>{dashboard.deacons} registrados</span></div>
+              <div className="quick-link-card"><strong>Activos</strong><span>{dashboard.active} en servicio o vigentes</span></div>
+            </div>
+          </section>
+
+          <section className="dashboard-section">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Fichas</p>
+                <h2>Directorio de personas</h2>
+              </div>
+              <span className="meta">Haz clic para ver nombramientos e historial</span>
+            </div>
+
+            {items.length === 0 ? (
+              <div className="empty-state">Todavía no hay personas públicas registradas.</div>
+            ) : (
+              <div className="grid">
+                {items.map((item) => (
+                  <Link className="entity-card person-card clickable-card" href={`/personas/${item.slug}`} key={item.id}>
+                    <p className="entity-type">{personTypeLabel(item.person_type)}</p>
+                    <h2>{item.display_name}</h2>
+                    {item.biography_public && <p className="meta">{item.biography_public}</p>}
+                    {item.death_date && <p className="meta">Fallecido</p>}
+                    <span className="card-link-label">Ver ficha completa →</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
       )}
     </main>
   )
