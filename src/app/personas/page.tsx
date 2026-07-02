@@ -12,6 +12,7 @@ type Person = {
   biography_public: string | null
   status: string | null
   death_date: string | null
+  age_text: string | null
 }
 
 type PersonFilter = 'all' | 'bishop' | 'priest' | 'deacon' | 'religious' | 'lay' | 'active'
@@ -43,11 +44,21 @@ function filterLabel(value: PersonFilter) {
   return labels[value]
 }
 
+function normalizeFilter(value: string | null): PersonFilter {
+  const allowed: PersonFilter[] = ['all', 'bishop', 'priest', 'deacon', 'religious', 'lay', 'active']
+  return allowed.includes(value as PersonFilter) ? value as PersonFilter : 'all'
+}
+
 export default function PersonasPage() {
   const [items, setItems] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<PersonFilter>('all')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setFilter(normalizeFilter(params.get('tipo')))
+  }, [])
 
   useEffect(() => {
     async function loadPeople() {
@@ -109,7 +120,7 @@ export default function PersonasPage() {
           <p className="eyebrow">Dashboard pastoral</p>
           <h1>Personas</h1>
           <p className="lead">
-            Directorio de obispos, sacerdotes, diáconos, religiosos y laicos responsables. Cada tarjeta conduce a su ficha personal con nombramientos e historial.
+            Directorio filtrable de obispos, sacerdotes, diáconos, religiosos y laicos responsables. La lista muestra información esencial y cada fila abre su ficha personal.
           </p>
         </div>
       </div>
@@ -156,28 +167,46 @@ export default function PersonasPage() {
             </div>
           </section>
 
-          <section className="dashboard-section">
+          <section className="card dashboard-section">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Fichas</p>
+                <p className="eyebrow">Listado</p>
                 <h2>{filterLabel(filter)}</h2>
               </div>
-              <span className="meta">{filteredItems.length} resultados · haz clic para ver nombramientos e historial</span>
+              <span className="meta">{filteredItems.length} resultados · clic en una fila para ver nombramientos e historial</span>
             </div>
 
             {filteredItems.length === 0 ? (
               <div className="empty-state">No hay registros para este filtro.</div>
             ) : (
-              <div className="grid">
-                {filteredItems.map((item) => (
-                  <Link className="entity-card person-card clickable-card" href={`/personas/${item.slug}`} key={item.id}>
-                    <p className="entity-type">{personTypeLabel(item.person_type)}</p>
-                    <h2>{item.display_name}</h2>
-                    {item.biography_public && <p className="meta">{item.biography_public}</p>}
-                    {item.death_date && <p className="meta">Fallecido</p>}
-                    <span className="card-link-label">Ver ficha completa →</span>
-                  </Link>
-                ))}
+              <div className="table-wrap">
+                <table className="data-table dashboard-list-table people-list-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Tipo</th>
+                      <th>Edad ref.</th>
+                      <th>Estado</th>
+                      <th>Resumen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredItems.map((item) => (
+                      <tr className="clickable-table-row" key={item.id}>
+                        <td>
+                          <Link href={`/personas/${item.slug}`}>
+                            <strong>{item.display_name}</strong>
+                            <small>Ver ficha completa →</small>
+                          </Link>
+                        </td>
+                        <td>{personTypeLabel(item.person_type)}</td>
+                        <td>{item.age_text ? `${item.age_text} años` : '—'}</td>
+                        <td>{item.status === 'active' && !item.death_date ? 'Activo' : 'No activo'}</td>
+                        <td>{item.biography_public ?? 'Sin resumen público'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </section>
