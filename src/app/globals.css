@@ -188,11 +188,21 @@ h2 {
   gap: 18px;
 }
 
+.diocese-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
 .entity-card {
   background: white;
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 22px;
+}
+
+.diocese-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .entity-type {
@@ -213,6 +223,42 @@ h2 {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.6;
+}
+
+.italic-meta {
+  font-style: italic;
+}
+
+.diocese-stats {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 8px;
+}
+
+.diocese-stats div {
+  background: #fbf8f1;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.diocese-stats strong {
+  display: block;
+  font-size: 18px;
+}
+
+.diocese-stats span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.source-line {
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+  padding-top: 10px;
 }
 
 .empty-state,
@@ -243,5 +289,9 @@ h2 {
     align-items: flex-start;
     flex-direction: column;
     display: flex;
+  }
+
+  .diocese-stats {
+    grid-template-columns: 1fr;
   }
 }
