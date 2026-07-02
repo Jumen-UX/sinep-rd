@@ -194,11 +194,11 @@ export default function AdminPage() {
           <h2>Diócesis</h2>
           <p className="meta">Ver directorio público conectado a Supabase.</p>
         </Link>
-        <div className="entity-card admin-module muted-module">
-          <p className="entity-type">Próximo</p>
+        <Link className="entity-card admin-module" href="/admin/solicitudes">
+          <p className="entity-type">Aprobaciones</p>
           <h2>Solicitudes de cambio</h2>
-          <p className="meta">Aprobación editorial y auditoría.</p>
-        </div>
+          <p className="meta">Revisar solicitudes pendientes y flujo editorial.</p>
+        </Link>
         <div className="entity-card admin-module muted-module">
           <p className="entity-type">Próximo</p>
           <h2>Personas y clero</h2>
