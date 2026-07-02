@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+type SupabaseClient = ReturnType<typeof createClient>
 
 type Profile = {
   full_name: string | null
@@ -43,7 +45,7 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
 
 export default function AdminPage() {
   const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
+  const [client, setClient] = useState<SupabaseClient | null>(null)
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [roles, setRoles] = useState<RoleRow[]>([])
@@ -51,6 +53,9 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const supabase = createClient()
+    setClient(supabase)
+
     async function loadAdmin() {
       const { data: userData, error: userError } = await supabase.auth.getUser()
 
@@ -94,9 +99,10 @@ export default function AdminPage() {
     }
 
     loadAdmin()
-  }, [router, supabase])
+  }, [router])
 
   async function handleSignOut() {
+    const supabase = client ?? createClient()
     await supabase.auth.signOut()
     router.push('/admin/login')
   }
