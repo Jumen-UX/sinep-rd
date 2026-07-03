@@ -19,6 +19,8 @@ type StatusRow = {
 }
 
 type TargetKind = 'ecclesiastical_entities' | 'persons'
+type Segment = 'all' | 'dioceses' | 'parishes' | 'chapels' | 'clergy' | 'bishops' | 'priests' | 'pending' | 'complete'
+type FieldStatus = { record_table: string; record_id: string; status: string }
 
 function fieldKey(label: string) {
   const map: Record<string, string> = {
@@ -54,20 +56,73 @@ function displayRecordType(row: StatusRow) {
   return row.entity_type_name ?? labels[row.person_type ?? ''] ?? row.person_type ?? '—'
 }
 
+function segmentLabel(segment: Segment) {
+  const labels: Record<Segment, string> = {
+    all: 'Todas las fichas',
+    dioceses: 'Diócesis',
+    parishes: 'Parroquias',
+    chapels: 'Capillas',
+    clergy: 'Clero y agentes',
+    bishops: 'Obispos',
+    priests: 'Sacerdotes',
+    pending: 'Datos pendientes',
+    complete: 'Fichas completas',
+  }
+  return labels[segment]
+}
+
 export default function AdminEstadoFichasPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [kind, setKind] = useState<TargetKind>('ecclesiastical_entities')
+  const [segment, setSegment] = useState<Segment>('all')
+  const [scopeMode, setScopeMode] = useState<'all' | 'mine'>('all')
   const [entities, setEntities] = useState<StatusRow[]>([])
   const [agents, setAgents] = useState<StatusRow[]>([])
+  const [fieldStatuses, setFieldStatuses] = useState<FieldStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const rows = kind === 'ecclesiastical_entities' ? entities : agents
+  function sourceRows(targetKind = kind) {
+    return targetKind === 'ecclesiastical_entities' ? entities : agents
+  }
+
+  function matchesSegment(row: StatusRow, targetKind = kind, targetSegment = segment) {
+    if (targetSegment === 'pending') return row.missing_count > 0
+    if (targetSegment === 'complete') return row.missing_count === 0
+
+    if (targetKind === 'ecclesiastical_entities') {
+      if (targetSegment === 'dioceses') return ['archdiocese', 'diocese', 'military_ordinariate'].includes(row.entity_type_key ?? '')
+      if (targetSegment === 'parishes') return ['parish', 'quasi_parish'].includes(row.entity_type_key ?? '')
+      if (targetSegment === 'chapels') return row.entity_type_key === 'chapel'
+      if (['clergy', 'bishops', 'priests'].includes(targetSegment)) return false
+    }
+
+    if (targetKind === 'persons') {
+      if (targetSegment === 'clergy') return ['bishop', 'priest', 'deacon', 'religious', 'lay'].includes(row.person_type ?? '')
+      if (targetSegment === 'bishops') return row.person_type === 'bishop'
+      if (targetSegment === 'priests') return row.person_type === 'priest'
+      if (['dioceses', 'parishes', 'chapels'].includes(targetSegment)) return false
+    }
+
+    return true
+  }
+
+  const rows = sourceRows().filter((row) => matchesSegment(row))
   const pendingRows = rows.filter((row) => row.missing_count > 0).sort((a, b) => a.completion_percent - b.completion_percent)
   const average = rows.length > 0 ? Math.round(rows.reduce((sum, row) => sum + row.completion_percent, 0) / rows.length) : 0
+  const exceptionCount = fieldStatuses.filter((status) => status.record_table === kind && rows.some((row) => row.id === status.record_id)).length
+
+  function count(targetKind: TargetKind, targetSegment: Segment) {
+    return sourceRows(targetKind).filter((row) => matchesSegment(row, targetKind, targetSegment)).length
+  }
+
+  function selectSegment(targetKind: TargetKind, targetSegment: Segment) {
+    setKind(targetKind)
+    setSegment(targetSegment)
+  }
 
   async function loadData() {
     setError(null)
@@ -77,16 +132,18 @@ export default function AdminEstadoFichasPage() {
       return
     }
 
-    const [entityRes, agentRes] = await Promise.all([
-      supabase.from('admin_entity_completeness').select('*').order('completion_percent', { ascending: true }).limit(300),
-      supabase.from('admin_person_completeness').select('*').order('completion_percent', { ascending: true }).limit(300),
+    const [entityRes, agentRes, statusRes] = await Promise.all([
+      supabase.from('admin_entity_completeness').select('*').order('completion_percent', { ascending: true }).limit(500),
+      supabase.from('admin_person_completeness').select('*').order('completion_percent', { ascending: true }).limit(500),
+      supabase.from('data_field_statuses').select('record_table,record_id,status').in('status', ['unknown', 'not_applicable']),
     ])
 
-    if (entityRes.error || agentRes.error) {
-      setError(entityRes.error?.message ?? agentRes.error?.message ?? 'No se pudo cargar el estado de las fichas')
+    if (entityRes.error || agentRes.error || statusRes.error) {
+      setError(entityRes.error?.message ?? agentRes.error?.message ?? statusRes.error?.message ?? 'No se pudo cargar el estado de fichas')
     } else {
       setEntities((entityRes.data ?? []) as StatusRow[])
       setAgents((agentRes.data ?? []) as StatusRow[])
+      setFieldStatuses((statusRes.data ?? []) as FieldStatus[])
     }
     setLoading(false)
   }
@@ -144,7 +201,7 @@ export default function AdminEstadoFichasPage() {
         <div>
           <p className="eyebrow">Calidad de datos</p>
           <h1>Estado de fichas</h1>
-          <p className="lead">Visualiza el avance de cada ficha y marca datos como no identificados o no aplicables para que dejen de aparecer como pendientes.</p>
+          <p className="lead">Filtra por ámbito, tipo de ficha y datos pendientes para organizar el trabajo de carga y revisión.</p>
         </div>
       </section>
 
@@ -152,14 +209,29 @@ export default function AdminEstadoFichasPage() {
       {message && <div className="empty-state">{message}</div>}
 
       <section className="dashboard-grid dashboard-summary">
-        <button className={`metric-card metric-button ${kind === 'ecclesiastical_entities' ? 'active-filter' : ''}`} type="button" onClick={() => setKind('ecclesiastical_entities')}>
-          <strong>{entities.length}</strong><span>Entidades · avance {entities.length ? Math.round(entities.reduce((s, r) => s + r.completion_percent, 0) / entities.length) : 0}%</span>
+        <button className={`metric-card metric-button ${scopeMode === 'all' ? 'active-filter' : ''}`} type="button" onClick={() => setScopeMode('all')}>
+          <strong>Todas</strong><span>Fichas visibles</span>
         </button>
-        <button className={`metric-card metric-button ${kind === 'persons' ? 'active-filter' : ''}`} type="button" onClick={() => setKind('persons')}>
-          <strong>{agents.length}</strong><span>Clero y agentes · avance {agents.length ? Math.round(agents.reduce((s, r) => s + r.completion_percent, 0) / agents.length) : 0}%</span>
+        <button className={`metric-card metric-button ${scopeMode === 'mine' ? 'active-filter' : ''}`} type="button" onClick={() => setScopeMode('mine')}>
+          <strong>Mi ámbito</strong><span>Filtro operativo</span>
         </button>
-        <div className="metric-card"><strong>{pendingRows.length}</strong><span>Fichas con datos pendientes</span></div>
-        <div className="metric-card"><strong>{average}%</strong><span>Avance promedio actual</span></div>
+        <div className="metric-card"><strong>{rows.length}</strong><span>{segmentLabel(segment)}</span></div>
+        <div className="metric-card"><strong>{average}%</strong><span>Avance promedio</span></div>
+      </section>
+
+      {scopeMode === 'mine' && <div className="empty-state">Este filtro queda preparado para limitar por diócesis, parroquia o pastoral asignada cuando se configuren los ámbitos de cada usuario.</div>}
+
+      <section className="dashboard-grid dashboard-summary">
+        <button className={`metric-card metric-button ${kind === 'ecclesiastical_entities' && segment === 'all' ? 'active-filter' : ''}`} type="button" onClick={() => selectSegment('ecclesiastical_entities', 'all')}><strong>{count('ecclesiastical_entities', 'all')}</strong><span>Entidades</span></button>
+        <button className={`metric-card metric-button ${segment === 'dioceses' ? 'active-filter' : ''}`} type="button" onClick={() => selectSegment('ecclesiastical_entities', 'dioceses')}><strong>{count('ecclesiastical_entities', 'dioceses')}</strong><span>Diócesis</span></button>
+        <button className={`metric-card metric-button ${segment === 'parishes' ? 'active-filter' : ''}`} type="button" onClick={() => selectSegment('ecclesiastical_entities', 'parishes')}><strong>{count('ecclesiastical_entities', 'parishes')}</strong><span>Parroquias</span></button>
+        <button className={`metric-card metric-button ${segment === 'chapels' ? 'active-filter' : ''}`} type="button" onClick={() => selectSegment('ecclesiastical_entities', 'chapels')}><strong>{count('ecclesiastical_entities', 'chapels')}</strong><span>Capillas</span></button>
+        <button className={`metric-card metric-button ${kind === 'persons' && segment === 'clergy' ? 'active-filter' : ''}`} type="button" onClick={() => selectSegment('persons', 'clergy')}><strong>{count('persons', 'clergy')}</strong><span>Clero y agentes</span></button>
+        <button className={`metric-card metric-button ${segment === 'bishops' ? 'active-filter' : ''}`} type="button" onClick={() => selectSegment('persons', 'bishops')}><strong>{count('persons', 'bishops')}</strong><span>Obispos</span></button>
+        <button className={`metric-card metric-button ${segment === 'priests' ? 'active-filter' : ''}`} type="button" onClick={() => selectSegment('persons', 'priests')}><strong>{count('persons', 'priests')}</strong><span>Sacerdotes</span></button>
+        <button className={`metric-card metric-button ${segment === 'pending' ? 'active-filter' : ''}`} type="button" onClick={() => setSegment('pending')}><strong>{pendingRows.length}</strong><span>Datos pendientes</span></button>
+        <button className={`metric-card metric-button ${segment === 'complete' ? 'active-filter' : ''}`} type="button" onClick={() => setSegment('complete')}><strong>{rows.filter((row) => row.missing_count === 0).length}</strong><span>Completas</span></button>
+        <div className="metric-card"><strong>{exceptionCount}</strong><span>No identificado / no aplica</span></div>
       </section>
 
       <section className="card dashboard-section">
