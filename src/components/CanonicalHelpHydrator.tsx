@@ -30,6 +30,14 @@ function findHelp(text: string, rows: HelpRow[]) {
     ?? rows.find((row) => normalizedText.includes(normalize(row.canonical_name ?? '')) && row.canonical_name)
 }
 
+function labeledSmall(label: string, value: string) {
+  const element = document.createElement('small')
+  const strong = document.createElement('b')
+  strong.textContent = label
+  element.append(strong, ` ${value}`)
+  return element
+}
+
 export default function CanonicalHelpHydrator() {
   const supabase = useMemo(() => createClient(), [])
 
@@ -74,10 +82,8 @@ export default function CanonicalHelpHydrator() {
         shortEl.textContent = help.short_definition ?? ''
         const fullEl = document.createElement('small')
         fullEl.textContent = help.full_definition ?? ''
-        const referenceEl = document.createElement('small')
-        referenceEl.innerHTML = `<b>Base:</b> ${help.canon_reference ?? 'Código de Derecho Canónico'}`
-        const contextEl = document.createElement('small')
-        contextEl.innerHTML = `<b>Contexto:</b> ${help.canonical_context ?? 'Oficio eclesiástico'}`
+        const referenceEl = labeledSmall('Base:', help.canon_reference ?? 'Código de Derecho Canónico')
+        const contextEl = labeledSmall('Contexto:', help.canonical_context ?? 'Oficio eclesiástico')
 
         popover.append(titleEl, shortEl)
         if (help.full_definition) popover.append(fullEl)
