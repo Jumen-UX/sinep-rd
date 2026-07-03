@@ -1,11 +1,6 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-
-const fallbackUrl = 'https://hrvgpceqaxujlttpimdz.supabase.co'
-const fallbackPublishableKey = 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP'
+import { createBrowserClient } from '@supabase/ssr'
+import { getSupabasePublishableKey, getSupabaseUrl } from './config'
 
 export function createClient() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || fallbackUrl,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || fallbackPublishableKey
-  )
+  return createBrowserClient(getSupabaseUrl(), getSupabasePublishableKey())
 }

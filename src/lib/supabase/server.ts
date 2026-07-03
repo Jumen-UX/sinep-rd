@@ -1,18 +1,31 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import type { CookieOptions } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { getSupabasePublishableKey, getSupabaseUrl } from './config'
 
-function getRequiredEnv(name: string) {
-  const value = process.env[name]
-
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`)
-  }
-
-  return value
+type SupabaseCookieToSet = {
+  name: string
+  value: string
+  options: CookieOptions
 }
 
 export async function createClient() {
-  return createSupabaseClient(
-    getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
-    getRequiredEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
-  )
+  const cookieStore = await cookies()
+
+  return createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
+      },
+      setAll(cookiesToSet: SupabaseCookieToSet[]) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options)
+          })
+        } catch {
+          // Server Components cannot set cookies. Middleware keeps auth cookies fresh.
+        }
+      },
+    },
+  })
 }

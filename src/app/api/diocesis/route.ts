@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getSupabaseRestHeaders, getSupabaseUrl } from '@/lib/supabase/config'
 
 const columns = [
   'id',
@@ -25,38 +26,34 @@ const columns = [
   'erected_at'
 ].join(',')
 
-const fallbackUrl = 'https://hrvgpceqaxujlttpimdz.supabase.co'
-
-function getApiKey() {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP'
-  )
-}
-
 export async function GET() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || fallbackUrl
-  const key = getApiKey()
-  const table = ['public', 'dioceses'].join('_')
-  const endpoint = `${url}/rest/v1/${table}?select=${columns}&order=name.asc`
+  try {
+    const url = getSupabaseUrl()
+    const table = ['public', 'dioceses'].join('_')
+    const endpoint = `${url}/rest/v1/${table}?select=${columns}&order=name.asc`
 
-  const response = await fetch(endpoint, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-    },
-    cache: 'no-store',
-  })
+    const response = await fetch(endpoint, {
+      headers: getSupabaseRestHeaders(),
+      cache: 'no-store',
+    })
 
-  if (!response.ok) {
-    const details = await response.text()
-    return NextResponse.json(
-      { error: 'No se pudo cargar el directorio', status: response.status, details },
-      { status: response.status }
-    )
+    if (!response.ok) {
+      const details = await response.text()
+      console.error('Failed to load dioceses from Supabase', {
+        status: response.status,
+        details,
+      })
+
+      return NextResponse.json(
+        { error: 'No se pudo cargar el directorio' },
+        { status: response.status }
+      )
+    }
+
+    const data = await response.json()
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('Unexpected dioceses API error', error)
+    return NextResponse.json({ error: 'No se pudo cargar el directorio' }, { status: 500 })
   }
-
-  const data = await response.json()
-  return NextResponse.json(data)
 }

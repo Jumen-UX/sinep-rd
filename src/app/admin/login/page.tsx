@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function AdminLoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('vicariasdo@gmail.com')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
     })
 
     if (signInError) {
-      setError(signInError.message)
+      setError('No pudimos validar esas credenciales.')
       setLoading(false)
       return
     }

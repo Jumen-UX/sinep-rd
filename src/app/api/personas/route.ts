@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const fallbackUrl = 'https://hrvgpceqaxujlttpimdz.supabase.co'
+import { getSupabasePublishableKey, getSupabaseUrl } from '@/lib/supabase/config'
 
 const listColumns = [
   'id',
@@ -167,11 +166,7 @@ const canonicalHelpColumns = [
 ].join(',')
 
 function getApiKey() {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP'
-  )
+  return getSupabasePublishableKey()
 }
 
 async function fetchJson<T>(endpoint: string, key: string): Promise<T> {
@@ -185,7 +180,12 @@ async function fetchJson<T>(endpoint: string, key: string): Promise<T> {
 
   if (!response.ok) {
     const details = await response.text()
-    throw new Error(details || `HTTP ${response.status}`)
+    console.error('Supabase REST request failed', {
+      endpoint,
+      status: response.status,
+      details,
+    })
+    throw new Error(`Supabase REST request failed with status ${response.status}`)
   }
 
   return response.json() as Promise<T>
@@ -222,7 +222,7 @@ async function attachCanonicalHelp(url: string, key: string, positions: Record<s
 }
 
 export async function GET(request: NextRequest) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || fallbackUrl
+  const url = getSupabaseUrl()
   const key = getApiKey()
   const slug = request.nextUrl.searchParams.get('slug')
 
@@ -282,10 +282,10 @@ export async function GET(request: NextRequest) {
       positions,
     })
   } catch (error) {
+    console.error('Unexpected people API error', error)
     return NextResponse.json(
       {
         error: 'No se pudo cargar la información de personas',
-        details: error instanceof Error ? error.message : 'Error desconocido',
       },
       { status: 500 }
     )
