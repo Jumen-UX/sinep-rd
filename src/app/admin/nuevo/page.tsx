@@ -7,7 +7,7 @@ const items = [
   { title: 'Nuevo sacerdote', type: 'Persona', description: 'Datos personales, ordenación, cargo actual, historial y fuentes.', href: null },
   { title: 'Nueva jurisdicción', type: 'Entidad', description: 'Identidad, territorio, responsable principal, estadísticas y estructura.', href: null },
   { title: 'Nueva parroquia', type: 'Entidad', description: 'Identidad, dependencia territorial, responsables, contacto y pastorales.', href: '/admin/nuevo/parroquia' },
-  { title: 'Nueva capilla', type: 'Entidad', description: 'Identidad, dependencia, responsable, ubicación y notas.', href: null },
+  { title: 'Nueva capilla', type: 'Entidad', description: 'Identidad, dependencia, responsable, ubicación y notas.', href: '/admin/nuevo/capilla' },
 ]
 
 export default function AdminNuevoPage() {
