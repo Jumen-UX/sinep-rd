@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import CanonicalHelpHydrator from '@/components/CanonicalHelpHydrator'
 import './globals.css'
 import './hierarchy.css'
 
@@ -34,6 +35,7 @@ export default function RootLayout({
           </header>
 
           {children}
+          <CanonicalHelpHydrator />
 
           <footer className="site-footer">
             SINEP RD · Sistema Nacional de Información Eclesiástica y Pastoral
