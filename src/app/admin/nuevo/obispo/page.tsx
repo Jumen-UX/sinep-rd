@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type Person = { id: string; display_name: string; slug: string; person_type: string }
+type ClergyRecord = { id: string; display_name: string; slug: string; person_type: string }
 type Entity = { direct_entity_id: string; direct_entity_name: string; direct_entity_type_name: string | null; hierarchy_path: string | null }
 type Office = { id: string; display_name: string; organization_chart_id: string | null }
 
-const steps = ['Origen', 'Persona', 'Episcopado', 'Cargo', 'Revisión']
+const steps = ['Origen', 'Datos básicos', 'Episcopado', 'Cargo', 'Revisión']
 
 function emptyToNull(value: FormDataEntryValue | null) {
   const text = String(value ?? '').trim()
@@ -32,10 +32,10 @@ export default function NuevoObispoPage() {
   const supabase = useMemo(() => createClient(), [])
   const [step, setStep] = useState(0)
   const [mode, setMode] = useState<'existing' | 'new'>('existing')
-  const [people, setPeople] = useState<Person[]>([])
+  const [clergyRecords, setClergyRecords] = useState<ClergyRecord[]>([])
   const [entities, setEntities] = useState<Entity[]>([])
   const [offices, setOffices] = useState<Office[]>([])
-  const [selectedPersonId, setSelectedPersonId] = useState('')
+  const [selectedClergyId, setSelectedClergyId] = useState('')
   const [assignmentEntityId, setAssignmentEntityId] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -43,7 +43,7 @@ export default function NuevoObispoPage() {
   const [error, setError] = useState<string | null>(null)
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
 
-  const selectedPerson = people.find((person) => person.id === selectedPersonId)
+  const selectedClergy = clergyRecords.find((record) => record.id === selectedClergyId)
   const selectedEntity = entities.find((entity) => entity.direct_entity_id === assignmentEntityId)
 
   async function loadData() {
@@ -53,16 +53,16 @@ export default function NuevoObispoPage() {
       return
     }
 
-    const [peopleRes, entityRes, officeRes] = await Promise.all([
+    const [clergyRes, entityRes, officeRes] = await Promise.all([
       supabase.from('persons').select('id,display_name,slug,person_type').in('person_type', ['priest', 'bishop']).eq('status', 'active').order('display_name'),
       supabase.from('public_entity_hierarchy_paths').select('direct_entity_id,direct_entity_name,direct_entity_type_name,hierarchy_path').order('direct_entity_name'),
       supabase.from('office_configurations').select('id,display_name,organization_chart_id').eq('status', 'active').order('display_name'),
     ])
 
-    if (peopleRes.error || entityRes.error || officeRes.error) {
-      setError(peopleRes.error?.message ?? entityRes.error?.message ?? officeRes.error?.message ?? 'No se pudieron cargar los catálogos.')
+    if (clergyRes.error || entityRes.error || officeRes.error) {
+      setError(clergyRes.error?.message ?? entityRes.error?.message ?? officeRes.error?.message ?? 'No se pudieron cargar los catálogos.')
     } else {
-      setPeople((peopleRes.data ?? []) as Person[])
+      setClergyRecords((clergyRes.data ?? []) as ClergyRecord[])
       setEntities((entityRes.data ?? []) as Entity[])
       setOffices((officeRes.data ?? []) as Office[])
     }
@@ -82,16 +82,16 @@ export default function NuevoObispoPage() {
 
     const form = new FormData(event.currentTarget)
     const { data: userData } = await supabase.auth.getUser()
-    let personId = selectedPersonId
-    let personSlug = selectedPerson?.slug ?? null
+    let recordId = selectedClergyId
+    let recordSlug = selectedClergy?.slug ?? null
 
     if (mode === 'existing') {
-      if (!personId) {
-        setError('Selecciona una persona existente.')
+      if (!recordId) {
+        setError('Selecciona el sacerdote que será registrado como obispo.')
         setSaving(false)
         return
       }
-      const updateRes = await supabase.from('persons').update({ person_type: 'bishop' }).eq('id', personId)
+      const updateRes = await supabase.from('persons').update({ person_type: 'bishop' }).eq('id', recordId)
       if (updateRes.error) {
         setError(updateRes.error.message)
         setSaving(false)
@@ -127,13 +127,13 @@ export default function NuevoObispoPage() {
         setSaving(false)
         return
       }
-      personId = inserted.data.id
-      personSlug = inserted.data.slug
+      recordId = inserted.data.id
+      recordSlug = inserted.data.slug
     }
 
-    const currentProfile = await supabase.from('clergy_profiles').select('id').eq('person_id', personId).maybeSingle()
+    const currentProfile = await supabase.from('clergy_profiles').select('id').eq('person_id', recordId).maybeSingle()
     const profilePayload = {
-      person_id: personId,
+      person_id: recordId,
       incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
       current_service_entity_id: emptyToNull(form.get('assignment_entity_id')),
       priestly_ordination_date: emptyToNull(form.get('priestly_ordination_date')),
@@ -151,7 +151,7 @@ export default function NuevoObispoPage() {
     }
 
     const ordRes = await supabase.from('episcopal_ordinations').insert({
-      bishop_person_id: personId,
+      bishop_person_id: recordId,
       ordination_date: emptyToNull(form.get('episcopal_ordination_date')),
       ordination_place: emptyToNull(form.get('ordination_place')),
       principal_consecrator_person_id: emptyToNull(form.get('principal_consecrator_person_id')),
@@ -167,7 +167,7 @@ export default function NuevoObispoPage() {
       visibility: 'public',
       status: 'active',
       notes_public: emptyToNull(form.get('ordination_notes_public')),
-      notes_internal: 'Creado desde asistente episcopal.',
+      notes_internal: 'Creado desde asistente de nuevo obispo.',
       created_by: userData.user?.id ?? null,
     })
     if (ordRes.error) {
@@ -180,7 +180,7 @@ export default function NuevoObispoPage() {
     if (officeId) {
       const office = offices.find((item) => item.id === officeId)
       const assignmentRes = await supabase.from('position_assignments').insert({
-        person_id: personId,
+        person_id: recordId,
         office_configuration_id: officeId,
         organization_chart_id: office?.organization_chart_id ?? null,
         ecclesiastical_entity_id: emptyToNull(form.get('assignment_entity_id')),
@@ -191,7 +191,7 @@ export default function NuevoObispoPage() {
         assignment_status: 'active',
         selection_method: 'appointment',
         notes_public: emptyToNull(form.get('appointment_notes_public')),
-        notes_internal: 'Cargo episcopal creado desde asistente episcopal.',
+        notes_internal: 'Cargo episcopal creado desde asistente de nuevo obispo.',
         verification_status: 'pending',
         visibility: 'public',
         record_status: 'active',
@@ -203,8 +203,8 @@ export default function NuevoObispoPage() {
       }
     }
 
-    setSavedSlug(personSlug)
-    setMessage(mode === 'existing' ? 'Persona existente actualizada como obispo.' : 'Persona episcopal creada correctamente.')
+    setSavedSlug(recordSlug)
+    setMessage(mode === 'existing' ? 'Sacerdote actualizado como obispo.' : 'Obispo creado correctamente.')
     setSaving(false)
   }
 
@@ -216,8 +216,8 @@ export default function NuevoObispoPage() {
       <section className="dashboard-hero card">
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
-          <h1>Nueva persona episcopal</h1>
-          <p className="lead">Selecciona un sacerdote existente o crea una persona nueva. El sistema no duplica fichas existentes.</p>
+          <h1>Nuevo obispo</h1>
+          <p className="lead">Selecciona un sacerdote existente o crea un obispo desde cero. El sistema no duplica fichas existentes.</p>
         </div>
       </section>
 
@@ -239,12 +239,12 @@ export default function NuevoObispoPage() {
             <h2>Origen de la ficha</h2>
             <div className="dashboard-grid dashboard-summary">
               <button className={`metric-card metric-button ${mode === 'existing' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('existing')}><strong>Existente</strong><span>Seleccionar sacerdote registrado</span></button>
-              <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('new')}><strong>Nuevo</strong><span>Crear desde cero</span></button>
+              <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('new')}><strong>Nuevo</strong><span>Crear obispo desde cero</span></button>
             </div>
             {mode === 'existing' && (
-              <select value={selectedPersonId} onChange={(event) => setSelectedPersonId(event.target.value)}>
-                <option value="">Selecciona persona</option>
-                {people.map((person) => <option key={person.id} value={person.id}>{person.display_name} · {person.person_type}</option>)}
+              <select value={selectedClergyId} onChange={(event) => setSelectedClergyId(event.target.value)}>
+                <option value="">Selecciona sacerdote</option>
+                {clergyRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name} · {record.person_type}</option>)}
               </select>
             )}
           </section>
@@ -253,8 +253,8 @@ export default function NuevoObispoPage() {
         {step === 1 && (
           <section>
             <p className="eyebrow">Paso 2</p>
-            <h2>{mode === 'existing' ? 'Persona seleccionada' : 'Datos personales'}</h2>
-            {mode === 'existing' ? <div className="empty-state"><strong>{selectedPerson?.display_name ?? 'No seleccionado'}</strong><span>Se actualizará la misma ficha, sin duplicarla.</span></div> : (
+            <h2>{mode === 'existing' ? 'Sacerdote seleccionado' : 'Datos básicos'}</h2>
+            {mode === 'existing' ? <div className="empty-state"><strong>{selectedClergy?.display_name ?? 'No seleccionado'}</strong><span>Se actualizará la misma ficha, sin duplicarla.</span></div> : (
               <>
                 <input name="first_name" placeholder="Primer nombre" />
                 <input name="middle_name" placeholder="Segundo nombre" />
@@ -280,11 +280,11 @@ export default function NuevoObispoPage() {
             <input name="religious_order" placeholder="Orden o congregación, si aplica" />
             <select name="incardination_entity_id" defaultValue=""><option value="">Incardinación</option>{entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name}</option>)}</select>
             <h3>Sucesión apostólica</h3>
-            <select name="principal_consecrator_person_id" defaultValue=""><option value="">Consagrante principal registrado</option>{people.map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}</select>
+            <select name="principal_consecrator_person_id" defaultValue=""><option value="">Consagrante principal registrado</option>{clergyRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
             <input name="principal_consecrator_name" placeholder="Consagrante principal si no está registrado" />
-            <select name="co_consecrator_1_person_id" defaultValue=""><option value="">Co-consagrante 1 registrado</option>{people.map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}</select>
+            <select name="co_consecrator_1_person_id" defaultValue=""><option value="">Co-consagrante 1 registrado</option>{clergyRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
             <input name="co_consecrator_1_name" placeholder="Co-consagrante 1 si no está registrado" />
-            <select name="co_consecrator_2_person_id" defaultValue=""><option value="">Co-consagrante 2 registrado</option>{people.map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}</select>
+            <select name="co_consecrator_2_person_id" defaultValue=""><option value="">Co-consagrante 2 registrado</option>{clergyRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
             <input name="co_consecrator_2_name" placeholder="Co-consagrante 2 si no está registrado" />
             <textarea name="ordination_notes_public" placeholder="Notas públicas" />
           </section>
@@ -310,13 +310,13 @@ export default function NuevoObispoPage() {
             <input name="source_name" placeholder="Fuente" />
             <input name="source_url" placeholder="URL de fuente" />
             <label>Fecha de revisión<input name="source_checked_at" type="date" /></label>
-            <p className="lead">Guarda la persona episcopal. Si partiste de un sacerdote existente, se conservará su historial.</p>
+            <p className="lead">Guarda el obispo. Si partiste de un sacerdote existente, se conservará su historial.</p>
           </section>
         )}
 
         <div className="admin-form-grid">
           <button className="button button-secondary" type="button" onClick={() => setStep(Math.max(0, step - 1))}>Anterior</button>
-          {step < steps.length - 1 ? <button className="button button-secondary" type="button" onClick={() => setStep(Math.min(steps.length - 1, step + 1))}>Siguiente</button> : <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar persona episcopal'}</button>}
+          {step < steps.length - 1 ? <button className="button button-secondary" type="button" onClick={() => setStep(Math.min(steps.length - 1, step + 1))}>Siguiente</button> : <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar obispo'}</button>}
         </div>
       </form>
     </main>
