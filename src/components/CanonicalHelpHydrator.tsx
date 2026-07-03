@@ -25,8 +25,9 @@ function normalize(value: string) {
 function findHelp(text: string, rows: HelpRow[]) {
   const normalizedText = normalize(text)
   return rows.find((row) => normalize(row.office_display_name ?? '') === normalizedText)
-    ?? rows.find((row) => normalizedText.includes(normalize(row.canonical_name ?? '')) && row.canonical_name)
     ?? rows.find((row) => normalize(row.canonical_name ?? '') === normalizedText)
+    ?? rows.find((row) => normalizedText.length > 4 && normalize(row.canonical_name ?? '').includes(normalizedText))
+    ?? rows.find((row) => normalizedText.includes(normalize(row.canonical_name ?? '')) && row.canonical_name)
 }
 
 export default function CanonicalHelpHydrator() {
