@@ -153,6 +153,19 @@ const positionColumns = [
   'notes_public'
 ].join(',')
 
+const canonicalHelpColumns = [
+  'office_configuration_key',
+  'canonical_name',
+  'short_definition',
+  'full_definition',
+  'canon_reference',
+  'requires_priest',
+  'requires_bishop',
+  'canonical_context',
+  'source_title',
+  'source_url'
+].join(',')
+
 function getApiKey() {
   return (
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
@@ -176,6 +189,36 @@ async function fetchJson<T>(endpoint: string, key: string): Promise<T> {
   }
 
   return response.json() as Promise<T>
+}
+
+async function attachCanonicalHelp(url: string, key: string, positions: Record<string, unknown>[]) {
+  const configurationKeys = Array.from(new Set(positions.map((item) => item.office_configuration_key).filter(Boolean).map(String)))
+  if (configurationKeys.length === 0) return positions
+
+  const helpRows = await fetchJson<Record<string, unknown>[]>(
+    `${url}/rest/v1/public_office_canonical_help?office_configuration_key=in.(${configurationKeys.join(',')})&select=${canonicalHelpColumns}`,
+    key
+  ).catch(() => [])
+
+  const helpByKey = new Map(helpRows.map((item) => [String(item.office_configuration_key), item]))
+
+  return positions.map((position) => {
+    const help = helpByKey.get(String(position.office_configuration_key ?? ''))
+    if (!help?.canonical_name) return position
+
+    return {
+      ...position,
+      canonical_name: help.canonical_name,
+      canonical_short_definition: help.short_definition,
+      canonical_full_definition: help.full_definition,
+      canonical_reference: help.canon_reference,
+      canonical_requires_priest: help.requires_priest,
+      canonical_requires_bishop: help.requires_bishop,
+      canonical_context: help.canonical_context,
+      canonical_source_title: help.source_title,
+      canonical_source_url: help.source_url,
+    }
+  })
 }
 
 export async function GET(request: NextRequest) {
@@ -205,7 +248,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Persona no encontrada' }, { status: 404 })
     }
 
-    const [clergyRows, appointments, movements, episcopalOrdinations, positions] = await Promise.all([
+    const [clergyRows, appointments, movements, episcopalOrdinations, positionRows] = await Promise.all([
       fetchJson<Record<string, unknown>[]>(
         `${url}/rest/v1/public_clergy?slug=eq.${encodedSlug}&select=${clergyColumns}&limit=1`,
         key
@@ -227,6 +270,8 @@ export async function GET(request: NextRequest) {
         key
       ).catch(() => [])
     ])
+
+    const positions = await attachCanonicalHelp(url, key, positionRows)
 
     return NextResponse.json({
       person,
