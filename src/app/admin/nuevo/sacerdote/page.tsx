@@ -13,9 +13,16 @@ type EntityPath = {
   hierarchy_path: string | null
 }
 
+type OfficeConfig = {
+  id: string
+  key: string
+  display_name: string
+  organization_chart_id: string | null
+}
+
 type MissingField = { key: string; label: string }
 
-const steps = ['Persona', 'Nacimiento', 'Clero', 'Servicio', 'Completitud', 'Revisión']
+const steps = ['Persona', 'Nacimiento', 'Clero', 'Servicio', 'Cargo', 'Completitud', 'Revisión']
 const optionalFields: MissingField[] = [
   { key: 'gender', label: 'Género' },
   { key: 'birth_date', label: 'Fecha de nacimiento' },
@@ -55,16 +62,19 @@ export default function NuevoSacerdotePage() {
   const supabase = useMemo(() => createClient(), [])
   const [step, setStep] = useState(0)
   const [entities, setEntities] = useState<EntityPath[]>([])
+  const [officeConfigs, setOfficeConfigs] = useState<OfficeConfig[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [incardinationId, setIncardinationId] = useState('')
   const [serviceId, setServiceId] = useState('')
+  const [quickEntityId, setQuickEntityId] = useState('')
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
 
   const incardination = entities.find((item) => item.direct_entity_id === incardinationId)
   const service = entities.find((item) => item.direct_entity_id === serviceId)
+  const quickEntity = entities.find((item) => item.direct_entity_id === quickEntityId)
 
   async function loadData() {
     setError(null)
@@ -74,13 +84,24 @@ export default function NuevoSacerdotePage() {
       return
     }
 
-    const { data, error: loadError } = await supabase
-      .from('public_entity_hierarchy_paths')
-      .select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,hierarchy_path')
-      .order('direct_entity_name')
+    const [entityRes, officeRes] = await Promise.all([
+      supabase
+        .from('public_entity_hierarchy_paths')
+        .select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,hierarchy_path')
+        .order('direct_entity_name'),
+      supabase
+        .from('office_configurations')
+        .select('id,key,display_name,organization_chart_id')
+        .eq('status', 'active')
+        .order('display_name'),
+    ])
 
-    if (loadError) setError(loadError.message)
-    else setEntities((data ?? []) as EntityPath[])
+    if (entityRes.error || officeRes.error) {
+      setError(entityRes.error?.message ?? officeRes.error?.message ?? 'No se pudieron cargar los catálogos.')
+    } else {
+      setEntities((entityRes.data ?? []) as EntityPath[])
+      setOfficeConfigs((officeRes.data ?? []) as OfficeConfig[])
+    }
     setLoading(false)
   }
 
@@ -158,6 +179,37 @@ export default function NuevoSacerdotePage() {
       }
     }
 
+    const quickOfficeId = emptyToNull(form.get('quick_office_configuration_id'))
+    if (saved?.id && quickOfficeId) {
+      const selectedOffice = officeConfigs.find((office) => office.id === quickOfficeId)
+      const assignmentEntityId = emptyToNull(form.get('quick_entity_id')) || emptyToNull(form.get('current_service_entity_id'))
+      const startDate = emptyToNull(form.get('quick_start_date'))
+
+      const assignmentRes = await supabase.from('position_assignments').insert({
+        person_id: saved.id,
+        office_configuration_id: quickOfficeId,
+        organization_chart_id: selectedOffice?.organization_chart_id ?? null,
+        ecclesiastical_entity_id: assignmentEntityId,
+        title_override: emptyToNull(form.get('quick_title_override')),
+        start_date: startDate,
+        term_start_date: startDate,
+        is_current: true,
+        assignment_status: 'active',
+        selection_method: 'appointment',
+        notes_public: emptyToNull(form.get('quick_notes_public')),
+        notes_internal: 'Asignación creada desde el asistente de nuevo sacerdote.',
+        verification_status: 'pending',
+        visibility: 'public',
+        record_status: 'active',
+      })
+
+      if (assignmentRes.error) {
+        setError(assignmentRes.error.message)
+        setSaving(false)
+        return
+      }
+    }
+
     const personMissing = notIdentifiedFields.filter((field) => ['gender', 'birth_date', 'birth_place', 'biography_public'].includes(field))
     const clergyMissing = notIdentifiedFields.filter((field) => ['priestly_ordination_date', 'incardination_entity_id', 'current_service_entity_id'].includes(field))
 
@@ -196,7 +248,7 @@ export default function NuevoSacerdotePage() {
     }
 
     setSavedSlug(saved?.slug ?? slug)
-    setMessage('Sacerdote creado correctamente.')
+    setMessage(quickOfficeId ? 'Sacerdote creado correctamente con su cargo actual.' : 'Sacerdote creado correctamente.')
     setSaving(false)
   }
 
@@ -210,7 +262,7 @@ export default function NuevoSacerdotePage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nuevo sacerdote</h1>
-          <p className="lead">Registra la persona, su perfil clerical, ordenación e incardinación. Después se le pueden asignar cargos como párroco, vicario, encargado o coordinador pastoral.</p>
+          <p className="lead">Registra la persona, su perfil clerical, ordenación, incardinación y, si ya se conoce, su cargo actual.</p>
         </div>
       </section>
 
@@ -281,7 +333,7 @@ export default function NuevoSacerdotePage() {
               {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
             </select>
             <div className="empty-state"><strong>Incardinación</strong><span>{incardination?.hierarchy_path ?? incardination?.direct_entity_name ?? 'Selecciona la diócesis, jurisdicción o entidad si aplica.'}</span></div>
-            <select name="current_service_entity_id" value={serviceId} onChange={(event) => setServiceId(event.target.value)}>
+            <select name="current_service_entity_id" value={serviceId} onChange={(event) => { setServiceId(event.target.value); setQuickEntityId(event.target.value) }}>
               <option value="">Sin servicio actual por ahora</option>
               {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
             </select>
@@ -292,6 +344,26 @@ export default function NuevoSacerdotePage() {
         {step === 4 && (
           <section>
             <p className="eyebrow">Paso 5</p>
+            <h2>Asignación rápida de cargo actual</h2>
+            <p className="meta">Opcional. Si todavía no tienes cargos configurados, deja este paso vacío y usa luego Catálogo de cargos y Asignaciones de cargos.</p>
+            <select name="quick_office_configuration_id" defaultValue="">
+              <option value="">Sin cargo actual por ahora</option>
+              {officeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
+            </select>
+            <input name="quick_title_override" placeholder="Título público opcional: Párroco, Vicario parroquial, Encargado" />
+            <select name="quick_entity_id" value={quickEntityId} onChange={(event) => setQuickEntityId(event.target.value)}>
+              <option value="">Usar entidad del servicio actual o dejar sin entidad</option>
+              {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
+            </select>
+            <div className="empty-state"><strong>Entidad del cargo</strong><span>{quickEntity?.hierarchy_path ?? quickEntity?.direct_entity_name ?? service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona la parroquia, capilla, curia o entidad del cargo.'}</span></div>
+            <label>Fecha de inicio del cargo<input name="quick_start_date" type="date" /></label>
+            <textarea name="quick_notes_public" placeholder="Notas públicas del cargo" />
+          </section>
+        )}
+
+        {step === 5 && (
+          <section>
+            <p className="eyebrow">Paso 6</p>
             <h2>Datos faltantes</h2>
             <p className="meta">Marca datos que fueron buscados y no se pudieron identificar. No generarán alertas de completitud.</p>
             <div className="card compact-section">
@@ -305,11 +377,11 @@ export default function NuevoSacerdotePage() {
           </section>
         )}
 
-        {step === 5 && (
+        {step === 6 && (
           <section>
-            <p className="eyebrow">Paso 6</p>
+            <p className="eyebrow">Paso 7</p>
             <h2>Revisión y guardado</h2>
-            <p className="lead">Guarda el sacerdote. Luego podrás asignarle cargos configurables: párroco, vicario parroquial, encargado de capilla, asesor o coordinador pastoral.</p>
+            <p className="lead">Guarda el sacerdote. Si elegiste un cargo actual, se creará también su asignación pública.</p>
           </section>
         )}
 
