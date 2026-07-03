@@ -75,6 +75,12 @@ const adminModules = [
     description: 'Configurar cargos base, ámbitos, categorías y organigramas.',
   },
   {
+    href: '/admin/referencias-canonicas/cargos',
+    type: 'Derecho canónico',
+    title: 'Referencias de cargos',
+    description: 'Consultar definiciones de oficios y cargos según el Código de Derecho Canónico.',
+  },
+  {
     href: '/admin/solicitudes',
     type: 'Aprobaciones',
     title: 'Solicitudes de cambio',
