@@ -3,8 +3,8 @@
 import Link from 'next/link'
 
 const items = [
-  { title: 'Nueva persona episcopal', type: 'Persona', description: 'Seleccionar sacerdote existente o crear obispo nuevo, con ordenación episcopal, sucesión y cargo.', href: '/admin/nuevo/obispo' },
-  { title: 'Nuevo sacerdote', type: 'Persona', description: 'Datos personales, ordenación, cargo actual, historial y fuentes.', href: '/admin/nuevo/sacerdote' },
+  { title: 'Nuevo obispo', type: 'Clero', description: 'Seleccionar sacerdote existente o crear obispo nuevo, con ordenación episcopal, sucesión y cargo.', href: '/admin/nuevo/obispo' },
+  { title: 'Nuevo sacerdote', type: 'Clero', description: 'Datos personales, ordenación, cargo actual, historial y fuentes.', href: '/admin/nuevo/sacerdote' },
   { title: 'Nueva jurisdicción', type: 'Entidad', description: 'Identidad, territorio, responsable principal, estadísticas y estructura.', href: null },
   { title: 'Nueva parroquia', type: 'Entidad', description: 'Identidad, dependencia territorial, responsables, contacto y pastorales.', href: '/admin/nuevo/parroquia' },
   { title: 'Nueva capilla', type: 'Entidad', description: 'Identidad, dependencia, responsable, ubicación y notas.', href: '/admin/nuevo/capilla' },
@@ -18,7 +18,7 @@ export default function AdminNuevoPage() {
         <div>
           <p className="eyebrow">Asistente de registro</p>
           <h1>Agregar nueva ficha</h1>
-          <p className="lead">Punto de entrada para crear fichas completas mediante procesos guiados. Cada asistente intentará completar la ficha y registrar qué datos quedan no identificados o no aplican.</p>
+          <p className="lead">Punto de entrada para crear fichas completas mediante procesos guiados. Cada asistente intenta completar la ficha y registrar qué datos quedan no identificados o no aplican.</p>
         </div>
       </section>
       <section className="grid admin-modules">
