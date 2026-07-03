@@ -48,13 +48,13 @@ const adminModules = [
     href: '/admin/nuevo',
     type: 'Asistente',
     title: 'Agregar nueva ficha',
-    description: 'Crear nueva persona, jurisdicción, parroquia o capilla mediante pasos guiados.',
+    description: 'Crear nuevo obispo, sacerdote, jurisdicción, parroquia o capilla mediante pasos guiados.',
   },
   {
-    href: '/admin/completitud',
+    href: '/admin/estado-fichas',
     type: 'Calidad de datos',
-    title: 'Completitud de fichas',
-    description: 'Ver porcentajes, datos faltantes y marcar campos como no identificados o no aplicables.',
+    title: 'Estado de fichas',
+    description: 'Ver avance, datos faltantes y marcar campos como no identificados o no aplicables.',
   },
   {
     href: '/admin/estructura',
@@ -66,7 +66,7 @@ const adminModules = [
     href: '/admin/asignaciones',
     type: 'Cargos',
     title: 'Asignaciones de cargos',
-    description: 'Asignar personas a cargos, comisiones, entidades, períodos, predecesores y sucesores.',
+    description: 'Asignar clero, agentes y responsables a cargos, comisiones, entidades y períodos.',
   },
   {
     href: '/admin/configuracion/cargos',
@@ -232,7 +232,7 @@ export default function AdminPage() {
         </div>
         <div className="grid admin-modules">
           <Link className="entity-card admin-module" href="/diocesis"><p className="entity-type">Directorio</p><h2>Diócesis</h2><p className="meta">Ver jurisdicciones y fichas públicas.</p></Link>
-          <Link className="entity-card admin-module" href="/personas"><p className="entity-type">Directorio</p><h2>Personas</h2><p className="meta">Ver obispos, sacerdotes, diáconos y laicos registrados.</p></Link>
+          <Link className="entity-card admin-module" href="/personas"><p className="entity-type">Directorio</p><h2>Clero y agentes</h2><p className="meta">Ver obispos, sacerdotes, diáconos, religiosos y laicos registrados.</p></Link>
         </div>
       </section>
     </main>
