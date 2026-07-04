@@ -20,13 +20,15 @@ function getSafeNextPath() {
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMessage: string) {
-  let timeoutId: ReturnType<typeof setTimeout>
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
 
   const timeout = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), LOGIN_TIMEOUT_MS)
   })
 
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId))
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId)
+  })
 }
 
 function getLoginErrorMessage(error: unknown) {
