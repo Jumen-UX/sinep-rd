@@ -198,7 +198,7 @@ export default function NuevoSacerdotePage() {
         selection_method: 'appointment',
         notes_public: emptyToNull(form.get('quick_notes_public')),
         notes_internal: 'Asignación creada desde el asistente de nuevo sacerdote.',
-        verification_status: 'pending',
+        verification_status: 'pending_review',
         visibility: 'public',
         record_status: 'active',
       })
