@@ -5,6 +5,42 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+const LOGIN_TIMEOUT_MS = 15_000
+
+function getSafeNextPath() {
+  if (typeof window === 'undefined') return '/admin'
+
+  const next = new URLSearchParams(window.location.search).get('next')
+
+  if (!next || !next.startsWith('/') || next.startsWith('//')) {
+    return '/admin'
+  }
+
+  return next
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMessage: string) {
+  let timeoutId: ReturnType<typeof setTimeout>
+
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), LOGIN_TIMEOUT_MS)
+  })
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId))
+}
+
+function getLoginErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message === 'login-timeout') {
+    return 'Supabase no respondió a tiempo. Revisa la conexión y la configuración del despliegue.'
+  }
+
+  if (error instanceof Error && error.message.startsWith('Missing environment variable')) {
+    return 'La configuración de Supabase no está completa en el despliegue.'
+  }
+
+  return 'No pudimos completar el inicio de sesión. Intenta de nuevo.'
+}
+
 export default function AdminLoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -17,20 +53,29 @@ export default function AdminLoginPage() {
     setLoading(true)
     setError(null)
 
-    const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const supabase = createClient()
+      const { error: signInError } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        }),
+        'login-timeout',
+      )
 
-    if (signInError) {
-      setError('No pudimos validar esas credenciales.')
+      if (signInError) {
+        setError('No pudimos validar esas credenciales.')
+        setLoading(false)
+        return
+      }
+
+      router.push(getSafeNextPath())
+      router.refresh()
+    } catch (loginError) {
+      console.error('Admin login failed', loginError)
+      setError(getLoginErrorMessage(loginError))
       setLoading(false)
-      return
     }
-
-    router.push('/admin')
-    router.refresh()
   }
 
   return (
