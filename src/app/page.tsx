@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 type Diocese = {
@@ -25,6 +25,28 @@ type Person = {
   death_date: string | null
 }
 
+type DashboardSummary = {
+  dioceses: {
+    total: number
+    archdioceses: number
+    dioceses: number
+    military: number
+    provinces: { name: string; count: number }[]
+    total_catholics: number
+    total_population: number
+    total_parishes: number
+  }
+  people: {
+    total: number
+    bishops: number
+    priests: number
+    deacons: number
+    religious: number
+    laypeople: number
+    active: number
+  }
+}
+
 function formatNumber(value: number | null | undefined) {
   if (value === null || value === undefined) return '—'
   return new Intl.NumberFormat('es-DO').format(value)
@@ -36,7 +58,7 @@ function personTypeLabel(value: string | null) {
     priest: 'Sacerdote',
     deacon: 'Diácono',
     religious: 'Religioso/a',
-    lay: 'Laico/a',
+    layperson: 'Laico/a',
   }
 
   if (!value) return 'Persona'
@@ -45,23 +67,29 @@ function personTypeLabel(value: string | null) {
 
 export default function HomePage() {
   const [dioceses, setDioceses] = useState<Diocese[]>([])
-  const [people, setPeople] = useState<Person[]>([])
+  const [bishops, setBishops] = useState<Person[]>([])
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const [dioceseResponse, peopleResponse] = await Promise.all([
-          fetch('/api/diocesis'),
-          fetch('/api/personas'),
+        const [summaryResponse, dioceseResponse, peopleResponse] = await Promise.all([
+          fetch('/api/dashboard/resumen'),
+          fetch('/api/diocesis?limit=8'),
+          fetch('/api/personas?tipo=bishop&limit=8'),
         ])
+
+        if (summaryResponse.ok) {
+          setSummary((await summaryResponse.json()) as DashboardSummary)
+        }
 
         if (dioceseResponse.ok) {
           setDioceses((await dioceseResponse.json()) as Diocese[])
         }
 
         if (peopleResponse.ok) {
-          setPeople((await peopleResponse.json()) as Person[])
+          setBishops((await peopleResponse.json()) as Person[])
         }
       } finally {
         setLoading(false)
@@ -70,30 +98,6 @@ export default function HomePage() {
 
     loadDashboard()
   }, [])
-
-  const summary = useMemo(() => {
-    const bishops = people.filter((item) => item.person_type === 'bishop').length
-    const priests = people.filter((item) => item.person_type === 'priest').length
-    const deacons = people.filter((item) => item.person_type === 'deacon').length
-    const activePeople = people.filter((item) => item.status === 'active' && !item.death_date).length
-    const totalCatholics = dioceses.reduce((sum, item) => sum + (item.catholics_total ?? 0), 0)
-    const totalParishes = dioceses.reduce((sum, item) => sum + (item.parishes_count ?? 0), 0)
-    const provinces = new Set(dioceses.map((item) => item.ecclesiastical_province_name).filter(Boolean)).size
-
-    return {
-      jurisdictions: dioceses.length,
-      provinces,
-      totalCatholics,
-      totalParishes,
-      bishops,
-      priests,
-      deacons,
-      activePeople,
-    }
-  }, [dioceses, people])
-
-  const recentDioceses = dioceses.slice(0, 8)
-  const bishops = people.filter((item) => item.person_type === 'bishop').slice(0, 8)
 
   return (
     <main className="container dashboard-page home-dashboard">
@@ -129,38 +133,38 @@ export default function HomePage() {
 
       <section className="dashboard-grid dashboard-summary">
         <Link className="metric-card metric-link" href="/diocesis">
-          <strong>{loading ? '—' : summary.jurisdictions}</strong>
+          <strong>{loading ? '—' : summary?.dioceses.total ?? 0}</strong>
           <span>Jurisdicciones</span>
         </Link>
         <Link className="metric-card metric-link" href="/diocesis">
-          <strong>{loading ? '—' : summary.provinces}</strong>
+          <strong>{loading ? '—' : summary?.dioceses.provinces.length ?? 0}</strong>
           <span>Provincias eclesiásticas</span>
         </Link>
         <Link className="metric-card metric-link" href="/personas?tipo=bishop">
-          <strong>{loading ? '—' : summary.bishops}</strong>
+          <strong>{loading ? '—' : summary?.people.bishops ?? 0}</strong>
           <span>Obispos registrados</span>
         </Link>
         <Link className="metric-card metric-link" href="/personas">
-          <strong>{loading ? '—' : summary.activePeople}</strong>
+          <strong>{loading ? '—' : summary?.people.active ?? 0}</strong>
           <span>Personas activas</span>
         </Link>
       </section>
 
       <section className="dashboard-grid dashboard-summary">
         <div className="metric-card">
-          <strong>{loading ? '—' : formatNumber(summary.totalCatholics)}</strong>
+          <strong>{loading ? '—' : formatNumber(summary?.dioceses.total_catholics)}</strong>
           <span>Fieles católicos reportados</span>
         </div>
         <div className="metric-card">
-          <strong>{loading ? '—' : formatNumber(summary.totalParishes)}</strong>
+          <strong>{loading ? '—' : formatNumber(summary?.dioceses.total_parishes)}</strong>
           <span>Parroquias reportadas</span>
         </div>
         <Link className="metric-card metric-link" href="/personas?tipo=priest">
-          <strong>{loading ? '—' : summary.priests}</strong>
+          <strong>{loading ? '—' : summary?.people.priests ?? 0}</strong>
           <span>Sacerdotes registrados</span>
         </Link>
         <Link className="metric-card metric-link" href="/personas?tipo=deacon">
-          <strong>{loading ? '—' : summary.deacons}</strong>
+          <strong>{loading ? '—' : summary?.people.deacons ?? 0}</strong>
           <span>Diáconos registrados</span>
         </Link>
       </section>
@@ -191,7 +195,7 @@ export default function HomePage() {
             <Link className="inline-link" href="/diocesis">Ver todas</Link>
           </div>
           <div className="list-table compact-list-table">
-            {recentDioceses.map((item) => (
+            {dioceses.map((item) => (
               <Link className="list-row" href={`/entidades/${item.slug}`} key={item.id}>
                 <span><strong>{item.name}</strong><small>{item.entity_type_name ?? 'Jurisdicción'}</small></span>
                 <span>{item.current_ordinary_name ?? 'Sin ordinario registrado'}</span>
