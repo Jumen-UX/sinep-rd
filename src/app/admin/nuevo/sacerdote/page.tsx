@@ -121,7 +121,6 @@ export default function NuevoSacerdotePage() {
     const lastName = String(form.get('last_name') ?? '').trim()
     const displayName = String(form.get('display_name') ?? '').trim() || buildDisplayName(form)
     const slugInput = String(form.get('slug') ?? '').trim()
-    const notIdentifiedFields = form.getAll('not_identified_fields').map(String)
 
     if (!firstName || !lastName || !displayName) {
       setError('Nombre, apellido y nombre público son obligatorios.')
@@ -129,127 +128,53 @@ export default function NuevoSacerdotePage() {
       return
     }
 
-    const slug = slugInput || slugify(displayName)
-    const { data: userData } = await supabase.auth.getUser()
-
-    const { data: saved, error: insertError } = await supabase
-      .from('persons')
-      .insert({
-        first_name: firstName,
-        middle_name: emptyToNull(form.get('middle_name')),
-        last_name: lastName,
-        second_last_name: emptyToNull(form.get('second_last_name')),
-        display_name: displayName,
-        slug,
-        person_type: 'priest',
-        gender: emptyToNull(form.get('gender')),
-        birth_date: emptyToNull(form.get('birth_date')),
-        birth_place: emptyToNull(form.get('birth_place')),
-        biography_public: emptyToNull(form.get('biography_public')),
-        notes_internal: emptyToNull(form.get('notes_internal')),
-        status: 'active',
-        visibility: 'public',
-        created_by: userData.user?.id ?? null,
-      })
-      .select('id,slug')
-      .single()
-
-    if (insertError) {
-      setError(insertError.message)
-      setSaving(false)
-      return
-    }
-
-    if (saved?.id) {
-      const clergyRes = await supabase.from('clergy_profiles').insert({
-        person_id: saved.id,
-        incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
-        current_service_entity_id: emptyToNull(form.get('current_service_entity_id')),
-        diaconal_ordination_date: emptyToNull(form.get('diaconal_ordination_date')),
-        priestly_ordination_date: emptyToNull(form.get('priestly_ordination_date')),
-        religious_order: emptyToNull(form.get('religious_order')),
-        canonical_status: String(form.get('canonical_status') ?? 'active'),
-        notes_private: emptyToNull(form.get('clergy_notes')),
-      })
-
-      if (clergyRes.error) {
-        setError(clergyRes.error.message)
-        setSaving(false)
-        return
-      }
-    }
-
     const quickOfficeId = emptyToNull(form.get('quick_office_configuration_id'))
-    if (saved?.id && quickOfficeId) {
-      const selectedOffice = officeConfigs.find((office) => office.id === quickOfficeId)
-      const assignmentEntityId = emptyToNull(form.get('quick_entity_id')) || emptyToNull(form.get('current_service_entity_id'))
-      const startDate = emptyToNull(form.get('quick_start_date'))
+    const payload = {
+      first_name: firstName,
+      middle_name: emptyToNull(form.get('middle_name')),
+      last_name: lastName,
+      second_last_name: emptyToNull(form.get('second_last_name')),
+      display_name: displayName,
+      slug: slugInput || slugify(displayName),
+      gender: emptyToNull(form.get('gender')),
+      birth_date: emptyToNull(form.get('birth_date')),
+      birth_place: emptyToNull(form.get('birth_place')),
+      biography_public: emptyToNull(form.get('biography_public')),
+      notes_internal: emptyToNull(form.get('notes_internal')),
+      incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
+      current_service_entity_id: emptyToNull(form.get('current_service_entity_id')),
+      diaconal_ordination_date: emptyToNull(form.get('diaconal_ordination_date')),
+      priestly_ordination_date: emptyToNull(form.get('priestly_ordination_date')),
+      religious_order: emptyToNull(form.get('religious_order')),
+      canonical_status: emptyToNull(form.get('canonical_status')),
+      clergy_notes: emptyToNull(form.get('clergy_notes')),
+      quick_office_configuration_id: quickOfficeId,
+      quick_title_override: emptyToNull(form.get('quick_title_override')),
+      quick_entity_id: emptyToNull(form.get('quick_entity_id')),
+      quick_start_date: emptyToNull(form.get('quick_start_date')),
+      quick_notes_public: emptyToNull(form.get('quick_notes_public')),
+      not_identified_fields: form.getAll('not_identified_fields').map(String),
+    }
 
-      const assignmentRes = await supabase.from('position_assignments').insert({
-        person_id: saved.id,
-        office_configuration_id: quickOfficeId,
-        organization_chart_id: selectedOffice?.organization_chart_id ?? null,
-        ecclesiastical_entity_id: assignmentEntityId,
-        title_override: emptyToNull(form.get('quick_title_override')),
-        start_date: startDate,
-        term_start_date: startDate,
-        is_current: true,
-        assignment_status: 'active',
-        selection_method: 'appointment',
-        notes_public: emptyToNull(form.get('quick_notes_public')),
-        notes_internal: 'Asignación creada desde el asistente de nuevo sacerdote.',
-        verification_status: 'pending_review',
-        visibility: 'public',
-        record_status: 'active',
+    try {
+      const response = await fetch('/api/admin/sacerdote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
+      const data = await response.json()
 
-      if (assignmentRes.error) {
-        setError(assignmentRes.error.message)
-        setSaving(false)
-        return
+      if (!response.ok) {
+        throw new Error(data.error ?? 'No se pudo guardar el sacerdote.')
       }
+
+      setSavedSlug(data.slug ?? payload.slug)
+      setMessage(quickOfficeId ? 'Sacerdote creado correctamente con su cargo actual.' : 'Sacerdote creado correctamente.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el sacerdote.')
+    } finally {
+      setSaving(false)
     }
-
-    const personMissing = notIdentifiedFields.filter((field) => ['gender', 'birth_date', 'birth_place', 'biography_public'].includes(field))
-    const clergyMissing = notIdentifiedFields.filter((field) => ['priestly_ordination_date', 'incardination_entity_id', 'current_service_entity_id'].includes(field))
-
-    if (saved?.id && personMissing.length > 0) {
-      const rows = personMissing.map((field) => ({
-        record_table: 'persons',
-        record_id: saved.id,
-        field_name: field,
-        status: 'unknown',
-        notes: 'Marcado como no identificado desde el asistente de nuevo sacerdote.',
-        created_by: userData.user?.id ?? null,
-      }))
-      const statusRes = await supabase.from('data_field_statuses').upsert(rows, { onConflict: 'record_table,record_id,field_name' })
-      if (statusRes.error) {
-        setError(statusRes.error.message)
-        setSaving(false)
-        return
-      }
-    }
-
-    if (saved?.id && clergyMissing.length > 0) {
-      const rows = clergyMissing.map((field) => ({
-        record_table: 'clergy_profiles',
-        record_id: saved.id,
-        field_name: field,
-        status: 'unknown',
-        notes: 'Marcado como no identificado desde el asistente de nuevo sacerdote.',
-        created_by: userData.user?.id ?? null,
-      }))
-      const statusRes = await supabase.from('data_field_statuses').upsert(rows, { onConflict: 'record_table,record_id,field_name' })
-      if (statusRes.error) {
-        setError(statusRes.error.message)
-        setSaving(false)
-        return
-      }
-    }
-
-    setSavedSlug(saved?.slug ?? slug)
-    setMessage(quickOfficeId ? 'Sacerdote creado correctamente con su cargo actual.' : 'Sacerdote creado correctamente.')
-    setSaving(false)
   }
 
   if (loading) return <main className="container"><div className="empty-state">Cargando asistente...</div></main>
@@ -262,7 +187,7 @@ export default function NuevoSacerdotePage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nuevo sacerdote</h1>
-          <p className="lead">Registra la persona, su perfil clerical, ordenación, incardinación y, si ya se conoce, su cargo actual.</p>
+          <p className="lead">Registra la persona, su perfil clerical, ordenación, incardinación y, si ya se conoce, su cargo actual. El guardado es transaccional para evitar fichas parciales.</p>
         </div>
       </section>
 
