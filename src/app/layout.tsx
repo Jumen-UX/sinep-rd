@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import CanonicalHelpHydrator from '@/components/CanonicalHelpHydrator'
-import PublicSuggestionWidget from '@/components/PublicSuggestionWidget'
 import './globals.css'
 import './hierarchy.css'
 
@@ -29,15 +27,13 @@ export default function RootLayout({
 
               <div className="nav-links">
                 <Link href="/diocesis">Diócesis</Link>
-                <Link href="/personas">Personas</Link>
+                <Link href="/personas">Clero y agentes</Link>
                 <Link href="/admin">Administración</Link>
               </div>
             </nav>
           </header>
 
           {children}
-          <CanonicalHelpHydrator />
-          <PublicSuggestionWidget />
 
           <footer className="site-footer">
             SINEP RD · Sistema Nacional de Información Eclesiástica y Pastoral
