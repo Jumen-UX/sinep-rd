@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import './globals.css'
 import './hierarchy.css'
+import './dashboard.css'
 
 export const metadata: Metadata = {
   title: 'SINEP RD',
