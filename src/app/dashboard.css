@@ -26,7 +26,7 @@
 }
 
 .section-heading {
-  align-items: end;
+  align-items: flex-end;
   display: flex;
   gap: 18px;
   justify-content: space-between;
@@ -170,7 +170,7 @@
   color: inherit;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(220px, 1.4fr) minmax(160px, 1fr) minmax(120px, 0.7fr);
+  grid-template-columns: minmax(220px, 1.3fr) minmax(180px, 1fr) auto;
   padding: 14px 16px;
   text-decoration: none;
 }
@@ -201,6 +201,10 @@
   color: var(--muted);
   font-size: 14px;
   line-height: 1.45;
+}
+
+.list-row > span:last-child {
+  white-space: nowrap;
 }
 
 .inline-link {
@@ -288,6 +292,10 @@
 
   .list-row {
     grid-template-columns: 1fr;
+  }
+
+  .list-row > span:last-child {
+    white-space: normal;
   }
 }
 
