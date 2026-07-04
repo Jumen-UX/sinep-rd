@@ -29,6 +29,13 @@ export default function PublicSuggestionWidget() {
 
   async function submitSuggestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const currentTarget = target
+
+    if (!currentTarget) {
+      setError('Esta página no acepta sugerencias públicas.')
+      return
+    }
+
     setSaving(true)
     setMessage(null)
     setError(null)
@@ -47,8 +54,8 @@ export default function PublicSuggestionWidget() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        target_table: target.target_table,
-        target_slug: target.target_slug,
+        target_table: currentTarget.target_table,
+        target_slug: currentTarget.target_slug,
         page_url: pathname,
         suggestion_type: form.get('suggestion_type'),
         title,
