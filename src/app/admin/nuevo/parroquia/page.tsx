@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type EntityType = { id: string; key: string; name: string }
 type EntityPath = {
   direct_entity_id: string
   direct_entity_name: string
@@ -48,7 +47,6 @@ export default function NuevaParroquiaPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [step, setStep] = useState(0)
-  const [entityTypes, setEntityTypes] = useState<EntityType[]>([])
   const [parents, setParents] = useState<EntityPath[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -57,7 +55,6 @@ export default function NuevaParroquiaPage() {
   const [selectedParentId, setSelectedParentId] = useState('')
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
 
-  const parishType = entityTypes.find((item) => item.key === 'parish')
   const selectedParent = parents.find((item) => item.direct_entity_id === selectedParentId)
 
   async function loadData() {
@@ -68,15 +65,14 @@ export default function NuevaParroquiaPage() {
       return
     }
 
-    const [typeRes, parentRes] = await Promise.all([
-      supabase.from('entity_types').select('id,key,name').in('key', ['archdiocese', 'diocese', 'military_ordinariate', 'vicariate', 'pastoral_zone', 'deanery', 'pastoral_region', 'parish']).order('default_level_order'),
-      supabase.from('public_entity_hierarchy_paths').select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,hierarchy_path').order('direct_entity_name'),
-    ])
+    const parentRes = await supabase
+      .from('public_entity_hierarchy_paths')
+      .select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,hierarchy_path')
+      .order('direct_entity_name')
 
-    if (typeRes.error || parentRes.error) {
-      setError(typeRes.error?.message ?? parentRes.error?.message ?? 'No se pudieron cargar los catálogos.')
+    if (parentRes.error) {
+      setError(parentRes.error.message ?? 'No se pudieron cargar los catálogos.')
     } else {
-      setEntityTypes((typeRes.data ?? []) as EntityType[])
       setParents((parentRes.data ?? []) as EntityPath[])
     }
     setLoading(false)
@@ -96,8 +92,6 @@ export default function NuevaParroquiaPage() {
     const form = new FormData(event.currentTarget)
     const name = String(form.get('name') ?? '').trim()
     const slugInput = String(form.get('slug') ?? '').trim()
-    const parentId = emptyToNull(form.get('parent_entity_id'))
-    const notIdentifiedFields = form.getAll('not_identified_fields').map(String)
 
     if (!name) {
       setError('El nombre de la parroquia es obligatorio.')
@@ -105,86 +99,48 @@ export default function NuevaParroquiaPage() {
       return
     }
 
-    if (!parishType) {
-      setError('No se encontró el tipo de entidad Parroquia en la base de datos.')
-      setSaving(false)
-      return
+    const payload = {
+      entity_type_key: 'parish',
+      name,
+      official_name: emptyToNull(form.get('official_name')),
+      slug: slugInput || slugify(name),
+      description: emptyToNull(form.get('description')),
+      country: 'República Dominicana',
+      province: emptyToNull(form.get('province')),
+      municipality: emptyToNull(form.get('municipality')),
+      sector: emptyToNull(form.get('sector')),
+      address: emptyToNull(form.get('address')),
+      email: emptyToNull(form.get('email')),
+      phone: emptyToNull(form.get('phone')),
+      website: emptyToNull(form.get('website')),
+      erected_at: emptyToNull(form.get('erected_at')),
+      territory_summary: emptyToNull(form.get('territory_summary')),
+      source_name: emptyToNull(form.get('source_name')),
+      source_url: emptyToNull(form.get('source_url')),
+      source_checked_at: emptyToNull(form.get('source_checked_at')),
+      parent_entity_id: emptyToNull(form.get('parent_entity_id')),
+      not_identified_fields: form.getAll('not_identified_fields').map(String),
     }
 
-    const slug = slugInput || slugify(name)
-    const { data: userData } = await supabase.auth.getUser()
-
-    const { data: saved, error: insertError } = await supabase
-      .from('ecclesiastical_entities')
-      .insert({
-        entity_type_id: parishType.id,
-        name,
-        official_name: emptyToNull(form.get('official_name')),
-        slug,
-        description: emptyToNull(form.get('description')),
-        country: 'República Dominicana',
-        province: emptyToNull(form.get('province')),
-        municipality: emptyToNull(form.get('municipality')),
-        sector: emptyToNull(form.get('sector')),
-        address: emptyToNull(form.get('address')),
-        email: emptyToNull(form.get('email')),
-        phone: emptyToNull(form.get('phone')),
-        website: emptyToNull(form.get('website')),
-        erected_at: emptyToNull(form.get('erected_at')),
-        territory_summary: emptyToNull(form.get('territory_summary')),
-        source_name: emptyToNull(form.get('source_name')),
-        source_url: emptyToNull(form.get('source_url')),
-        source_checked_at: emptyToNull(form.get('source_checked_at')),
-        status: 'active',
-        visibility: 'public',
-        created_by: userData.user?.id ?? null,
+    try {
+      const response = await fetch('/api/admin/entidad', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
-      .select('id,slug')
-      .single()
+      const data = await response.json()
 
-    if (insertError) {
-      setError(insertError.message)
+      if (!response.ok) {
+        throw new Error(data.error ?? 'No se pudo guardar la parroquia.')
+      }
+
+      setSavedSlug(data.slug ?? payload.slug)
+      setMessage('Parroquia creada correctamente.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar la parroquia.')
+    } finally {
       setSaving(false)
-      return
     }
-
-    if (parentId && saved?.id) {
-      const relRes = await supabase.from('entity_relationships').insert({
-        parent_entity_id: parentId,
-        child_entity_id: saved.id,
-        relationship_type: 'territorial',
-        is_current: true,
-        status: 'active',
-        notes: 'Relación creada desde asistente de nueva parroquia.',
-        created_by: userData.user?.id ?? null,
-      })
-      if (relRes.error) {
-        setError(relRes.error.message)
-        setSaving(false)
-        return
-      }
-    }
-
-    if (saved?.id && notIdentifiedFields.length > 0) {
-      const rows = notIdentifiedFields.map((field) => ({
-        record_table: 'ecclesiastical_entities',
-        record_id: saved.id,
-        field_name: field,
-        status: 'unknown',
-        notes: 'Marcado como no identificado desde el asistente de nueva parroquia.',
-        created_by: userData.user?.id ?? null,
-      }))
-      const statusRes = await supabase.from('data_field_statuses').upsert(rows, { onConflict: 'record_table,record_id,field_name' })
-      if (statusRes.error) {
-        setError(statusRes.error.message)
-        setSaving(false)
-        return
-      }
-    }
-
-    setSavedSlug(saved?.slug ?? slug)
-    setMessage('Parroquia creada correctamente.')
-    setSaving(false)
   }
 
   if (loading) return <main className="container"><div className="empty-state">Cargando asistente...</div></main>
@@ -197,7 +153,7 @@ export default function NuevaParroquiaPage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nueva parroquia</h1>
-          <p className="lead">Crea una parroquia, enlázala a su dependencia territorial y marca desde el inicio los datos no identificados para evitar alertas innecesarias.</p>
+          <p className="lead">Crea una parroquia, enlázala a su dependencia territorial y marca desde el inicio los datos no identificados. El guardado es transaccional para evitar entidades sin relación.</p>
         </div>
       </section>
 
