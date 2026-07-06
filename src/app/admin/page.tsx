@@ -70,6 +70,12 @@ const moduleGroups: ModuleGroup[] = [
         description: 'Ver parroquias sin párroco ni administrador parroquial activo y asignar responsable.',
       },
       {
+        href: '/admin/fallecimiento',
+        type: 'Estado de persona',
+        title: 'Marcar fallecimiento',
+        description: 'Registrar el deceso de una persona y cerrar sus cargos activos sin borrar historial.',
+      },
+      {
         href: '/admin/solicitudes',
         type: 'Revisión',
         title: 'Solicitudes pendientes',
