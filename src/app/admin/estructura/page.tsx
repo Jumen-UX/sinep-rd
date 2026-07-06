@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 
 type SupabaseClient = ReturnType<typeof createClient>
 
-type Diocese = {
+type EcclesiasticalEntity = {
   id: string
   name: string
   official_name: string | null
@@ -137,7 +137,8 @@ export default function AdminEstructuraPage() {
   const router = useRouter()
   const supabase = useMemo<SupabaseClient>(() => createClient(), [])
 
-  const [dioceses, setDioceses] = useState<Diocese[]>([])
+  const [entities, setEntities] = useState<EcclesiasticalEntity[]>([])
+  const [dioceses, setDioceses] = useState<EcclesiasticalEntity[]>([])
   const [entityTypes, setEntityTypes] = useState<EntityType[]>([])
   const [structureKinds, setStructureKinds] = useState<StructureKind[]>(fallbackKinds)
   const [activeKind, setActiveKind] = useState<StructureKindKey>('territorial')
@@ -171,7 +172,7 @@ export default function AdminEstructuraPage() {
       return
     }
 
-    const [dioceseRes, kindRes, entityTypeRes] = await Promise.all([
+    const [entityRes, kindRes, entityTypeRes] = await Promise.all([
       supabase
         .from('ecclesiastical_entities')
         .select('id,name,official_name,slug')
@@ -189,14 +190,16 @@ export default function AdminEstructuraPage() {
         .order('default_level_order'),
     ])
 
-    if (dioceseRes.error) setError(dioceseRes.error.message)
+    if (entityRes.error) setError(entityRes.error.message)
     if (kindRes.error) setError(kindRes.error.message)
     if (entityTypeRes.error) setError(entityTypeRes.error.message)
 
-    const loadedDioceses = ((dioceseRes.data ?? []) as Diocese[]).filter((entity) =>
+    const loadedEntities = (entityRes.data ?? []) as EcclesiasticalEntity[]
+    const loadedDioceses = loadedEntities.filter((entity) =>
       /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato/i.test(entity.name),
     )
 
+    setEntities(loadedEntities)
     setDioceses(loadedDioceses)
     setStructureKinds(((kindRes.data ?? []) as StructureKind[]).length > 0 ? (kindRes.data as StructureKind[]) : fallbackKinds)
     setEntityTypes((entityTypeRes.data ?? []) as EntityType[])
@@ -692,8 +695,8 @@ export default function AdminEstructuraPage() {
             <input name="code" placeholder="Código opcional" />
             <select name="linked_ecclesiastical_entity_id" defaultValue="">
               <option value="">Vincular a entidad existente opcional</option>
-              {dioceses.map((diocese) => (
-                <option key={diocese.id} value={diocese.id}>{diocese.name}</option>
+              {entities.map((entity) => (
+                <option key={entity.id} value={entity.id}>{entity.name}</option>
               ))}
             </select>
             <label>Fecha de inicio<input name="start_date" type="date" /></label>
