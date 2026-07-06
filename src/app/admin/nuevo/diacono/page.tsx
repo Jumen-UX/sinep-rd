@@ -26,6 +26,14 @@ type SaveResponse = {
 type DeaconType = 'permanent' | 'transitional' | 'external'
 
 const PHOTO_BUCKET = 'person-photos'
+const optionalFields = [
+  { key: 'birth_date', label: 'Fecha de nacimiento' },
+  { key: 'birth_place', label: 'Lugar de nacimiento' },
+  { key: 'biography_public', label: 'Biografía pública' },
+  { key: 'diaconal_ordination_date', label: 'Fecha de ordenación diaconal' },
+  { key: 'incardination_entity_id', label: 'Incardinación' },
+  { key: 'current_service_entity_id', label: 'Entidad donde sirve actualmente' },
+]
 
 function emptyToNull(value: FormDataEntryValue | null) {
   const text = String(value ?? '').trim()
