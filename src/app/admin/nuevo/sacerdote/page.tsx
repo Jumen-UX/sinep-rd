@@ -24,7 +24,40 @@ type MissingField = { key: string; label: string }
 type DraftValue = string | string[]
 type DraftValues = Record<string, DraftValue>
 
+type PriestPayload = {
+  first_name: string
+  middle_name: string | null
+  last_name: string
+  second_last_name: string | null
+  display_name: string
+  slug: string
+  gender: string | null
+  birth_date: string | null
+  birth_place: string | null
+  photo_url?: string | null
+  photo_path?: string | null
+  biography_public: string | null
+  notes_internal: string | null
+  identity_document_type: string | null
+  identity_document_number: string | null
+  identity_document_country: string | null
+  incardination_entity_id: string | null
+  current_service_entity_id: string | null
+  diaconal_ordination_date: string | null
+  priestly_ordination_date: string | null
+  religious_order: string | null
+  canonical_status: string | null
+  clergy_notes: string | null
+  quick_office_configuration_id: string | null
+  quick_title_override: string | null
+  quick_entity_id: string | null
+  quick_start_date: string | null
+  quick_notes_public: string | null
+  not_identified_fields: string[]
+}
+
 const DRAFT_KEY = 'sinep:nuevo-sacerdote:draft'
+const PHOTO_BUCKET = 'person-photos'
 const steps = ['Persona', 'Nacimiento', 'Clero', 'Servicio', 'Cargo', 'Completitud', 'Revisión']
 const optionalFields: MissingField[] = [
   { key: 'gender', label: 'Género' },
@@ -50,14 +83,23 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
+function buildDisplayNameFromParts(parts: Array<FormDataEntryValue | string | null | undefined>) {
+  return parts.map((part) => String(part ?? '').trim()).filter(Boolean).join(' ')
+}
+
 function buildDisplayName(form: FormData) {
-  const parts = [
+  return buildDisplayNameFromParts([
     form.get('first_name'),
     form.get('middle_name'),
     form.get('last_name'),
     form.get('second_last_name'),
-  ].map((part) => String(part ?? '').trim()).filter(Boolean)
-  return parts.join(' ')
+  ])
+}
+
+function fileExtension(file: File) {
+  if (file.type === 'image/png') return 'png'
+  if (file.type === 'image/webp') return 'webp'
+  return 'jpg'
 }
 
 export default function NuevoSacerdotePage() {
@@ -81,6 +123,12 @@ export default function NuevoSacerdotePage() {
   const service = entities.find((item) => item.direct_entity_id === serviceId)
   const quickEntity = entities.find((item) => item.direct_entity_id === quickEntityId)
   const notIdentifiedFields = Array.isArray(draftValues.not_identified_fields) ? draftValues.not_identified_fields : []
+  const namePreview = buildDisplayNameFromParts([
+    fieldValue('first_name'),
+    fieldValue('middle_name'),
+    fieldValue('last_name'),
+    fieldValue('second_last_name'),
+  ])
 
   function fieldValue(name: string, fallback = '') {
     const value = draftValues[name]
@@ -103,6 +151,8 @@ export default function NuevoSacerdotePage() {
   function handleDraftChange(event: FormEvent<HTMLFormElement>) {
     const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     if (!target.name) return
+
+    if (target instanceof HTMLInputElement && target.type === 'file') return
 
     setDraftValues((previous) => {
       const next: DraftValues = { ...previous }
@@ -175,6 +225,31 @@ export default function NuevoSacerdotePage() {
     }
   }, [])
 
+  async function uploadPhoto(file: File, slug: string) {
+    if (!file || file.size === 0) return { photo_url: null, photo_path: null }
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      throw new Error('La foto debe estar en formato JPG, PNG o WEBP.')
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error('La foto no debe pasar de 5 MB.')
+    }
+
+    const path = `sacerdotes/${slug || 'sacerdote'}-${Date.now()}.${fileExtension(file)}`
+    const { error: uploadError } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
+
+    if (uploadError) {
+      throw new Error(`No se pudo subir la foto: ${uploadError.message}`)
+    }
+
+    const { data } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
+    return { photo_url: data.publicUrl, photo_path: path }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
@@ -185,43 +260,52 @@ export default function NuevoSacerdotePage() {
     const form = new FormData(event.currentTarget)
     const firstName = String(form.get('first_name') ?? '').trim()
     const lastName = String(form.get('last_name') ?? '').trim()
-    const displayName = String(form.get('display_name') ?? '').trim() || buildDisplayName(form)
+    const displayName = buildDisplayName(form)
+    const slug = slugify(displayName)
 
-    if (!firstName || !lastName || !displayName) {
-      setError('Nombre, apellido y nombre para mostrar en la ficha son obligatorios.')
+    if (!firstName || !lastName || !displayName || !slug) {
+      setError('Primer nombre y primer apellido son obligatorios.')
       setSaving(false)
       return
     }
 
     const quickOfficeId = emptyToNull(form.get('quick_office_configuration_id'))
-    const payload = {
-      first_name: firstName,
-      middle_name: emptyToNull(form.get('middle_name')),
-      last_name: lastName,
-      second_last_name: emptyToNull(form.get('second_last_name')),
-      display_name: displayName,
-      slug: slugify(displayName),
-      gender: emptyToNull(form.get('gender')),
-      birth_date: emptyToNull(form.get('birth_date')),
-      birth_place: emptyToNull(form.get('birth_place')),
-      biography_public: emptyToNull(form.get('biography_public')),
-      notes_internal: emptyToNull(form.get('notes_internal')),
-      incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
-      current_service_entity_id: emptyToNull(form.get('current_service_entity_id')),
-      diaconal_ordination_date: emptyToNull(form.get('diaconal_ordination_date')),
-      priestly_ordination_date: emptyToNull(form.get('priestly_ordination_date')),
-      religious_order: emptyToNull(form.get('religious_order')),
-      canonical_status: emptyToNull(form.get('canonical_status')),
-      clergy_notes: emptyToNull(form.get('clergy_notes')),
-      quick_office_configuration_id: quickOfficeId,
-      quick_title_override: emptyToNull(form.get('quick_title_override')),
-      quick_entity_id: emptyToNull(form.get('quick_entity_id')),
-      quick_start_date: emptyToNull(form.get('quick_start_date')),
-      quick_notes_public: emptyToNull(form.get('quick_notes_public')),
-      not_identified_fields: form.getAll('not_identified_fields').map(String),
-    }
+    const photoFile = form.get('photo_file') instanceof File ? form.get('photo_file') as File : null
 
     try {
+      const uploadedPhoto = photoFile ? await uploadPhoto(photoFile, slug) : { photo_url: null, photo_path: null }
+      const payload: PriestPayload = {
+        first_name: firstName,
+        middle_name: emptyToNull(form.get('middle_name')),
+        last_name: lastName,
+        second_last_name: emptyToNull(form.get('second_last_name')),
+        display_name: displayName,
+        slug,
+        gender: emptyToNull(form.get('gender')),
+        birth_date: emptyToNull(form.get('birth_date')),
+        birth_place: emptyToNull(form.get('birth_place')),
+        photo_url: uploadedPhoto.photo_url,
+        photo_path: uploadedPhoto.photo_path,
+        biography_public: emptyToNull(form.get('biography_public')),
+        notes_internal: emptyToNull(form.get('notes_internal')),
+        identity_document_type: emptyToNull(form.get('identity_document_type')),
+        identity_document_number: emptyToNull(form.get('identity_document_number')),
+        identity_document_country: emptyToNull(form.get('identity_document_country')),
+        incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
+        current_service_entity_id: emptyToNull(form.get('current_service_entity_id')),
+        diaconal_ordination_date: emptyToNull(form.get('diaconal_ordination_date')),
+        priestly_ordination_date: emptyToNull(form.get('priestly_ordination_date')),
+        religious_order: emptyToNull(form.get('religious_order')),
+        canonical_status: emptyToNull(form.get('canonical_status')),
+        clergy_notes: emptyToNull(form.get('clergy_notes')),
+        quick_office_configuration_id: quickOfficeId,
+        quick_title_override: emptyToNull(form.get('quick_title_override')),
+        quick_entity_id: emptyToNull(form.get('quick_entity_id')),
+        quick_start_date: emptyToNull(form.get('quick_start_date')),
+        quick_notes_public: emptyToNull(form.get('quick_notes_public')),
+        not_identified_fields: form.getAll('not_identified_fields').map(String),
+      }
+
       const response = await fetch('/api/admin/sacerdote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -254,7 +338,7 @@ export default function NuevoSacerdotePage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nuevo sacerdote</h1>
-          <p className="lead">Registra la persona, su perfil clerical, ordenación, incardinación y, si ya se conoce, su cargo actual. Lo que escribas se conserva como borrador en este navegador hasta guardar la ficha.</p>
+          <p className="lead">Registra todo en un solo proceso. El sistema arma el nombre, asigna un código interno automáticamente y conserva lo escrito como borrador hasta guardar.</p>
         </div>
       </section>
 
@@ -271,17 +355,31 @@ export default function NuevoSacerdotePage() {
 
       <form className="admin-form admin-config-form card dashboard-section" onChange={handleDraftChange} onSubmit={handleSubmit}>
         <section hidden={step !== 0}>
-          <p className="eyebrow">Paso 1</p>
-          <h2>Datos personales</h2>
+          <p className="eyebrow">Paso 1 · Datos obligatorios</p>
+          <h2>Identificación básica</h2>
+          <p className="meta">El nombre de la ficha se arma automáticamente con estos datos. El código interno SINEP también se asigna solo al guardar.</p>
           <input name="first_name" placeholder="Primer nombre" required defaultValue={fieldValue('first_name')} />
-          <input name="middle_name" placeholder="Segundo nombre" defaultValue={fieldValue('middle_name')} />
+          <input name="middle_name" placeholder="Segundo nombre, si aplica" defaultValue={fieldValue('middle_name')} />
           <input name="last_name" placeholder="Primer apellido" required defaultValue={fieldValue('last_name')} />
-          <input name="second_last_name" placeholder="Segundo apellido" defaultValue={fieldValue('second_last_name')} />
-          <input name="display_name" placeholder="Nombre como aparecerá en la ficha. Si se deja vacío, se genera automáticamente" defaultValue={fieldValue('display_name')} />
+          <input name="second_last_name" placeholder="Segundo apellido, si aplica" defaultValue={fieldValue('second_last_name')} />
+          <div className="empty-state"><strong>Nombre que se mostrará</strong><span>{namePreview || 'Se formará automáticamente al escribir el nombre y apellido.'}</span></div>
+          <h2>Documento de identidad</h2>
+          <p className="meta">Opcional, pero recomendado para evitar duplicados. Usa cédula para dominicanos y pasaporte para extranjeros.</p>
+          <select name="identity_document_type" defaultValue={fieldValue('identity_document_type')}>
+            <option value="">Sin documento por ahora</option>
+            <option value="cedula">Cédula</option>
+            <option value="passport">Pasaporte</option>
+            <option value="other">Otro documento</option>
+          </select>
+          <input name="identity_document_number" placeholder="Número de documento" defaultValue={fieldValue('identity_document_number')} />
+          <input name="identity_document_country" placeholder="País del documento, ej. República Dominicana" defaultValue={fieldValue('identity_document_country', 'República Dominicana')} />
+          <h2>Foto de la ficha</h2>
+          <p className="meta">Opcional. Formatos permitidos: JPG, PNG o WEBP. Máximo 5 MB. La foto no se guarda como borrador; selecciónala antes de guardar.</p>
+          <input name="photo_file" type="file" accept="image/jpeg,image/png,image/webp" />
         </section>
 
         <section hidden={step !== 1}>
-          <p className="eyebrow">Paso 2</p>
+          <p className="eyebrow">Paso 2 · Datos opcionales</p>
           <h2>Nacimiento y biografía</h2>
           <select name="gender" defaultValue={fieldValue('gender', 'male')}>
             <option value="male">Masculino</option>
@@ -294,8 +392,8 @@ export default function NuevoSacerdotePage() {
         </section>
 
         <section hidden={step !== 2}>
-          <p className="eyebrow">Paso 3</p>
-          <h2>Perfil clerical</h2>
+          <p className="eyebrow">Paso 3 · Datos clericales</p>
+          <h2>Ordenación y estado</h2>
           <label>Ordenación diaconal<input name="diaconal_ordination_date" type="date" defaultValue={fieldValue('diaconal_ordination_date')} /></label>
           <label>Ordenación sacerdotal<input name="priestly_ordination_date" type="date" defaultValue={fieldValue('priestly_ordination_date')} /></label>
           <input name="religious_order" placeholder="Orden o congregación, si aplica" defaultValue={fieldValue('religious_order')} />
@@ -310,7 +408,7 @@ export default function NuevoSacerdotePage() {
         </section>
 
         <section hidden={step !== 3}>
-          <p className="eyebrow">Paso 4</p>
+          <p className="eyebrow">Paso 4 · Servicio</p>
           <h2>Incardinación y servicio actual</h2>
           <select name="incardination_entity_id" value={incardinationId} onChange={(event) => setIncardinationId(event.target.value)}>
             <option value="">Sin incardinación por ahora</option>
@@ -325,9 +423,9 @@ export default function NuevoSacerdotePage() {
         </section>
 
         <section hidden={step !== 4}>
-          <p className="eyebrow">Paso 5</p>
-          <h2>Asignación rápida de cargo actual</h2>
-          <p className="meta">Opcional. Si todavía no tienes cargos configurados, deja este paso vacío y usa luego Catálogo de cargos y Asignaciones de cargos.</p>
+          <p className="eyebrow">Paso 5 · Cargo actual</p>
+          <h2>Asignación rápida</h2>
+          <p className="meta">Opcional. Puedes guardar la ficha sin cargo y asignarlo después desde Asignaciones.</p>
           <select name="quick_office_configuration_id" defaultValue={fieldValue('quick_office_configuration_id')}>
             <option value="">Sin cargo actual por ahora</option>
             {officeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
@@ -343,9 +441,9 @@ export default function NuevoSacerdotePage() {
         </section>
 
         <section hidden={step !== 5}>
-          <p className="eyebrow">Paso 6</p>
+          <p className="eyebrow">Paso 6 · Datos opcionales no encontrados</p>
           <h2>Datos faltantes</h2>
-          <p className="meta">Marca datos que fueron buscados y no se pudieron identificar. No generarán alertas de completitud.</p>
+          <p className="meta">Marca solo los datos que fueron buscados y no se pudieron identificar. Así no aparecerán como pendientes.</p>
           <div className="card compact-section">
             {optionalFields.map((field) => (
               <label key={field.key} className="role-pill">
@@ -357,9 +455,9 @@ export default function NuevoSacerdotePage() {
         </section>
 
         <section hidden={step !== 6}>
-          <p className="eyebrow">Paso 7</p>
-          <h2>Revisión y guardado</h2>
-          <p className="lead">Guarda el sacerdote. Si elegiste un cargo actual, se creará también su asignación pública.</p>
+          <p className="eyebrow">Paso 7 · Revisión</p>
+          <h2>Guardar sacerdote</h2>
+          <p className="lead">Se creará la ficha, el perfil clerical, el código interno SINEP y, si elegiste un cargo actual, también la asignación.</p>
           <p className="meta">Después de guardar correctamente, el borrador se elimina automáticamente de este navegador.</p>
         </section>
 
