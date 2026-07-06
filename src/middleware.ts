@@ -58,14 +58,9 @@ export async function middleware(request: NextRequest) {
     return redirectToLogin(request)
   }
 
-  const { data: roles, error: roleError } = await supabase
-    .from('user_role_assignments')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .limit(1)
+  const { data: hasAdminRole, error: roleError } = await supabase.rpc('current_user_has_admin_role')
 
-  if (roleError || !roles?.length) {
+  if (roleError || hasAdminRole !== true) {
     return pathname === ADMIN_PREFIX ? response : redirectToAdmin(request)
   }
 
