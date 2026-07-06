@@ -118,7 +118,7 @@ function personTypeLabel(value: string | null) {
     priest: 'Sacerdote',
     deacon: 'Diácono',
     religious: 'Religioso/a',
-    lay: 'Laico/a',
+    layperson: 'Laico/a',
   }
 
   if (!value) return 'Persona'
@@ -257,19 +257,19 @@ export default function PersonDetailPage() {
       <section className="dashboard-grid dashboard-summary person-metrics">
         <div className="metric-card">
           <strong>{metricAge(person.birth_date, person.age_text, person.death_date)}</strong>
-          <span>Edad actual</span>
+          <span>{person.death_date ? 'Edad al fallecer' : 'Edad actual'}</span>
         </div>
         <div className="metric-card">
-          <strong>{metricYears(clergy?.priestly_ordination_date ?? null)}</strong>
+          <strong>{metricYears(clergy?.priestly_ordination_date ?? null, person.death_date)}</strong>
           <span>Años como sacerdote</span>
         </div>
         <div className="metric-card">
-          <strong>{metricYears(clergy?.episcopal_ordination_date ?? episcopalOrdination?.ordination_date ?? null)}</strong>
+          <strong>{metricYears(clergy?.episcopal_ordination_date ?? episcopalOrdination?.ordination_date ?? null, person.death_date)}</strong>
           <span>Años como obispo</span>
         </div>
         <div className="metric-card">
-          <strong>{metricYears(primaryAppointment?.start_date ?? null)}</strong>
-          <span>En cargo actual</span>
+          <strong>{metricYears(primaryAppointment?.start_date ?? null, primaryAppointment?.end_date ?? person.death_date)}</strong>
+          <span>En cargo principal</span>
         </div>
       </section>
 
@@ -393,7 +393,7 @@ export default function PersonDetailPage() {
                   ) : (
                     <span>{appointment.entity_name ?? appointment.pastoral_entity_name ?? 'Entidad no indicada'}</span>
                   )}
-                  <small>Desde {formatDate(appointment.start_date)} · {metricYears(appointment.start_date)} años en el cargo</small>
+                  <small>Desde {formatDate(appointment.start_date)} · {metricYears(appointment.start_date, person.death_date)} años en el cargo</small>
                   {appointment.notes_public && <span className="meta">{appointment.notes_public}</span>}
                 </div>
               ))}
