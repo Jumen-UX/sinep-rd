@@ -43,7 +43,9 @@ export default function NuevoObispoPage() {
   const [error, setError] = useState<string | null>(null)
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
 
-  const selectedClergy = clergyRecords.find((record) => record.id === selectedClergyId)
+  const priestRecords = clergyRecords.filter((record) => record.person_type === 'priest')
+  const bishopRecords = clergyRecords.filter((record) => record.person_type === 'bishop')
+  const selectedClergy = priestRecords.find((record) => record.id === selectedClergyId)
   const selectedEntity = entities.find((entity) => entity.direct_entity_id === assignmentEntityId)
 
   async function loadData() {
@@ -92,7 +94,7 @@ export default function NuevoObispoPage() {
     }
 
     if (mode === 'new' && (!firstName || !lastName || !name)) {
-      setError('Nombre, apellido y nombre público son obligatorios.')
+      setError('Nombre y apellido son obligatorios para registrar un obispo externo.')
       setSaving(false)
       return
     }
@@ -105,7 +107,7 @@ export default function NuevoObispoPage() {
       last_name: lastName,
       second_last_name: emptyToNull(form.get('second_last_name')),
       display_name: name,
-      slug: String(form.get('slug') ?? '').trim() || slugify(name),
+      slug: slugify(name),
       birth_date: emptyToNull(form.get('birth_date')),
       birth_place: emptyToNull(form.get('birth_place')),
       biography_public: emptyToNull(form.get('biography_public')),
@@ -144,7 +146,7 @@ export default function NuevoObispoPage() {
       }
 
       setSavedSlug(data.slug ?? selectedClergy?.slug ?? null)
-      setMessage(mode === 'existing' ? 'Sacerdote actualizado como obispo.' : 'Obispo creado correctamente.')
+      setMessage(mode === 'existing' ? 'Sacerdote registrado como obispo correctamente.' : 'Obispo externo registrado correctamente con historial sacerdotal pendiente.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar el obispo.')
     } finally {
@@ -160,8 +162,8 @@ export default function NuevoObispoPage() {
       <section className="dashboard-hero card">
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
-          <h1>Nuevo obispo</h1>
-          <p className="lead">Selecciona un sacerdote existente o crea un obispo desde cero. El sistema guarda persona, perfil clerical, ordenación y cargo en una transacción para evitar fichas parciales.</p>
+          <h1>Registrar obispo</h1>
+          <p className="lead">Primero busca si ya existe como sacerdote. Si existe, se completa esa misma ficha con sus datos episcopales. Solo usa obispo externo cuando todavía no existe su ficha sacerdotal en SINEP RD.</p>
         </div>
       </section>
 
@@ -180,32 +182,33 @@ export default function NuevoObispoPage() {
         {step === 0 && (
           <section>
             <p className="eyebrow">Paso 1</p>
-            <h2>Origen de la ficha</h2>
+            <h2>¿Ya existe como sacerdote?</h2>
+            <p className="meta">El flujo normal es seleccionar un sacerdote existente y agregar su ordenación episcopal. Así se evita duplicar personas.</p>
             <div className="dashboard-grid dashboard-summary">
-              <button className={`metric-card metric-button ${mode === 'existing' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('existing')}><strong>Existente</strong><span>Seleccionar sacerdote registrado</span></button>
-              <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('new')}><strong>Nuevo</strong><span>Crear obispo desde cero</span></button>
+              <button className={`metric-card metric-button ${mode === 'existing' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('existing')}><strong>Sí</strong><span>Seleccionar sacerdote registrado</span></button>
+              <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => { setMode('new'); setSelectedClergyId('') }}><strong>No</strong><span>Registrar obispo externo</span></button>
             </div>
             {mode === 'existing' && (
               <select value={selectedClergyId} onChange={(event) => setSelectedClergyId(event.target.value)}>
                 <option value="">Selecciona sacerdote</option>
-                {clergyRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name} · {record.person_type}</option>)}
+                {priestRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}
               </select>
             )}
+            {mode === 'new' && <div className="empty-state"><strong>Obispo externo</strong><span>Usa esta opción solo si fue enviado desde otra jurisdicción y todavía no está registrada su historia sacerdotal.</span></div>}
           </section>
         )}
 
         {step === 1 && (
           <section>
             <p className="eyebrow">Paso 2</p>
-            <h2>{mode === 'existing' ? 'Sacerdote seleccionado' : 'Datos básicos'}</h2>
+            <h2>{mode === 'existing' ? 'Sacerdote seleccionado' : 'Datos básicos del obispo externo'}</h2>
             {mode === 'existing' ? <div className="empty-state"><strong>{selectedClergy?.display_name ?? 'No seleccionado'}</strong><span>Se actualizará la misma ficha, sin duplicarla.</span></div> : (
               <>
                 <input name="first_name" placeholder="Primer nombre" />
                 <input name="middle_name" placeholder="Segundo nombre" />
                 <input name="last_name" placeholder="Primer apellido" />
                 <input name="second_last_name" placeholder="Segundo apellido" />
-                <input name="display_name" placeholder="Nombre público" />
-                <input name="slug" placeholder="Slug opcional" />
+                <input name="display_name" placeholder="Nombre como aparecerá en la ficha" />
                 <label>Fecha de nacimiento<input name="birth_date" type="date" /></label>
                 <input name="birth_place" placeholder="Lugar de nacimiento" />
                 <textarea name="biography_public" placeholder="Biografía pública breve" />
@@ -224,11 +227,11 @@ export default function NuevoObispoPage() {
             <input name="religious_order" placeholder="Orden o congregación, si aplica" />
             <select name="incardination_entity_id" defaultValue=""><option value="">Incardinación</option>{entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name}</option>)}</select>
             <h3>Sucesión apostólica</h3>
-            <select name="principal_consecrator_person_id" defaultValue=""><option value="">Consagrante principal registrado</option>{clergyRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
+            <select name="principal_consecrator_person_id" defaultValue=""><option value="">Consagrante principal registrado</option>{bishopRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
             <input name="principal_consecrator_name" placeholder="Consagrante principal si no está registrado" />
-            <select name="co_consecrator_1_person_id" defaultValue=""><option value="">Co-consagrante 1 registrado</option>{clergyRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
+            <select name="co_consecrator_1_person_id" defaultValue=""><option value="">Co-consagrante 1 registrado</option>{bishopRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
             <input name="co_consecrator_1_name" placeholder="Co-consagrante 1 si no está registrado" />
-            <select name="co_consecrator_2_person_id" defaultValue=""><option value="">Co-consagrante 2 registrado</option>{clergyRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
+            <select name="co_consecrator_2_person_id" defaultValue=""><option value="">Co-consagrante 2 registrado</option>{bishopRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
             <input name="co_consecrator_2_name" placeholder="Co-consagrante 2 si no está registrado" />
             <textarea name="ordination_notes_public" placeholder="Notas públicas" />
           </section>
