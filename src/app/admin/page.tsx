@@ -69,10 +69,10 @@ const adminModules = [
     description: 'Asignar clero, agentes y responsables a cargos, comisiones, entidades y períodos.',
   },
   {
-    href: '/admin/configuracion/cargos',
-    type: 'Configuración',
-    title: 'Catálogo de cargos',
-    description: 'Configurar cargos base, ámbitos, categorías y organigramas.',
+    href: '/admin/cargos',
+    type: 'Crecimiento controlado',
+    title: 'Cargos y oficios',
+    description: 'Crear cargos oficiales, sugerir nuevos cargos y revisar solicitudes editoriales.',
   },
   {
     href: '/admin/referencias-canonicas/cargos',
