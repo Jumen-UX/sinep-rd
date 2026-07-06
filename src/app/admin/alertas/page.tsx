@@ -89,6 +89,17 @@ export default function AdminAlertasPage() {
 
       {error && <div className="error-box">{error}</div>}
 
+      <section className="card admin-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Otras alertas</p>
+            <h2>Revisión de jurisdicciones</h2>
+            <p className="meta">También puedes revisar diócesis, arquidiócesis u ordinariatos sin obispo titular activo.</p>
+          </div>
+        </div>
+        <Link className="button button-secondary" href="/admin/alertas/jurisdicciones">Ver jurisdicciones sin obispo titular</Link>
+      </section>
+
       <section className="dashboard-grid dashboard-summary">
         <button className={`metric-card metric-button ${filter === 'needs_action' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('needs_action')}>
           <strong>{needsAction.length}</strong><span>Requieren acción</span>
