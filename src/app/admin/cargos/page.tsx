@@ -38,7 +38,7 @@ const personTypes = [
 ]
 
 const categoryOptions = [
-  ['ecclesiastical', 'Eclesiástico'],
+  ['ecclesiastical', 'Eclesial'],
   ['pastoral', 'Pastoral'],
   ['administrative', 'Administrativo'],
 ]
@@ -55,6 +55,10 @@ function relationName(value: { name: string } | { name: string }[] | null) {
   if (!value) return '—'
   if (Array.isArray(value)) return value[0]?.name ?? '—'
   return value.name
+}
+
+function personTypeLabel(value: string) {
+  return personTypes.find(([key]) => key === value)?.[1] ?? value
 }
 
 function formatDate(value: string | null) {
@@ -315,11 +319,17 @@ export default function AdminCargosPage() {
             <tbody>
               {offices.map((office) => (
                 <tr key={office.id}>
-                  <td><strong>{office.display_name}</strong><small>{office.key}</small></td>
+                  <td>
+                    <div>
+                      <strong>{office.display_name}</strong>
+                      <br />
+                      <small className="meta">{office.key}</small>
+                    </div>
+                  </td>
                   <td>{relationName(office.office_categories)}</td>
                   <td>{relationName(office.office_scopes)}</td>
                   <td>{relationName(office.organization_charts)}</td>
-                  <td>{office.allowed_person_types?.join(', ')}</td>
+                  <td>{office.allowed_person_types?.map(personTypeLabel).join(', ')}</td>
                 </tr>
               ))}
             </tbody>
