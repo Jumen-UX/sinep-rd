@@ -193,16 +193,7 @@ export default function AdminAsignacionesPage() {
     const form = new FormData(event.currentTarget)
     const officeConfigurationId = String(form.get('office_configuration_id') ?? '')
     const personId = emptyToNull(form.get('person_id'))
-    const organizationChartId = emptyToNull(form.get('organization_chart_id'))
-    const organizationUnitId = emptyToNull(form.get('organization_unit_id'))
-    const ecclesiasticalEntityId = emptyToNull(form.get('ecclesiastical_entity_id'))
-    const pastoralEntityId = emptyToNull(form.get('pastoral_entity_id'))
-    const predecessorAssignmentId = emptyToNull(form.get('predecessor_assignment_id'))
-    const successorAssignmentId = emptyToNull(form.get('successor_assignment_id'))
-    const startDate = emptyToNull(form.get('start_date'))
-    const termStartDate = emptyToNull(form.get('term_start_date')) || startDate
-    const termEndDate = emptyToNull(form.get('term_end_date'))
-    const actualEndDate = emptyToNull(form.get('actual_end_date'))
+    const assignmentStatus = String(form.get('assignment_status') ?? 'active')
 
     if (!officeConfigurationId) {
       setError('Debes seleccionar un cargo configurado.')
@@ -210,61 +201,62 @@ export default function AdminAsignacionesPage() {
       return
     }
 
-    if (!personId && String(form.get('assignment_status') ?? '') !== 'vacant') {
+    if (!personId && assignmentStatus !== 'vacant') {
       setError('Debes seleccionar una persona, excepto cuando el estado sea Vacante.')
       setSaving(false)
       return
     }
 
-    const { data: saved, error: saveError } = await supabase
-      .from('position_assignments')
-      .insert({
-        person_id: personId,
-        office_configuration_id: officeConfigurationId,
-        organization_chart_id: organizationChartId,
-        organization_unit_id: organizationUnitId,
-        ecclesiastical_entity_id: ecclesiasticalEntityId,
-        pastoral_entity_id: pastoralEntityId,
-        title_override: emptyToNull(form.get('title_override')),
-        start_date: startDate,
-        term_start_date: termStartDate,
-        term_end_date: termEndDate,
-        actual_end_date: actualEndDate,
-        is_current: !actualEndDate,
-        assignment_status: String(form.get('assignment_status') ?? 'active'),
-        selection_method: String(form.get('selection_method') ?? 'appointment'),
-        predecessor_assignment_id: predecessorAssignmentId,
-        successor_assignment_id: successorAssignmentId,
-        notes_public: emptyToNull(form.get('notes_public')),
-        verification_status: 'pending_review',
-        visibility: 'public',
-        record_status: 'active',
+    const payload = {
+      person_id: personId,
+      office_configuration_id: officeConfigurationId,
+      organization_chart_id: emptyToNull(form.get('organization_chart_id')),
+      organization_unit_id: emptyToNull(form.get('organization_unit_id')),
+      ecclesiastical_entity_id: emptyToNull(form.get('ecclesiastical_entity_id')),
+      pastoral_entity_id: emptyToNull(form.get('pastoral_entity_id')),
+      title_override: emptyToNull(form.get('title_override')),
+      start_date: emptyToNull(form.get('start_date')),
+      term_start_date: emptyToNull(form.get('term_start_date')),
+      term_end_date: emptyToNull(form.get('term_end_date')),
+      actual_end_date: emptyToNull(form.get('actual_end_date')),
+      assignment_status: assignmentStatus,
+      selection_method: String(form.get('selection_method') ?? 'appointment'),
+      predecessor_assignment_id: emptyToNull(form.get('predecessor_assignment_id')),
+      successor_assignment_id: emptyToNull(form.get('successor_assignment_id')),
+      notes_public: emptyToNull(form.get('notes_public')),
+      notes_internal: emptyToNull(form.get('notes_internal')),
+      source_name: emptyToNull(form.get('source_name')),
+      source_url: emptyToNull(form.get('source_url')),
+      source_checked_at: emptyToNull(form.get('source_checked_at')),
+      close_previous_current: form.get('close_previous_current') === 'on',
+      verification_status: 'pending_review',
+      visibility: 'public',
+    }
+
+    try {
+      const response = await fetch('/api/admin/asignacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
-      .select('id')
-      .single()
+      const data = await response.json()
 
-    if (saveError) {
-      setError(saveError.message)
+      if (!response.ok) {
+        throw new Error(data.error ?? 'No se pudo guardar la asignación.')
+      }
+
+      setMessage('Asignación guardada correctamente en una transacción.')
+      event.currentTarget.reset()
+      setSelectedConfigId('')
+      setSelectedStartDate('')
+      setSelectedChartId('')
+      setSelectedEntityId('')
+      await loadData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar la asignación.')
+    } finally {
       setSaving(false)
-      return
     }
-
-    if (saved?.id && predecessorAssignmentId) {
-      await supabase.from('position_assignments').update({ successor_assignment_id: saved.id, replaced_by_assignment_id: saved.id }).eq('id', predecessorAssignmentId)
-    }
-
-    if (saved?.id && successorAssignmentId) {
-      await supabase.from('position_assignments').update({ predecessor_assignment_id: saved.id }).eq('id', successorAssignmentId)
-    }
-
-    setMessage('Asignación guardada correctamente.')
-    event.currentTarget.reset()
-    setSelectedConfigId('')
-    setSelectedStartDate('')
-    setSelectedChartId('')
-    setSelectedEntityId('')
-    await loadData()
-    setSaving(false)
   }
 
   const filteredUnits = selectedChartId
@@ -295,7 +287,7 @@ export default function AdminAsignacionesPage() {
           <p className="eyebrow">Administración</p>
           <h1>Asignaciones de cargos</h1>
           <p className="lead">
-            Asigna personas a cargos configurados dentro de un organigrama, entidad o unidad. Si seleccionas una parroquia, el sistema resuelve automáticamente su zona, vicaría y diócesis.
+            Asigna personas a cargos configurados dentro de un organigrama, entidad o unidad. El guardado es transaccional para evitar cargos parciales o sucesiones incompletas.
           </p>
         </div>
       </section>
@@ -391,7 +383,19 @@ export default function AdminAsignacionesPage() {
             {assignmentOptions.map((assignment) => <option key={assignment.id} value={assignment.id}>{assignment.label}</option>)}
           </select>
 
+          <label className="role-pill">
+            <input name="close_previous_current" type="checkbox" /> Cerrar asignaciones actuales equivalentes
+          </label>
+
+          <input name="source_name" placeholder="Fuente del nombramiento" />
+          <input name="source_url" placeholder="URL de fuente" />
+          <label>
+            Fecha de revisión de fuente
+            <input name="source_checked_at" type="date" />
+          </label>
+
           <textarea name="notes_public" placeholder="Notas públicas" />
+          <textarea name="notes_internal" placeholder="Notas internas" />
 
           <button className="button button-primary" disabled={saving}>
             {saving ? 'Guardando...' : 'Guardar asignación'}
