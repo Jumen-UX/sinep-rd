@@ -35,6 +35,11 @@ function personTypeLabel(value: string) {
   return 'Persona'
 }
 
+function getInitialPersonId() {
+  if (typeof window === 'undefined') return ''
+  return new URLSearchParams(window.location.search).get('person') ?? ''
+}
+
 export default function AdminFallecimientoPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -70,7 +75,12 @@ export default function AdminFallecimientoPage() {
       if (peopleError) {
         setError(peopleError.message)
       } else {
-        setPeople((data ?? []) as PersonOption[])
+        const rows = (data ?? []) as PersonOption[]
+        setPeople(rows)
+        const initialPersonId = getInitialPersonId()
+        if (initialPersonId && rows.some((person) => person.id === initialPersonId)) {
+          setSelectedPersonId(initialPersonId)
+        }
       }
       setLoading(false)
     }
