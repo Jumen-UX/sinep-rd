@@ -162,10 +162,10 @@ export default function HomePage() {
           <strong>{loading ? '—' : formatNumber(summary?.dioceses.total_catholics)}</strong>
           <span>Fieles católicos reportados</span>
         </div>
-        <Link className="metric-card metric-link" href="/diocesis?tipo=parish">
+        <div className="metric-card">
           <strong>{loading ? '—' : formatNumber(summary?.dioceses.loaded_parishes ?? summary?.dioceses.total_parishes)}</strong>
           <span>Parroquias cargadas</span>
-        </Link>
+        </div>
         <Link className="metric-card metric-link" href="/personas?tipo=priest">
           <strong>{loading ? '—' : summary?.people.priests ?? 0}</strong>
           <span>Sacerdotes registrados</span>
