@@ -5,66 +5,106 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type Entity = {
-  id: string
-  name: string
-  slug: string
-  entity_type_id: string | null
-}
+type SupabaseClient = ReturnType<typeof createClient>
 
-type PastoralEntity = {
+type Diocese = {
   id: string
   name: string
+  official_name: string | null
   slug: string
 }
 
-type Chart = {
+type EntityType = {
   id: string
   key: string
   name: string
 }
 
-type Unit = {
+type StructureKind = {
+  key: StructureKindKey
+  name: string
+  description: string | null
+}
+
+type StructureKindKey = 'territorial' | 'pastoral' | 'administrative' | 'organic'
+
+type StructureTemplate = {
   id: string
-  organization_chart_id: string
-  parent_unit_id: string | null
+  diocese_id: string
+  kind_key: StructureKindKey
   key: string
   name: string
-  status: string | null
+  description: string | null
+  is_primary: boolean
+  is_active: boolean
+  status: string
 }
 
-type EntityRelationship = {
+type StructureLevel = {
   id: string
-  parent_entity_id: string
-  child_entity_id: string
-  relationship_type: string | null
+  template_id: string
+  level_key: string
+  name: string
+  plural_name: string | null
+  description: string | null
+  level_order: number
+  parent_level_id: string | null
+  linked_entity_type_id: string | null
+  scope: string
+  is_entry_point: boolean
+  is_required: boolean
+  allows_multiple_entities: boolean
+  allows_new_nodes: boolean
+}
+
+type ChildLevelOption = {
+  level_id: string
+  level_key: string
+  level_name: string
+  plural_name: string | null
+  level_order: number
+  parent_level_id: string | null
+  edge_id: string | null
+  allows_multiple: boolean
+  is_required: boolean
+}
+
+type StructureTreeNode = {
+  node_id: string
+  template_id: string
+  level_id: string
+  level_key: string
+  level_name: string
+  parent_node_id: string | null
+  depth: number
+  path_ids: string[]
+  path_names: string[]
+  name: string
+  official_name: string | null
+  slug: string
+  code: string | null
+  linked_ecclesiastical_entity_id: string | null
+  linked_pastoral_entity_id: string | null
   start_date: string | null
+  end_date: string | null
   is_current: boolean
-  notes: string | null
+  status: string
+  visibility: string
+  has_children: boolean
 }
 
-type PastoralRelationship = {
-  id: string
-  parent_pastoral_entity_id: string
-  child_pastoral_entity_id: string
-  relationship_type: string | null
-  start_date: string | null
-  is_current: boolean
-  notes: string | null
+type RpcResult = {
+  success?: boolean
+  id?: string
+  message?: string
 }
 
-type TabKey = 'territorial' | 'pastoral' | 'administrative'
-
-const tabLabels: Record<TabKey, string> = {
-  territorial: 'Territorial',
-  pastoral: 'Pastoral',
-  administrative: 'Administrativa',
-}
-
-function formatDate(value: string | null) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat('es-DO', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
-}
+const fallbackKinds: StructureKind[] = [
+  { key: 'territorial', name: 'Territorial', description: 'Vicarías, zonas, parroquias, sectores y capillas.' },
+  { key: 'pastoral', name: 'Pastoral', description: 'Áreas pastorales, movimientos, comunidades y servicios.' },
+  { key: 'administrative', name: 'Administrativa', description: 'Curia, oficinas, departamentos y dependencias internas.' },
+  { key: 'organic', name: 'Orgánica', description: 'Organigramas, unidades y líneas de responsabilidad.' },
+]
 
 function emptyToNull(value: FormDataEntryValue | null) {
   const text = String(value ?? '').trim()
@@ -80,40 +120,56 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
+function formatDate(value: string | null) {
+  if (!value) return '—'
+  return new Intl.DateTimeFormat('es-DO', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function toBoolean(value: FormDataEntryValue | null) {
+  return value === 'on' || value === 'true'
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  return 'Ocurrió un error inesperado.'
+}
+
 export default function AdminEstructuraPage() {
   const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
+  const supabase = useMemo<SupabaseClient>(() => createClient(), [])
 
-  const [activeTab, setActiveTab] = useState<TabKey>('territorial')
-  const [entities, setEntities] = useState<Entity[]>([])
-  const [pastoralEntities, setPastoralEntities] = useState<PastoralEntity[]>([])
-  const [charts, setCharts] = useState<Chart[]>([])
-  const [units, setUnits] = useState<Unit[]>([])
-  const [entityRelationships, setEntityRelationships] = useState<EntityRelationship[]>([])
-  const [pastoralRelationships, setPastoralRelationships] = useState<PastoralRelationship[]>([])
-  const [loading, setLoading] = useState(true)
+  const [dioceses, setDioceses] = useState<Diocese[]>([])
+  const [entityTypes, setEntityTypes] = useState<EntityType[]>([])
+  const [structureKinds, setStructureKinds] = useState<StructureKind[]>(fallbackKinds)
+  const [activeKind, setActiveKind] = useState<StructureKindKey>('territorial')
+  const [selectedDioceseId, setSelectedDioceseId] = useState('')
+  const [selectedTemplateId, setSelectedTemplateId] = useState('')
+  const [selectedParentNodeId, setSelectedParentNodeId] = useState('')
+  const [templates, setTemplates] = useState<StructureTemplate[]>([])
+  const [levels, setLevels] = useState<StructureLevel[]>([])
+  const [treeNodes, setTreeNodes] = useState<StructureTreeNode[]>([])
+  const [childLevelOptions, setChildLevelOptions] = useState<ChildLevelOption[]>([])
+  const [loadingBase, setLoadingBase] = useState(true)
+  const [loadingStructure, setLoadingStructure] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [selectedChartId, setSelectedChartId] = useState('')
 
-  function entityName(id: string | null) {
-    if (!id) return '—'
-    return entities.find((item) => item.id === id)?.name ?? 'Entidad no encontrada'
-  }
+  const selectedDiocese = dioceses.find((diocese) => diocese.id === selectedDioceseId) ?? null
+  const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) ?? null
+  const selectedParentNode = treeNodes.find((node) => node.node_id === selectedParentNodeId) ?? null
+  const selectedParentLevelId = selectedParentNode?.level_id ?? null
+  const sortedLevels = [...levels].sort((a, b) => a.level_order - b.level_order)
+  const sortedNodes = [...treeNodes].sort((a, b) => a.path_names.join(' / ').localeCompare(b.path_names.join(' / '), 'es'))
 
-  function pastoralName(id: string | null) {
-    if (!id) return '—'
-    return pastoralEntities.find((item) => item.id === id)?.name ?? 'Pastoral no encontrada'
-  }
-
-  function unitName(id: string | null) {
-    if (!id) return '—'
-    return units.find((item) => item.id === id)?.name ?? 'Unidad no encontrada'
-  }
-
-  async function loadData() {
+  async function loadBaseData() {
     setError(null)
+    setLoadingBase(true)
 
     const { data: userData } = await supabase.auth.getUser()
     if (!userData.user) {
@@ -121,216 +177,302 @@ export default function AdminEstructuraPage() {
       return
     }
 
-    const [entityRes, pastoralRes, chartRes, unitRes, entityRelRes, pastoralRelRes] = await Promise.all([
-      supabase.from('ecclesiastical_entities').select('id,name,slug,entity_type_id').eq('status', 'active').order('name'),
-      supabase.from('pastoral_entities').select('id,name,slug').eq('status', 'active').order('name'),
-      supabase.from('organization_charts').select('id,key,name').eq('status', 'active').order('sort_order'),
-      supabase.from('organization_units').select('id,organization_chart_id,parent_unit_id,key,name,status').eq('status', 'active').order('name'),
-      supabase.from('entity_relationships').select('id,parent_entity_id,child_entity_id,relationship_type,start_date,is_current,notes').eq('status', 'active').order('created_at', { ascending: false }).limit(150),
-      supabase.from('pastoral_relationships').select('id,parent_pastoral_entity_id,child_pastoral_entity_id,relationship_type,start_date,is_current,notes').eq('status', 'active').order('created_at', { ascending: false }).limit(150),
+    const [dioceseRes, kindRes, entityTypeRes] = await Promise.all([
+      supabase
+        .from('ecclesiastical_entities')
+        .select('id,name,official_name,slug')
+        .eq('status', 'active')
+        .order('name'),
+      supabase
+        .from('structure_kinds')
+        .select('key,name,description')
+        .eq('status', 'active')
+        .order('sort_order'),
+      supabase
+        .from('entity_types')
+        .select('id,key,name')
+        .eq('status', 'active')
+        .order('default_level_order'),
     ])
 
-    const failed = [entityRes, pastoralRes, chartRes, unitRes, entityRelRes, pastoralRelRes].find((item) => item.error)
-    if (failed?.error) {
-      setError(failed.error.message)
-    } else {
-      setEntities((entityRes.data ?? []) as Entity[])
-      setPastoralEntities((pastoralRes.data ?? []) as PastoralEntity[])
-      setCharts((chartRes.data ?? []) as Chart[])
-      setUnits((unitRes.data ?? []) as Unit[])
-      setEntityRelationships((entityRelRes.data ?? []) as EntityRelationship[])
-      setPastoralRelationships((pastoralRelRes.data ?? []) as PastoralRelationship[])
-      if (!selectedChartId && chartRes.data?.[0]?.id) setSelectedChartId(chartRes.data[0].id)
+    if (dioceseRes.error) setError(dioceseRes.error.message)
+    if (kindRes.error) setError(kindRes.error.message)
+    if (entityTypeRes.error) setError(entityTypeRes.error.message)
+
+    const loadedDioceses = ((dioceseRes.data ?? []) as Diocese[]).filter((entity) =>
+      /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato/i.test(entity.name),
+    )
+
+    setDioceses(loadedDioceses)
+    setStructureKinds(((kindRes.data ?? []) as StructureKind[]).length > 0 ? (kindRes.data as StructureKind[]) : fallbackKinds)
+    setEntityTypes((entityTypeRes.data ?? []) as EntityType[])
+
+    if (!selectedDioceseId && loadedDioceses[0]) {
+      setSelectedDioceseId(loadedDioceses[0].id)
     }
 
-    setLoading(false)
+    setLoadingBase(false)
+  }
+
+  async function loadTemplates(dioceseId: string, kindKey: StructureKindKey) {
+    if (!dioceseId) return
+
+    setError(null)
+    setLoadingStructure(true)
+
+    const { data, error: templateError } = await supabase.rpc('get_structure_templates', {
+      p_diocese_id: dioceseId,
+      p_kind_key: kindKey,
+      p_active_only: false,
+    })
+
+    if (templateError) {
+      setError(templateError.message)
+      setTemplates([])
+      setSelectedTemplateId('')
+      setLoadingStructure(false)
+      return
+    }
+
+    const loadedTemplates = (data ?? []) as StructureTemplate[]
+    setTemplates(loadedTemplates)
+
+    const preferredTemplate =
+      loadedTemplates.find((template) => template.id === selectedTemplateId) ??
+      loadedTemplates.find((template) => template.is_primary && template.status === 'active') ??
+      loadedTemplates[0]
+
+    setSelectedTemplateId(preferredTemplate?.id ?? '')
+    setLoadingStructure(false)
+  }
+
+  async function loadTemplateDetails(templateId: string) {
+    if (!templateId) {
+      setLevels([])
+      setTreeNodes([])
+      return
+    }
+
+    setError(null)
+    setLoadingStructure(true)
+
+    const [levelRes, treeRes] = await Promise.all([
+      supabase
+        .from('structure_levels')
+        .select('id,template_id,level_key,name,plural_name,description,level_order,parent_level_id,linked_entity_type_id,scope,is_entry_point,is_required,allows_multiple_entities,allows_new_nodes')
+        .eq('template_id', templateId)
+        .order('level_order'),
+      supabase.rpc('get_structure_tree', {
+        p_template_id: templateId,
+        p_root_node_id: null,
+        p_as_of: todayIso(),
+        p_include_inactive: false,
+      }),
+    ])
+
+    if (levelRes.error) setError(levelRes.error.message)
+    if (treeRes.error) setError(treeRes.error.message)
+
+    setLevels((levelRes.data ?? []) as StructureLevel[])
+    setTreeNodes((treeRes.data ?? []) as StructureTreeNode[])
+    setLoadingStructure(false)
+  }
+
+  async function loadChildLevelOptions(templateId: string, parentLevelId: string | null) {
+    if (!templateId) {
+      setChildLevelOptions([])
+      return
+    }
+
+    const { data, error: levelOptionError } = await supabase.rpc('get_structure_child_level_options', {
+      p_template_id: templateId,
+      p_parent_level_id: parentLevelId,
+    })
+
+    if (levelOptionError) {
+      setError(levelOptionError.message)
+      setChildLevelOptions([])
+      return
+    }
+
+    setChildLevelOptions((data ?? []) as ChildLevelOption[])
   }
 
   useEffect(() => {
-    loadData()
+    loadBaseData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function saveTerritorial(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    if (selectedDioceseId) {
+      loadTemplates(selectedDioceseId, activeKind)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDioceseId, activeKind])
+
+  useEffect(() => {
+    loadTemplateDetails(selectedTemplateId)
+    setSelectedParentNodeId('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTemplateId])
+
+  useEffect(() => {
+    loadChildLevelOptions(selectedTemplateId, selectedParentLevelId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTemplateId, selectedParentLevelId])
+
+  async function saveTemplate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
     setError(null)
     setMessage(null)
 
     const form = new FormData(event.currentTarget)
-    const parentId = String(form.get('parent_entity_id') ?? '')
-    const childId = String(form.get('child_entity_id') ?? '')
-    const startDate = emptyToNull(form.get('start_date'))
+    const name = String(form.get('name') ?? '').trim()
 
-    if (!parentId || !childId) {
-      setError('Selecciona entidad superior y entidad dependiente.')
+    if (!selectedDioceseId) {
+      setError('Selecciona una diócesis o jurisdicción.')
       setSaving(false)
       return
     }
 
-    if (parentId === childId) {
-      setError('Una entidad no puede depender de sí misma.')
+    if (!name) {
+      setError('Escribe el nombre de la estructura.')
       setSaving(false)
       return
     }
 
-    await supabase
-      .from('entity_relationships')
-      .update({ is_current: false, end_date: startDate })
-      .eq('child_entity_id', childId)
-      .eq('is_current', true)
-
-    const { error: insertError } = await supabase.from('entity_relationships').insert({
-      parent_entity_id: parentId,
-      child_entity_id: childId,
-      relationship_type: String(form.get('relationship_type') ?? 'territorial'),
-      start_date: startDate,
-      is_current: true,
+    const payload = {
+      diocese_id: selectedDioceseId,
+      kind_key: activeKind,
+      key: emptyToNull(form.get('key')) ?? `${activeKind}-${slugify(name)}`,
+      name,
+      description: emptyToNull(form.get('description')),
+      is_primary: toBoolean(form.get('is_primary')),
+      is_active: true,
       status: 'active',
-      notes: emptyToNull(form.get('notes')),
-    })
+    }
 
-    if (insertError) {
-      setError(insertError.message)
+    const { data, error: saveError } = await supabase.rpc('admin_save_structure_template', { payload })
+
+    if (saveError) {
+      setError(saveError.message)
     } else {
-      setMessage('Dependencia territorial guardada correctamente.')
+      const result = data as RpcResult | null
+      setMessage(`Estructura guardada${result?.id ? `: ${result.id}` : ''}.`)
       event.currentTarget.reset()
-      await loadData()
+      await loadTemplates(selectedDioceseId, activeKind)
     }
 
     setSaving(false)
   }
 
-  async function savePastoral(event: FormEvent<HTMLFormElement>) {
+  async function saveLevel(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
     setError(null)
     setMessage(null)
 
     const form = new FormData(event.currentTarget)
-    const parentId = String(form.get('parent_pastoral_entity_id') ?? '')
-    const childId = String(form.get('child_pastoral_entity_id') ?? '')
-    const startDate = emptyToNull(form.get('start_date'))
+    const name = String(form.get('name') ?? '').trim()
+    const levelOrder = Number(form.get('level_order') ?? 0)
 
-    if (!parentId || !childId) {
-      setError('Selecciona pastoral superior y pastoral dependiente.')
+    if (!selectedTemplateId) {
+      setError('Selecciona una plantilla de estructura.')
       setSaving(false)
       return
     }
 
-    if (parentId === childId) {
-      setError('Una pastoral no puede depender de sí misma.')
+    if (!name || !Number.isFinite(levelOrder) || levelOrder <= 0) {
+      setError('Completa el nombre y el orden del nivel.')
       setSaving(false)
       return
     }
 
-    await supabase
-      .from('pastoral_relationships')
-      .update({ is_current: false, end_date: startDate })
-      .eq('child_pastoral_entity_id', childId)
-      .eq('is_current', true)
+    const payload = {
+      template_id: selectedTemplateId,
+      parent_level_id: emptyToNull(form.get('parent_level_id')),
+      linked_entity_type_id: emptyToNull(form.get('linked_entity_type_id')),
+      level_key: emptyToNull(form.get('level_key')) ?? slugify(name),
+      name,
+      plural_name: emptyToNull(form.get('plural_name')),
+      description: emptyToNull(form.get('description')),
+      level_order: levelOrder,
+      scope: String(form.get('scope') ?? 'mixed'),
+      is_entry_point: toBoolean(form.get('is_entry_point')),
+      is_required: toBoolean(form.get('is_required')),
+      allows_multiple_entities: true,
+      allows_new_nodes: true,
+    }
 
-    const { error: insertError } = await supabase.from('pastoral_relationships').insert({
-      parent_pastoral_entity_id: parentId,
-      child_pastoral_entity_id: childId,
-      relationship_type: String(form.get('relationship_type') ?? 'pastoral'),
-      start_date: startDate,
-      is_current: true,
+    const { data, error: saveError } = await supabase.rpc('admin_save_structure_level', { payload })
+
+    if (saveError) {
+      setError(saveError.message)
+    } else {
+      const result = data as RpcResult | null
+      setMessage(`Nivel guardado${result?.id ? `: ${result.id}` : ''}.`)
+      event.currentTarget.reset()
+      await loadTemplateDetails(selectedTemplateId)
+    }
+
+    setSaving(false)
+  }
+
+  async function saveNode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSaving(true)
+    setError(null)
+    setMessage(null)
+
+    const form = new FormData(event.currentTarget)
+    const name = String(form.get('name') ?? '').trim()
+    const levelId = String(form.get('level_id') ?? '')
+
+    if (!selectedTemplateId) {
+      setError('Selecciona una plantilla de estructura.')
+      setSaving(false)
+      return
+    }
+
+    if (!name || !levelId) {
+      setError('Selecciona el nivel y escribe el nombre del nodo.')
+      setSaving(false)
+      return
+    }
+
+    const payload = {
+      template_id: selectedTemplateId,
+      level_id: levelId,
+      parent_node_id: emptyToNull(form.get('parent_node_id')),
+      name,
+      official_name: emptyToNull(form.get('official_name')),
+      slug: emptyToNull(form.get('slug')) ?? slugify(name),
+      code: emptyToNull(form.get('code')),
+      description: emptyToNull(form.get('description')),
+      linked_ecclesiastical_entity_id: emptyToNull(form.get('linked_ecclesiastical_entity_id')),
+      start_date: emptyToNull(form.get('start_date')) ?? todayIso(),
       status: 'active',
-      notes: emptyToNull(form.get('notes')),
-    })
-
-    if (!insertError) {
-      await supabase.from('pastoral_entities').update({ parent_pastoral_entity_id: parentId }).eq('id', childId)
+      visibility: String(form.get('visibility') ?? 'public'),
     }
 
-    if (insertError) {
-      setError(insertError.message)
+    const { data, error: saveError } = await supabase.rpc('admin_save_structure_node', { payload })
+
+    if (saveError) {
+      setError(saveError.message)
     } else {
-      setMessage('Dependencia pastoral guardada correctamente.')
+      const result = data as RpcResult | null
+      setMessage(`Nodo guardado${result?.id ? `: ${result.id}` : ''}.`)
       event.currentTarget.reset()
-      await loadData()
+      setSelectedParentNodeId('')
+      await loadTemplateDetails(selectedTemplateId)
     }
 
     setSaving(false)
   }
 
-  async function saveAdministrative(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setSaving(true)
-    setError(null)
-    setMessage(null)
-
-    const form = new FormData(event.currentTarget)
-    const mode = String(form.get('admin_mode') ?? 'update')
-    const chartId = String(form.get('organization_chart_id') ?? '')
-    const parentUnitId = emptyToNull(form.get('parent_unit_id'))
-
-    if (!chartId) {
-      setError('Selecciona un organigrama.')
-      setSaving(false)
-      return
-    }
-
-    if (mode === 'create') {
-      const name = String(form.get('new_unit_name') ?? '').trim()
-      if (!name) {
-        setError('Escribe el nombre de la unidad nueva.')
-        setSaving(false)
-        return
-      }
-
-      const { error: insertError } = await supabase.from('organization_units').insert({
-        organization_chart_id: chartId,
-        parent_unit_id: parentUnitId,
-        name,
-        key: `${slugify(name)}-${Date.now().toString(36)}`,
-        description: emptyToNull(form.get('notes')),
-        sort_order: 100,
-        visibility: 'public',
-        status: 'active',
-      })
-
-      if (insertError) setError(insertError.message)
-      else {
-        setMessage('Unidad administrativa creada correctamente.')
-        event.currentTarget.reset()
-        await loadData()
-      }
-    } else {
-      const unitId = String(form.get('unit_id') ?? '')
-      if (!unitId) {
-        setError('Selecciona la unidad que quieres mover.')
-        setSaving(false)
-        return
-      }
-      if (unitId === parentUnitId) {
-        setError('Una unidad no puede depender de sí misma.')
-        setSaving(false)
-        return
-      }
-
-      const { error: updateError } = await supabase
-        .from('organization_units')
-        .update({ parent_unit_id: parentUnitId, organization_chart_id: chartId })
-        .eq('id', unitId)
-
-      if (updateError) setError(updateError.message)
-      else {
-        setMessage('Dependencia administrativa actualizada correctamente.')
-        event.currentTarget.reset()
-        await loadData()
-      }
-    }
-
-    setSaving(false)
-  }
-
-  const filteredUnits = selectedChartId
-    ? units.filter((unit) => unit.organization_chart_id === selectedChartId)
-    : units
-
-  if (loading) {
-    return <main className="container"><div className="empty-state">Cargando estructura...</div></main>
+  if (loadingBase) {
+    return <main className="container"><div className="empty-state">Cargando motor de estructuras...</div></main>
   }
 
   return (
@@ -341,10 +483,11 @@ export default function AdminEstructuraPage() {
 
       <section className="dashboard-hero card">
         <div>
-          <p className="eyebrow">Administración</p>
-          <h1>Estructura institucional</h1>
+          <p className="eyebrow">Fase 1 · Motor flexible</p>
+          <h1>Estructuras de la diócesis</h1>
           <p className="lead">
-            Administra por separado la estructura territorial, la estructura pastoral y la estructura administrativa. Así el sistema no confunde una vicaría territorial con una vicaría pastoral.
+            Define la jerarquía real de cada diócesis sin imponer un modelo fijo. Puedes crear niveles como vicaría,
+            zona pastoral, parroquia, sector, capilla u otros, y luego crear nodos debajo del nivel permitido.
           </p>
         </div>
       </section>
@@ -352,159 +495,225 @@ export default function AdminEstructuraPage() {
       {error && <div className="error-box">{error}</div>}
       {message && <div className="empty-state">{message}</div>}
 
+      <section className="card dashboard-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Contexto</p>
+            <h2>Selecciona jurisdicción y tipo de estructura</h2>
+            <p className="meta">Los formularios se adaptan a la configuración de la diócesis seleccionada.</p>
+          </div>
+        </div>
+
+        <form className="admin-form admin-config-form">
+          <label>
+            Diócesis o jurisdicción
+            <select value={selectedDioceseId} onChange={(event) => setSelectedDioceseId(event.target.value)}>
+              <option value="">Seleccionar</option>
+              {dioceses.map((diocese) => (
+                <option key={diocese.id} value={diocese.id}>{diocese.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Tipo de estructura
+            <select value={activeKind} onChange={(event) => setActiveKind(event.target.value as StructureKindKey)}>
+              {structureKinds.map((kind) => (
+                <option key={kind.key} value={kind.key}>{kind.name}</option>
+              ))}
+            </select>
+          </label>
+        </form>
+      </section>
+
       <div className="dashboard-grid dashboard-summary">
-        {(Object.keys(tabLabels) as TabKey[]).map((tab) => (
+        {structureKinds.map((kind) => (
           <button
-            className={`metric-card metric-button ${activeTab === tab ? 'active-filter' : ''}`}
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            className={`metric-card metric-button ${activeKind === kind.key ? 'active-filter' : ''}`}
+            key={kind.key}
+            onClick={() => setActiveKind(kind.key)}
             type="button"
           >
-            <strong>{tabLabels[tab]}</strong>
-            <span>{tab === 'territorial' ? 'Diócesis, vicarías territoriales, zonas y parroquias' : tab === 'pastoral' ? 'Vicaría de pastoral, áreas y equipos' : 'Curia, oficinas y departamentos'}</span>
+            <strong>{kind.name}</strong>
+            <span>{kind.description ?? 'Estructura configurable'}</span>
           </button>
         ))}
       </div>
 
-      {activeTab === 'territorial' && (
+      <section className="card dashboard-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Plantillas</p>
+            <h2>{selectedDiocese?.name ?? 'Selecciona una diócesis'}</h2>
+            <p className="meta">Una plantilla define los niveles permitidos para este tipo de estructura.</p>
+          </div>
+        </div>
+
+        {loadingStructure && <div className="empty-state">Actualizando estructura...</div>}
+
+        {templates.length > 0 && (
+          <div className="grid admin-modules">
+            {templates.map((template) => (
+              <button
+                className={`entity-card admin-module metric-button ${selectedTemplateId === template.id ? 'active-filter' : ''}`}
+                key={template.id}
+                onClick={() => setSelectedTemplateId(template.id)}
+                type="button"
+              >
+                <p className="entity-type">{template.kind_key}</p>
+                <h2>{template.name}</h2>
+                <p className="meta">{template.description ?? 'Sin descripción'}</p>
+                <span className="role-pill">{template.is_primary ? 'Principal' : 'Alterna'} · {template.status}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <form className="admin-form admin-config-form" onSubmit={saveTemplate}>
+          <input name="name" placeholder="Nombre de la estructura, ej. Estructura territorial 2026" />
+          <input name="key" placeholder="Clave opcional, ej. territorial-2026" />
+          <textarea name="description" placeholder="Descripción o fuente de la configuración" />
+          <label className="role-pill"><input name="is_primary" type="checkbox" /> Usar como estructura principal</label>
+          <button className="button button-primary" disabled={saving || !selectedDioceseId} type="submit">
+            {saving ? 'Guardando...' : 'Crear plantilla'}
+          </button>
+        </form>
+      </section>
+
+      {selectedTemplate && (
         <section className="card dashboard-section">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Estructura territorial</p>
-              <h2>Dependencias eclesiásticas territoriales</h2>
+              <p className="eyebrow">Niveles</p>
+              <h2>{selectedTemplate.name}</h2>
+              <p className="meta">Define qué niveles existen y qué nivel puede depender de cuál.</p>
             </div>
           </div>
-          <form className="admin-form admin-config-form" onSubmit={saveTerritorial}>
-            <select name="parent_entity_id" defaultValue="">
-              <option value="">Entidad superior</option>
-              {entities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}
-            </select>
-            <select name="child_entity_id" defaultValue="">
-              <option value="">Entidad dependiente</option>
-              {entities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}
-            </select>
-            <select name="relationship_type" defaultValue="territorial">
-              <option value="territorial">Territorial</option>
-              <option value="jurisdiction">Jurisdicción</option>
-              <option value="depends_on">Dependencia</option>
-              <option value="contains">Contiene</option>
-            </select>
-            <label>Fecha de inicio<input name="start_date" type="date" /></label>
-            <textarea name="notes" placeholder="Notas internas o públicas" />
-            <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar dependencia territorial'}</button>
-          </form>
 
           <div className="table-wrap">
             <table className="data-table dashboard-list-table">
-              <thead><tr><th>Superior</th><th>Dependiente</th><th>Relación</th><th>Inicio</th><th>Actual</th></tr></thead>
+              <thead>
+                <tr><th>Orden</th><th>Nivel</th><th>Depende de</th><th>Tipo vinculado</th><th>Entrada</th></tr>
+              </thead>
               <tbody>
-                {entityRelationships.map((rel) => (
-                  <tr key={rel.id}>
-                    <td>{entityName(rel.parent_entity_id)}</td>
-                    <td>{entityName(rel.child_entity_id)}</td>
-                    <td>{rel.relationship_type ?? 'territorial'}</td>
-                    <td>{formatDate(rel.start_date)}</td>
-                    <td>{rel.is_current ? 'Sí' : 'No'}</td>
+                {sortedLevels.map((level) => (
+                  <tr key={level.id}>
+                    <td>{level.level_order}</td>
+                    <td>{level.name}<br /><span className="meta">{level.level_key}</span></td>
+                    <td>{levels.find((item) => item.id === level.parent_level_id)?.name ?? 'Raíz'}</td>
+                    <td>{entityTypes.find((item) => item.id === level.linked_entity_type_id)?.name ?? 'Sin vínculo'}</td>
+                    <td>{level.is_entry_point ? 'Sí' : 'No'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </section>
-      )}
 
-      {activeTab === 'pastoral' && (
-        <section className="card dashboard-section">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Estructura pastoral</p>
-              <h2>Dependencias pastorales</h2>
-            </div>
-          </div>
-          <form className="admin-form admin-config-form" onSubmit={savePastoral}>
-            <select name="parent_pastoral_entity_id" defaultValue="">
-              <option value="">Pastoral superior</option>
-              {pastoralEntities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}
+          <form className="admin-form admin-config-form" onSubmit={saveLevel}>
+            <input name="name" placeholder="Nombre del nivel, ej. Sector" />
+            <input name="plural_name" placeholder="Plural opcional, ej. Sectores" />
+            <input name="level_key" placeholder="Clave opcional, ej. sector" />
+            <input name="level_order" min="1" placeholder="Orden jerárquico" type="number" />
+            <select name="parent_level_id" defaultValue="">
+              <option value="">Sin padre / nivel raíz</option>
+              {sortedLevels.map((level) => (
+                <option key={level.id} value={level.id}>{level.level_order}. {level.name}</option>
+              ))}
             </select>
-            <select name="child_pastoral_entity_id" defaultValue="">
-              <option value="">Pastoral dependiente</option>
-              {pastoralEntities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}
+            <select name="linked_entity_type_id" defaultValue="">
+              <option value="">Tipo de entidad vinculado opcional</option>
+              {entityTypes.map((type) => (
+                <option key={type.id} value={type.id}>{type.name}</option>
+              ))}
             </select>
-            <select name="relationship_type" defaultValue="pastoral">
+            <select name="scope" defaultValue="ecclesial">
+              <option value="ecclesial">Eclesial</option>
               <option value="pastoral">Pastoral</option>
-              <option value="commission">Comisión</option>
-              <option value="team">Equipo</option>
-              <option value="coordination">Coordinación</option>
+              <option value="administrative">Administrativa</option>
+              <option value="organic">Orgánica</option>
+              <option value="mixed">Mixta</option>
             </select>
-            <label>Fecha de inicio<input name="start_date" type="date" /></label>
-            <textarea name="notes" placeholder="Notas internas o públicas" />
-            <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar dependencia pastoral'}</button>
+            <textarea name="description" placeholder="Descripción del nivel" />
+            <label className="role-pill"><input name="is_entry_point" type="checkbox" /> Nivel de entrada</label>
+            <label className="role-pill"><input name="is_required" type="checkbox" /> Obligatorio</label>
+            <button className="button button-primary" disabled={saving} type="submit">
+              {saving ? 'Guardando...' : 'Guardar nivel'}
+            </button>
           </form>
-
-          <div className="table-wrap">
-            <table className="data-table dashboard-list-table">
-              <thead><tr><th>Superior</th><th>Dependiente</th><th>Relación</th><th>Inicio</th><th>Actual</th></tr></thead>
-              <tbody>
-                {pastoralRelationships.map((rel) => (
-                  <tr key={rel.id}>
-                    <td>{pastoralName(rel.parent_pastoral_entity_id)}</td>
-                    <td>{pastoralName(rel.child_pastoral_entity_id)}</td>
-                    <td>{rel.relationship_type ?? 'pastoral'}</td>
-                    <td>{formatDate(rel.start_date)}</td>
-                    <td>{rel.is_current ? 'Sí' : 'No'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </section>
       )}
 
-      {activeTab === 'administrative' && (
+      {selectedTemplate && (
         <section className="card dashboard-section">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Estructura administrativa</p>
-              <h2>Unidades, oficinas y departamentos</h2>
+              <p className="eyebrow">Nodos</p>
+              <h2>Jerarquía actual</h2>
+              <p className="meta">Crea vicarías, zonas, parroquias, sectores u otros nodos según el nivel permitido.</p>
             </div>
           </div>
-          <form className="admin-form admin-config-form" onSubmit={saveAdministrative}>
-            <select name="admin_mode" defaultValue="update">
-              <option value="update">Mover unidad existente</option>
-              <option value="create">Crear unidad nueva</option>
-            </select>
-            <select name="organization_chart_id" value={selectedChartId} onChange={(event) => setSelectedChartId(event.target.value)}>
-              <option value="">Organigrama</option>
-              {charts.map((chart) => <option key={chart.id} value={chart.id}>{chart.name}</option>)}
-            </select>
-            <select name="unit_id" defaultValue="">
-              <option value="">Unidad existente</option>
-              {filteredUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
-            </select>
-            <input name="new_unit_name" placeholder="Nombre de unidad nueva" />
-            <select name="parent_unit_id" defaultValue="">
-              <option value="">Sin superior / raíz</option>
-              {filteredUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
-            </select>
-            <textarea name="notes" placeholder="Descripción o notas" />
-            <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar estructura administrativa'}</button>
-          </form>
 
           <div className="table-wrap">
             <table className="data-table dashboard-list-table">
-              <thead><tr><th>Unidad</th><th>Depende de</th><th>Organigrama</th><th>Estado</th></tr></thead>
+              <thead>
+                <tr><th>Nodo</th><th>Nivel</th><th>Padre</th><th>Inicio</th><th>Estado</th></tr>
+              </thead>
               <tbody>
-                {filteredUnits.map((unit) => (
-                  <tr key={unit.id}>
-                    <td>{unit.name}</td>
-                    <td>{unitName(unit.parent_unit_id)}</td>
-                    <td>{charts.find((chart) => chart.id === unit.organization_chart_id)?.name ?? '—'}</td>
-                    <td>{unit.status ?? '—'}</td>
+                {sortedNodes.map((node) => (
+                  <tr key={node.node_id}>
+                    <td>{'— '.repeat(node.depth)}{node.name}<br /><span className="meta">{node.path_names.join(' / ')}</span></td>
+                    <td>{node.level_name}</td>
+                    <td>{treeNodes.find((item) => item.node_id === node.parent_node_id)?.name ?? 'Raíz'}</td>
+                    <td>{formatDate(node.start_date)}</td>
+                    <td>{node.status}</td>
                   </tr>
                 ))}
+                {sortedNodes.length === 0 && (
+                  <tr><td colSpan={5}>No hay nodos cargados para esta plantilla.</td></tr>
+                )}
               </tbody>
             </table>
           </div>
+
+          <form className="admin-form admin-config-form" onSubmit={saveNode}>
+            <select
+              name="parent_node_id"
+              value={selectedParentNodeId}
+              onChange={(event) => setSelectedParentNodeId(event.target.value)}
+            >
+              <option value="">Sin padre / raíz</option>
+              {sortedNodes.map((node) => (
+                <option key={node.node_id} value={node.node_id}>{'— '.repeat(node.depth)}{node.name} · {node.level_name}</option>
+              ))}
+            </select>
+            <select name="level_id" defaultValue="">
+              <option value="">Nivel permitido</option>
+              {childLevelOptions.map((option) => (
+                <option key={option.level_id} value={option.level_id}>{option.level_order}. {option.level_name}</option>
+              ))}
+            </select>
+            <input name="name" placeholder="Nombre del nodo, ej. Vicaría Norte" />
+            <input name="official_name" placeholder="Nombre oficial opcional" />
+            <input name="slug" placeholder="Slug opcional" />
+            <input name="code" placeholder="Código opcional" />
+            <select name="linked_ecclesiastical_entity_id" defaultValue="">
+              <option value="">Vincular a entidad existente opcional</option>
+              {dioceses.map((diocese) => (
+                <option key={diocese.id} value={diocese.id}>{diocese.name}</option>
+              ))}
+            </select>
+            <label>Fecha de inicio<input name="start_date" type="date" /></label>
+            <select name="visibility" defaultValue="public">
+              <option value="public">Público</option>
+              <option value="authenticated">Solo usuarios autenticados</option>
+              <option value="restricted">Restringido</option>
+              <option value="private">Privado</option>
+            </select>
+            <textarea name="description" placeholder="Descripción, fuente o notas" />
+            <button className="button button-primary" disabled={saving || childLevelOptions.length === 0} type="submit">
+              {saving ? 'Guardando...' : 'Crear nodo'}
+            </button>
+          </form>
         </section>
       )}
     </main>
