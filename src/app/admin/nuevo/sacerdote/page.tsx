@@ -41,6 +41,13 @@ type PriestPayload = {
   validation_type: string | null
   validation_value: string | null
   validation_country: string | null
+  primary_phone: string | null
+  secondary_phone: string | null
+  contact_email: string | null
+  father_name: string | null
+  mother_name: string | null
+  family_notes: string | null
+  biography_notes: string | null
   incardination_entity_id: string | null
   current_service_entity_id: string | null
   diaconal_ordination_date: string | null
@@ -54,6 +61,11 @@ type PriestPayload = {
   quick_start_date: string | null
   quick_notes_public: string | null
   not_identified_fields: string[]
+}
+
+type SaveResponse = {
+  slug?: string
+  internal_reference_code?: string
 }
 
 const DRAFT_KEY = 'sinep:nuevo-sacerdote:draft'
@@ -117,6 +129,7 @@ export default function NuevoSacerdotePage() {
   const [serviceId, setServiceId] = useState('')
   const [quickEntityId, setQuickEntityId] = useState('')
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
+  const [savedInternalCode, setSavedInternalCode] = useState<string | null>(null)
   const [draftValues, setDraftValues] = useState<DraftValues>({})
 
   const incardination = entities.find((item) => item.direct_entity_id === incardinationId)
@@ -256,6 +269,7 @@ export default function NuevoSacerdotePage() {
     setError(null)
     setMessage(null)
     setSavedSlug(null)
+    setSavedInternalCode(null)
 
     const form = new FormData(event.currentTarget)
     const firstName = String(form.get('first_name') ?? '').trim()
@@ -291,6 +305,13 @@ export default function NuevoSacerdotePage() {
         validation_type: emptyToNull(form.get('validation_type')),
         validation_value: emptyToNull(form.get('validation_value')),
         validation_country: emptyToNull(form.get('validation_country')),
+        primary_phone: emptyToNull(form.get('primary_phone')),
+        secondary_phone: emptyToNull(form.get('secondary_phone')),
+        contact_email: emptyToNull(form.get('contact_email')),
+        father_name: emptyToNull(form.get('father_name')),
+        mother_name: emptyToNull(form.get('mother_name')),
+        family_notes: emptyToNull(form.get('family_notes')),
+        biography_notes: emptyToNull(form.get('biography_notes')),
         incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
         current_service_entity_id: emptyToNull(form.get('current_service_entity_id')),
         diaconal_ordination_date: emptyToNull(form.get('diaconal_ordination_date')),
@@ -311,15 +332,16 @@ export default function NuevoSacerdotePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      const data = await response.json()
+      const data = await response.json() as SaveResponse
 
       if (!response.ok) {
-        throw new Error(data.error ?? 'No se pudo guardar el sacerdote.')
+        throw new Error((data as { error?: string }).error ?? 'No se pudo guardar el sacerdote.')
       }
 
       window.localStorage.removeItem(DRAFT_KEY)
       setDraftValues({})
       setSavedSlug(data.slug ?? payload.slug)
+      setSavedInternalCode(data.internal_reference_code ?? null)
       setMessage(quickOfficeId ? 'Sacerdote creado correctamente con su cargo actual.' : 'Sacerdote creado correctamente.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar el sacerdote.')
@@ -343,7 +365,13 @@ export default function NuevoSacerdotePage() {
       </section>
 
       {error && <div className="error-box">{error}</div>}
-      {message && <div className="empty-state">{message} {savedSlug && <Link href={`/personas/${savedSlug}`}>Ver ficha pública</Link>}</div>}
+      {message && (
+        <div className="empty-state">
+          <strong>{message}</strong>
+          {savedInternalCode && <span>Código interno: {savedInternalCode}</span>}
+          {savedSlug && <Link href={`/personas/${savedSlug}`}>Ver ficha pública</Link>}
+        </div>
+      )}
 
       <div className="dashboard-grid dashboard-summary">
         {steps.map((label, index) => (
@@ -357,12 +385,13 @@ export default function NuevoSacerdotePage() {
         <section hidden={step !== 0}>
           <p className="eyebrow">Paso 1 · Datos obligatorios</p>
           <h2>Identificación básica</h2>
-          <p className="meta">El nombre de la ficha se arma automáticamente con estos datos. El código interno SINEP se asigna solo al guardar y no aparece en la ficha pública.</p>
+          <p className="meta">El nombre de la ficha se arma automáticamente con estos datos. El código interno SINEP se asigna al guardar y solo se muestra en administración.</p>
           <input name="first_name" placeholder="Primer nombre" required defaultValue={fieldValue('first_name')} />
           <input name="middle_name" placeholder="Segundo nombre, si aplica" defaultValue={fieldValue('middle_name')} />
           <input name="last_name" placeholder="Primer apellido" required defaultValue={fieldValue('last_name')} />
           <input name="second_last_name" placeholder="Segundo apellido, si aplica" defaultValue={fieldValue('second_last_name')} />
           <div className="empty-state"><strong>Nombre que se mostrará</strong><span>{namePreview || 'Se formará automáticamente al escribir el nombre y apellido.'}</span></div>
+
           <h2>Validación interna</h2>
           <p className="meta">Opcional, pero recomendado para evitar duplicados. Este dato es privado y no aparece en la ficha pública.</p>
           <select name="validation_type" defaultValue={fieldValue('validation_type')}>
@@ -373,6 +402,13 @@ export default function NuevoSacerdotePage() {
           </select>
           <input name="validation_value" placeholder="Número del documento para validación interna" defaultValue={fieldValue('validation_value')} />
           <input name="validation_country" placeholder="País del documento, ej. República Dominicana" defaultValue={fieldValue('validation_country', 'República Dominicana')} />
+
+          <h2>Contactos internos</h2>
+          <p className="meta">Datos privados para comunicación y verificación. No aparecen en la ficha pública.</p>
+          <input name="primary_phone" placeholder="Teléfono principal" defaultValue={fieldValue('primary_phone')} />
+          <input name="secondary_phone" placeholder="Teléfono alterno" defaultValue={fieldValue('secondary_phone')} />
+          <input name="contact_email" type="email" placeholder="Correo de contacto" defaultValue={fieldValue('contact_email')} />
+
           <h2>Foto de la ficha</h2>
           <p className="meta">Opcional. Formatos permitidos: JPG, PNG o WEBP. Máximo 5 MB. La foto no se guarda como borrador; selecciónala antes de guardar.</p>
           <input name="photo_file" type="file" accept="image/jpeg,image/png,image/webp" />
@@ -388,7 +424,13 @@ export default function NuevoSacerdotePage() {
           </select>
           <label>Fecha de nacimiento<input name="birth_date" type="date" defaultValue={fieldValue('birth_date')} /></label>
           <input name="birth_place" placeholder="Lugar de nacimiento" defaultValue={fieldValue('birth_place')} />
-          <textarea name="biography_public" placeholder="Biografía breve para mostrar en la ficha" defaultValue={fieldValue('biography_public')} />
+          <h2>Datos familiares para preparar biografía</h2>
+          <p className="meta">Estos datos quedan internos. Pueden servir para redactar la biografía, pero no se publican automáticamente.</p>
+          <input name="father_name" placeholder="Nombre del padre" defaultValue={fieldValue('father_name')} />
+          <input name="mother_name" placeholder="Nombre de la madre" defaultValue={fieldValue('mother_name')} />
+          <textarea name="family_notes" placeholder="Notas familiares relevantes para la biografía" defaultValue={fieldValue('family_notes')} />
+          <textarea name="biography_notes" placeholder="Apuntes internos para preparar la biografía" defaultValue={fieldValue('biography_notes')} />
+          <textarea name="biography_public" placeholder="Biografía breve para mostrar en la ficha pública" defaultValue={fieldValue('biography_public')} />
         </section>
 
         <section hidden={step !== 2}>
@@ -457,7 +499,7 @@ export default function NuevoSacerdotePage() {
         <section hidden={step !== 6}>
           <p className="eyebrow">Paso 7 · Revisión</p>
           <h2>Guardar sacerdote</h2>
-          <p className="lead">Se creará la ficha pública, el perfil clerical, el registro privado de validación y, si elegiste un cargo actual, también la asignación.</p>
+          <p className="lead">Se creará la ficha pública, el perfil clerical, el registro privado de validación, los contactos internos, los datos familiares de apoyo y, si elegiste un cargo actual, también la asignación.</p>
           <p className="meta">Después de guardar correctamente, el borrador se elimina automáticamente de este navegador.</p>
         </section>
 
