@@ -312,25 +312,24 @@ export default function AdminCargosPage() {
           <span className="meta">{offices.length} cargos</span>
         </div>
 
-        <div className="table-wrap">
-          <table className="data-table dashboard-list-table">
+        <div className={styles.tableWrap}>
+          <table className={styles.officeTable}>
             <thead>
               <tr><th>Cargo</th><th>Categoría</th><th>Ámbito</th><th>Organigrama</th><th>Personas permitidas</th></tr>
             </thead>
             <tbody>
               {offices.map((office) => (
                 <tr key={office.id}>
-                  <td>
+                  <td data-label="Cargo">
                     <div>
                       <strong>{office.display_name}</strong>
-                      <br />
                       <small className="meta">{office.key}</small>
                     </div>
                   </td>
-                  <td>{relationName(office.office_categories)}</td>
-                  <td>{relationName(office.office_scopes)}</td>
-                  <td>{relationName(office.organization_charts)}</td>
-                  <td>{office.allowed_person_types?.map(personTypeLabel).join(', ')}</td>
+                  <td data-label="Categoría">{relationName(office.office_categories)}</td>
+                  <td data-label="Ámbito">{relationName(office.office_scopes)}</td>
+                  <td data-label="Organigrama">{relationName(office.organization_charts)}</td>
+                  <td data-label="Personas permitidas">{office.allowed_person_types?.map(personTypeLabel).join(', ')}</td>
                 </tr>
               ))}
             </tbody>
