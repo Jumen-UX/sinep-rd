@@ -64,6 +64,12 @@ const moduleGroups: ModuleGroup[] = [
     description: 'Acciones frecuentes para revisar cambios, completar fichas y mantener datos actualizados.',
     modules: [
       {
+        href: '/admin/alertas',
+        type: 'Alertas',
+        title: 'Parroquias sin responsable',
+        description: 'Ver parroquias sin párroco ni administrador parroquial activo y asignar responsable.',
+      },
+      {
         href: '/admin/solicitudes',
         type: 'Revisión',
         title: 'Solicitudes pendientes',
@@ -260,7 +266,7 @@ export default function AdminPage() {
       )}
 
       {moduleGroups.map((group) => (
-        <section className="card admin-section" key={group.eyebrow}>
+        <section className="card admin-section" key={group.title}>
           <div className="section-heading">
             <div>
               <p className="eyebrow">{group.eyebrow}</p>
@@ -270,28 +276,16 @@ export default function AdminPage() {
           </div>
           <div className="grid admin-modules">
             {group.modules.map((module) => (
-              <Link className="entity-card admin-module" href={module.href} key={module.href}>
+              <article className="entity-card admin-module" key={module.href}>
                 <p className="entity-type">{module.type}</p>
                 <h2>{module.title}</h2>
                 <p className="meta">{module.description}</p>
-              </Link>
+                <Link className="button button-primary" href={module.href}>Abrir</Link>
+              </article>
             ))}
           </div>
         </section>
       ))}
-
-      <section className="card admin-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Directorios públicos</p>
-            <h2>Consulta rápida</h2>
-          </div>
-        </div>
-        <div className="grid admin-modules">
-          <Link className="entity-card admin-module" href="/diocesis"><p className="entity-type">Directorio</p><h2>Diócesis</h2><p className="meta">Ver jurisdicciones y fichas públicas.</p></Link>
-          <Link className="entity-card admin-module" href="/personas"><p className="entity-type">Directorio</p><h2>Clero y agentes</h2><p className="meta">Ver obispos, sacerdotes, diáconos, religiosos y laicos registrados.</p></Link>
-        </div>
-      </section>
     </main>
   )
 }
