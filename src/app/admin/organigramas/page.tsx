@@ -24,7 +24,12 @@ type Unit = {
   status: string
 }
 
-type NamedRelation = { display_name?: string | null; name?: string | null } | NamedRelation[] | null
+type NamedRecord = {
+  display_name?: string | null
+  name?: string | null
+}
+
+type NamedRelation = NamedRecord | NamedRecord[] | null
 
 type Assignment = {
   id: string
@@ -39,8 +44,8 @@ type Assignment = {
 
 function relationName(value: NamedRelation) {
   if (!value) return null
-  if (Array.isArray(value)) return value[0]?.display_name ?? value[0]?.name ?? null
-  return value.display_name ?? value.name ?? null
+  const record = Array.isArray(value) ? value[0] : value
+  return record?.display_name ?? record?.name ?? null
 }
 
 function visibilityLabel(value: string) {
