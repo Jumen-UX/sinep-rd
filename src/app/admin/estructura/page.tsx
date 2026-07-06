@@ -20,13 +20,13 @@ type EntityType = {
   name: string
 }
 
+type StructureKindKey = 'territorial' | 'pastoral' | 'administrative' | 'organic'
+
 type StructureKind = {
   key: StructureKindKey
   name: string
   description: string | null
 }
-
-type StructureKindKey = 'territorial' | 'pastoral' | 'administrative' | 'organic'
 
 type StructureTemplate = {
   id: string
@@ -131,12 +131,6 @@ function todayIso() {
 
 function toBoolean(value: FormDataEntryValue | null) {
   return value === 'on' || value === 'true'
-}
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message
-  if (typeof error === 'string') return error
-  return 'Ocurrió un error inesperado.'
 }
 
 export default function AdminEstructuraPage() {
@@ -504,7 +498,7 @@ export default function AdminEstructuraPage() {
           </div>
         </div>
 
-        <form className="admin-form admin-config-form">
+        <form className="admin-form admin-config-form" onSubmit={(event) => event.preventDefault()}>
           <label>
             Diócesis o jurisdicción
             <select value={selectedDioceseId} onChange={(event) => setSelectedDioceseId(event.target.value)}>
