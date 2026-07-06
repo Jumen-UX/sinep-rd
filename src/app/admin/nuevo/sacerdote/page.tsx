@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { maskInternalCode } from '@/lib/privacy/mask'
 
 type EntityPath = {
   direct_entity_id: string
@@ -368,7 +369,7 @@ export default function NuevoSacerdotePage() {
       {message && (
         <div className="empty-state">
           <strong>{message}</strong>
-          {savedInternalCode && <span>Código interno: {savedInternalCode}</span>}
+          {savedInternalCode && <span>Código interno: {maskInternalCode(savedInternalCode)}</span>}
           {savedSlug && <Link href={`/personas/${savedSlug}`}>Ver ficha pública</Link>}
         </div>
       )}
@@ -385,7 +386,7 @@ export default function NuevoSacerdotePage() {
         <section hidden={step !== 0}>
           <p className="eyebrow">Paso 1 · Datos obligatorios</p>
           <h2>Identificación básica</h2>
-          <p className="meta">El nombre de la ficha se arma automáticamente con estos datos. El código interno SINEP se asigna al guardar y solo se muestra en administración.</p>
+          <p className="meta">El nombre de la ficha se arma automáticamente con estos datos. El código interno SINEP se asigna al guardar y se muestra oculto por seguridad.</p>
           <input name="first_name" placeholder="Primer nombre" required defaultValue={fieldValue('first_name')} />
           <input name="middle_name" placeholder="Segundo nombre, si aplica" defaultValue={fieldValue('middle_name')} />
           <input name="last_name" placeholder="Primer apellido" required defaultValue={fieldValue('last_name')} />
@@ -393,7 +394,7 @@ export default function NuevoSacerdotePage() {
           <div className="empty-state"><strong>Nombre que se mostrará</strong><span>{namePreview || 'Se formará automáticamente al escribir el nombre y apellido.'}</span></div>
 
           <h2>Validación interna</h2>
-          <p className="meta">Opcional, pero recomendado para evitar duplicados. Este dato es privado y no aparece en la ficha pública.</p>
+          <p className="meta">Opcional, pero recomendado para evitar duplicados. Este dato es privado y cuando se consulte se mostrará oculto.</p>
           <select name="validation_type" defaultValue={fieldValue('validation_type')}>
             <option value="">Sin documento por ahora</option>
             <option value="cedula">Cédula</option>
@@ -404,7 +405,7 @@ export default function NuevoSacerdotePage() {
           <input name="validation_country" placeholder="País del documento, ej. República Dominicana" defaultValue={fieldValue('validation_country', 'República Dominicana')} />
 
           <h2>Contactos internos</h2>
-          <p className="meta">Datos privados para comunicación y verificación. No aparecen en la ficha pública.</p>
+          <p className="meta">Datos privados para comunicación y verificación. No aparecen en la ficha pública y se mostrarán ocultos en consultas.</p>
           <input name="primary_phone" placeholder="Teléfono principal" defaultValue={fieldValue('primary_phone')} />
           <input name="secondary_phone" placeholder="Teléfono alterno" defaultValue={fieldValue('secondary_phone')} />
           <input name="contact_email" type="email" placeholder="Correo de contacto" defaultValue={fieldValue('contact_email')} />
