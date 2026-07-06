@@ -63,6 +63,12 @@ const adminModules = [
     description: 'Administrar estructuras territorial, pastoral y administrativa por separado.',
   },
   {
+    href: '/admin/organigramas',
+    type: 'Vista institucional',
+    title: 'Organigramas visuales',
+    description: 'Ver organigramas, unidades y responsables actuales, incluyendo alertas de unidades sin responsable.',
+  },
+  {
     href: '/admin/asignaciones',
     type: 'Cargos',
     title: 'Asignaciones de cargos',
