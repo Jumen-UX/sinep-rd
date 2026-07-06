@@ -87,6 +87,7 @@ export default function NuevoSacerdotePage() {
   const [officeConfigs, setOfficeConfigs] = useState<OfficeConfig[]>([])
   const [deacons, setDeacons] = useState<DeaconOption[]>([])
   const [mode, setMode] = useState<'existing-deacon' | 'new-priest'>('existing-deacon')
+  const [priestType, setPriestType] = useState<'diocesan' | 'religious'>('diocesan')
   const [selectedDeaconId, setSelectedDeaconId] = useState('')
   const [incardinationId, setIncardinationId] = useState('')
   const [serviceId, setServiceId] = useState('')
@@ -184,6 +185,7 @@ export default function NuevoSacerdotePage() {
         const parsed = JSON.parse(saved) as DraftValues
         setDraftValues(parsed)
         setMode(parsed.registration_mode === 'new-priest' ? 'new-priest' : 'existing-deacon')
+        setPriestType(parsed.priest_type === 'religious' ? 'religious' : 'diocesan')
         setSelectedDeaconId(typeof parsed.existing_deacon_person_id === 'string' ? parsed.existing_deacon_person_id : '')
         setIncardinationId(typeof parsed.incardination_entity_id === 'string' ? parsed.incardination_entity_id : '')
         setServiceId(typeof parsed.current_service_entity_id === 'string' ? parsed.current_service_entity_id : '')
@@ -239,6 +241,14 @@ export default function NuevoSacerdotePage() {
       const photoFile = form.get('photo_file') instanceof File ? form.get('photo_file') as File : null
       const uploadedPhoto = photoFile ? await uploadPhoto(photoFile, slug) : { photo_url: null, photo_path: null }
       const quickOfficeId = emptyToNull(form.get('quick_office_configuration_id'))
+      const formPriestType = emptyToNull(form.get('priest_type')) ?? priestType
+      const religiousInstituteName = emptyToNull(form.get('religious_institute_name'))
+
+      if (formPriestType === 'religious' && !religiousInstituteName) {
+        setError('Indica la congregación, instituto u orden del sacerdote religioso.')
+        setSaving(false)
+        return
+      }
 
       const payload = {
         existing_deacon_person_id: existingDeaconId || null,
@@ -265,11 +275,14 @@ export default function NuevoSacerdotePage() {
         mother_name: emptyToNull(form.get('mother_name')),
         family_notes: emptyToNull(form.get('family_notes')),
         biography_notes: emptyToNull(form.get('biography_notes')),
+        priest_type: formPriestType,
+        religious_institute_name: religiousInstituteName,
+        religious_order: religiousInstituteName,
+        religious_province_name: emptyToNull(form.get('religious_province_name')),
         incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
         current_service_entity_id: emptyToNull(form.get('current_service_entity_id')),
         diaconal_ordination_date: emptyToNull(form.get('diaconal_ordination_date')),
         priestly_ordination_date: emptyToNull(form.get('priestly_ordination_date')),
-        religious_order: emptyToNull(form.get('religious_order')),
         canonical_status: emptyToNull(form.get('canonical_status')),
         clergy_notes: emptyToNull(form.get('clergy_notes')),
         quick_office_configuration_id: quickOfficeId,
@@ -402,10 +415,23 @@ export default function NuevoSacerdotePage() {
 
         <section hidden={step !== 3}>
           <p className="eyebrow">Paso 4 · Datos clericales</p>
+          <h2>Tipo de sacerdote</h2>
+          <p className="meta">El sacerdote diocesano pertenece a una diócesis. El sacerdote religioso pertenece a una congregación, instituto u orden, aunque sirva en una parroquia diocesana.</p>
+          <label className="role-pill"><input checked={priestType === 'diocesan'} name="priest_type" onChange={() => { setPriestType('diocesan'); setDraftField('priest_type', 'diocesan') }} type="radio" value="diocesan" /> Sacerdote diocesano</label>
+          <label className="role-pill"><input checked={priestType === 'religious'} name="priest_type" onChange={() => { setPriestType('religious'); setDraftField('priest_type', 'religious') }} type="radio" value="religious" /> Sacerdote religioso</label>
+
+          {priestType === 'religious' && (
+            <div className="card compact-section">
+              <h3>Datos de vida religiosa</h3>
+              <p className="meta">Uso interno y pastoral. No cambia el hecho de que pueda servir como párroco o vicario en una diócesis.</p>
+              <input name="religious_institute_name" placeholder="Congregación, instituto u orden" defaultValue={fieldValue('religious_institute_name', fieldValue('religious_order'))} />
+              <input name="religious_province_name" placeholder="Provincia religiosa, si aplica" defaultValue={fieldValue('religious_province_name')} />
+            </div>
+          )}
+
           <h2>Ordenación y estado</h2>
           <label>Ordenación diaconal<input name="diaconal_ordination_date" type="date" defaultValue={fieldValue('diaconal_ordination_date')} /></label>
           <label>Ordenación sacerdotal<input name="priestly_ordination_date" type="date" required defaultValue={fieldValue('priestly_ordination_date')} /></label>
-          <input name="religious_order" placeholder="Orden o congregación, si aplica" defaultValue={fieldValue('religious_order')} />
           <select name="canonical_status" defaultValue={fieldValue('canonical_status', 'active')}>
             <option value="active">Activo</option>
             <option value="retired">Retirado</option>
@@ -423,7 +449,7 @@ export default function NuevoSacerdotePage() {
             <option value="">Sin incardinación por ahora</option>
             {entities.filter((entity) => ['archdiocese', 'diocese', 'military_ordinariate'].includes(entity.direct_entity_type_key ?? '')).map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name}</option>)}
           </select>
-          <div className="empty-state"><strong>Incardinación</strong><span>{incardination?.hierarchy_path ?? incardination?.direct_entity_name ?? 'Selecciona la diócesis o jurisdicción si aplica.'}</span></div>
+          <div className="empty-state"><strong>Incardinación</strong><span>{incardination?.hierarchy_path ?? incardination?.direct_entity_name ?? (priestType === 'religious' ? 'En religiosos puede dejarse vacío si la incardinación no aplica igual que en un sacerdote diocesano.' : 'Selecciona la diócesis o jurisdicción si aplica.')}</span></div>
           <EntityHierarchyPicker
             allowCreateParish
             entities={entities}
