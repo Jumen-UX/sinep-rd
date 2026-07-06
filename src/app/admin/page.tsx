@@ -37,60 +37,102 @@ type Summary = {
   pending_documents: number
 }
 
+type ModuleCard = {
+  href: string
+  type: string
+  title: string
+  description: string
+}
+
+type ModuleGroup = {
+  eyebrow: string
+  title: string
+  description: string
+  modules: ModuleCard[]
+}
+
 function getRoleInfo(role: RoleRow): RoleInfo | null {
   if (!role.roles) return null
   if (Array.isArray(role.roles)) return role.roles[0] ?? null
   return role.roles
 }
 
-const adminModules = [
+const moduleGroups: ModuleGroup[] = [
   {
-    href: '/admin/nuevo',
-    type: 'Asistente',
-    title: 'Agregar nueva ficha',
-    description: 'Crear nuevo obispo, sacerdote, jurisdicción, parroquia o capilla mediante pasos guiados.',
+    eyebrow: 'Trabajo diario',
+    title: 'Revisar y mantener información',
+    description: 'Acciones frecuentes para revisar cambios, completar fichas y mantener datos actualizados.',
+    modules: [
+      {
+        href: '/admin/solicitudes',
+        type: 'Revisión',
+        title: 'Solicitudes pendientes',
+        description: 'Aprobar, rechazar o pedir cambios antes de publicar información.',
+      },
+      {
+        href: '/admin/estado-fichas',
+        type: 'Calidad de datos',
+        title: 'Fichas incompletas',
+        description: 'Ver qué datos faltan y marcar información como no identificada o no aplicable.',
+      },
+      {
+        href: '/admin/asignaciones',
+        type: 'Nombramientos',
+        title: 'Asignar cargos',
+        description: 'Registrar nombramientos, traslados, vacantes y cargos internos o públicos.',
+      },
+    ],
   },
   {
-    href: '/admin/estado-fichas',
-    type: 'Calidad de datos',
-    title: 'Estado de fichas',
-    description: 'Ver avance, datos faltantes y marcar campos como no identificados o no aplicables.',
+    eyebrow: 'Agregar o completar datos',
+    title: 'Crear fichas y registros',
+    description: 'Entradas guiadas para agregar nuevas personas, jurisdicciones, parroquias o capillas.',
+    modules: [
+      {
+        href: '/admin/nuevo',
+        type: 'Asistente',
+        title: 'Agregar nueva ficha',
+        description: 'Crear obispo, sacerdote, jurisdicción, parroquia o capilla mediante pasos guiados.',
+      },
+      {
+        href: '/admin/asignaciones',
+        type: 'Cargo o vacante',
+        title: 'Agregar nombramiento',
+        description: 'Asignar una persona a un cargo o registrar una vacante cuando no hay responsable.',
+      },
+    ],
   },
   {
-    href: '/admin/estructura',
-    type: 'Estructura',
-    title: 'Estructura institucional',
-    description: 'Administrar estructuras territorial, pastoral y administrativa por separado.',
+    eyebrow: 'Estructura institucional',
+    title: 'Ver y organizar la institución',
+    description: 'Herramientas para entender y mantener la estructura territorial, pastoral y administrativa.',
+    modules: [
+      {
+        href: '/admin/estructura',
+        type: 'Estructura',
+        title: 'Estructura institucional',
+        description: 'Organizar diócesis, parroquias, zonas, vicarías y áreas pastorales.',
+      },
+      {
+        href: '/admin/organigramas',
+        type: 'Organigrama',
+        title: 'Organigramas visuales',
+        description: 'Ver unidades, responsables actuales y áreas sin responsable asignado.',
+      },
+    ],
   },
   {
-    href: '/admin/organigramas',
-    type: 'Vista institucional',
-    title: 'Organigramas visuales',
-    description: 'Ver organigramas, unidades y responsables actuales, incluyendo alertas de unidades sin responsable.',
-  },
-  {
-    href: '/admin/asignaciones',
-    type: 'Cargos',
-    title: 'Asignaciones de cargos',
-    description: 'Asignar clero, agentes y responsables a cargos, comisiones, entidades y períodos.',
-  },
-  {
-    href: '/admin/cargos',
-    type: 'Crecimiento controlado',
-    title: 'Cargos y oficios',
-    description: 'Crear cargos oficiales, sugerir nuevos cargos y revisar solicitudes editoriales.',
-  },
-  {
-    href: '/admin/referencias-canonicas/cargos',
-    type: 'Derecho canónico',
-    title: 'Referencias de cargos',
-    description: 'Consultar definiciones de oficios y cargos según el Código de Derecho Canónico.',
-  },
-  {
-    href: '/admin/solicitudes',
-    type: 'Aprobaciones',
-    title: 'Solicitudes de cambio',
-    description: 'Revisar solicitudes pendientes y flujo editorial.',
+    eyebrow: 'Configuración',
+    title: 'Ajustes del sistema',
+    description: 'Todo lo que define cómo funciona el sistema queda agrupado en un solo lugar.',
+    modules: [
+      {
+        href: '/admin/configuracion',
+        type: 'Ajustes',
+        title: 'Centro de configuración',
+        description: 'Configurar cargos, organigramas, estructura y reglas editoriales desde un solo lugar.',
+      },
+    ],
   },
 ]
 
@@ -193,7 +235,7 @@ export default function AdminPage() {
         <div>
           <p className="eyebrow">Panel administrativo</p>
           <h1>Bienvenido, {profile?.full_name ?? profile?.email}</h1>
-          <p className="lead">Gestiona SINEP RD desde botones y asistentes guiados.</p>
+          <p className="lead">Elige qué necesitas hacer. Cada sección agrupa acciones relacionadas para evitar pantallas técnicas dispersas.</p>
         </div>
         <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
       </div>
@@ -217,23 +259,26 @@ export default function AdminPage() {
         </section>
       )}
 
-      <section className="card admin-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Acciones principales</p>
-            <h2>Administración guiada</h2>
+      {moduleGroups.map((group) => (
+        <section className="card admin-section" key={group.eyebrow}>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">{group.eyebrow}</p>
+              <h2>{group.title}</h2>
+              <p className="meta">{group.description}</p>
+            </div>
           </div>
-        </div>
-        <div className="grid admin-modules">
-          {adminModules.map((module) => (
-            <Link className="entity-card admin-module" href={module.href} key={module.href}>
-              <p className="entity-type">{module.type}</p>
-              <h2>{module.title}</h2>
-              <p className="meta">{module.description}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+          <div className="grid admin-modules">
+            {group.modules.map((module) => (
+              <Link className="entity-card admin-module" href={module.href} key={module.href}>
+                <p className="entity-type">{module.type}</p>
+                <h2>{module.title}</h2>
+                <p className="meta">{module.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ))}
 
       <section className="card admin-section">
         <div className="section-heading">
