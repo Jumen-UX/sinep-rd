@@ -3,14 +3,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import EntityHierarchyPicker, { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
 import { createClient } from '@/lib/supabase/client'
-
-type EntityPath = {
-  direct_entity_id: string
-  direct_entity_name: string
-  direct_entity_type_name: string | null
-  hierarchy_path: string | null
-}
 
 type OfficeConfig = {
   id: string
@@ -89,7 +83,7 @@ export default function NuevoSacerdotePage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [entities, setEntities] = useState<EntityPath[]>([])
+  const [entities, setEntities] = useState<EntityHierarchyEntity[]>([])
   const [officeConfigs, setOfficeConfigs] = useState<OfficeConfig[]>([])
   const [deacons, setDeacons] = useState<DeaconOption[]>([])
   const [mode, setMode] = useState<'existing-deacon' | 'new-priest'>('existing-deacon')
@@ -103,8 +97,6 @@ export default function NuevoSacerdotePage() {
 
   const selectedDeacon = deacons.find((item) => item.id === selectedDeaconId)
   const incardination = entities.find((item) => item.direct_entity_id === incardinationId)
-  const service = entities.find((item) => item.direct_entity_id === serviceId)
-  const quickEntity = entities.find((item) => item.direct_entity_id === quickEntityId)
   const notIdentifiedFields = Array.isArray(draftValues.not_identified_fields) ? draftValues.not_identified_fields : []
   const namePreview = selectedDeacon?.display_name || buildDisplayNameFromParts([
     fieldValue('first_name'),
@@ -155,8 +147,8 @@ export default function NuevoSacerdotePage() {
 
     const [entityRes, officeRes, deaconRes] = await Promise.all([
       supabase
-        .from('public_entity_hierarchy_paths')
-        .select('direct_entity_id,direct_entity_name,direct_entity_type_name,hierarchy_path')
+        .from('admin_entity_hierarchy_selector')
+        .select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_key,direct_entity_type_name,jurisdiction_id,jurisdiction_name,jurisdiction_slug,vicariate_id,vicariate_name,vicariate_slug,zone_id,zone_name,zone_slug,parish_id,parish_name,parish_slug,hierarchy_path')
         .order('direct_entity_name'),
       supabase
         .from('office_configurations')
@@ -174,7 +166,7 @@ export default function NuevoSacerdotePage() {
     if (entityRes.error || officeRes.error || deaconRes.error) {
       setError(entityRes.error?.message ?? officeRes.error?.message ?? deaconRes.error?.message ?? 'No se pudieron cargar los catálogos.')
     } else {
-      setEntities((entityRes.data ?? []) as EntityPath[])
+      setEntities((entityRes.data ?? []) as EntityHierarchyEntity[])
       setOfficeConfigs((officeRes.data ?? []) as OfficeConfig[])
       setDeacons((deaconRes.data ?? []) as DeaconOption[])
     }
@@ -429,14 +421,19 @@ export default function NuevoSacerdotePage() {
           <h2>Incardinación y servicio actual</h2>
           <select name="incardination_entity_id" value={incardinationId} onChange={(event) => { setIncardinationId(event.target.value); setDraftField('incardination_entity_id', event.target.value) }}>
             <option value="">Sin incardinación por ahora</option>
-            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
+            {entities.filter((entity) => ['archdiocese', 'diocese', 'military_ordinariate'].includes(entity.direct_entity_type_key ?? '')).map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name}</option>)}
           </select>
-          <div className="empty-state"><strong>Incardinación</strong><span>{incardination?.hierarchy_path ?? incardination?.direct_entity_name ?? 'Selecciona la diócesis, jurisdicción o entidad si aplica.'}</span></div>
-          <select name="current_service_entity_id" value={serviceId} onChange={(event) => { const value = event.target.value; setServiceId(value); setQuickEntityId(value); setDraftField('current_service_entity_id', value); setDraftField('quick_entity_id', value) }}>
-            <option value="">Sin servicio actual por ahora</option>
-            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-          </select>
-          <div className="empty-state"><strong>Servicio actual</strong><span>{service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona parroquia, capilla, curia o entidad donde sirve.'}</span></div>
+          <div className="empty-state"><strong>Incardinación</strong><span>{incardination?.hierarchy_path ?? incardination?.direct_entity_name ?? 'Selecciona la diócesis o jurisdicción si aplica.'}</span></div>
+          <EntityHierarchyPicker
+            allowCreateParish
+            entities={entities}
+            help="Primero selecciona la jurisdicción. Si esa estructura tiene vicarías o zonas, aparecerán como filtros antes de elegir la parroquia. Si la parroquia no existe, puedes crearla aquí mismo."
+            label="Servicio actual"
+            name="current_service_entity_id"
+            value={serviceId}
+            onChange={(value) => { setServiceId(value); setQuickEntityId(value); setDraftField('current_service_entity_id', value); setDraftField('quick_entity_id', value) }}
+            onCreated={loadData}
+          />
         </section>
 
         <section hidden={step !== 5}>
@@ -448,11 +445,16 @@ export default function NuevoSacerdotePage() {
             {officeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
           </select>
           <input name="quick_title_override" placeholder="Título para mostrar" defaultValue={fieldValue('quick_title_override')} />
-          <select name="quick_entity_id" value={quickEntityId} onChange={(event) => { setQuickEntityId(event.target.value); setDraftField('quick_entity_id', event.target.value) }}>
-            <option value="">Usar entidad del servicio actual o dejar sin entidad</option>
-            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-          </select>
-          <div className="empty-state"><strong>Entidad del cargo</strong><span>{quickEntity?.hierarchy_path ?? quickEntity?.direct_entity_name ?? service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona la entidad del cargo.'}</span></div>
+          <EntityHierarchyPicker
+            allowCreateParish
+            entities={entities}
+            help="Selecciona la parroquia o crea una nueva dentro de la jurisdicción, vicaría o zona correspondiente. Esto evita confundir parroquias con nombres parecidos."
+            label="Entidad del cargo"
+            name="quick_entity_id"
+            value={quickEntityId}
+            onChange={(value) => { setQuickEntityId(value); setDraftField('quick_entity_id', value) }}
+            onCreated={loadData}
+          />
           <label>Fecha de inicio del cargo<input name="quick_start_date" type="date" defaultValue={fieldValue('quick_start_date')} /></label>
           <textarea name="quick_notes_public" placeholder="Notas visibles del cargo" defaultValue={fieldValue('quick_notes_public')} />
         </section>
