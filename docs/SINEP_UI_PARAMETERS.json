@@ -1,0 +1,66 @@
+{
+  "name": "SINEP RD Interface Parameters",
+  "version": "1.0.0",
+  "language": "es-DO",
+  "principles": [
+    "interfaz clara y no tecnica",
+    "lenguaje pastoral y administrativo simple",
+    "una accion principal por pantalla",
+    "datos criticos primero",
+    "datos privados claramente identificados",
+    "historial preservado, no eliminacion de registros"
+  ],
+  "layout": {
+    "maxContentWidth": "1120px",
+    "pagePaddingDesktop": "32px",
+    "pagePaddingMobile": "16px",
+    "cardRadius": "24px",
+    "cardShadow": "soft",
+    "formColumns": "single_for_sensitive_forms"
+  },
+  "wizard": {
+    "stepStyle": "compact_cards",
+    "maxVisibleFieldsPerSection": 6,
+    "showStepNumber": true,
+    "showStepName": true,
+    "avoidLargeStepCards": true,
+    "mobileBehavior": "horizontal_scroll_or_single_column"
+  },
+  "selectionControls": {
+    "preferred": "selectable_option_cards",
+    "avoid": ["large_unlabeled_radios", "technical_switches"],
+    "selectedState": "institutional_border_and_soft_background"
+  },
+  "buttons": {
+    "primary": "main_action_only",
+    "secondary": "navigation_or_safe_action",
+    "danger": "only_for_sensitive_confirmation",
+    "maxStylesPerSection": 2
+  },
+  "labels": {
+    "avoidTechnicalValues": true,
+    "hide": ["id", "slug", "key", "enum", "table_name", "record_id"],
+    "preferredExamples": [
+      "Nombre",
+      "Fecha de nacimiento",
+      "Lugar de nacimiento",
+      "Datos privados de validacion",
+      "Cargo actual",
+      "Guardar ficha"
+    ]
+  },
+  "privacy": {
+    "privateHint": "Uso interno. No se publica.",
+    "sensitiveScreensNeedConsequenceText": true,
+    "maskPublicSensitiveData": true
+  },
+  "reviewChecklist": [
+    "La pantalla explica que hacer",
+    "No muestra valores tecnicos",
+    "Los datos privados estan identificados",
+    "La accion principal es evidente",
+    "El formulario no se ve saturado",
+    "Funciona en escritorio y movil",
+    "Los errores son humanos"
+  ]
+}
