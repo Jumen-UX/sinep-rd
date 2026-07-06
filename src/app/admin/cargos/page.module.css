@@ -63,9 +63,92 @@
   margin-top: 4px;
 }
 
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.officeTable {
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+
+.officeTable th,
+.officeTable td {
+  border-bottom: 1px solid var(--border);
+  padding: 13px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.officeTable th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.officeTable td {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.officeTable strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
 @media (max-width: 900px) {
   .officeForm {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .tableWrap {
+    overflow-x: visible;
+  }
+
+  .officeTable {
+    min-width: 0;
+  }
+
+  .officeTable thead {
+    display: none;
+  }
+
+  .officeTable,
+  .officeTable tbody,
+  .officeTable tr,
+  .officeTable td {
+    display: block;
+    width: 100%;
+  }
+
+  .officeTable tr {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+  }
+
+  .officeTable td {
+    border-bottom: 0;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr);
+    padding: 7px 0;
+  }
+
+  .officeTable td::before {
+    color: var(--muted);
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 }
 
@@ -77,5 +160,9 @@
 
   .officeOptions {
     grid-column: 1 / -1;
+  }
+
+  .officeTable td {
+    grid-template-columns: 1fr;
   }
 }
