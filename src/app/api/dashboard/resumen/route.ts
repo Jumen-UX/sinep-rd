@@ -11,6 +11,10 @@ type DioceseSummaryRow = {
   parishes_count: number | null
 }
 
+type ParishRow = {
+  id: string
+}
+
 type PersonSummaryRow = {
   id: string
   person_type: string | null
@@ -34,10 +38,16 @@ function isMilitary(item: DioceseSummaryRow) {
 
 export async function GET() {
   try {
-    const [dioceses, people] = await Promise.all([
+    const [dioceses, parishes, people] = await Promise.all([
       fetchSupabaseJson<DioceseSummaryRow[]>('public_dioceses', {
         select: 'id,name,entity_type_name,ecclesiastical_province_name,population_total,catholics_total,parishes_count',
         order: 'name.asc',
+      }),
+      fetchSupabaseJson<ParishRow[]>('public_ecclesiastical_entities', {
+        select: 'id',
+        entity_type_key: 'eq.parish',
+        status: 'eq.active',
+        visibility: 'eq.public',
       }),
       fetchSupabaseJson<PersonSummaryRow[]>('persons', {
         select: 'id,person_type,status,death_date',
@@ -58,6 +68,7 @@ export async function GET() {
       .sort((a, b) => a.name.localeCompare(b.name, 'es'))
 
     const countPeople = (type: string) => people.filter((item) => item.person_type === type).length
+    const reportedParishes = dioceses.reduce((sum, item) => sum + (item.parishes_count ?? 0), 0)
 
     return NextResponse.json({
       dioceses: {
@@ -68,7 +79,9 @@ export async function GET() {
         provinces,
         total_catholics: dioceses.reduce((sum, item) => sum + (item.catholics_total ?? 0), 0),
         total_population: dioceses.reduce((sum, item) => sum + (item.population_total ?? 0), 0),
-        total_parishes: dioceses.reduce((sum, item) => sum + (item.parishes_count ?? 0), 0),
+        total_parishes: parishes.length,
+        loaded_parishes: parishes.length,
+        reported_parishes: reportedParishes,
       },
       people: {
         total: people.length,
