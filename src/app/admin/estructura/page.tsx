@@ -99,12 +99,21 @@ type RpcResult = {
   message?: string
 }
 
+type BuilderMode = 'level' | 'node'
+
 const fallbackKinds: StructureKind[] = [
-  { key: 'territorial', name: 'Territorial', description: 'Vicarías, zonas, parroquias, sectores y capillas.' },
-  { key: 'pastoral', name: 'Pastoral', description: 'Áreas pastorales, movimientos, comunidades y servicios.' },
-  { key: 'administrative', name: 'Administrativa', description: 'Curia, oficinas, departamentos y dependencias internas.' },
-  { key: 'organic', name: 'Orgánica', description: 'Organigramas, unidades y líneas de responsabilidad.' },
+  { key: 'territorial', name: 'Territorial', description: 'Cómo se divide la diócesis: vicarías, zonas, parroquias, sectores y capillas.' },
+  { key: 'pastoral', name: 'Pastoral', description: 'Cómo se organiza la acción pastoral: áreas, movimientos, comunidades y servicios.' },
+  { key: 'administrative', name: 'Administrativa', description: 'Cómo se ordena la curia: oficinas, departamentos y dependencias internas.' },
+  { key: 'organic', name: 'Orgánica', description: 'Cómo se visualizan organigramas, unidades y líneas de responsabilidad.' },
 ]
+
+const kindHelp: Record<StructureKindKey, string> = {
+  territorial: 'Úsala para la estructura que ayuda a ubicar parroquias, capillas, sectores y zonas dentro de una diócesis.',
+  pastoral: 'Úsala para áreas, comisiones, movimientos, comunidades o equipos que no son necesariamente territoriales.',
+  administrative: 'Úsala para la curia, oficinas, departamentos y otras dependencias internas.',
+  organic: 'Úsala cuando quieras representar organigramas, responsables y líneas de coordinación.',
+}
 
 function emptyToNull(value: FormDataEntryValue | null) {
   const text = String(value ?? '').trim()
@@ -133,6 +142,13 @@ function toBoolean(value: FormDataEntryValue | null) {
   return value === 'on' || value === 'true'
 }
 
+function buildDefaultModelName(kind: StructureKindKey) {
+  if (kind === 'territorial') return 'Modelo territorial principal'
+  if (kind === 'pastoral') return 'Modelo pastoral principal'
+  if (kind === 'administrative') return 'Modelo administrativo principal'
+  return 'Modelo orgánico principal'
+}
+
 export default function AdminEstructuraPage() {
   const router = useRouter()
   const supabase = useMemo<SupabaseClient>(() => createClient(), [])
@@ -142,6 +158,7 @@ export default function AdminEstructuraPage() {
   const [entityTypes, setEntityTypes] = useState<EntityType[]>([])
   const [structureKinds, setStructureKinds] = useState<StructureKind[]>(fallbackKinds)
   const [activeKind, setActiveKind] = useState<StructureKindKey>('territorial')
+  const [builderMode, setBuilderMode] = useState<BuilderMode>('node')
   const [selectedDioceseId, setSelectedDioceseId] = useState('')
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [selectedParentNodeId, setSelectedParentNodeId] = useState('')
@@ -161,6 +178,9 @@ export default function AdminEstructuraPage() {
   const selectedParentLevelId = selectedParentNode?.level_id ?? null
   const sortedLevels = [...levels].sort((a, b) => a.level_order - b.level_order)
   const sortedNodes = [...treeNodes].sort((a, b) => a.path_names.join(' / ').localeCompare(b.path_names.join(' / '), 'es'))
+  const rootNodes = sortedNodes.filter((node) => !node.parent_node_id)
+  const nextLevelOrder = sortedLevels.length > 0 ? Math.max(...sortedLevels.map((level) => level.level_order)) + 1 : 1
+  const selectedKind = structureKinds.find((kind) => kind.key === activeKind) ?? fallbackKinds.find((kind) => kind.key === activeKind)
 
   async function loadBaseData() {
     setError(null)
@@ -247,6 +267,7 @@ export default function AdminEstructuraPage() {
     if (!templateId) {
       setLevels([])
       setTreeNodes([])
+      setChildLevelOptions([])
       return
     }
 
@@ -334,7 +355,7 @@ export default function AdminEstructuraPage() {
     }
 
     if (!name) {
-      setError('Escribe el nombre de la estructura.')
+      setError('Escribe el nombre del modelo.')
       setSaving(false)
       return
     }
@@ -345,7 +366,7 @@ export default function AdminEstructuraPage() {
       key: emptyToNull(form.get('key')) ?? `${activeKind}-${slugify(name)}`,
       name,
       description: emptyToNull(form.get('description')),
-      is_primary: toBoolean(form.get('is_primary')),
+      is_primary: true,
       is_active: true,
       status: 'active',
     }
@@ -356,9 +377,10 @@ export default function AdminEstructuraPage() {
       setError(saveError.message)
     } else {
       const result = data as RpcResult | null
-      setMessage(`Estructura guardada${result?.id ? `: ${result.id}` : ''}.`)
+      setMessage('Modelo de organización guardado correctamente.')
       event.currentTarget.reset()
       await loadTemplates(selectedDioceseId, activeKind)
+      if (result?.id) setSelectedTemplateId(result.id)
     }
 
     setSaving(false)
@@ -375,7 +397,7 @@ export default function AdminEstructuraPage() {
     const levelOrder = Number(form.get('level_order') ?? 0)
 
     if (!selectedTemplateId) {
-      setError('Selecciona una plantilla de estructura.')
+      setError('Primero crea o selecciona un modelo de organización.')
       setSaving(false)
       return
     }
@@ -427,13 +449,13 @@ export default function AdminEstructuraPage() {
     const levelId = String(form.get('level_id') ?? '')
 
     if (!selectedTemplateId) {
-      setError('Selecciona una plantilla de estructura.')
+      setError('Primero crea o selecciona un modelo de organización.')
       setSaving(false)
       return
     }
 
     if (!name || !levelId) {
-      setError('Selecciona el nivel y escribe el nombre del nodo.')
+      setError('Selecciona el nivel y escribe el nombre de la unidad.')
       setSaving(false)
       return
     }
@@ -459,7 +481,7 @@ export default function AdminEstructuraPage() {
       setError(saveError.message)
     } else {
       const result = data as RpcResult | null
-      setMessage(`Nodo guardado${result?.id ? `: ${result.id}` : ''}.`)
+      setMessage(`Unidad agregada${result?.id ? `: ${result.id}` : ''}.`)
       event.currentTarget.reset()
       setSelectedParentNodeId('')
       await loadTemplateDetails(selectedTemplateId)
@@ -469,248 +491,266 @@ export default function AdminEstructuraPage() {
   }
 
   if (loadingBase) {
-    return <main className="container"><div className="empty-state">Cargando motor de estructuras...</div></main>
+    return <main className="container"><div className="empty-state">Cargando configuración de estructuras...</div></main>
   }
 
   return (
-    <main className="container dashboard-page admin-config-page">
+    <main className="container dashboard-page admin-config-page structure-config-page">
       <div className="detail-backlink">
         <Link href="/admin">← Volver al panel administrativo</Link>
       </div>
 
-      <section className="dashboard-hero card">
+      <section className="dashboard-hero card structure-hero">
         <div>
-          <p className="eyebrow">Fase 1 · Motor flexible</p>
-          <h1>Estructuras de la diócesis</h1>
+          <p className="eyebrow">Configuración por diócesis</p>
+          <h1>Cómo se organiza esta diócesis</h1>
           <p className="lead">
-            Define la jerarquía real de cada diócesis sin imponer un modelo fijo. Puedes crear niveles como vicaría,
-            zona pastoral, parroquia, sector, capilla u otros, y luego crear nodos debajo del nivel permitido.
+            Aquí no se impone una jerarquía fija. Primero eliges la diócesis, luego defines qué tipo de organización usa
+            y finalmente construyes su mapa real: vicarías, zonas, parroquias, sectores, capillas u otros niveles.
           </p>
+        </div>
+        <div className="structure-hero-panel">
+          <strong>{selectedDiocese?.name ?? 'Sin diócesis seleccionada'}</strong>
+          <span>{selectedKind?.name ?? 'Estructura'} · {selectedTemplate?.name ?? 'sin modelo activo'}</span>
+          <small>{sortedLevels.length} niveles · {sortedNodes.length} unidades cargadas</small>
         </div>
       </section>
 
       {error && <div className="error-box">{error}</div>}
       {message && <div className="empty-state">{message}</div>}
 
-      <section className="card dashboard-section">
-        <div className="section-heading">
+      <section className="structure-steps">
+        <article className="card structure-step-card">
+          <span className="structure-step-number">1</span>
           <div>
-            <p className="eyebrow">Contexto</p>
-            <h2>Selecciona jurisdicción y tipo de estructura</h2>
-            <p className="meta">Los formularios se adaptan a la configuración de la diócesis seleccionada.</p>
-          </div>
-        </div>
-
-        <form className="admin-form admin-config-form" onSubmit={(event) => event.preventDefault()}>
-          <label>
-            Diócesis o jurisdicción
+            <p className="eyebrow">Diócesis</p>
+            <h2>Elige dónde vas a trabajar</h2>
+            <p className="meta">Cada diócesis puede tener su propio modelo, sin afectar a las demás.</p>
             <select value={selectedDioceseId} onChange={(event) => setSelectedDioceseId(event.target.value)}>
-              <option value="">Seleccionar</option>
+              <option value="">Seleccionar diócesis</option>
               {dioceses.map((diocese) => (
                 <option key={diocese.id} value={diocese.id}>{diocese.name}</option>
               ))}
             </select>
-          </label>
+          </div>
+        </article>
 
-          <label>
-            Tipo de estructura
-            <select value={activeKind} onChange={(event) => setActiveKind(event.target.value as StructureKindKey)}>
-              {structureKinds.map((kind) => (
-                <option key={kind.key} value={kind.key}>{kind.name}</option>
-              ))}
-            </select>
-          </label>
-        </form>
-      </section>
-
-      <div className="dashboard-grid dashboard-summary">
-        {structureKinds.map((kind) => (
-          <button
-            className={`metric-card metric-button ${activeKind === kind.key ? 'active-filter' : ''}`}
-            key={kind.key}
-            onClick={() => setActiveKind(kind.key)}
-            type="button"
-          >
-            <strong>{kind.name}</strong>
-            <span>{kind.description ?? 'Estructura configurable'}</span>
-          </button>
-        ))}
-      </div>
-
-      <section className="card dashboard-section">
-        <div className="section-heading">
+        <article className="card structure-step-card">
+          <span className="structure-step-number">2</span>
           <div>
-            <p className="eyebrow">Plantillas</p>
-            <h2>{selectedDiocese?.name ?? 'Selecciona una diócesis'}</h2>
-            <p className="meta">Una plantilla define los niveles permitidos para este tipo de estructura.</p>
+            <p className="eyebrow">Tipo de organización</p>
+            <h2>Qué quieres configurar</h2>
+            <p className="meta">{kindHelp[activeKind]}</p>
+            <div className="structure-kind-grid">
+              {structureKinds.map((kind) => (
+                <button
+                  className={`quick-link-card structure-kind-card ${activeKind === kind.key ? 'active-filter' : ''}`}
+                  key={kind.key}
+                  onClick={() => setActiveKind(kind.key)}
+                  type="button"
+                >
+                  <strong>{kind.name}</strong>
+                  <span>{kind.description ?? 'Modelo configurable'}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </article>
 
-        {loadingStructure && <div className="empty-state">Actualizando estructura...</div>}
-
-        {templates.length > 0 && (
-          <div className="grid admin-modules">
-            {templates.map((template) => (
-              <button
-                className={`entity-card admin-module metric-button ${selectedTemplateId === template.id ? 'active-filter' : ''}`}
-                key={template.id}
-                onClick={() => setSelectedTemplateId(template.id)}
-                type="button"
-              >
-                <p className="entity-type">{template.kind_key}</p>
-                <h2>{template.name}</h2>
-                <p className="meta">{template.description ?? 'Sin descripción'}</p>
-                <span className="role-pill">{template.is_primary ? 'Principal' : 'Alterna'} · {template.status}</span>
+        <article className="card structure-step-card">
+          <span className="structure-step-number">3</span>
+          <div>
+            <p className="eyebrow">Modelo activo</p>
+            <h2>Selecciona o crea el modelo</h2>
+            <p className="meta">El modelo define qué niveles se permiten y cómo se enlazan.</p>
+            {templates.length > 0 ? (
+              <select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>{template.name}{template.is_primary ? ' · principal' : ''}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="meta">No hay modelo para esta combinación. Crea uno debajo.</p>
+            )}
+            <form className="structure-inline-form" onSubmit={saveTemplate}>
+              <input name="name" placeholder={buildDefaultModelName(activeKind)} />
+              <input name="key" placeholder="Clave opcional" />
+              <button className="button button-primary" disabled={saving || !selectedDioceseId} type="submit">
+                {saving ? 'Guardando...' : 'Crear modelo'}
               </button>
-            ))}
+            </form>
           </div>
-        )}
-
-        <form className="admin-form admin-config-form" onSubmit={saveTemplate}>
-          <input name="name" placeholder="Nombre de la estructura, ej. Estructura territorial 2026" />
-          <input name="key" placeholder="Clave opcional, ej. territorial-2026" />
-          <textarea name="description" placeholder="Descripción o fuente de la configuración" />
-          <label className="role-pill"><input name="is_primary" type="checkbox" /> Usar como estructura principal</label>
-          <button className="button button-primary" disabled={saving || !selectedDioceseId} type="submit">
-            {saving ? 'Guardando...' : 'Crear plantilla'}
-          </button>
-        </form>
+        </article>
       </section>
 
       {selectedTemplate && (
-        <section className="card dashboard-section">
+        <section className="card dashboard-section structure-map-card">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Niveles</p>
+              <p className="eyebrow">Mapa actual</p>
               <h2>{selectedTemplate.name}</h2>
-              <p className="meta">Define qué niveles existen y qué nivel puede depender de cuál.</p>
+              <p className="meta">Esta es la jerarquía que usarán los formularios y filtros del sistema.</p>
+            </div>
+            <div className="role-list">
+              <span className="role-pill">{sortedLevels.length} niveles</span>
+              <span className="role-pill">{sortedNodes.length} unidades</span>
+              <span className="role-pill">{rootNodes.length} raíces</span>
             </div>
           </div>
 
-          <div className="table-wrap">
-            <table className="data-table dashboard-list-table">
-              <thead>
-                <tr><th>Orden</th><th>Nivel</th><th>Depende de</th><th>Tipo vinculado</th><th>Entrada</th></tr>
-              </thead>
-              <tbody>
-                {sortedLevels.map((level) => (
-                  <tr key={level.id}>
-                    <td>{level.level_order}</td>
-                    <td>{level.name}<br /><span className="meta">{level.level_key}</span></td>
-                    <td>{levels.find((item) => item.id === level.parent_level_id)?.name ?? 'Raíz'}</td>
-                    <td>{entityTypes.find((item) => item.id === level.linked_entity_type_id)?.name ?? 'Sin vínculo'}</td>
-                    <td>{level.is_entry_point ? 'Sí' : 'No'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {loadingStructure && <div className="empty-state">Actualizando mapa...</div>}
 
-          <form className="admin-form admin-config-form" onSubmit={saveLevel}>
-            <input name="name" placeholder="Nombre del nivel, ej. Sector" />
-            <input name="plural_name" placeholder="Plural opcional, ej. Sectores" />
-            <input name="level_key" placeholder="Clave opcional, ej. sector" />
-            <input name="level_order" min="1" placeholder="Orden jerárquico" type="number" />
-            <select name="parent_level_id" defaultValue="">
-              <option value="">Sin padre / nivel raíz</option>
+          <div className="structure-map-layout">
+            <div className="structure-level-list">
+              <h3>Niveles permitidos</h3>
+              {sortedLevels.length === 0 && <p className="meta">Todavía no hay niveles. Agrega el primer nivel, por ejemplo “Diócesis”.</p>}
               {sortedLevels.map((level) => (
-                <option key={level.id} value={level.id}>{level.level_order}. {level.name}</option>
+                <div className="structure-level-row" key={level.id}>
+                  <span>{level.level_order}</span>
+                  <div>
+                    <strong>{level.name}</strong>
+                    <small>Depende de: {levels.find((item) => item.id === level.parent_level_id)?.name ?? 'raíz'}</small>
+                  </div>
+                </div>
               ))}
-            </select>
-            <select name="linked_entity_type_id" defaultValue="">
-              <option value="">Tipo de entidad vinculado opcional</option>
-              {entityTypes.map((type) => (
-                <option key={type.id} value={type.id}>{type.name}</option>
+            </div>
+
+            <div className="structure-tree-list">
+              <h3>Unidades cargadas</h3>
+              {sortedNodes.length === 0 && <p className="meta">Todavía no hay unidades. Agrega la raíz o vincula la diócesis actual.</p>}
+              {sortedNodes.map((node) => (
+                <div className="structure-node-row" key={node.node_id} style={{ marginLeft: `${Math.min(node.depth, 5) * 18}px` }}>
+                  <div>
+                    <strong>{node.name}</strong>
+                    <small>{node.level_name} · {node.parent_node_id ? `depende de ${treeNodes.find((item) => item.node_id === node.parent_node_id)?.name ?? '—'}` : 'raíz'}</small>
+                  </div>
+                  <span>{formatDate(node.start_date)}</span>
+                </div>
               ))}
-            </select>
-            <select name="scope" defaultValue="ecclesial">
-              <option value="ecclesial">Eclesial</option>
-              <option value="pastoral">Pastoral</option>
-              <option value="administrative">Administrativa</option>
-              <option value="organic">Orgánica</option>
-              <option value="mixed">Mixta</option>
-            </select>
-            <textarea name="description" placeholder="Descripción del nivel" />
-            <label className="role-pill"><input name="is_entry_point" type="checkbox" /> Nivel de entrada</label>
-            <label className="role-pill"><input name="is_required" type="checkbox" /> Obligatorio</label>
-            <button className="button button-primary" disabled={saving} type="submit">
-              {saving ? 'Guardando...' : 'Guardar nivel'}
-            </button>
-          </form>
+            </div>
+          </div>
         </section>
       )}
 
       {selectedTemplate && (
-        <section className="card dashboard-section">
+        <section className="card dashboard-section structure-builder-card">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Nodos</p>
-              <h2>Jerarquía actual</h2>
-              <p className="meta">Crea vicarías, zonas, parroquias, sectores u otros nodos según el nivel permitido.</p>
+              <p className="eyebrow">Acciones</p>
+              <h2>Qué necesitas agregar</h2>
+              <p className="meta">Primero se definen niveles. Luego se agregan unidades reales dentro del mapa.</p>
             </div>
           </div>
 
-          <div className="table-wrap">
-            <table className="data-table dashboard-list-table">
-              <thead>
-                <tr><th>Nodo</th><th>Nivel</th><th>Padre</th><th>Inicio</th><th>Estado</th></tr>
-              </thead>
-              <tbody>
-                {sortedNodes.map((node) => (
-                  <tr key={node.node_id}>
-                    <td>{'— '.repeat(node.depth)}{node.name}<br /><span className="meta">{node.path_names.join(' / ')}</span></td>
-                    <td>{node.level_name}</td>
-                    <td>{treeNodes.find((item) => item.node_id === node.parent_node_id)?.name ?? 'Raíz'}</td>
-                    <td>{formatDate(node.start_date)}</td>
-                    <td>{node.status}</td>
-                  </tr>
-                ))}
-                {sortedNodes.length === 0 && (
-                  <tr><td colSpan={5}>No hay nodos cargados para esta plantilla.</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="structure-action-tabs">
+            <button className={`metric-card metric-button ${builderMode === 'node' ? 'active-filter' : ''}`} onClick={() => setBuilderMode('node')} type="button">
+              <strong>Agregar unidad</strong>
+              <span>Vicaría Norte, Zona A, Parroquia San José, Sector 1...</span>
+            </button>
+            <button className={`metric-card metric-button ${builderMode === 'level' ? 'active-filter' : ''}`} onClick={() => setBuilderMode('level')} type="button">
+              <strong>Agregar nivel</strong>
+              <span>Sector, Vicaría, Zona Pastoral, Capilla, Comunidad...</span>
+            </button>
           </div>
 
-          <form className="admin-form admin-config-form" onSubmit={saveNode}>
-            <select
-              name="parent_node_id"
-              value={selectedParentNodeId}
-              onChange={(event) => setSelectedParentNodeId(event.target.value)}
-            >
-              <option value="">Sin padre / raíz</option>
-              {sortedNodes.map((node) => (
-                <option key={node.node_id} value={node.node_id}>{'— '.repeat(node.depth)}{node.name} · {node.level_name}</option>
-              ))}
-            </select>
-            <select name="level_id" defaultValue="">
-              <option value="">Nivel permitido</option>
-              {childLevelOptions.map((option) => (
-                <option key={option.level_id} value={option.level_id}>{option.level_order}. {option.level_name}</option>
-              ))}
-            </select>
-            <input name="name" placeholder="Nombre del nodo, ej. Vicaría Norte" />
-            <input name="official_name" placeholder="Nombre oficial opcional" />
-            <input name="slug" placeholder="Slug opcional" />
-            <input name="code" placeholder="Código opcional" />
-            <select name="linked_ecclesiastical_entity_id" defaultValue="">
-              <option value="">Vincular a entidad existente opcional</option>
-              {entities.map((entity) => (
-                <option key={entity.id} value={entity.id}>{entity.name}</option>
-              ))}
-            </select>
-            <label>Fecha de inicio<input name="start_date" type="date" /></label>
-            <select name="visibility" defaultValue="public">
-              <option value="public">Público</option>
-              <option value="authenticated">Solo usuarios autenticados</option>
-              <option value="restricted">Restringido</option>
-              <option value="private">Privado</option>
-            </select>
-            <textarea name="description" placeholder="Descripción, fuente o notas" />
-            <button className="button button-primary" disabled={saving || childLevelOptions.length === 0} type="submit">
-              {saving ? 'Guardando...' : 'Crear nodo'}
-            </button>
-          </form>
+          {builderMode === 'level' && (
+            <form className="admin-form admin-config-form structure-main-form" onSubmit={saveLevel}>
+              <label>Nombre del nivel<input name="name" placeholder="Ej. Sector" /></label>
+              <label>Plural<input name="plural_name" placeholder="Ej. Sectores" /></label>
+              <label>Clave interna<input name="level_key" placeholder="Opcional: sector" /></label>
+              <label>Orden<input name="level_order" min="1" placeholder={`${nextLevelOrder}`} type="number" /></label>
+              <label>
+                Depende de
+                <select name="parent_level_id" defaultValue="">
+                  <option value="">Sin padre / nivel raíz</option>
+                  {sortedLevels.map((level) => (
+                    <option key={level.id} value={level.id}>{level.level_order}. {level.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Tipo de entidad vinculado
+                <select name="linked_entity_type_id" defaultValue="">
+                  <option value="">Sin vínculo</option>
+                  {entityTypes.map((type) => (
+                    <option key={type.id} value={type.id}>{type.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Uso principal
+                <select name="scope" defaultValue={activeKind === 'territorial' ? 'ecclesial' : activeKind}>
+                  <option value="ecclesial">Eclesial</option>
+                  <option value="pastoral">Pastoral</option>
+                  <option value="administrative">Administrativa</option>
+                  <option value="organic">Orgánica</option>
+                  <option value="mixed">Mixta</option>
+                </select>
+              </label>
+              <textarea name="description" placeholder="Descripción del nivel o criterio de uso" />
+              <label className="role-pill"><input name="is_entry_point" type="checkbox" /> Puede iniciar un formulario</label>
+              <label className="role-pill"><input name="is_required" type="checkbox" /> Nivel obligatorio</label>
+              <button className="button button-primary" disabled={saving} type="submit">
+                {saving ? 'Guardando...' : 'Guardar nivel'}
+              </button>
+            </form>
+          )}
+
+          {builderMode === 'node' && (
+            <form className="admin-form admin-config-form structure-main-form" onSubmit={saveNode}>
+              <label>
+                Depende de
+                <select
+                  name="parent_node_id"
+                  value={selectedParentNodeId}
+                  onChange={(event) => setSelectedParentNodeId(event.target.value)}
+                >
+                  <option value="">Sin padre / raíz</option>
+                  {sortedNodes.map((node) => (
+                    <option key={node.node_id} value={node.node_id}>{'— '.repeat(node.depth)}{node.name} · {node.level_name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Nivel permitido
+                <select name="level_id" defaultValue="">
+                  <option value="">Seleccionar nivel</option>
+                  {childLevelOptions.map((option) => (
+                    <option key={option.level_id} value={option.level_id}>{option.level_order}. {option.level_name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>Nombre de la unidad<input name="name" placeholder="Ej. Vicaría Norte" /></label>
+              <label>Nombre oficial<input name="official_name" placeholder="Opcional" /></label>
+              <label>Código<input name="code" placeholder="Opcional" /></label>
+              <label>
+                Vincular con entidad existente
+                <select name="linked_ecclesiastical_entity_id" defaultValue="">
+                  <option value="">No vincular todavía</option>
+                  {entities.map((entity) => (
+                    <option key={entity.id} value={entity.id}>{entity.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>Fecha de inicio<input name="start_date" type="date" /></label>
+              <label>
+                Visibilidad
+                <select name="visibility" defaultValue="public">
+                  <option value="public">Público</option>
+                  <option value="authenticated">Solo usuarios autenticados</option>
+                  <option value="restricted">Restringido</option>
+                  <option value="private">Privado</option>
+                </select>
+              </label>
+              <textarea name="description" placeholder="Fuente, nota o explicación" />
+              <button className="button button-primary" disabled={saving || childLevelOptions.length === 0} type="submit">
+                {saving ? 'Guardando...' : 'Agregar unidad'}
+              </button>
+              {childLevelOptions.length === 0 && (
+                <p className="meta">No hay niveles permitidos para el padre seleccionado. Agrega primero el nivel correspondiente.</p>
+              )}
+            </form>
+          )}
         </section>
       )}
     </main>
