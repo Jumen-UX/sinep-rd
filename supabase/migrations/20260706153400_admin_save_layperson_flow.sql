@@ -1,0 +1,165 @@
+create or replace function public.admin_save_layperson(payload jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_person_id uuid;
+  v_slug text;
+  v_internal_code text;
+  v_first_name text := nullif(btrim(payload->>'first_name'), '');
+  v_last_name text := nullif(btrim(payload->>'last_name'), '');
+  v_display_name text := nullif(btrim(payload->>'display_name'), '');
+  v_office_configuration_id uuid := nullif(payload->>'quick_office_configuration_id', '')::uuid;
+  v_assignment_entity_id uuid := nullif(payload->>'quick_entity_id', '')::uuid;
+  v_organization_chart_id uuid;
+  v_start_date date := nullif(payload->>'quick_start_date', '')::date;
+begin
+  if v_user_id is null or not public.current_user_has_admin_role() then
+    raise exception 'No autorizado para guardar laicos' using errcode = '42501';
+  end if;
+
+  v_display_name := coalesce(
+    v_display_name,
+    concat_ws(' ', v_first_name, nullif(btrim(payload->>'middle_name'), ''), v_last_name, nullif(btrim(payload->>'second_last_name'), ''))
+  );
+  v_slug := nullif(btrim(payload->>'slug'), '');
+  v_slug := coalesce(v_slug, regexp_replace(lower(unaccent(v_display_name)), '[^a-z0-9]+', '-', 'g'));
+  v_slug := regexp_replace(v_slug, '(^-+|-+$)', '', 'g');
+
+  if v_first_name is null or v_last_name is null or v_display_name is null or v_slug is null then
+    raise exception 'Primer nombre y primer apellido son obligatorios' using errcode = '22023';
+  end if;
+
+  insert into public.persons (
+    first_name,
+    middle_name,
+    last_name,
+    second_last_name,
+    display_name,
+    slug,
+    person_type,
+    gender,
+    birth_date,
+    birth_place,
+    photo_url,
+    photo_path,
+    biography_public,
+    notes_internal,
+    status,
+    visibility,
+    created_by
+  ) values (
+    v_first_name,
+    nullif(btrim(payload->>'middle_name'), ''),
+    v_last_name,
+    nullif(btrim(payload->>'second_last_name'), ''),
+    v_display_name,
+    v_slug,
+    'layperson',
+    nullif(payload->>'gender', ''),
+    nullif(payload->>'birth_date', '')::date,
+    nullif(btrim(payload->>'birth_place'), ''),
+    nullif(btrim(payload->>'photo_url'), ''),
+    nullif(btrim(payload->>'photo_path'), ''),
+    nullif(btrim(payload->>'biography_public'), ''),
+    nullif(btrim(payload->>'notes_internal'), ''),
+    'active',
+    'public',
+    v_user_id
+  )
+  returning id, slug into v_person_id, v_slug;
+
+  v_internal_code := public.generate_person_internal_code_for_type('layperson');
+
+  insert into public.person_private_validation (
+    person_id,
+    internal_reference_code,
+    validation_type,
+    validation_value,
+    validation_country,
+    primary_phone,
+    secondary_phone,
+    contact_email,
+    father_name,
+    mother_name,
+    family_notes,
+    biography_notes,
+    created_by
+  ) values (
+    v_person_id,
+    v_internal_code,
+    nullif(payload->>'validation_type', ''),
+    nullif(btrim(payload->>'validation_value'), ''),
+    nullif(btrim(payload->>'validation_country'), ''),
+    nullif(btrim(payload->>'primary_phone'), ''),
+    nullif(btrim(payload->>'secondary_phone'), ''),
+    nullif(btrim(payload->>'contact_email'), ''),
+    nullif(btrim(payload->>'father_name'), ''),
+    nullif(btrim(payload->>'mother_name'), ''),
+    nullif(btrim(payload->>'family_notes'), ''),
+    nullif(btrim(payload->>'biography_notes'), ''),
+    v_user_id
+  );
+
+  if v_office_configuration_id is not null then
+    select organization_chart_id
+    into v_organization_chart_id
+    from public.office_configurations
+    where id = v_office_configuration_id;
+
+    insert into public.position_assignments (
+      person_id,
+      office_configuration_id,
+      organization_chart_id,
+      ecclesiastical_entity_id,
+      title_override,
+      start_date,
+      term_start_date,
+      is_current,
+      assignment_status,
+      selection_method,
+      notes_public,
+      notes_internal,
+      verification_status,
+      visibility,
+      record_status
+    ) values (
+      v_person_id,
+      v_office_configuration_id,
+      v_organization_chart_id,
+      v_assignment_entity_id,
+      nullif(btrim(payload->>'quick_title_override'), ''),
+      v_start_date,
+      v_start_date,
+      true,
+      'active',
+      'appointment',
+      nullif(btrim(payload->>'quick_notes_public'), ''),
+      'Asignación creada desde asistente transaccional de nuevo laico.',
+      'pending_review',
+      coalesce(nullif(payload->>'assignment_visibility', ''), 'internal'),
+      'active'
+    );
+  end if;
+
+  perform public.admin_mark_missing_fields(
+    'persons',
+    v_person_id,
+    payload->'not_identified_fields',
+    array['gender','birth_date','birth_place','biography_public'],
+    'Marcado como no identificado desde el asistente transaccional de nuevo laico.',
+    v_user_id
+  );
+
+  return jsonb_build_object(
+    'person_id', v_person_id,
+    'slug', v_slug,
+    'internal_reference_code', v_internal_code
+  );
+end;
+$$;
+
+grant execute on function public.admin_save_layperson(jsonb) to authenticated;
