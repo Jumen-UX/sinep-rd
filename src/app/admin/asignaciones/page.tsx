@@ -94,6 +94,20 @@ const selectionOptions = [
   ['other', 'Otro'],
 ]
 
+const visibilityOptions = [
+  ['public', 'Pública'],
+  ['internal', 'Interna'],
+  ['private', 'Privada / confidencial'],
+]
+
+const publicationStatusOptions = [
+  ['published', 'Publicada'],
+  ['scheduled', 'Programada'],
+  ['internal', 'Interna'],
+  ['private', 'Privada'],
+  ['draft', 'Borrador'],
+]
+
 function formatDate(value: string | null) {
   if (!value) return '—'
   return new Intl.DateTimeFormat('es-DO', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
@@ -219,6 +233,11 @@ export default function AdminAsignacionesPage() {
       term_start_date: emptyToNull(form.get('term_start_date')),
       term_end_date: emptyToNull(form.get('term_end_date')),
       actual_end_date: emptyToNull(form.get('actual_end_date')),
+      effective_date: emptyToNull(form.get('effective_date')),
+      public_from: emptyToNull(form.get('public_from')),
+      public_until: emptyToNull(form.get('public_until')),
+      confidential_until: emptyToNull(form.get('confidential_until')),
+      publication_status: String(form.get('publication_status') ?? 'published'),
       assignment_status: assignmentStatus,
       selection_method: String(form.get('selection_method') ?? 'appointment'),
       predecessor_assignment_id: emptyToNull(form.get('predecessor_assignment_id')),
@@ -230,7 +249,7 @@ export default function AdminAsignacionesPage() {
       source_checked_at: emptyToNull(form.get('source_checked_at')),
       close_previous_current: form.get('close_previous_current') === 'on',
       verification_status: 'pending_review',
-      visibility: 'public',
+      visibility: String(form.get('visibility') ?? 'public'),
     }
 
     try {
@@ -287,7 +306,7 @@ export default function AdminAsignacionesPage() {
           <p className="eyebrow">Administración</p>
           <h1>Asignaciones de cargos</h1>
           <p className="lead">
-            Asigna personas a cargos configurados dentro de un organigrama, entidad o unidad. El guardado es transaccional para evitar cargos parciales o sucesiones incompletas.
+            Asigna personas a cargos configurados dentro de un organigrama, entidad o unidad. Controla si la asignación es pública, interna o confidencial y desde cuándo puede mostrarse.
           </p>
         </div>
       </section>
@@ -299,7 +318,7 @@ export default function AdminAsignacionesPage() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Nueva asignación</p>
-            <h2>Persona, cargo, período y relación</h2>
+            <h2>Persona, cargo, período, visibilidad y relación</h2>
           </div>
         </div>
 
@@ -365,6 +384,34 @@ export default function AdminAsignacionesPage() {
             <input name="actual_end_date" type="date" />
           </label>
 
+          <label>
+            Fecha efectiva del nombramiento
+            <input name="effective_date" type="date" />
+          </label>
+
+          <label>
+            Visible públicamente desde
+            <input name="public_from" type="date" />
+          </label>
+
+          <label>
+            Visible públicamente hasta
+            <input name="public_until" type="date" />
+          </label>
+
+          <label>
+            Confidencial hasta
+            <input name="confidential_until" type="date" />
+          </label>
+
+          <select name="visibility" defaultValue="public">
+            {visibilityOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+
+          <select name="publication_status" defaultValue="published">
+            {publicationStatusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+
           <select name="assignment_status" defaultValue="active">
             {statusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
@@ -407,7 +454,7 @@ export default function AdminAsignacionesPage() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Listado</p>
-            <h2>Asignaciones recientes</h2>
+            <h2>Asignaciones recientes visibles públicamente</h2>
           </div>
           <span className="meta">{assignments.length} registros</span>
         </div>
