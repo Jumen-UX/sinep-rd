@@ -35,6 +35,8 @@ type DashboardSummary = {
     total_catholics: number
     total_population: number
     total_parishes: number
+    loaded_parishes: number
+    reported_parishes: number
   }
   people: {
     total: number
@@ -63,6 +65,11 @@ function personTypeLabel(value: string | null) {
 
   if (!value) return 'Persona'
   return labels[value] ?? value
+}
+
+function parishStatLabel(item: Diocese) {
+  if (!item.parishes_count) return 'Sin estadística parroquial'
+  return `Estadística: ${formatNumber(item.parishes_count)} parroquias${item.statistics_year ? ` · ${item.statistics_year}` : ''}`
 }
 
 export default function HomePage() {
@@ -155,10 +162,10 @@ export default function HomePage() {
           <strong>{loading ? '—' : formatNumber(summary?.dioceses.total_catholics)}</strong>
           <span>Fieles católicos reportados</span>
         </div>
-        <div className="metric-card">
-          <strong>{loading ? '—' : formatNumber(summary?.dioceses.total_parishes)}</strong>
-          <span>Parroquias reportadas</span>
-        </div>
+        <Link className="metric-card metric-link" href="/diocesis?tipo=parish">
+          <strong>{loading ? '—' : formatNumber(summary?.dioceses.loaded_parishes ?? summary?.dioceses.total_parishes)}</strong>
+          <span>Parroquias cargadas</span>
+        </Link>
         <Link className="metric-card metric-link" href="/personas?tipo=priest">
           <strong>{loading ? '—' : summary?.people.priests ?? 0}</strong>
           <span>Sacerdotes registrados</span>
@@ -199,7 +206,7 @@ export default function HomePage() {
               <Link className="list-row" href={`/entidades/${item.slug}`} key={item.id}>
                 <span><strong>{item.name}</strong><small>{item.entity_type_name ?? 'Jurisdicción'}</small></span>
                 <span>{item.current_ordinary_name ?? 'Sin ordinario registrado'}</span>
-                <span>{formatNumber(item.parishes_count)} parroquias</span>
+                <span>{parishStatLabel(item)}</span>
               </Link>
             ))}
           </div>
