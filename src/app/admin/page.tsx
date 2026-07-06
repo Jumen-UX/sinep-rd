@@ -64,6 +64,12 @@ const moduleGroups: ModuleGroup[] = [
     description: 'Acciones frecuentes para revisar cambios, completar fichas y mantener datos actualizados.',
     modules: [
       {
+        href: '/admin/personas',
+        type: 'Personas',
+        title: 'Administrar personas',
+        description: 'Buscar personas registradas y abrir acciones administrativas como marcar fallecimiento.',
+      },
+      {
         href: '/admin/alertas',
         type: 'Alertas',
         title: 'Parroquias sin responsable',
