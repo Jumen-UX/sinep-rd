@@ -51,6 +51,7 @@ export default function AdminFallecimientoPage() {
   const [selectedPersonId, setSelectedPersonId] = useState('')
   const [closeAssignments, setCloseAssignments] = useState(true)
   const [registerParishVacancy, setRegisterParishVacancy] = useState(false)
+  const [registerJurisdictionVacancy, setRegisterJurisdictionVacancy] = useState(false)
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
   const [closedCount, setClosedCount] = useState(0)
   const [vacancyCount, setVacancyCount] = useState(0)
@@ -123,6 +124,7 @@ export default function AdminFallecimientoPage() {
       notes_internal: emptyToNull(form.get('notes_internal')),
       close_active_assignments: closeAssignments,
       register_parish_vacancy: registerParishVacancy,
+      register_jurisdiction_vacancy: registerJurisdictionVacancy,
     }
 
     try {
@@ -139,6 +141,8 @@ export default function AdminFallecimientoPage() {
       setVacancyCount(data.registered_vacancies_count ?? 0)
       setPeople((current) => current.filter((person) => person.id !== selectedPersonId))
       setSelectedPersonId('')
+      setRegisterParishVacancy(false)
+      setRegisterJurisdictionVacancy(false)
       setMessage('Fallecimiento registrado correctamente.')
       event.currentTarget.reset()
     } catch (err) {
@@ -167,7 +171,7 @@ export default function AdminFallecimientoPage() {
         <div className="empty-state">
           <strong>{message}</strong>
           <span>Cargos cerrados: {closedCount}</span>
-          <span>Vacantes parroquiales registradas: {vacancyCount}</span>
+          <span>Vacantes registradas: {vacancyCount}</span>
           {savedSlug && <Link href={`/personas/${savedSlug}`}>Ver ficha pública</Link>}
         </div>
       )}
@@ -216,7 +220,11 @@ export default function AdminFallecimientoPage() {
             <input checked={registerParishVacancy} disabled={!closeAssignments} onChange={(event) => setRegisterParishVacancy(event.target.checked)} type="checkbox" />
             Si era párroco o administrador parroquial, registrar la parroquia como vacante.
           </label>
-          <p className="meta">Si no registras la vacante explícita, la parroquia aparecerá como posible vacancia en alertas.</p>
+          <label className="role-pill">
+            <input checked={registerJurisdictionVacancy} disabled={!closeAssignments} onChange={(event) => setRegisterJurisdictionVacancy(event.target.checked)} type="checkbox" />
+            Si era obispo diocesano, registrar la jurisdicción como sede vacante.
+          </label>
+          <p className="meta">Si no registras la vacante explícita, la parroquia o jurisdicción aparecerá como posible vacancia en alertas.</p>
         </section>
 
         <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Marcar fallecimiento'}</button>
