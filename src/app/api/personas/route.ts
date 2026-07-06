@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabasePublishableKey, getSupabaseUrl } from '@/lib/supabase/config'
+import { fetchSupabaseJson } from '@/lib/supabase/rest'
 
 const listColumns = [
   'id',
@@ -165,40 +165,20 @@ const canonicalHelpColumns = [
   'source_url'
 ].join(',')
 
-function getApiKey() {
-  return getSupabasePublishableKey()
+function normalizePersonType(value: string | null) {
+  if (!value || value === 'all' || value === 'active') return value
+  if (value === 'lay') return 'layperson'
+  return value
 }
 
-async function fetchJson<T>(endpoint: string, key: string): Promise<T> {
-  const response = await fetch(endpoint, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-    },
-    cache: 'no-store',
-  })
-
-  if (!response.ok) {
-    const details = await response.text()
-    console.error('Supabase REST request failed', {
-      endpoint,
-      status: response.status,
-      details,
-    })
-    throw new Error(`Supabase REST request failed with status ${response.status}`)
-  }
-
-  return response.json() as Promise<T>
-}
-
-async function attachCanonicalHelp(url: string, key: string, positions: Record<string, unknown>[]) {
+async function attachCanonicalHelp(positions: Record<string, unknown>[]) {
   const configurationKeys = Array.from(new Set(positions.map((item) => item.office_configuration_key).filter(Boolean).map(String)))
   if (configurationKeys.length === 0) return positions
 
-  const helpRows = await fetchJson<Record<string, unknown>[]>(
-    `${url}/rest/v1/public_office_canonical_help?office_configuration_key=in.(${configurationKeys.join(',')})&select=${canonicalHelpColumns}`,
-    key
-  ).catch(() => [])
+  const helpRows = await fetchSupabaseJson<Record<string, unknown>[]>('public_office_canonical_help', {
+    office_configuration_key: `in.(${configurationKeys.join(',')})`,
+    select: canonicalHelpColumns,
+  }).catch(() => [])
 
   const helpByKey = new Map(helpRows.map((item) => [String(item.office_configuration_key), item]))
 
@@ -221,26 +201,47 @@ async function attachCanonicalHelp(url: string, key: string, positions: Record<s
   })
 }
 
+function buildListFilters(request: NextRequest) {
+  const tipo = normalizePersonType(request.nextUrl.searchParams.get('tipo'))
+  const limit = request.nextUrl.searchParams.get('limit')
+  const filters: Record<string, string> = {
+    status: 'eq.active',
+    visibility: 'eq.public',
+    select: listColumns,
+    order: 'display_name.asc',
+  }
+
+  if (tipo && tipo !== 'all' && tipo !== 'active') {
+    filters.person_type = `eq.${tipo}`
+  }
+
+  if (tipo === 'active') {
+    filters.death_date = 'is.null'
+  }
+
+  if (limit && /^\d+$/.test(limit)) {
+    filters.limit = limit
+  }
+
+  return filters
+}
+
 export async function GET(request: NextRequest) {
-  const url = getSupabaseUrl()
-  const key = getApiKey()
   const slug = request.nextUrl.searchParams.get('slug')
 
   try {
     if (!slug) {
-      const people = await fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/persons?status=eq.active&visibility=eq.public&select=${listColumns}&order=display_name.asc`,
-        key
-      )
+      const people = await fetchSupabaseJson<Record<string, unknown>[]>('persons', buildListFilters(request))
       return NextResponse.json(people)
     }
 
-    const encodedSlug = encodeURIComponent(slug)
-
-    const people = await fetchJson<Record<string, unknown>[]>(
-      `${url}/rest/v1/persons?slug=eq.${encodedSlug}&status=eq.active&visibility=eq.public&select=${personColumns}&limit=1`,
-      key
-    )
+    const people = await fetchSupabaseJson<Record<string, unknown>[]>('persons', {
+      slug: `eq.${slug}`,
+      status: 'eq.active',
+      visibility: 'eq.public',
+      select: personColumns,
+      limit: '1',
+    })
 
     const person = people[0]
 
@@ -249,29 +250,34 @@ export async function GET(request: NextRequest) {
     }
 
     const [clergyRows, appointments, movements, episcopalOrdinations, positionRows] = await Promise.all([
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_clergy?slug=eq.${encodedSlug}&select=${clergyColumns}&limit=1`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_current_appointments?person_slug=eq.${encodedSlug}&select=${appointmentColumns}&order=start_date.desc.nullslast`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_person_movements?person_slug=eq.${encodedSlug}&select=${movementColumns}&order=effective_date.desc.nullslast`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_episcopal_ordinations?bishop_slug=eq.${encodedSlug}&select=${episcopalOrdinationColumns}&limit=1`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_position_assignments?person_slug=eq.${encodedSlug}&select=${positionColumns}&order=start_date.desc.nullslast`,
-        key
-      ).catch(() => [])
+      fetchSupabaseJson<Record<string, unknown>[]>('public_clergy', {
+        slug: `eq.${slug}`,
+        select: clergyColumns,
+        limit: '1',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('public_current_appointments', {
+        person_slug: `eq.${slug}`,
+        select: appointmentColumns,
+        order: 'start_date.desc.nullslast',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('public_person_movements', {
+        person_slug: `eq.${slug}`,
+        select: movementColumns,
+        order: 'effective_date.desc.nullslast',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('public_episcopal_ordinations', {
+        bishop_slug: `eq.${slug}`,
+        select: episcopalOrdinationColumns,
+        limit: '1',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('public_position_assignments', {
+        person_slug: `eq.${slug}`,
+        select: positionColumns,
+        order: 'start_date.desc.nullslast',
+      }).catch(() => [])
     ])
 
-    const positions = await attachCanonicalHelp(url, key, positionRows)
+    const positions = await attachCanonicalHelp(positionRows)
 
     return NextResponse.json({
       person,

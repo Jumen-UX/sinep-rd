@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
-import { getSupabaseRestHeaders, getSupabaseUrl } from '@/lib/supabase/config'
+import { NextRequest, NextResponse } from 'next/server'
+import { fetchSupabaseJson } from '@/lib/supabase/rest'
 
 const columns = [
   'id',
@@ -26,31 +26,41 @@ const columns = [
   'erected_at'
 ].join(',')
 
-export async function GET() {
+function buildFilters(request: NextRequest) {
+  const tipo = request.nextUrl.searchParams.get('tipo')
+  const provincia = request.nextUrl.searchParams.get('provincia')
+  const limit = request.nextUrl.searchParams.get('limit')
+  const filters: Record<string, string | string[]> = {
+    select: columns,
+    order: 'name.asc',
+  }
+
+  if (provincia) {
+    filters.ecclesiastical_province_name = `eq.${provincia}`
+  }
+
+  if (tipo === 'archdiocese') {
+    filters.or = '(entity_type_name.ilike.*arquidiócesis*,entity_type_name.ilike.*arquidiocesis*)'
+  }
+
+  if (tipo === 'diocese') {
+    filters.entity_type_name = ['ilike.*diócesis*', 'not.ilike.*arquidiócesis*']
+  }
+
+  if (tipo === 'military') {
+    filters.or = '(entity_type_name.ilike.*castrense*,entity_type_name.ilike.*militar*,name.ilike.*castrense*,name.ilike.*militar*)'
+  }
+
+  if (limit && /^\d+$/.test(limit)) {
+    filters.limit = limit
+  }
+
+  return filters
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const url = getSupabaseUrl()
-    const table = ['public', 'dioceses'].join('_')
-    const endpoint = `${url}/rest/v1/${table}?select=${columns}&order=name.asc`
-
-    const response = await fetch(endpoint, {
-      headers: getSupabaseRestHeaders(),
-      cache: 'no-store',
-    })
-
-    if (!response.ok) {
-      const details = await response.text()
-      console.error('Failed to load dioceses from Supabase', {
-        status: response.status,
-        details,
-      })
-
-      return NextResponse.json(
-        { error: 'No se pudo cargar el directorio' },
-        { status: response.status }
-      )
-    }
-
-    const data = await response.json()
+    const data = await fetchSupabaseJson<Record<string, unknown>[]>('public_dioceses', buildFilters(request))
     return NextResponse.json(data)
   } catch (error) {
     console.error('Unexpected dioceses API error', error)

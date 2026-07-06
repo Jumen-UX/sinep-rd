@@ -81,78 +81,39 @@ export default function NuevoObispoPage() {
     setSavedSlug(null)
 
     const form = new FormData(event.currentTarget)
-    const { data: userData } = await supabase.auth.getUser()
-    let recordId = selectedClergyId
-    let recordSlug = selectedClergy?.slug ?? null
+    const name = String(form.get('display_name') ?? '').trim() || displayName(form)
+    const firstName = String(form.get('first_name') ?? '').trim()
+    const lastName = String(form.get('last_name') ?? '').trim()
 
-    if (mode === 'existing') {
-      if (!recordId) {
-        setError('Selecciona el sacerdote que será registrado como obispo.')
-        setSaving(false)
-        return
-      }
-      const updateRes = await supabase.from('persons').update({ person_type: 'bishop' }).eq('id', recordId)
-      if (updateRes.error) {
-        setError(updateRes.error.message)
-        setSaving(false)
-        return
-      }
-    } else {
-      const name = String(form.get('display_name') ?? '').trim() || displayName(form)
-      const firstName = String(form.get('first_name') ?? '').trim()
-      const lastName = String(form.get('last_name') ?? '').trim()
-      if (!firstName || !lastName || !name) {
-        setError('Nombre, apellido y nombre público son obligatorios.')
-        setSaving(false)
-        return
-      }
-      const inserted = await supabase.from('persons').insert({
-        first_name: firstName,
-        middle_name: emptyToNull(form.get('middle_name')),
-        last_name: lastName,
-        second_last_name: emptyToNull(form.get('second_last_name')),
-        display_name: name,
-        slug: String(form.get('slug') ?? '').trim() || slugify(name),
-        person_type: 'bishop',
-        gender: 'male',
-        birth_date: emptyToNull(form.get('birth_date')),
-        birth_place: emptyToNull(form.get('birth_place')),
-        biography_public: emptyToNull(form.get('biography_public')),
-        status: 'active',
-        visibility: 'public',
-        created_by: userData.user?.id ?? null,
-      }).select('id,slug').single()
-      if (inserted.error) {
-        setError(inserted.error.message)
-        setSaving(false)
-        return
-      }
-      recordId = inserted.data.id
-      recordSlug = inserted.data.slug
-    }
-
-    const currentProfile = await supabase.from('clergy_profiles').select('id').eq('person_id', recordId).maybeSingle()
-    const profilePayload = {
-      person_id: recordId,
-      incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
-      current_service_entity_id: emptyToNull(form.get('assignment_entity_id')),
-      priestly_ordination_date: emptyToNull(form.get('priestly_ordination_date')),
-      episcopal_ordination_date: emptyToNull(form.get('episcopal_ordination_date')),
-      religious_order: emptyToNull(form.get('religious_order')),
-      canonical_status: 'active',
-    }
-    const profileRes = currentProfile.data?.id
-      ? await supabase.from('clergy_profiles').update(profilePayload).eq('id', currentProfile.data.id)
-      : await supabase.from('clergy_profiles').insert(profilePayload)
-    if (profileRes.error) {
-      setError(profileRes.error.message)
+    if (mode === 'existing' && !selectedClergyId) {
+      setError('Selecciona el sacerdote que será registrado como obispo.')
       setSaving(false)
       return
     }
 
-    const ordRes = await supabase.from('episcopal_ordinations').insert({
-      bishop_person_id: recordId,
-      ordination_date: emptyToNull(form.get('episcopal_ordination_date')),
+    if (mode === 'new' && (!firstName || !lastName || !name)) {
+      setError('Nombre, apellido y nombre público son obligatorios.')
+      setSaving(false)
+      return
+    }
+
+    const payload = {
+      mode,
+      selected_clergy_id: selectedClergyId,
+      first_name: firstName,
+      middle_name: emptyToNull(form.get('middle_name')),
+      last_name: lastName,
+      second_last_name: emptyToNull(form.get('second_last_name')),
+      display_name: name,
+      slug: String(form.get('slug') ?? '').trim() || slugify(name),
+      birth_date: emptyToNull(form.get('birth_date')),
+      birth_place: emptyToNull(form.get('birth_place')),
+      biography_public: emptyToNull(form.get('biography_public')),
+      incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
+      assignment_entity_id: emptyToNull(form.get('assignment_entity_id')),
+      priestly_ordination_date: emptyToNull(form.get('priestly_ordination_date')),
+      episcopal_ordination_date: emptyToNull(form.get('episcopal_ordination_date')),
+      religious_order: emptyToNull(form.get('religious_order')),
       ordination_place: emptyToNull(form.get('ordination_place')),
       principal_consecrator_person_id: emptyToNull(form.get('principal_consecrator_person_id')),
       co_consecrator_1_person_id: emptyToNull(form.get('co_consecrator_1_person_id')),
@@ -160,52 +121,35 @@ export default function NuevoObispoPage() {
       principal_consecrator_name: emptyToNull(form.get('principal_consecrator_name')),
       co_consecrator_1_name: emptyToNull(form.get('co_consecrator_1_name')),
       co_consecrator_2_name: emptyToNull(form.get('co_consecrator_2_name')),
+      office_configuration_id: emptyToNull(form.get('office_configuration_id')),
+      title_override: emptyToNull(form.get('title_override')),
+      appointment_start_date: emptyToNull(form.get('appointment_start_date')),
+      appointment_notes_public: emptyToNull(form.get('appointment_notes_public')),
       source_name: emptyToNull(form.get('source_name')),
       source_url: emptyToNull(form.get('source_url')),
       source_checked_at: emptyToNull(form.get('source_checked_at')),
-      verification_status: 'pending_review',
-      visibility: 'public',
-      status: 'active',
-      notes_public: emptyToNull(form.get('ordination_notes_public')),
-      notes_internal: 'Creado desde asistente de nuevo obispo.',
-      created_by: userData.user?.id ?? null,
-    })
-    if (ordRes.error) {
-      setError(ordRes.error.message)
-      setSaving(false)
-      return
+      ordination_notes_public: emptyToNull(form.get('ordination_notes_public')),
     }
 
-    const officeId = emptyToNull(form.get('office_configuration_id'))
-    if (officeId) {
-      const office = offices.find((item) => item.id === officeId)
-      const assignmentRes = await supabase.from('position_assignments').insert({
-        person_id: recordId,
-        office_configuration_id: officeId,
-        organization_chart_id: office?.organization_chart_id ?? null,
-        ecclesiastical_entity_id: emptyToNull(form.get('assignment_entity_id')),
-        title_override: emptyToNull(form.get('title_override')),
-        start_date: emptyToNull(form.get('appointment_start_date')),
-        term_start_date: emptyToNull(form.get('appointment_start_date')),
-        is_current: true,
-        assignment_status: 'active',
-        selection_method: 'appointment',
-        notes_public: emptyToNull(form.get('appointment_notes_public')),
-        notes_internal: 'Cargo episcopal creado desde asistente de nuevo obispo.',
-        verification_status: 'pending',
-        visibility: 'public',
-        record_status: 'active',
+    try {
+      const response = await fetch('/api/admin/obispo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
-      if (assignmentRes.error) {
-        setError(assignmentRes.error.message)
-        setSaving(false)
-        return
-      }
-    }
+      const data = await response.json()
 
-    setSavedSlug(recordSlug)
-    setMessage(mode === 'existing' ? 'Sacerdote actualizado como obispo.' : 'Obispo creado correctamente.')
-    setSaving(false)
+      if (!response.ok) {
+        throw new Error(data.error ?? 'No se pudo guardar el obispo.')
+      }
+
+      setSavedSlug(data.slug ?? selectedClergy?.slug ?? null)
+      setMessage(mode === 'existing' ? 'Sacerdote actualizado como obispo.' : 'Obispo creado correctamente.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el obispo.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading) return <main className="container"><div className="empty-state">Cargando asistente...</div></main>
@@ -217,7 +161,7 @@ export default function NuevoObispoPage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nuevo obispo</h1>
-          <p className="lead">Selecciona un sacerdote existente o crea un obispo desde cero. El sistema no duplica fichas existentes.</p>
+          <p className="lead">Selecciona un sacerdote existente o crea un obispo desde cero. El sistema guarda persona, perfil clerical, ordenación y cargo en una transacción para evitar fichas parciales.</p>
         </div>
       </section>
 

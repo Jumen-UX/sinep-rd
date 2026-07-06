@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 type Person = {
@@ -15,7 +15,19 @@ type Person = {
   age_text: string | null
 }
 
-type PersonFilter = 'all' | 'bishop' | 'priest' | 'deacon' | 'religious' | 'lay' | 'active'
+type PersonFilter = 'all' | 'bishop' | 'priest' | 'deacon' | 'religious' | 'layperson' | 'active'
+
+type DashboardSummary = {
+  people: {
+    total: number
+    bishops: number
+    priests: number
+    deacons: number
+    religious: number
+    laypeople: number
+    active: number
+  }
+}
 
 function personTypeLabel(value: string | null) {
   const labels: Record<string, string> = {
@@ -23,7 +35,7 @@ function personTypeLabel(value: string | null) {
     priest: 'Sacerdote',
     deacon: 'Diácono',
     religious: 'Religioso/a',
-    lay: 'Laico/a',
+    layperson: 'Laico/a',
   }
 
   if (!value) return 'Persona'
@@ -37,7 +49,7 @@ function filterLabel(value: PersonFilter) {
     priest: 'Sacerdotes',
     deacon: 'Diáconos',
     religious: 'Religiosos/as',
-    lay: 'Laicos/as',
+    layperson: 'Laicos/as',
     active: 'Activos',
   }
 
@@ -45,12 +57,19 @@ function filterLabel(value: PersonFilter) {
 }
 
 function normalizeFilter(value: string | null): PersonFilter {
-  const allowed: PersonFilter[] = ['all', 'bishop', 'priest', 'deacon', 'religious', 'lay', 'active']
+  if (value === 'lay') return 'layperson'
+  const allowed: PersonFilter[] = ['all', 'bishop', 'priest', 'deacon', 'religious', 'layperson', 'active']
   return allowed.includes(value as PersonFilter) ? value as PersonFilter : 'all'
+}
+
+function buildPeopleUrl(filter: PersonFilter) {
+  if (filter === 'all') return '/api/personas'
+  return `/api/personas?tipo=${encodeURIComponent(filter)}`
 }
 
 export default function PersonasPage() {
   const [items, setItems] = useState<Person[]>([])
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<PersonFilter>('all')
@@ -61,9 +80,23 @@ export default function PersonasPage() {
   }, [])
 
   useEffect(() => {
+    async function loadSummary() {
+      const response = await fetch('/api/dashboard/resumen')
+      if (response.ok) {
+        setSummary((await response.json()) as DashboardSummary)
+      }
+    }
+
+    loadSummary()
+  }, [])
+
+  useEffect(() => {
     async function loadPeople() {
+      setLoading(true)
+      setError(null)
+
       try {
-        const response = await fetch('/api/personas')
+        const response = await fetch(buildPeopleUrl(filter))
         const data = await response.json()
 
         if (!response.ok) {
@@ -79,39 +112,28 @@ export default function PersonasPage() {
     }
 
     loadPeople()
-  }, [])
+  }, [filter])
 
-  const dashboard = useMemo(() => {
-    const countByType = (type: string) => items.filter((item) => item.person_type === type).length
-    return {
-      total: items.length,
-      bishops: countByType('bishop'),
-      priests: countByType('priest'),
-      deacons: countByType('deacon'),
-      religious: countByType('religious'),
-      lay: countByType('lay'),
-      active: items.filter((item) => item.status === 'active' && !item.death_date).length,
-    }
-  }, [items])
-
-  const filteredItems = useMemo(() => {
-    if (filter === 'all') return items
-    if (filter === 'active') return items.filter((item) => item.status === 'active' && !item.death_date)
-    return items.filter((item) => item.person_type === filter)
-  }, [filter, items])
+  function updateFilter(value: PersonFilter) {
+    setFilter(value)
+    const query = value === 'all' ? '' : `?tipo=${encodeURIComponent(value)}`
+    window.history.replaceState(null, '', `/personas${query}`)
+  }
 
   function FilterCard({ value, count, title, subtitle }: { value: PersonFilter; count: number; title: string; subtitle: string }) {
     return (
       <button
         className={`quick-link-card filter-card ${filter === value ? 'active-filter' : ''}`}
         type="button"
-        onClick={() => setFilter(value)}
+        onClick={() => updateFilter(value)}
       >
         <strong>{title}</strong>
         <span>{count} {subtitle}</span>
       </button>
     )
   }
+
+  const peopleSummary = summary?.people
 
   return (
     <main className="container dashboard-page">
@@ -128,23 +150,23 @@ export default function PersonasPage() {
       {loading && <div className="empty-state">Cargando personas...</div>}
       {error && <div className="error-box">{error}</div>}
 
-      {!loading && !error && (
+      {!error && (
         <>
           <section className="dashboard-grid dashboard-summary">
-            <button className={`metric-card metric-button ${filter === 'all' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('all')}>
-              <strong>{dashboard.total}</strong>
+            <button className={`metric-card metric-button ${filter === 'all' ? 'active-filter' : ''}`} type="button" onClick={() => updateFilter('all')}>
+              <strong>{peopleSummary?.total ?? '—'}</strong>
               <span>Personas públicas</span>
             </button>
-            <button className={`metric-card metric-button ${filter === 'bishop' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('bishop')}>
-              <strong>{dashboard.bishops}</strong>
+            <button className={`metric-card metric-button ${filter === 'bishop' ? 'active-filter' : ''}`} type="button" onClick={() => updateFilter('bishop')}>
+              <strong>{peopleSummary?.bishops ?? '—'}</strong>
               <span>Obispos</span>
             </button>
-            <button className={`metric-card metric-button ${filter === 'priest' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('priest')}>
-              <strong>{dashboard.priests}</strong>
+            <button className={`metric-card metric-button ${filter === 'priest' ? 'active-filter' : ''}`} type="button" onClick={() => updateFilter('priest')}>
+              <strong>{peopleSummary?.priests ?? '—'}</strong>
               <span>Sacerdotes</span>
             </button>
-            <button className={`metric-card metric-button ${filter === 'deacon' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('deacon')}>
-              <strong>{dashboard.deacons}</strong>
+            <button className={`metric-card metric-button ${filter === 'deacon' ? 'active-filter' : ''}`} type="button" onClick={() => updateFilter('deacon')}>
+              <strong>{peopleSummary?.deacons ?? '—'}</strong>
               <span>Diáconos</span>
             </button>
           </section>
@@ -158,12 +180,12 @@ export default function PersonasPage() {
               <span className="meta">Filtro activo: {filterLabel(filter)}</span>
             </div>
             <div className="quick-link-grid">
-              <FilterCard value="bishop" count={dashboard.bishops} title="Obispos" subtitle="registrados" />
-              <FilterCard value="priest" count={dashboard.priests} title="Sacerdotes" subtitle="registrados" />
-              <FilterCard value="deacon" count={dashboard.deacons} title="Diáconos" subtitle="registrados" />
-              <FilterCard value="active" count={dashboard.active} title="Activos" subtitle="vigentes" />
-              <FilterCard value="religious" count={dashboard.religious} title="Religiosos/as" subtitle="registrados" />
-              <FilterCard value="lay" count={dashboard.lay} title="Laicos/as" subtitle="registrados" />
+              <FilterCard value="bishop" count={peopleSummary?.bishops ?? 0} title="Obispos" subtitle="registrados" />
+              <FilterCard value="priest" count={peopleSummary?.priests ?? 0} title="Sacerdotes" subtitle="registrados" />
+              <FilterCard value="deacon" count={peopleSummary?.deacons ?? 0} title="Diáconos" subtitle="registrados" />
+              <FilterCard value="active" count={peopleSummary?.active ?? 0} title="Activos" subtitle="vigentes" />
+              <FilterCard value="religious" count={peopleSummary?.religious ?? 0} title="Religiosos/as" subtitle="registrados" />
+              <FilterCard value="layperson" count={peopleSummary?.laypeople ?? 0} title="Laicos/as" subtitle="registrados" />
             </div>
           </section>
 
@@ -173,10 +195,10 @@ export default function PersonasPage() {
                 <p className="eyebrow">Listado</p>
                 <h2>{filterLabel(filter)}</h2>
               </div>
-              <span className="meta">{filteredItems.length} resultados · clic en una fila para ver nombramientos e historial</span>
+              <span className="meta">{items.length} resultados · clic en una fila para ver nombramientos e historial</span>
             </div>
 
-            {filteredItems.length === 0 ? (
+            {!loading && items.length === 0 ? (
               <div className="empty-state">No hay registros para este filtro.</div>
             ) : (
               <div className="table-wrap">
@@ -191,7 +213,7 @@ export default function PersonasPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredItems.map((item) => (
+                    {items.map((item) => (
                       <tr className="clickable-table-row" key={item.id}>
                         <td>
                           <Link href={`/personas/${item.slug}`}>

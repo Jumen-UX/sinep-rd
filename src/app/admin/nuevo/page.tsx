@@ -5,7 +5,7 @@ import Link from 'next/link'
 const items = [
   { title: 'Nuevo obispo', type: 'Clero', description: 'Seleccionar sacerdote existente o crear obispo nuevo, con ordenación episcopal, sucesión y cargo.', href: '/admin/nuevo/obispo' },
   { title: 'Nuevo sacerdote', type: 'Clero', description: 'Datos personales, ordenación, cargo actual, historial y fuentes.', href: '/admin/nuevo/sacerdote' },
-  { title: 'Nueva jurisdicción', type: 'Entidad', description: 'Identidad, territorio, responsable principal, estadísticas y estructura.', href: null },
+  { title: 'Nueva jurisdicción', type: 'Entidad', description: 'Provincia eclesiástica, arquidiócesis, diócesis, ordinariato o división territorial interna.', href: '/admin/nuevo/jurisdiccion' },
   { title: 'Nueva parroquia', type: 'Entidad', description: 'Identidad, dependencia territorial, responsables, contacto y pastorales.', href: '/admin/nuevo/parroquia' },
   { title: 'Nueva capilla', type: 'Entidad', description: 'Identidad, dependencia, responsable, ubicación y notas.', href: '/admin/nuevo/capilla' },
 ]
@@ -27,11 +27,7 @@ export default function AdminNuevoPage() {
             <p className="entity-type">{item.type}</p>
             <h2>{item.title}</h2>
             <p className="meta">{item.description}</p>
-            {item.href ? (
-              <Link className="button button-primary" href={item.href}>Iniciar asistente</Link>
-            ) : (
-              <button className="button button-secondary" type="button" disabled>Asistente en preparación</button>
-            )}
+            <Link className="button button-primary" href={item.href}>Iniciar asistente</Link>
           </article>
         ))}
       </section>

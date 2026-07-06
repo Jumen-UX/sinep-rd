@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabasePublishableKey, getSupabaseUrl } from '@/lib/supabase/config'
+import { fetchSupabaseJson } from '@/lib/supabase/rest'
 
 const entityColumns = [
   'id','entity_type_id','name','official_name','slug','description','latin_name','cathedral_name',
@@ -38,32 +38,6 @@ const positionColumns = [
   'selection_method','notes_public'
 ].join(',')
 
-function getApiKey() {
-  return getSupabasePublishableKey()
-}
-
-async function fetchJson<T>(endpoint: string, key: string): Promise<T> {
-  const response = await fetch(endpoint, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-    },
-    cache: 'no-store',
-  })
-
-  if (!response.ok) {
-    const details = await response.text()
-    console.error('Supabase REST request failed', {
-      endpoint,
-      status: response.status,
-      details,
-    })
-    throw new Error(`Supabase REST request failed with status ${response.status}`)
-  }
-
-  return response.json() as Promise<T>
-}
-
 function byId(items: Record<string, unknown>[]) {
   return new Map(items.map((item) => [String(item.id), item]))
 }
@@ -75,15 +49,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Falta el slug de la entidad' }, { status: 400 })
   }
 
-  const url = getSupabaseUrl()
-  const key = getApiKey()
-  const encodedSlug = encodeURIComponent(slug)
-
   try {
-    const entities = await fetchJson<Record<string, unknown>[]>(
-      `${url}/rest/v1/ecclesiastical_entities?slug=eq.${encodedSlug}&select=${entityColumns}&limit=1`,
-      key
-    )
+    const entities = await fetchSupabaseJson<Record<string, unknown>[]>('ecclesiastical_entities', {
+      slug: `eq.${slug}`,
+      select: entityColumns,
+      limit: '1',
+    })
 
     const entity = entities[0]
 
@@ -93,37 +64,46 @@ export async function GET(request: NextRequest) {
 
     const entityId = String(entity.id)
     const entityTypeId = String(entity.entity_type_id)
-    const positionFilter = `or=(direct_entity_slug.eq.${encodedSlug},parish_slug.eq.${encodedSlug},zone_slug.eq.${encodedSlug},vicariate_slug.eq.${encodedSlug},diocese_slug.eq.${encodedSlug})`
+    const positionFilter = `or=(direct_entity_slug.eq.${slug},parish_slug.eq.${slug},zone_slug.eq.${slug},vicariate_slug.eq.${slug},diocese_slug.eq.${slug})`
 
     const [types, relationships, currentAppointments, appointmentRows, evolutionEvents, statisticsSnapshots, positions] = await Promise.all([
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/entity_types?id=eq.${entityTypeId}&select=key,name&limit=1`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/entity_relationships?or=(parent_entity_id.eq.${entityId},child_entity_id.eq.${entityId})&select=${relationshipColumns}&order=start_date.desc.nullslast`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_current_appointments?entity_id=eq.${entityId}&select=person_name,person_slug,office_name,start_date,appointment_type,notes_public&order=start_date.desc.nullslast`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/appointments?entity_id=eq.${entityId}&status=eq.active&visibility=eq.public&select=${appointmentColumns}&order=start_date.asc.nullslast`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_entity_evolution_events?entity_id=eq.${entityId}&select=${evolutionColumns}&order=event_date.asc.nullslast`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_entity_statistics_snapshots?entity_id=eq.${entityId}&select=${statisticsColumns}&order=statistics_year.asc`,
-        key
-      ).catch(() => []),
-      fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/public_position_assignments_with_hierarchy?${positionFilter}&select=${positionColumns}&order=start_date.desc.nullslast`,
-        key
-      ).catch(() => [])
+      fetchSupabaseJson<Record<string, unknown>[]>('entity_types', {
+        id: `eq.${entityTypeId}`,
+        select: 'key,name',
+        limit: '1',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('entity_relationships', {
+        or: `(parent_entity_id.eq.${entityId},child_entity_id.eq.${entityId})`,
+        select: relationshipColumns,
+        order: 'start_date.desc.nullslast',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('public_current_appointments', {
+        entity_id: `eq.${entityId}`,
+        select: 'person_name,person_slug,office_name,start_date,appointment_type,notes_public',
+        order: 'start_date.desc.nullslast',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('appointments', {
+        entity_id: `eq.${entityId}`,
+        status: 'eq.active',
+        visibility: 'eq.public',
+        select: appointmentColumns,
+        order: 'start_date.asc.nullslast',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('public_entity_evolution_events', {
+        entity_id: `eq.${entityId}`,
+        select: evolutionColumns,
+        order: 'event_date.asc.nullslast',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('public_entity_statistics_snapshots', {
+        entity_id: `eq.${entityId}`,
+        select: statisticsColumns,
+        order: 'statistics_year.asc',
+      }).catch(() => []),
+      fetchSupabaseJson<Record<string, unknown>[]>('public_position_assignments_with_hierarchy', {
+        or: positionFilter.replace(/^or=/, ''),
+        select: positionColumns,
+        order: 'start_date.desc.nullslast',
+      }).catch(() => [])
     ])
 
     const relatedIds = Array.from(
@@ -137,11 +117,10 @@ export async function GET(request: NextRequest) {
     let relatedEntities: Record<string, unknown>[] = []
 
     if (relatedIds.length > 0) {
-      const ids = relatedIds.join(',')
-      relatedEntities = await fetchJson<Record<string, unknown>[]>(
-        `${url}/rest/v1/ecclesiastical_entities?id=in.(${ids})&select=id,name,slug`,
-        key
-      ).catch(() => [])
+      relatedEntities = await fetchSupabaseJson<Record<string, unknown>[]>('ecclesiastical_entities', {
+        id: `in.(${relatedIds.join(',')})`,
+        select: 'id,name,slug',
+      }).catch(() => [])
     }
 
     const personIds = Array.from(new Set(appointmentRows.map((item) => item.person_id).filter(Boolean).map(String)))
@@ -149,22 +128,22 @@ export async function GET(request: NextRequest) {
 
     const [people, offices, clergyProfiles] = await Promise.all([
       personIds.length > 0
-        ? fetchJson<Record<string, unknown>[]>(
-            `${url}/rest/v1/persons?id=in.(${personIds.join(',')})&select=id,display_name,slug,person_type,birth_date,death_date,age_text`,
-            key
-          ).catch(() => [])
+        ? fetchSupabaseJson<Record<string, unknown>[]>('persons', {
+            id: `in.(${personIds.join(',')})`,
+            select: 'id,display_name,slug,person_type,birth_date,death_date,age_text',
+          }).catch(() => [])
         : Promise.resolve([]),
       officeIds.length > 0
-        ? fetchJson<Record<string, unknown>[]>(
-            `${url}/rest/v1/offices?id=in.(${officeIds.join(',')})&select=id,name,key`,
-            key
-          ).catch(() => [])
+        ? fetchSupabaseJson<Record<string, unknown>[]>('offices', {
+            id: `in.(${officeIds.join(',')})`,
+            select: 'id,name,key',
+          }).catch(() => [])
         : Promise.resolve([]),
       personIds.length > 0
-        ? fetchJson<Record<string, unknown>[]>(
-            `${url}/rest/v1/clergy_profiles?person_id=in.(${personIds.join(',')})&select=person_id,diaconal_ordination_date,priestly_ordination_date,episcopal_ordination_date,canonical_status`,
-            key
-          ).catch(() => [])
+        ? fetchSupabaseJson<Record<string, unknown>[]>('clergy_profiles', {
+            person_id: `in.(${personIds.join(',')})`,
+            select: 'person_id,diaconal_ordination_date,priestly_ordination_date,episcopal_ordination_date,canonical_status',
+          }).catch(() => [])
         : Promise.resolve([])
     ])
 
