@@ -115,6 +115,199 @@ const kindHelp: Record<StructureKindKey, string> = {
   organic: 'Úsala cuando quieras representar organigramas, responsables y líneas de coordinación.',
 }
 
+const structurePageStyles = `
+  .structure-config-page input,
+  .structure-config-page select,
+  .structure-config-page textarea {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font: inherit;
+    padding: 12px 14px;
+    width: 100%;
+  }
+
+  .structure-config-page textarea {
+    min-height: 90px;
+    resize: vertical;
+  }
+
+  .structure-hero {
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+  }
+
+  .structure-hero-panel {
+    background: #fbf8f1;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    display: grid;
+    gap: 8px;
+    padding: 20px;
+  }
+
+  .structure-hero-panel strong {
+    font-size: 22px;
+    line-height: 1.2;
+  }
+
+  .structure-hero-panel span,
+  .structure-hero-panel small {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .structure-steps {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .structure-step-card {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .structure-step-number {
+    align-items: center;
+    background: var(--primary);
+    border-radius: 999px;
+    color: white;
+    display: inline-flex;
+    font-weight: 800;
+    height: 36px;
+    justify-content: center;
+    width: 36px;
+  }
+
+  .structure-kind-grid {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .structure-kind-card {
+    appearance: none;
+    cursor: pointer;
+    font: inherit;
+    min-height: auto;
+  }
+
+  .active-filter {
+    border-color: rgba(122, 31, 31, 0.68) !important;
+    box-shadow: 0 16px 36px rgba(122, 31, 31, 0.12) !important;
+  }
+
+  .structure-inline-form {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr) auto;
+    margin-top: 14px;
+  }
+
+  .structure-map-layout {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: minmax(240px, 0.78fr) minmax(0, 1.22fr);
+  }
+
+  .structure-level-list,
+  .structure-tree-list {
+    background: #fbf8f1;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    display: grid;
+    gap: 10px;
+    padding: 18px;
+  }
+
+  .structure-level-list h3,
+  .structure-tree-list h3 {
+    margin: 0 0 4px;
+  }
+
+  .structure-level-row,
+  .structure-node-row {
+    align-items: center;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 12px;
+  }
+
+  .structure-level-row span {
+    align-items: center;
+    background: #f7f3ea;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-weight: 800;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
+  }
+
+  .structure-level-row div,
+  .structure-node-row div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .structure-level-row small,
+  .structure-node-row small,
+  .structure-node-row span {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .structure-action-tabs {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .structure-action-tabs .metric-card strong {
+    font-size: 24px;
+  }
+
+  .structure-main-form label {
+    color: var(--muted);
+    display: grid;
+    font-size: 14px;
+    font-weight: 800;
+    gap: 7px;
+  }
+
+  .structure-main-form .role-pill {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+    justify-content: flex-start;
+    width: fit-content;
+  }
+
+  .structure-main-form .role-pill input {
+    width: auto;
+  }
+
+  @media (max-width: 980px) {
+    .structure-hero,
+    .structure-steps,
+    .structure-map-layout,
+    .structure-action-tabs,
+    .structure-inline-form {
+      grid-template-columns: 1fr;
+    }
+  }
+`
+
 function emptyToNull(value: FormDataEntryValue | null) {
   const text = String(value ?? '').trim()
   return text.length > 0 ? text : null
@@ -496,6 +689,7 @@ export default function AdminEstructuraPage() {
 
   return (
     <main className="container dashboard-page admin-config-page structure-config-page">
+      <style>{structurePageStyles}</style>
       <div className="detail-backlink">
         <Link href="/admin">← Volver al panel administrativo</Link>
       </div>
