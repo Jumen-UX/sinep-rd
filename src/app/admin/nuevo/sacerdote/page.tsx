@@ -38,9 +38,9 @@ type PriestPayload = {
   photo_path?: string | null
   biography_public: string | null
   notes_internal: string | null
-  identity_document_type: string | null
-  identity_document_number: string | null
-  identity_document_country: string | null
+  validation_type: string | null
+  validation_value: string | null
+  validation_country: string | null
   incardination_entity_id: string | null
   current_service_entity_id: string | null
   diaconal_ordination_date: string | null
@@ -288,9 +288,9 @@ export default function NuevoSacerdotePage() {
         photo_path: uploadedPhoto.photo_path,
         biography_public: emptyToNull(form.get('biography_public')),
         notes_internal: emptyToNull(form.get('notes_internal')),
-        identity_document_type: emptyToNull(form.get('identity_document_type')),
-        identity_document_number: emptyToNull(form.get('identity_document_number')),
-        identity_document_country: emptyToNull(form.get('identity_document_country')),
+        validation_type: emptyToNull(form.get('validation_type')),
+        validation_value: emptyToNull(form.get('validation_value')),
+        validation_country: emptyToNull(form.get('validation_country')),
         incardination_entity_id: emptyToNull(form.get('incardination_entity_id')),
         current_service_entity_id: emptyToNull(form.get('current_service_entity_id')),
         diaconal_ordination_date: emptyToNull(form.get('diaconal_ordination_date')),
@@ -338,7 +338,7 @@ export default function NuevoSacerdotePage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nuevo sacerdote</h1>
-          <p className="lead">Registra todo en un solo proceso. El sistema arma el nombre, asigna un código interno automáticamente y conserva lo escrito como borrador hasta guardar.</p>
+          <p className="lead">Registra todo en un solo proceso. El sistema arma el nombre, asigna un código interno privado y conserva lo escrito como borrador hasta guardar.</p>
         </div>
       </section>
 
@@ -357,22 +357,22 @@ export default function NuevoSacerdotePage() {
         <section hidden={step !== 0}>
           <p className="eyebrow">Paso 1 · Datos obligatorios</p>
           <h2>Identificación básica</h2>
-          <p className="meta">El nombre de la ficha se arma automáticamente con estos datos. El código interno SINEP también se asigna solo al guardar.</p>
+          <p className="meta">El nombre de la ficha se arma automáticamente con estos datos. El código interno SINEP se asigna solo al guardar y no aparece en la ficha pública.</p>
           <input name="first_name" placeholder="Primer nombre" required defaultValue={fieldValue('first_name')} />
           <input name="middle_name" placeholder="Segundo nombre, si aplica" defaultValue={fieldValue('middle_name')} />
           <input name="last_name" placeholder="Primer apellido" required defaultValue={fieldValue('last_name')} />
           <input name="second_last_name" placeholder="Segundo apellido, si aplica" defaultValue={fieldValue('second_last_name')} />
           <div className="empty-state"><strong>Nombre que se mostrará</strong><span>{namePreview || 'Se formará automáticamente al escribir el nombre y apellido.'}</span></div>
-          <h2>Documento de identidad</h2>
-          <p className="meta">Opcional, pero recomendado para evitar duplicados. Usa cédula para dominicanos y pasaporte para extranjeros.</p>
-          <select name="identity_document_type" defaultValue={fieldValue('identity_document_type')}>
+          <h2>Validación interna</h2>
+          <p className="meta">Opcional, pero recomendado para evitar duplicados. Este dato es privado y no aparece en la ficha pública.</p>
+          <select name="validation_type" defaultValue={fieldValue('validation_type')}>
             <option value="">Sin documento por ahora</option>
             <option value="cedula">Cédula</option>
             <option value="passport">Pasaporte</option>
             <option value="other">Otro documento</option>
           </select>
-          <input name="identity_document_number" placeholder="Número de documento" defaultValue={fieldValue('identity_document_number')} />
-          <input name="identity_document_country" placeholder="País del documento, ej. República Dominicana" defaultValue={fieldValue('identity_document_country', 'República Dominicana')} />
+          <input name="validation_value" placeholder="Número del documento para validación interna" defaultValue={fieldValue('validation_value')} />
+          <input name="validation_country" placeholder="País del documento, ej. República Dominicana" defaultValue={fieldValue('validation_country', 'República Dominicana')} />
           <h2>Foto de la ficha</h2>
           <p className="meta">Opcional. Formatos permitidos: JPG, PNG o WEBP. Máximo 5 MB. La foto no se guarda como borrador; selecciónala antes de guardar.</p>
           <input name="photo_file" type="file" accept="image/jpeg,image/png,image/webp" />
@@ -457,7 +457,7 @@ export default function NuevoSacerdotePage() {
         <section hidden={step !== 6}>
           <p className="eyebrow">Paso 7 · Revisión</p>
           <h2>Guardar sacerdote</h2>
-          <p className="lead">Se creará la ficha, el perfil clerical, el código interno SINEP y, si elegiste un cargo actual, también la asignación.</p>
+          <p className="lead">Se creará la ficha pública, el perfil clerical, el registro privado de validación y, si elegiste un cargo actual, también la asignación.</p>
           <p className="meta">Después de guardar correctamente, el borrador se elimina automáticamente de este navegador.</p>
         </section>
 
