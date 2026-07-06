@@ -21,7 +21,10 @@ type OfficeConfig = {
 }
 
 type MissingField = { key: string; label: string }
+type DraftValue = string | string[]
+type DraftValues = Record<string, DraftValue>
 
+const DRAFT_KEY = 'sinep:nuevo-sacerdote:draft'
 const steps = ['Persona', 'Nacimiento', 'Clero', 'Servicio', 'Cargo', 'Completitud', 'Revisión']
 const optionalFields: MissingField[] = [
   { key: 'gender', label: 'Género' },
@@ -64,6 +67,7 @@ export default function NuevoSacerdotePage() {
   const [entities, setEntities] = useState<EntityPath[]>([])
   const [officeConfigs, setOfficeConfigs] = useState<OfficeConfig[]>([])
   const [loading, setLoading] = useState(true)
+  const [draftLoaded, setDraftLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -71,10 +75,55 @@ export default function NuevoSacerdotePage() {
   const [serviceId, setServiceId] = useState('')
   const [quickEntityId, setQuickEntityId] = useState('')
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
+  const [draftValues, setDraftValues] = useState<DraftValues>({})
 
   const incardination = entities.find((item) => item.direct_entity_id === incardinationId)
   const service = entities.find((item) => item.direct_entity_id === serviceId)
   const quickEntity = entities.find((item) => item.direct_entity_id === quickEntityId)
+  const notIdentifiedFields = Array.isArray(draftValues.not_identified_fields) ? draftValues.not_identified_fields : []
+
+  function fieldValue(name: string, fallback = '') {
+    const value = draftValues[name]
+    return typeof value === 'string' ? value : fallback
+  }
+
+  function saveDraft(next: DraftValues) {
+    setDraftValues(next)
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(next))
+  }
+
+  function setDraftField(name: string, value: DraftValue) {
+    setDraftValues((previous) => {
+      const next = { ...previous, [name]: value }
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  function handleDraftChange(event: FormEvent<HTMLFormElement>) {
+    const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    if (!target.name) return
+
+    setDraftValues((previous) => {
+      const next: DraftValues = { ...previous }
+
+      if (target instanceof HTMLInputElement && target.type === 'checkbox') {
+        if (target.name === 'not_identified_fields') {
+          const current = Array.isArray(previous.not_identified_fields) ? previous.not_identified_fields : []
+          next.not_identified_fields = target.checked
+            ? Array.from(new Set([...current, target.value]))
+            : current.filter((value) => value !== target.value)
+        } else {
+          next[target.name] = target.checked ? 'on' : ''
+        }
+      } else {
+        next[target.name] = target.value
+      }
+
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(next))
+      return next
+    })
+  }
 
   async function loadData() {
     setError(null)
@@ -109,6 +158,23 @@ export default function NuevoSacerdotePage() {
     loadData()
   }, [])
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(DRAFT_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved) as DraftValues
+        saveDraft(parsed)
+        setIncardinationId(typeof parsed.incardination_entity_id === 'string' ? parsed.incardination_entity_id : '')
+        setServiceId(typeof parsed.current_service_entity_id === 'string' ? parsed.current_service_entity_id : '')
+        setQuickEntityId(typeof parsed.quick_entity_id === 'string' ? parsed.quick_entity_id : typeof parsed.current_service_entity_id === 'string' ? parsed.current_service_entity_id : '')
+      }
+    } catch {
+      window.localStorage.removeItem(DRAFT_KEY)
+    } finally {
+      setDraftLoaded(true)
+    }
+  }, [])
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
@@ -120,10 +186,9 @@ export default function NuevoSacerdotePage() {
     const firstName = String(form.get('first_name') ?? '').trim()
     const lastName = String(form.get('last_name') ?? '').trim()
     const displayName = String(form.get('display_name') ?? '').trim() || buildDisplayName(form)
-    const slugInput = String(form.get('slug') ?? '').trim()
 
     if (!firstName || !lastName || !displayName) {
-      setError('Nombre, apellido y nombre público son obligatorios.')
+      setError('Nombre, apellido y nombre para mostrar en la ficha son obligatorios.')
       setSaving(false)
       return
     }
@@ -135,7 +200,7 @@ export default function NuevoSacerdotePage() {
       last_name: lastName,
       second_last_name: emptyToNull(form.get('second_last_name')),
       display_name: displayName,
-      slug: slugInput || slugify(displayName),
+      slug: slugify(displayName),
       gender: emptyToNull(form.get('gender')),
       birth_date: emptyToNull(form.get('birth_date')),
       birth_place: emptyToNull(form.get('birth_place')),
@@ -168,6 +233,8 @@ export default function NuevoSacerdotePage() {
         throw new Error(data.error ?? 'No se pudo guardar el sacerdote.')
       }
 
+      window.localStorage.removeItem(DRAFT_KEY)
+      setDraftValues({})
       setSavedSlug(data.slug ?? payload.slug)
       setMessage(quickOfficeId ? 'Sacerdote creado correctamente con su cargo actual.' : 'Sacerdote creado correctamente.')
     } catch (err) {
@@ -177,7 +244,7 @@ export default function NuevoSacerdotePage() {
     }
   }
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando asistente...</div></main>
+  if (loading || !draftLoaded) return <main className="container"><div className="empty-state">Cargando asistente...</div></main>
 
   return (
     <main className="container dashboard-page admin-config-page">
@@ -187,7 +254,7 @@ export default function NuevoSacerdotePage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nuevo sacerdote</h1>
-          <p className="lead">Registra la persona, su perfil clerical, ordenación, incardinación y, si ya se conoce, su cargo actual. El guardado es transaccional para evitar fichas parciales.</p>
+          <p className="lead">Registra la persona, su perfil clerical, ordenación, incardinación y, si ya se conoce, su cargo actual. Lo que escribas se conserva como borrador en este navegador hasta guardar la ficha.</p>
         </div>
       </section>
 
@@ -202,113 +269,99 @@ export default function NuevoSacerdotePage() {
         ))}
       </div>
 
-      <form className="admin-form admin-config-form card dashboard-section" onSubmit={handleSubmit}>
-        {step === 0 && (
-          <section>
-            <p className="eyebrow">Paso 1</p>
-            <h2>Datos personales</h2>
-            <input name="first_name" placeholder="Primer nombre" required />
-            <input name="middle_name" placeholder="Segundo nombre" />
-            <input name="last_name" placeholder="Primer apellido" required />
-            <input name="second_last_name" placeholder="Segundo apellido" />
-            <input name="display_name" placeholder="Nombre público. Si se deja vacío, se genera automáticamente" />
-            <input name="slug" placeholder="Slug opcional" />
-          </section>
-        )}
+      <form className="admin-form admin-config-form card dashboard-section" onChange={handleDraftChange} onSubmit={handleSubmit}>
+        <section hidden={step !== 0}>
+          <p className="eyebrow">Paso 1</p>
+          <h2>Datos personales</h2>
+          <input name="first_name" placeholder="Primer nombre" required defaultValue={fieldValue('first_name')} />
+          <input name="middle_name" placeholder="Segundo nombre" defaultValue={fieldValue('middle_name')} />
+          <input name="last_name" placeholder="Primer apellido" required defaultValue={fieldValue('last_name')} />
+          <input name="second_last_name" placeholder="Segundo apellido" defaultValue={fieldValue('second_last_name')} />
+          <input name="display_name" placeholder="Nombre como aparecerá en la ficha. Si se deja vacío, se genera automáticamente" defaultValue={fieldValue('display_name')} />
+        </section>
 
-        {step === 1 && (
-          <section>
-            <p className="eyebrow">Paso 2</p>
-            <h2>Nacimiento y biografía</h2>
-            <select name="gender" defaultValue="male">
-              <option value="male">Masculino</option>
-              <option value="female">Femenino</option>
-              <option value="unknown">No identificado</option>
-            </select>
-            <label>Fecha de nacimiento<input name="birth_date" type="date" /></label>
-            <input name="birth_place" placeholder="Lugar de nacimiento" />
-            <textarea name="biography_public" placeholder="Biografía pública breve" />
-          </section>
-        )}
+        <section hidden={step !== 1}>
+          <p className="eyebrow">Paso 2</p>
+          <h2>Nacimiento y biografía</h2>
+          <select name="gender" defaultValue={fieldValue('gender', 'male')}>
+            <option value="male">Masculino</option>
+            <option value="female">Femenino</option>
+            <option value="unknown">No identificado</option>
+          </select>
+          <label>Fecha de nacimiento<input name="birth_date" type="date" defaultValue={fieldValue('birth_date')} /></label>
+          <input name="birth_place" placeholder="Lugar de nacimiento" defaultValue={fieldValue('birth_place')} />
+          <textarea name="biography_public" placeholder="Biografía breve para mostrar en la ficha" defaultValue={fieldValue('biography_public')} />
+        </section>
 
-        {step === 2 && (
-          <section>
-            <p className="eyebrow">Paso 3</p>
-            <h2>Perfil clerical</h2>
-            <label>Ordenación diaconal<input name="diaconal_ordination_date" type="date" /></label>
-            <label>Ordenación sacerdotal<input name="priestly_ordination_date" type="date" /></label>
-            <input name="religious_order" placeholder="Orden o congregación, si aplica" />
-            <select name="canonical_status" defaultValue="active">
-              <option value="active">Activo</option>
-              <option value="retired">Retirado</option>
-              <option value="suspended">Suspendido</option>
-              <option value="deceased">Fallecido</option>
-              <option value="unknown">No identificado</option>
-            </select>
-            <textarea name="clergy_notes" placeholder="Notas privadas del perfil clerical" />
-          </section>
-        )}
+        <section hidden={step !== 2}>
+          <p className="eyebrow">Paso 3</p>
+          <h2>Perfil clerical</h2>
+          <label>Ordenación diaconal<input name="diaconal_ordination_date" type="date" defaultValue={fieldValue('diaconal_ordination_date')} /></label>
+          <label>Ordenación sacerdotal<input name="priestly_ordination_date" type="date" defaultValue={fieldValue('priestly_ordination_date')} /></label>
+          <input name="religious_order" placeholder="Orden o congregación, si aplica" defaultValue={fieldValue('religious_order')} />
+          <select name="canonical_status" defaultValue={fieldValue('canonical_status', 'active')}>
+            <option value="active">Activo</option>
+            <option value="retired">Retirado</option>
+            <option value="suspended">Suspendido</option>
+            <option value="deceased">Fallecido</option>
+            <option value="unknown">No identificado</option>
+          </select>
+          <textarea name="clergy_notes" placeholder="Notas internas del perfil clerical" defaultValue={fieldValue('clergy_notes')} />
+        </section>
 
-        {step === 3 && (
-          <section>
-            <p className="eyebrow">Paso 4</p>
-            <h2>Incardinación y servicio actual</h2>
-            <select name="incardination_entity_id" value={incardinationId} onChange={(event) => setIncardinationId(event.target.value)}>
-              <option value="">Sin incardinación por ahora</option>
-              {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-            </select>
-            <div className="empty-state"><strong>Incardinación</strong><span>{incardination?.hierarchy_path ?? incardination?.direct_entity_name ?? 'Selecciona la diócesis, jurisdicción o entidad si aplica.'}</span></div>
-            <select name="current_service_entity_id" value={serviceId} onChange={(event) => { setServiceId(event.target.value); setQuickEntityId(event.target.value) }}>
-              <option value="">Sin servicio actual por ahora</option>
-              {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-            </select>
-            <div className="empty-state"><strong>Servicio actual</strong><span>{service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona parroquia, capilla, curia o entidad donde sirve.'}</span></div>
-          </section>
-        )}
+        <section hidden={step !== 3}>
+          <p className="eyebrow">Paso 4</p>
+          <h2>Incardinación y servicio actual</h2>
+          <select name="incardination_entity_id" value={incardinationId} onChange={(event) => setIncardinationId(event.target.value)}>
+            <option value="">Sin incardinación por ahora</option>
+            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
+          </select>
+          <div className="empty-state"><strong>Incardinación</strong><span>{incardination?.hierarchy_path ?? incardination?.direct_entity_name ?? 'Selecciona la diócesis, jurisdicción o entidad si aplica.'}</span></div>
+          <select name="current_service_entity_id" value={serviceId} onChange={(event) => { const value = event.target.value; setServiceId(value); setQuickEntityId(value); setDraftField('quick_entity_id', value) }}>
+            <option value="">Sin servicio actual por ahora</option>
+            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
+          </select>
+          <div className="empty-state"><strong>Servicio actual</strong><span>{service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona parroquia, capilla, curia o entidad donde sirve.'}</span></div>
+        </section>
 
-        {step === 4 && (
-          <section>
-            <p className="eyebrow">Paso 5</p>
-            <h2>Asignación rápida de cargo actual</h2>
-            <p className="meta">Opcional. Si todavía no tienes cargos configurados, deja este paso vacío y usa luego Catálogo de cargos y Asignaciones de cargos.</p>
-            <select name="quick_office_configuration_id" defaultValue="">
-              <option value="">Sin cargo actual por ahora</option>
-              {officeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
-            </select>
-            <input name="quick_title_override" placeholder="Título público opcional: Párroco, Vicario parroquial, Encargado" />
-            <select name="quick_entity_id" value={quickEntityId} onChange={(event) => setQuickEntityId(event.target.value)}>
-              <option value="">Usar entidad del servicio actual o dejar sin entidad</option>
-              {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-            </select>
-            <div className="empty-state"><strong>Entidad del cargo</strong><span>{quickEntity?.hierarchy_path ?? quickEntity?.direct_entity_name ?? service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona la parroquia, capilla, curia o entidad del cargo.'}</span></div>
-            <label>Fecha de inicio del cargo<input name="quick_start_date" type="date" /></label>
-            <textarea name="quick_notes_public" placeholder="Notas públicas del cargo" />
-          </section>
-        )}
+        <section hidden={step !== 4}>
+          <p className="eyebrow">Paso 5</p>
+          <h2>Asignación rápida de cargo actual</h2>
+          <p className="meta">Opcional. Si todavía no tienes cargos configurados, deja este paso vacío y usa luego Catálogo de cargos y Asignaciones de cargos.</p>
+          <select name="quick_office_configuration_id" defaultValue={fieldValue('quick_office_configuration_id')}>
+            <option value="">Sin cargo actual por ahora</option>
+            {officeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
+          </select>
+          <input name="quick_title_override" placeholder="Título para mostrar: Párroco, Vicario parroquial, Encargado" defaultValue={fieldValue('quick_title_override')} />
+          <select name="quick_entity_id" value={quickEntityId} onChange={(event) => setQuickEntityId(event.target.value)}>
+            <option value="">Usar entidad del servicio actual o dejar sin entidad</option>
+            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
+          </select>
+          <div className="empty-state"><strong>Entidad del cargo</strong><span>{quickEntity?.hierarchy_path ?? quickEntity?.direct_entity_name ?? service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona la parroquia, capilla, curia o entidad del cargo.'}</span></div>
+          <label>Fecha de inicio del cargo<input name="quick_start_date" type="date" defaultValue={fieldValue('quick_start_date')} /></label>
+          <textarea name="quick_notes_public" placeholder="Notas visibles del cargo" defaultValue={fieldValue('quick_notes_public')} />
+        </section>
 
-        {step === 5 && (
-          <section>
-            <p className="eyebrow">Paso 6</p>
-            <h2>Datos faltantes</h2>
-            <p className="meta">Marca datos que fueron buscados y no se pudieron identificar. No generarán alertas de completitud.</p>
-            <div className="card compact-section">
-              {optionalFields.map((field) => (
-                <label key={field.key} className="role-pill">
-                  <input type="checkbox" name="not_identified_fields" value={field.key} /> {field.label}
-                </label>
-              ))}
-            </div>
-            <textarea name="notes_internal" placeholder="Notas internas de carga o verificación" />
-          </section>
-        )}
+        <section hidden={step !== 5}>
+          <p className="eyebrow">Paso 6</p>
+          <h2>Datos faltantes</h2>
+          <p className="meta">Marca datos que fueron buscados y no se pudieron identificar. No generarán alertas de completitud.</p>
+          <div className="card compact-section">
+            {optionalFields.map((field) => (
+              <label key={field.key} className="role-pill">
+                <input type="checkbox" name="not_identified_fields" value={field.key} defaultChecked={notIdentifiedFields.includes(field.key)} /> {field.label}
+              </label>
+            ))}
+          </div>
+          <textarea name="notes_internal" placeholder="Notas internas de carga o verificación" defaultValue={fieldValue('notes_internal')} />
+        </section>
 
-        {step === 6 && (
-          <section>
-            <p className="eyebrow">Paso 7</p>
-            <h2>Revisión y guardado</h2>
-            <p className="lead">Guarda el sacerdote. Si elegiste un cargo actual, se creará también su asignación pública.</p>
-          </section>
-        )}
+        <section hidden={step !== 6}>
+          <p className="eyebrow">Paso 7</p>
+          <h2>Revisión y guardado</h2>
+          <p className="lead">Guarda el sacerdote. Si elegiste un cargo actual, se creará también su asignación pública.</p>
+          <p className="meta">Después de guardar correctamente, el borrador se elimina automáticamente de este navegador.</p>
+        </section>
 
         <div className="admin-form-grid">
           <button className="button button-secondary" type="button" onClick={() => setStep(Math.max(0, step - 1))}>Anterior</button>
