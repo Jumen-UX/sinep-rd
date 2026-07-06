@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import styles from './page.module.css'
 
 type OfficeRow = {
   id: string
@@ -233,7 +234,7 @@ export default function AdminCargosPage() {
           </div>
         </div>
 
-        <form className="admin-form admin-config-form" onSubmit={submitCargo}>
+        <form className={styles.officeForm} onSubmit={submitCargo}>
           <input name="display_name" placeholder="Nombre visible, ej. Capellán" />
           <input name="key" placeholder="Clave opcional, ej. capellan_institucional" />
           <input name="base_role_name" placeholder="Cargo base, ej. Capellán" />
@@ -257,18 +258,18 @@ export default function AdminCargosPage() {
           <input name="source_name" placeholder="Fuente o documento" />
           <input name="source_url" placeholder="URL de fuente" />
 
-          <div className="role-list">
+          <div className={styles.officeOptions}>
             {personTypes.map(([value, label]) => (
-              <label className="role-pill" key={value}>
+              <label className={styles.officeCheckbox} key={value}>
                 <input name={`person_type_${value}`} type="checkbox" defaultChecked={value === 'priest'} /> {label}
               </label>
             ))}
           </div>
 
-          <label className="role-pill"><input name="requires_clergy" type="checkbox" defaultChecked /> Requiere clero</label>
-          <label className="role-pill"><input name="is_elective" type="checkbox" /> Es electivo</label>
+          <label className={styles.officeCheckbox}><input name="requires_clergy" type="checkbox" defaultChecked /> Requiere clero</label>
+          <label className={styles.officeCheckbox}><input name="is_elective" type="checkbox" /> Es electivo</label>
 
-          <div className="actions">
+          <div className={styles.formActions}>
             <button className="button button-primary" name="intent" value="admin_create" disabled={saving}>Crear cargo oficial</button>
             <button className="button button-secondary" name="intent" value="suggest" disabled={saving}>Sugerir para revisión</button>
           </div>
