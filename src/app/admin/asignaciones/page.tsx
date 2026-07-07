@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import StructureEntityPicker from '@/components/admin/StructureEntityPicker'
 import { createClient } from '@/lib/supabase/client'
 
 type Person = {
@@ -31,18 +32,6 @@ type Unit = {
   id: string
   name: string
   organization_chart_id: string
-}
-
-type EntityPath = {
-  direct_entity_id: string
-  direct_entity_name: string
-  direct_entity_slug: string
-  direct_entity_type_name: string | null
-  parish_name: string | null
-  zone_name: string | null
-  vicariate_name: string | null
-  diocese_name: string | null
-  hierarchy_path: string | null
 }
 
 type PastoralEntity = {
@@ -124,11 +113,6 @@ function addMonths(dateValue: string, months: number) {
   return date.toISOString().slice(0, 10)
 }
 
-function buildRoute(entity: EntityPath | null) {
-  if (!entity) return 'Selecciona una entidad para ver su ruta jerárquica.'
-  return entity.hierarchy_path || [entity.diocese_name, entity.vicariate_name, entity.zone_name, entity.parish_name ?? entity.direct_entity_name].filter(Boolean).join(' / ')
-}
-
 export default function AdminAsignacionesPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -137,7 +121,6 @@ export default function AdminAsignacionesPage() {
   const [configs, setConfigs] = useState<OfficeConfiguration[]>([])
   const [charts, setCharts] = useState<Chart[]>([])
   const [units, setUnits] = useState<Unit[]>([])
-  const [entityPaths, setEntityPaths] = useState<EntityPath[]>([])
   const [pastoralEntities, setPastoralEntities] = useState<PastoralEntity[]>([])
   const [assignments, setAssignments] = useState<AssignmentRow[]>([])
   const [rawAssignments, setRawAssignments] = useState<RawAssignment[]>([])
@@ -152,7 +135,6 @@ export default function AdminAsignacionesPage() {
   const [selectedEntityId, setSelectedEntityId] = useState('')
 
   const selectedConfig = configs.find((item) => item.id === selectedConfigId)
-  const selectedEntityPath = entityPaths.find((item) => item.direct_entity_id === selectedEntityId) ?? null
   const defaultTermEnd = selectedConfig?.default_term_months && selectedStartDate
     ? addMonths(selectedStartDate, selectedConfig.default_term_months)
     : ''
@@ -166,18 +148,17 @@ export default function AdminAsignacionesPage() {
       return
     }
 
-    const [peopleRes, configRes, chartRes, unitRes, entityPathRes, pastoralRes, assignmentRes, rawAssignmentRes] = await Promise.all([
+    const [peopleRes, configRes, chartRes, unitRes, pastoralRes, assignmentRes, rawAssignmentRes] = await Promise.all([
       supabase.from('persons').select('id,display_name,slug,person_type').eq('status', 'active').order('display_name'),
       supabase.from('office_configurations').select('id,key,display_name,organization_chart_id,default_term_months,continues_until_replaced').eq('status', 'active').order('display_name'),
       supabase.from('organization_charts').select('id,key,name').eq('status', 'active').order('sort_order'),
       supabase.from('organization_units').select('id,name,organization_chart_id').eq('status', 'active').order('name'),
-      supabase.from('public_entity_hierarchy_paths').select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,zone_name,vicariate_name,diocese_name,hierarchy_path').order('direct_entity_name'),
       supabase.from('pastoral_entities').select('id,name,slug').eq('status', 'active').order('name'),
       supabase.from('public_position_assignments_with_hierarchy').select('id,person_name,person_slug,position_title,organization_chart_name,direct_entity_name,pastoral_entity_name,hierarchy_path,predecessor_person_name,successor_person_name,start_date,term_start_date,term_end_date,actual_end_date,assignment_status').order('start_date', { ascending: false, nullsFirst: false }).limit(100),
       supabase.from('position_assignments').select('id,person_id,office_configuration_id,title_override').order('created_at', { ascending: false }).limit(300),
     ])
 
-    const failed = [peopleRes, configRes, chartRes, unitRes, entityPathRes, pastoralRes, assignmentRes, rawAssignmentRes].find((item) => item.error)
+    const failed = [peopleRes, configRes, chartRes, unitRes, pastoralRes, assignmentRes, rawAssignmentRes].find((item) => item.error)
     if (failed?.error) {
       setError(failed.error.message)
     } else {
@@ -185,7 +166,6 @@ export default function AdminAsignacionesPage() {
       setConfigs((configRes.data ?? []) as OfficeConfiguration[])
       setCharts((chartRes.data ?? []) as Chart[])
       setUnits((unitRes.data ?? []) as Unit[])
-      setEntityPaths((entityPathRes.data ?? []) as EntityPath[])
       setPastoralEntities((pastoralRes.data ?? []) as PastoralEntity[])
       setAssignments((assignmentRes.data ?? []) as AssignmentRow[])
       setRawAssignments((rawAssignmentRes.data ?? []) as RawAssignment[])
@@ -345,19 +325,14 @@ export default function AdminAsignacionesPage() {
             {filteredUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
           </select>
 
-          <select name="ecclesiastical_entity_id" value={selectedEntityId} onChange={(event) => setSelectedEntityId(event.target.value)}>
-            <option value="">Entidad eclesiástica</option>
-            {entityPaths.map((entity) => (
-              <option key={entity.direct_entity_id} value={entity.direct_entity_id}>
-                {entity.direct_entity_name} {entity.direct_entity_type_name ? `· ${entity.direct_entity_type_name}` : ''}
-              </option>
-            ))}
-          </select>
-
-          <div className="empty-state hierarchy-route-note">
-            <strong>Ruta jerárquica</strong>
-            <span>{buildRoute(selectedEntityPath)}</span>
-          </div>
+          <StructureEntityPicker
+            emptyLabel="Sin entidad eclesiástica seleccionada"
+            help="Selecciona la entidad del nombramiento usando la estructura activa de la diócesis. En una fase posterior los cargos se filtrarán por el nivel seleccionado."
+            label="Entidad eclesiástica"
+            name="ecclesiastical_entity_id"
+            value={selectedEntityId}
+            onChange={setSelectedEntityId}
+          />
 
           <select name="pastoral_entity_id" defaultValue="">
             <option value="">Entidad pastoral</option>
