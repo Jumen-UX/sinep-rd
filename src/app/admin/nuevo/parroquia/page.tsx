@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import StructureHierarchySelector from '@/components/StructureHierarchySelector'
 import { createClient } from '@/lib/supabase/client'
 
 type EntityPath = {
@@ -92,6 +93,8 @@ export default function NuevaParroquiaPage() {
     const form = new FormData(event.currentTarget)
     const name = String(form.get('name') ?? '').trim()
     const slugInput = String(form.get('slug') ?? '').trim()
+    const fallbackParentId = emptyToNull(form.get('parent_entity_id'))
+    const structureLinkedEntityId = emptyToNull(form.get('structure_linked_entity_id'))
 
     if (!name) {
       setError('El nombre de la parroquia es obligatorio.')
@@ -118,7 +121,13 @@ export default function NuevaParroquiaPage() {
       source_name: emptyToNull(form.get('source_name')),
       source_url: emptyToNull(form.get('source_url')),
       source_checked_at: emptyToNull(form.get('source_checked_at')),
-      parent_entity_id: emptyToNull(form.get('parent_entity_id')),
+      parent_entity_id: fallbackParentId ?? structureLinkedEntityId,
+      structure_diocese_id: emptyToNull(form.get('structure_diocese_id')),
+      structure_template_id: emptyToNull(form.get('structure_template_id')),
+      structure_parent_node_id: emptyToNull(form.get('structure_parent_node_id')),
+      structure_parent_level_id: emptyToNull(form.get('structure_parent_level_id')),
+      structure_parent_level_key: emptyToNull(form.get('structure_parent_level_key')),
+      structure_parent_path: emptyToNull(form.get('structure_parent_path')),
       not_identified_fields: form.getAll('not_identified_fields').map(String),
     }
 
@@ -184,13 +193,23 @@ export default function NuevaParroquiaPage() {
           <section>
             <p className="eyebrow">Paso 2</p>
             <h2>Dependencia territorial</h2>
-            <select name="parent_entity_id" value={selectedParentId} onChange={(event) => setSelectedParentId(event.target.value)}>
-              <option value="">Sin dependencia por ahora</option>
-              {parents.map((parent) => <option key={parent.direct_entity_id} value={parent.direct_entity_id}>{parent.direct_entity_name} · {parent.direct_entity_type_name ?? 'Entidad'}</option>)}
-            </select>
-            <div className="empty-state">
-              <strong>Ruta seleccionada</strong>
-              <span>{selectedParent?.hierarchy_path ?? selectedParent?.direct_entity_name ?? 'Selecciona diócesis, vicaría territorial o zona si aplica.'}</span>
+            <StructureHierarchySelector
+              helperText="Selecciona primero la diócesis y luego la vicaría, zona pastoral o unidad donde quedará ubicada la parroquia. Si el árbol todavía no está configurado, usa el selector de respaldo."
+              kind="territorial"
+              label="Ubicación en la estructura de la diócesis"
+              namePrefix="structure"
+            />
+            <div className="legacy-parent-selector">
+              <label>Selector de respaldo por ficha pública
+                <select name="parent_entity_id" value={selectedParentId} onChange={(event) => setSelectedParentId(event.target.value)}>
+                  <option value="">Sin dependencia pública directa</option>
+                  {parents.map((parent) => <option key={parent.direct_entity_id} value={parent.direct_entity_id}>{parent.direct_entity_name} · {parent.direct_entity_type_name ?? 'Entidad'}</option>)}
+                </select>
+              </label>
+              <div className="empty-state">
+                <strong>Ruta pública seleccionada</strong>
+                <span>{selectedParent?.hierarchy_path ?? selectedParent?.direct_entity_name ?? 'Selecciona una entidad pública solo si necesitas un padre directo adicional.'}</span>
+              </div>
             </div>
             <textarea name="territory_summary" placeholder="Territorio, sectores o comunidades que atiende" />
           </section>
