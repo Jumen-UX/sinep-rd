@@ -350,7 +350,7 @@ export default function DiocesisPage() {
                         <td>{formatDate(item.erected_at)}</td>
                         <td className="table-actions">
                           <Link className="inline-link" href={`/entidades/${item.slug}`}>Ficha</Link>
-                          <Link className="inline-link" href="/admin/estructura">Estructura</Link>
+                          <Link className="inline-link" href={`/admin/estructura?diocese=${encodeURIComponent(item.id)}`}>Estructura</Link>
                         </td>
                       </tr>
                     ))}
