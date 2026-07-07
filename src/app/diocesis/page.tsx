@@ -40,7 +40,16 @@ type DashboardSummary = {
     total_catholics: number
     total_population: number
     total_parishes: number
+    loaded_parishes?: number
+    reported_parishes?: number
   }
+}
+
+type FilterShortcut = {
+  value: DioceseFilter
+  title: string
+  subtitle: string
+  count: number | string
 }
 
 const builtinFilters = new Set(['all', 'archdiocese', 'diocese', 'military'])
@@ -130,17 +139,57 @@ export default function DiocesisPage() {
   }
 
   const dashboard = summary?.dioceses
+  const activeProvince = builtinFilters.has(filter) ? null : filter
+  const activeType = builtinFilters.has(filter) ? filter : 'all'
+  const reportedParishes = dashboard?.reported_parishes ?? dashboard?.total_parishes
+  const loadedParishes = dashboard?.loaded_parishes
+  const filterShortcuts: FilterShortcut[] = [
+    {
+      value: 'all',
+      title: 'Todas',
+      subtitle: 'Jurisdicciones registradas',
+      count: dashboard?.total ?? '—',
+    },
+    {
+      value: 'archdiocese',
+      title: 'Arquidiócesis',
+      subtitle: 'Sedes arquidiocesanas',
+      count: dashboard?.archdioceses ?? '—',
+    },
+    {
+      value: 'diocese',
+      title: 'Diócesis',
+      subtitle: 'Jurisdicciones diocesanas',
+      count: dashboard?.dioceses ?? '—',
+    },
+    {
+      value: 'military',
+      title: 'Castrense',
+      subtitle: 'Jurisdicción militar',
+      count: dashboard?.military ?? '—',
+    },
+  ]
 
   return (
     <main className="container dashboard-page">
-      <div className="dashboard-hero card">
+      <div className="dashboard-hero card dashboard-hero-split">
         <div>
-          <p className="eyebrow">Dashboard nacional</p>
+          <p className="eyebrow">Dashboard jerárquico</p>
           <h1>Diócesis y jurisdicciones</h1>
           <p className="lead">
-            Lista filtrable de jurisdicciones. El dashboard resume datos generales; cada fila abre la ficha completa con ordinarios, evolución histórica y estadísticas.
+            Vista nacional para leer la organización territorial-canónica: país, provincia eclesiástica, jurisdicción y ficha. Los niveles internos configurables se trabajan desde el motor de estructuras.
           </p>
         </div>
+
+        <aside className="dashboard-path-card" aria-label="Ruta activa">
+          <p className="eyebrow">Ruta activa</p>
+          <div className="dashboard-path-list">
+            <span>República Dominicana</span>
+            <span>{activeProvince ?? 'Todas las provincias eclesiásticas'}</span>
+            <span>{activeType === 'all' ? 'Todos los tipos' : filterTitle()}</span>
+          </div>
+          <Link className="inline-link" href="/admin/estructura">Configurar niveles internos</Link>
+        </aside>
       </div>
 
       {loading && <div className="empty-state">Cargando directorio...</div>}
@@ -177,7 +226,11 @@ export default function DiocesisPage() {
               <span>Población total reportada</span>
             </div>
             <div className="metric-card">
-              <strong>{formatNumber(dashboard?.total_parishes)}</strong>
+              <strong>{formatNumber(loadedParishes)}</strong>
+              <span>Parroquias cargadas</span>
+            </div>
+            <div className="metric-card">
+              <strong>{formatNumber(reportedParishes)}</strong>
               <span>Parroquias reportadas</span>
             </div>
           </section>
@@ -185,23 +238,72 @@ export default function DiocesisPage() {
           <section className="card dashboard-section">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Filtros</p>
-                <h2>Acceso rápido</h2>
+                <p className="eyebrow">Filtros jerárquicos</p>
+                <h2>Selecciona primero el contexto</h2>
               </div>
               <span className="meta">Filtro activo: {filterTitle()}</span>
             </div>
-            <div className="quick-link-grid">
-              {(dashboard?.provinces ?? []).map((province) => (
-                <button
-                  className={`quick-link-card filter-card ${filter === province.name ? 'active-filter' : ''}`}
-                  key={province.name}
-                  type="button"
-                  onClick={() => updateFilter(province.name)}
-                >
-                  <strong>{province.name}</strong>
-                  <span>{province.count} jurisdicciones</span>
+
+            <div className="hierarchy-filter-panel">
+              <div className="filter-group">
+                <p className="filter-group-title">País</p>
+                <button className="filter-chip active-filter" type="button" onClick={() => updateFilter('all')}>
+                  República Dominicana
                 </button>
-              ))}
+              </div>
+
+              <div className="filter-group">
+                <p className="filter-group-title">Tipo de jurisdicción</p>
+                <div className="filter-chip-list">
+                  {filterShortcuts.map((shortcut) => (
+                    <button
+                      className={`filter-chip ${filter === shortcut.value ? 'active-filter' : ''}`}
+                      key={shortcut.value}
+                      type="button"
+                      onClick={() => updateFilter(shortcut.value)}
+                    >
+                      <strong>{shortcut.title}</strong>
+                      <span>{shortcut.count} · {shortcut.subtitle}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="filter-group">
+                <p className="filter-group-title">Provincia eclesiástica</p>
+                <div className="quick-link-grid">
+                  {(dashboard?.provinces ?? []).map((province) => (
+                    <button
+                      className={`quick-link-card filter-card ${filter === province.name ? 'active-filter' : ''}`}
+                      key={province.name}
+                      type="button"
+                      onClick={() => updateFilter(province.name)}
+                    >
+                      <strong>{province.name}</strong>
+                      <span>{province.count} jurisdicciones</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="card dashboard-section">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Siguiente nivel</p>
+                <h2>Estructura interna configurable</h2>
+                <p className="meta">
+                  Cada diócesis puede usar sus propios niveles: vicarías, zonas pastorales, parroquias, sectores, capillas o comunidades. Esta vista prepara el contexto; la configuración se realiza en el módulo administrativo.
+                </p>
+              </div>
+              <Link className="button button-primary" href="/admin/estructura">Abrir configurador</Link>
+            </div>
+
+            <div className="hierarchy-preview-grid">
+              <div><strong>Territorial-canónico</strong><span>País → provincia eclesiástica → diócesis</span></div>
+              <div><strong>Pastoral-operativo</strong><span>Diócesis → niveles internos configurados</span></div>
+              <div><strong>Ficha y cargos</strong><span>Entidad → responsables → nombramientos</span></div>
             </div>
           </section>
 
@@ -228,6 +330,7 @@ export default function DiocesisPage() {
                       <th>Católicos</th>
                       <th>Parroquias</th>
                       <th>Erección</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -245,6 +348,10 @@ export default function DiocesisPage() {
                         <td>{formatNumber(item.catholics_total)}</td>
                         <td>{formatNumber(item.parishes_count)}</td>
                         <td>{formatDate(item.erected_at)}</td>
+                        <td className="table-actions">
+                          <Link className="inline-link" href={`/entidades/${item.slug}`}>Ficha</Link>
+                          <Link className="inline-link" href="/admin/estructura">Estructura</Link>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
