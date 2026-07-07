@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 
-export default function AdminUsersLayout({ children }: { children: React.ReactNode }) {
+export default function AdminUsersLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <nav className="container detail-backlink" aria-label="Usuarios y seguridad">
