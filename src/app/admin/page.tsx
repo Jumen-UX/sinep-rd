@@ -57,6 +57,27 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
   return role.roles
 }
 
+const featuredAdminActions: ModuleCard[] = [
+  {
+    href: '/admin/estructura',
+    type: 'Motor flexible',
+    title: 'Configurar estructura por diócesis',
+    description: 'Define niveles propios por diócesis: vicarías, zonas pastorales, parroquias, sectores, capillas, comunidades u otras unidades internas.',
+  },
+  {
+    href: '/diocesis',
+    type: 'Vista nacional',
+    title: 'Revisar jerarquía territorial',
+    description: 'Valida el contexto país → provincia eclesiástica → jurisdicción antes de editar niveles internos o crear unidades.',
+  },
+  {
+    href: '/admin/asignaciones',
+    type: 'Nombramientos',
+    title: 'Asignar responsables',
+    description: 'Registra cargos, vacantes, traslados y responsables vinculados a entidades o niveles de la estructura.',
+  },
+]
+
 const moduleGroups: ModuleGroup[] = [
   {
     eyebrow: 'Trabajo diario',
@@ -282,6 +303,26 @@ export default function AdminPage() {
           <div className="metric-card"><strong>{summary.pending_change_requests}</strong><span>Solicitudes pendientes</span></div>
         </section>
       )}
+
+      <section className="card admin-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Prioridad operativa</p>
+            <h2>Motor flexible de estructuras</h2>
+            <p className="meta">Empieza por definir la estructura de cada diócesis. Después los formularios de parroquias, cargos y personas podrán usar esos niveles como filtros jerárquicos.</p>
+          </div>
+        </div>
+        <div className="grid admin-modules">
+          {featuredAdminActions.map((module) => (
+            <article className="entity-card admin-module" key={module.href}>
+              <p className="entity-type">{module.type}</p>
+              <h2>{module.title}</h2>
+              <p className="meta">{module.description}</p>
+              <Link className="button button-primary" href={module.href}>Abrir</Link>
+            </article>
+          ))}
+        </div>
+      </section>
 
       {moduleGroups.map((group) => (
         <section className="card admin-section" key={group.title}>
