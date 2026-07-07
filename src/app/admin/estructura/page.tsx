@@ -176,10 +176,7 @@ const pageStyles = `
     width: 100%;
   }
 
-  .structure-catalog textarea {
-    min-height: 90px;
-    resize: vertical;
-  }
+  .structure-catalog textarea { min-height: 90px; resize: vertical; }
 
   .structure-catalog-hero {
     align-items: stretch;
@@ -187,9 +184,7 @@ const pageStyles = `
   }
 
   .structure-catalog-summary,
-  .catalog-fixed {
-    background: #fbf8f1;
-  }
+  .catalog-fixed { background: #fbf8f1; }
 
   .structure-catalog-summary {
     border: 1px solid var(--border);
@@ -199,10 +194,7 @@ const pageStyles = `
     padding: 20px;
   }
 
-  .structure-catalog-summary strong {
-    font-size: 22px;
-    line-height: 1.2;
-  }
+  .structure-catalog-summary strong { font-size: 22px; line-height: 1.2; }
 
   .structure-catalog-summary span,
   .structure-catalog-summary small,
@@ -234,13 +226,8 @@ const pageStyles = `
   }
 
   .catalog-form-grid,
-  .catalog-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .catalog-preset-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+  .catalog-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .catalog-preset-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
   .catalog-column,
   .catalog-form,
@@ -307,11 +294,7 @@ const pageStyles = `
     gap: 8px;
   }
 
-  .catalog-preset-card h3 {
-    font-size: 18px;
-    line-height: 1.2;
-    margin: 0;
-  }
+  .catalog-preset-card h3 { font-size: 18px; line-height: 1.2; margin: 0; }
 
   .catalog-preset-steps span {
     background: #fbf8f1;
@@ -323,9 +306,7 @@ const pageStyles = `
     padding: 7px 10px;
   }
 
-  .catalog-tabs .metric-card strong {
-    font-size: 24px;
-  }
+  .catalog-tabs .metric-card strong { font-size: 24px; }
 
   .catalog-help {
     background: #fbf8f1;
@@ -348,9 +329,7 @@ const pageStyles = `
     .catalog-layout,
     .catalog-form-grid,
     .catalog-tabs,
-    .catalog-preset-grid {
-      grid-template-columns: 1fr;
-    }
+    .catalog-preset-grid { grid-template-columns: 1fr; }
   }
 `
 
@@ -453,6 +432,13 @@ export default function AdminEstructuraPage() {
     return entityTypes.find((type) => keys.includes(type.key))?.id ?? null
   }
 
+  function resolveRequestedDiocese(loadedDioceses: EcclesiasticalEntity[]) {
+    const params = new URLSearchParams(window.location.search)
+    const requested = params.get('diocese') ?? params.get('diocese_id') ?? params.get('slug')
+    if (!requested) return loadedDioceses[0]
+    return loadedDioceses.find((diocese) => diocese.id === requested || diocese.slug === requested) ?? loadedDioceses[0]
+  }
+
   async function createRootNode(templateId: string, rootLevelId: string) {
     if (!selectedDioceseId || !selectedDiocese) return null
 
@@ -497,13 +483,19 @@ export default function AdminEstructuraPage() {
 
     const loadedEntities = (entityRes.data ?? []) as EcclesiasticalEntity[]
     const loadedDioceses = loadedEntities.filter((entity) => /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato/i.test(entity.name))
+    const requestedDiocese = resolveRequestedDiocese(loadedDioceses)
 
     setEntities(loadedEntities)
     setDioceses(loadedDioceses)
     setStructureKinds(((kindRes.data ?? []) as StructureKind[]).length > 0 ? (kindRes.data as StructureKind[]) : fallbackKinds)
     setEntityTypes((entityTypeRes.data ?? []) as EntityType[])
 
-    if (!selectedDioceseId && loadedDioceses[0]) setSelectedDioceseId(loadedDioceses[0].id)
+    if (requestedDiocese) {
+      setSelectedDioceseId(requestedDiocese.id)
+    } else if (!selectedDioceseId && loadedDioceses[0]) {
+      setSelectedDioceseId(loadedDioceses[0].id)
+    }
+
     setLoadingBase(false)
   }
 
