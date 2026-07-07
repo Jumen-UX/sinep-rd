@@ -38,6 +38,14 @@ type SaveResponse = {
   error?: string
 }
 
+type StructureNodeLevel = {
+  level_id: string | null
+}
+
+type LevelOfficeConfiguration = {
+  office_configuration_id: string
+}
+
 const DRAFT_KEY = 'sinep:nuevo-sacerdote:draft'
 const PHOTO_BUCKET = 'person-photos'
 const steps = ['Origen', 'Persona', 'Nacimiento', 'Clero', 'Servicio', 'Cargo', 'Completitud', 'Revisión']
@@ -86,6 +94,9 @@ export default function NuevoSacerdotePage() {
   const [error, setError] = useState<string | null>(null)
   const [entities, setEntities] = useState<EntityHierarchyEntity[]>([])
   const [officeConfigs, setOfficeConfigs] = useState<OfficeConfig[]>([])
+  const [quickOfficeConfigId, setQuickOfficeConfigId] = useState('')
+  const [levelOfficeConfigIds, setLevelOfficeConfigIds] = useState<string[]>([])
+  const [levelFilterMessage, setLevelFilterMessage] = useState('Selecciona una entidad del cargo para filtrar cargos por nivel estructural.')
   const [deacons, setDeacons] = useState<DeaconOption[]>([])
   const [mode, setMode] = useState<'existing-deacon' | 'new-priest'>('existing-deacon')
   const [priestType, setPriestType] = useState<'diocesan' | 'religious'>('diocesan')
@@ -99,6 +110,9 @@ export default function NuevoSacerdotePage() {
 
   const selectedDeacon = deacons.find((item) => item.id === selectedDeaconId)
   const incardination = entities.find((item) => item.direct_entity_id === incardinationId)
+  const filteredOfficeConfigs = quickEntityId && levelOfficeConfigIds.length > 0
+    ? officeConfigs.filter((office) => levelOfficeConfigIds.includes(office.id))
+    : officeConfigs
   const notIdentifiedFields = Array.isArray(draftValues.not_identified_fields) ? draftValues.not_identified_fields : []
   const namePreview = selectedDeacon?.display_name || buildDisplayNameFromParts([
     fieldValue('first_name'),
@@ -191,6 +205,7 @@ export default function NuevoSacerdotePage() {
         setIncardinationId(typeof parsed.incardination_entity_id === 'string' ? parsed.incardination_entity_id : '')
         setServiceId(typeof parsed.current_service_entity_id === 'string' ? parsed.current_service_entity_id : '')
         setQuickEntityId(typeof parsed.quick_entity_id === 'string' ? parsed.quick_entity_id : typeof parsed.current_service_entity_id === 'string' ? parsed.current_service_entity_id : '')
+        setQuickOfficeConfigId(typeof parsed.quick_office_configuration_id === 'string' ? parsed.quick_office_configuration_id : '')
       }
     } catch {
       window.localStorage.removeItem(DRAFT_KEY)
@@ -198,6 +213,60 @@ export default function NuevoSacerdotePage() {
       setDraftLoaded(true)
     }
   }, [])
+
+  useEffect(() => {
+    async function loadLevelOfficeConfigurations() {
+      setLevelOfficeConfigIds([])
+
+      if (!quickEntityId) {
+        setLevelFilterMessage('Selecciona una entidad del cargo para filtrar cargos por nivel estructural.')
+        return
+      }
+
+      const { data: nodeData, error: nodeError } = await supabase
+        .from('structure_nodes')
+        .select('level_id')
+        .eq('linked_ecclesiastical_entity_id', quickEntityId)
+        .eq('status', 'active')
+        .limit(1)
+
+      if (nodeError) {
+        setLevelFilterMessage(`No se pudo identificar el nivel estructural: ${nodeError.message}`)
+        return
+      }
+
+      const levelId = ((nodeData ?? []) as StructureNodeLevel[])[0]?.level_id
+      if (!levelId) {
+        setLevelFilterMessage('La entidad seleccionada no tiene nodo estructural activo vinculado. Se muestran todos los cargos.')
+        return
+      }
+
+      const { data: levelOfficeData, error: levelOfficeError } = await supabase
+        .from('structure_level_office_configurations')
+        .select('office_configuration_id')
+        .eq('level_id', levelId)
+        .eq('status', 'active')
+        .order('sort_order')
+
+      if (levelOfficeError) {
+        setLevelFilterMessage(`No se pudieron cargar los cargos permitidos: ${levelOfficeError.message}`)
+        return
+      }
+
+      const allowedIds = ((levelOfficeData ?? []) as LevelOfficeConfiguration[]).map((item) => item.office_configuration_id)
+      setLevelOfficeConfigIds(allowedIds)
+      setLevelFilterMessage(allowedIds.length > 0 ? 'Cargos filtrados por el nivel estructural seleccionado.' : 'Este nivel no tiene cargos configurados todavía. Se muestran todos los cargos.')
+    }
+
+    loadLevelOfficeConfigurations()
+  }, [quickEntityId, supabase])
+
+  useEffect(() => {
+    if (quickOfficeConfigId && !filteredOfficeConfigs.some((office) => office.id === quickOfficeConfigId)) {
+      setQuickOfficeConfigId('')
+      setDraftField('quick_office_configuration_id', '')
+    }
+  }, [quickOfficeConfigId, filteredOfficeConfigs])
 
   async function uploadPhoto(file: File, slug: string) {
     if (!file || file.size === 0) return { photo_url: null, photo_path: null }
@@ -304,6 +373,7 @@ export default function NuevoSacerdotePage() {
 
       window.localStorage.removeItem(DRAFT_KEY)
       setDraftValues({})
+      setQuickOfficeConfigId('')
       setSavedSlug(data.slug ?? payload.slug)
       setSavedInternalCode(data.internal_reference_code ?? null)
       setMessage(existingDeaconId ? 'Diácono registrado como sacerdote correctamente.' : quickOfficeId ? 'Sacerdote creado correctamente con su cargo actual.' : 'Sacerdote creado correctamente.')
@@ -466,10 +536,11 @@ export default function NuevoSacerdotePage() {
           <p className="eyebrow">Paso 6 · Cargo actual</p>
           <h2>Asignación rápida</h2>
           <p className="meta">Opcional. Puedes guardar sin cargo y asignarlo después.</p>
-          <select name="quick_office_configuration_id" defaultValue={fieldValue('quick_office_configuration_id')}>
+          <select name="quick_office_configuration_id" value={quickOfficeConfigId} onChange={(event) => { setQuickOfficeConfigId(event.target.value); setDraftField('quick_office_configuration_id', event.target.value) }}>
             <option value="">Sin cargo actual por ahora</option>
-            {officeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
+            {filteredOfficeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
           </select>
+          <p className="meta">{levelFilterMessage}</p>
           <input name="quick_title_override" placeholder="Título para mostrar" defaultValue={fieldValue('quick_title_override')} />
           <StructureEntityPicker
             allowCreate
