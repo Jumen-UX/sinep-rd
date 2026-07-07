@@ -24,6 +24,16 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
+async function getExistingProfileUserId(admin: ReturnType<typeof createAdminClient>, email: string) {
+  const { data } = await admin
+    .from('profiles')
+    .select('id')
+    .ilike('email', email)
+    .maybeSingle()
+
+  return typeof data?.id === 'string' ? data.id : null
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: userData, error: userError } = await supabase.auth.getUser()
@@ -67,6 +77,8 @@ export async function POST(request: Request) {
   try {
     const admin = createAdminClient()
     const redirectTo = new URL('/admin/login', request.url).toString()
+    let userId: string | null = null
+    let existingUser = false
 
     const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
       data: {
@@ -76,21 +88,28 @@ export async function POST(request: Request) {
       redirectTo,
     })
 
-    if (inviteError || !invited.user) {
-      return NextResponse.json(
-        { error: inviteError?.message ?? 'No se pudo invitar el usuario.' },
-        { status: 400 },
-      )
+    if (invited.user) {
+      userId = invited.user.id
     }
 
-    const userId = invited.user.id
+    if (inviteError || !userId) {
+      userId = await getExistingProfileUserId(admin, email)
+      existingUser = Boolean(userId)
+
+      if (!userId) {
+        return NextResponse.json(
+          { error: inviteError?.message ?? 'No se pudo invitar el usuario.' },
+          { status: 400 },
+        )
+      }
+    }
 
     await admin.from('profiles').upsert({
       id: userId,
       email,
       full_name: fullName || email,
       phone: phone || null,
-      status: 'pending',
+      status: existingUser ? 'active' : 'pending',
     })
 
     let assignment = null
@@ -110,6 +129,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
           user_id: userId,
           email,
+          existing_user: existingUser,
           warning: assignmentError.message,
         }, { status: 201 })
       }
@@ -117,7 +137,7 @@ export async function POST(request: Request) {
       assignment = assignmentData
     }
 
-    return NextResponse.json({ user_id: userId, email, assignment }, { status: 201 })
+    return NextResponse.json({ user_id: userId, email, existing_user: existingUser, assignment }, { status: 201 })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error inesperado invitando usuario.'
     const status = message.includes('SUPABASE_SERVICE_ROLE_KEY') ? 500 : 400
