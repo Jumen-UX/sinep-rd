@@ -49,6 +49,11 @@ type EventRegistrySummary = {
   load_modes: SummaryFacet[]
 }
 
+type DerivedPage = {
+  title: string
+  description: string
+}
+
 const monthNames = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -99,7 +104,9 @@ const pageStyles = `
   .events-timeline,
   .event-card,
   .facets-grid,
-  .event-principles,
+  .derived-list,
+  .impact-list,
+  .event-detail-grid,
   .flow-grid {
     display: grid;
     gap: 14px;
@@ -122,26 +129,32 @@ const pageStyles = `
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
-  .events-tab {
+  .events-tab,
+  .event-card-button {
     appearance: none;
     background: #ffffff;
     border: 1px solid var(--border);
-    border-radius: 18px;
     cursor: pointer;
-    display: grid;
-    gap: 6px;
-    padding: 16px;
+    font: inherit;
     text-align: left;
   }
 
-  .events-tab.active {
+  .events-tab {
+    border-radius: 18px;
+    display: grid;
+    gap: 6px;
+    padding: 16px;
+  }
+
+  .events-tab.active,
+  .event-card-button.active {
     border-color: rgba(122, 31, 31, 0.55);
     box-shadow: 0 16px 38px rgba(122, 31, 31, 0.12);
   }
 
   .events-layout {
     align-items: start;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.36fr);
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
   }
 
   .events-metrics {
@@ -149,9 +162,11 @@ const pageStyles = `
   }
 
   .events-metric,
-  .event-card,
+  .event-card-button,
   .facet-card,
-  .principle-card,
+  .derived-card,
+  .impact-card,
+  .detail-tile,
   .flow-step {
     background: #ffffff;
     border: 1px solid var(--border);
@@ -166,8 +181,9 @@ const pageStyles = `
     letter-spacing: -0.04em;
   }
 
-  .event-card {
+  .event-card-button {
     border-left: 5px solid rgba(122, 31, 31, 0.25);
+    width: 100%;
   }
 
   .event-card-main {
@@ -237,16 +253,21 @@ const pageStyles = `
     color: #166534;
   }
 
-  .facets-grid,
-  .event-principles,
-  .flow-grid {
-    grid-template-columns: 1fr;
-  }
-
   .facet-card.highlight,
-  .principle-card.highlight {
+  .derived-card.highlight,
+  .impact-card.highlight {
     background: #fbf8f1;
     border-style: dashed;
+  }
+
+  .event-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .derived-card button,
+  .impact-card button {
+    justify-self: start;
+    margin-top: 4px;
   }
 
   .detail-backlink {
@@ -264,11 +285,16 @@ const pageStyles = `
     .events-toolbar,
     .events-tabs,
     .events-layout,
-    .events-metrics {
+    .events-metrics,
+    .event-detail-grid {
       grid-template-columns: 1fr;
     }
   }
 `
+
+function eventKey(event: EventRegistryRow) {
+  return `${event.source_kind}:${event.event_id}`
+}
 
 function formatDate(value?: string | null) {
   if (!value) return 'Sin fecha'
@@ -305,6 +331,101 @@ function isEvidencePending(event: EventRegistryRow) {
   return !['verified', 'documentado'].includes(event.evidence_status ?? '')
 }
 
+function derivedPagesFor(event: EventRegistryRow | null): DerivedPage[] {
+  if (!event) return []
+
+  const pages: DerivedPage[] = [
+    { title: 'Página del evento', description: event.title },
+  ]
+
+  if (event.event_year) pages.push({ title: `Página del año ${event.event_year}`, description: `Agrupa todos los eventos de ${event.event_year}.` })
+  if (event.event_month) pages.push({ title: `Página de ${monthLabel(event.event_month)}`, description: 'Agrupa eventos ocurridos en ese mes, sin importar el año.' })
+  if (event.event_year && event.event_month) pages.push({ title: `${monthLabel(event.event_month)} de ${event.event_year}`, description: 'Vista combinada por mes y año.' })
+  if (event.related_entity_name) pages.push({ title: `Página de ${event.related_entity_name}`, description: 'Ficha viva de entidad alimentada por eventos.' })
+  if (event.event_type_name) pages.push({ title: `Categoría: ${event.event_type_name}`, description: 'Todos los eventos del mismo tipo.' })
+  if (event.source_name) pages.push({ title: `Fuente: ${event.source_name}`, description: 'Documento o fuente que sustenta el dato.' })
+
+  return pages
+}
+
+function impactNotesFor(event: EventRegistryRow | null) {
+  if (!event) return []
+  if (event.load_mode === 'evento_calendario') {
+    return [
+      'No cambia el estado actual; aparece como fecha derivada o aniversario.',
+      'Debe enlazarse al dato base que originó la fecha.',
+      'Puede alimentar calendario, recordatorios y páginas de fecha.',
+    ]
+  }
+
+  if (event.load_mode === 'carga_historica') {
+    return [
+      'Reconstruye el pasado y alimenta la línea histórica de las entidades relacionadas.',
+      'Puede confirmar, corregir o completar una ficha vigente importada.',
+      'Debe conservar nivel de evidencia: verificado, fuente secundaria o pendiente de documento.',
+    ]
+  }
+
+  return [
+    'Debe entrar como borrador o pendiente de revisión.',
+    'Antes de aplicar, el sistema debe mostrar relaciones que creará, cerrará o modificará.',
+    'Al aprobarse, actualiza el estado vigente sin borrar la historia anterior.',
+  ]
+}
+
+function EventDetailPanel({ event }: { event: EventRegistryRow | null }) {
+  const pages = derivedPagesFor(event)
+  const impacts = impactNotesFor(event)
+
+  if (!event) {
+    return (
+      <div className="facet-card highlight">
+        <strong>Selecciona un evento</strong>
+        <span className="meta">Aquí se mostrará la ficha del evento, las páginas derivadas que alimenta y la vista previa de impacto.</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="facets-grid">
+      <div className="facet-card highlight">
+        <strong>Ficha del evento</strong>
+        <span className="meta">{event.title}</span>
+      </div>
+
+      <div className="event-detail-grid">
+        <div className="detail-tile"><strong>Fecha</strong><span className="meta">{formatDate(event.event_date)}</span></div>
+        <div className="detail-tile"><strong>Tipo</strong><span className="meta">{event.event_type_name ?? event.event_type_key ?? '—'}</span></div>
+        <div className="detail-tile"><strong>Modo</strong><span className="meta">{loadModeLabel(event.load_mode)}</span></div>
+        <div className="detail-tile"><strong>Evidencia</strong><span className="meta">{evidenceLabel(event.evidence_status)}</span></div>
+        <div className="detail-tile"><strong>Entidad</strong><span className="meta">{event.related_entity_name ?? '—'}</span></div>
+        <div className="detail-tile"><strong>Fuente</strong><span className="meta">{event.source_name ?? '—'}</span></div>
+      </div>
+
+      <div className="derived-card highlight">
+        <strong>Páginas derivadas que alimenta</strong>
+        <span className="meta">Estas no serán artículos manuales; serán vistas generadas desde el evento.</span>
+      </div>
+      <div className="derived-list">
+        {pages.map((page) => (
+          <div className="derived-card" key={page.title}>
+            <strong>{page.title}</strong>
+            <span className="meta">{page.description}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="impact-card highlight">
+        <strong>Vista previa de impacto</strong>
+        <span className="meta">Antes de aplicar un evento real, aquí se verá qué cambia y qué queda histórico.</span>
+      </div>
+      <div className="impact-list">
+        {impacts.map((note) => <div className="impact-card" key={note}><span className="meta">{note}</span></div>)}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminEventosPage() {
   const router = useRouter()
   const supabase = useMemo<SupabaseClient>(() => createClient(), [])
@@ -316,6 +437,7 @@ export default function AdminEventosPage() {
   const [monthFilter, setMonthFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [searchText, setSearchText] = useState('')
+  const [selectedEventKey, setSelectedEventKey] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -346,8 +468,14 @@ export default function AdminEventosPage() {
     if (summaryRes.error) setError(summaryRes.error.message)
     if (eventsRes.error) setError(eventsRes.error.message)
 
+    const loadedEvents = (eventsRes.data ?? []) as EventRegistryRow[]
     setSummary((summaryRes.data ?? null) as EventRegistrySummary | null)
-    setEvents((eventsRes.data ?? []) as EventRegistryRow[])
+    setEvents(loadedEvents)
+
+    if (!selectedEventKey || !loadedEvents.some((event) => eventKey(event) === selectedEventKey)) {
+      setSelectedEventKey(loadedEvents[0] ? eventKey(loadedEvents[0]) : '')
+    }
+
     setLoading(false)
   }
 
@@ -370,6 +498,8 @@ export default function AdminEventosPage() {
 
     return true
   })
+
+  const selectedEvent = filteredEvents.find((event) => eventKey(event) === selectedEventKey) ?? filteredEvents[0] ?? null
 
   const years = useMemo(() => {
     const min = summary?.min_year ?? 1500
@@ -451,14 +581,14 @@ export default function AdminEventosPage() {
             <div>
               <p className="eyebrow">Línea de eventos</p>
               <h2>{filteredEvents.length} resultados</h2>
-              <p className="meta">Al hacer clic en un año, mes, entidad, tipo de evento o documento, la futura vista pública podrá generar páginas derivadas.</p>
+              <p className="meta">Selecciona un evento para ver qué páginas alimenta y qué impacto tendría al aplicarse.</p>
             </div>
           </div>
 
           <div className="events-timeline">
             {filteredEvents.length === 0 && <div className="empty-state">No hay eventos con esos filtros.</div>}
             {filteredEvents.map((event) => (
-              <article className="event-card" key={`${event.source_kind}-${event.event_id}`}>
+              <button className={`event-card-button ${selectedEvent && eventKey(event) === eventKey(selectedEvent) ? 'active' : ''}`} key={eventKey(event)} onClick={() => setSelectedEventKey(eventKey(event))} type="button">
                 <div className="event-card-main">
                   <div className="event-date-box">
                     <strong>{dayValue(event.event_date)}</strong>
@@ -476,41 +606,19 @@ export default function AdminEventosPage() {
                     </div>
                   </div>
                 </div>
-              </article>
+              </button>
             ))}
           </div>
         </div>
 
         <aside className="facets-grid">
-          <div className="facet-card highlight">
-            <strong>Principio del módulo</strong>
-            <span className="meta">Primero se reconstruye la historia. Después el sistema queda vivo y se alimenta por eventos nuevos.</span>
-          </div>
-
-          <div className="facet-card">
-            <strong>Páginas derivadas</strong>
-            <span className="meta">Año, mes, entidad, persona, documento, territorio y categoría no serán artículos manuales: serán vistas generadas desde eventos.</span>
-          </div>
-
-          <div className="facet-card">
-            <strong>Meses con eventos</strong>
-            {(summary?.months ?? []).slice(0, 12).map((facet) => (
-              <span className="meta" key={facet.month}>{monthLabel(facet.month)} · {facet.count}</span>
-            ))}
-          </div>
-
-          <div className="facet-card">
-            <strong>Tipos frecuentes</strong>
-            {(summary?.event_types ?? []).slice(0, 8).map((facet) => (
-              <span className="meta" key={facet.key}>{facet.name ?? facet.key} · {facet.count}</span>
-            ))}
-          </div>
+          <EventDetailPanel event={selectedEvent} />
 
           <div className="facet-card highlight">
             <strong>Asistentes pendientes</strong>
             <span className="meta">Registrar evento nuevo</span>
             <span className="meta">Carga histórica guiada</span>
-            <span className="meta">Vista previa de impacto</span>
+            <span className="meta">Vista previa de impacto real</span>
             <span className="meta">Adjuntar documento fuente</span>
           </div>
         </aside>
