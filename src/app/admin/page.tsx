@@ -121,15 +121,21 @@ const moduleGroups: ModuleGroup[] = [
     ],
   },
   {
-    eyebrow: 'Estructura institucional',
-    title: 'Ver y organizar la institución',
-    description: 'Herramientas para entender y mantener la estructura territorial, pastoral y administrativa.',
+    eyebrow: 'Estructura eclesial',
+    title: 'Ver y organizar la Iglesia',
+    description: 'Herramientas para separar la jerarquía territorial-canónica de la organización pastoral, administrativa y colegial.',
     modules: [
       {
+        href: '/admin/jurisdicciones',
+        type: 'Jurisdicciones',
+        title: 'Jurisdicciones eclesiásticas',
+        description: 'Ver el árbol Iglesia sui iuris → provincia eclesiástica → sede metropolitana y diócesis sufragáneas.',
+      },
+      {
         href: '/admin/estructura',
-        type: 'Estructura',
-        title: 'Estructura institucional',
-        description: 'Organizar diócesis, parroquias, zonas, vicarías y áreas pastorales.',
+        type: 'Estructura interna',
+        title: 'Estructura pastoral / administrativa',
+        description: 'Organizar vicarías, zonas, parroquias, sectores, capillas y unidades internas de cada diócesis.',
       },
       {
         href: '/admin/organigramas',
