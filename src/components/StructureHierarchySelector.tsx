@@ -74,6 +74,91 @@ type StructureHierarchySelectorProps = {
 
 const fixedJurisdictionKeys = ['country', 'ecclesiastical_province', 'archdiocese', 'diocese', 'military_ordinariate']
 
+const componentStyles = `
+  .structure-selector {
+    background: #fbf8f1;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .structure-selector h3 {
+    color: var(--foreground);
+    font-size: clamp(19px, 2vw, 22px);
+    line-height: 1.15;
+    margin: 0;
+  }
+
+  .structure-selector-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .structure-selector label {
+    color: var(--muted);
+    display: grid;
+    font-size: 14px;
+    font-weight: 800;
+    gap: 7px;
+  }
+
+  .structure-selector select {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--foreground);
+    font: inherit;
+    padding: 12px 14px;
+    width: 100%;
+  }
+
+  .structure-selector-path {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    display: grid;
+    gap: 6px;
+    padding: 14px;
+  }
+
+  .structure-selector-path strong {
+    color: var(--foreground);
+    line-height: 1.2;
+  }
+
+  .structure-selector-path span,
+  .structure-selector-path small {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .legacy-parent-selector {
+    border-top: 1px solid var(--border);
+    display: grid;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+
+  .legacy-parent-selector label {
+    color: var(--muted);
+    display: grid;
+    font-size: 14px;
+    font-weight: 800;
+    gap: 7px;
+  }
+
+  @media (max-width: 860px) {
+    .structure-selector-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+`
+
 function isFixedJurisdictionNode(node: Pick<StructureTreeNode, 'level_key' | 'level_name'>) {
   return fixedJurisdictionKeys.includes(node.level_key) || /pa[ií]s|provincia eclesi[aá]stica|arquidi[oó]cesis|di[oó]cesis|ordinariato/i.test(node.level_name)
 }
@@ -113,22 +198,24 @@ export default function StructureHierarchySelector({
   const [error, setError] = useState<string | null>(null)
 
   const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) ?? null
-  const sortedNodes = [...nodes].sort((a, b) => pathLabel(a).localeCompare(pathLabel(b), 'es'))
-  const selectableNodes = sortedNodes.filter((node) => node.is_current && node.status === 'active')
+  const sortedNodes = useMemo(() => [...nodes].sort((a, b) => pathLabel(a).localeCompare(pathLabel(b), 'es')), [nodes])
+  const selectableNodes = useMemo(() => sortedNodes.filter((node) => node.is_current && node.status === 'active'), [sortedNodes])
   const selectedNode = selectableNodes.find((node) => node.node_id === selectedNodeId) ?? null
-  const selection: StructureSelection | null = selectedDioceseId && selectedTemplateId && selectedNode
-    ? {
-        dioceseId: selectedDioceseId,
-        templateId: selectedTemplateId,
-        parentNodeId: selectedNode.node_id,
-        parentNodeName: selectedNode.name,
-        parentLevelId: selectedNode.level_id,
-        parentLevelKey: selectedNode.level_key,
-        parentLevelName: selectedNode.level_name,
-        linkedEntityId: selectedNode.linked_ecclesiastical_entity_id,
-        pathLabel: pathLabel(selectedNode),
-      }
-    : null
+  const selection = useMemo<StructureSelection | null>(() => {
+    if (!selectedDioceseId || !selectedTemplateId || !selectedNode) return null
+
+    return {
+      dioceseId: selectedDioceseId,
+      templateId: selectedTemplateId,
+      parentNodeId: selectedNode.node_id,
+      parentNodeName: selectedNode.name,
+      parentLevelId: selectedNode.level_id,
+      parentLevelKey: selectedNode.level_key,
+      parentLevelName: selectedNode.level_name,
+      linkedEntityId: selectedNode.linked_ecclesiastical_entity_id,
+      pathLabel: pathLabel(selectedNode),
+    }
+  }, [selectedDioceseId, selectedNode, selectedTemplateId])
 
   useEffect(() => {
     async function loadDioceses() {
@@ -241,6 +328,7 @@ export default function StructureHierarchySelector({
 
   return (
     <section className="structure-selector">
+      <style>{componentStyles}</style>
       <div className="section-heading">
         <div>
           <p className="eyebrow">Motor flexible</p>
