@@ -114,6 +114,7 @@ type RpcResult = {
 }
 
 const fixedJurisdictionKeys = ['country', 'ecclesiastical_province', 'archdiocese', 'diocese', 'military_ordinariate']
+const allowedKindKeys: StructureKindKey[] = ['territorial', 'pastoral', 'administrative', 'organic']
 
 const fallbackKinds: StructureKind[] = [
   { key: 'territorial', name: 'Territorial', description: 'Provincia, diócesis, vicarías, zonas, parroquias, sectores y capillas.' },
@@ -360,6 +361,10 @@ function isFixedJurisdictionLevel(level: Pick<StructureLevel, 'level_key' | 'nam
   return fixedJurisdictionKeys.includes(level.level_key) || /pa[ií]s|provincia eclesi[aá]stica|arquidi[oó]cesis|di[oó]cesis|ordinariato/i.test(level.name)
 }
 
+function isStructureKindKey(value: string | null): value is StructureKindKey {
+  return !!value && allowedKindKeys.includes(value as StructureKindKey)
+}
+
 function visibleLevelOrder(level: StructureLevel) {
   return isFixedJurisdictionLevel(level) ? 2 : level.level_order + 1
 }
@@ -439,6 +444,12 @@ export default function AdminEstructuraPage() {
     return loadedDioceses.find((diocese) => diocese.id === requested || diocese.slug === requested) ?? loadedDioceses[0]
   }
 
+  function resolveRequestedKind() {
+    const params = new URLSearchParams(window.location.search)
+    const requested = params.get('kind') ?? params.get('catalog') ?? params.get('tipo')
+    return isStructureKindKey(requested) ? requested : 'territorial'
+  }
+
   async function createRootNode(templateId: string, rootLevelId: string) {
     if (!selectedDioceseId || !selectedDiocese) return null
 
@@ -484,11 +495,13 @@ export default function AdminEstructuraPage() {
     const loadedEntities = (entityRes.data ?? []) as EcclesiasticalEntity[]
     const loadedDioceses = loadedEntities.filter((entity) => /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato/i.test(entity.name))
     const requestedDiocese = resolveRequestedDiocese(loadedDioceses)
+    const requestedKind = resolveRequestedKind()
 
     setEntities(loadedEntities)
     setDioceses(loadedDioceses)
     setStructureKinds(((kindRes.data ?? []) as StructureKind[]).length > 0 ? (kindRes.data as StructureKind[]) : fallbackKinds)
     setEntityTypes((entityTypeRes.data ?? []) as EntityType[])
+    setActiveKind(requestedKind)
 
     if (requestedDiocese) {
       setSelectedDioceseId(requestedDiocese.id)
