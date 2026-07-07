@@ -24,6 +24,12 @@ const configSections: { title: string; description: string; items: ConfigCard[] 
         description: 'Administrar cargos como párroco, administrador parroquial, vicario general, obispo auxiliar o director de pastoral.',
       },
       {
+        href: '/admin/estructura/cargos',
+        label: 'Reglas por nivel',
+        title: 'Cargos permitidos por nivel estructural',
+        description: 'Indicar qué cargos pueden usarse en cada nivel de una diócesis: diócesis, vicaría, zona, parroquia, sector, capilla o unidad administrativa.',
+      },
+      {
         href: '/admin/referencias-canonicas/cargos',
         label: 'Ayuda',
         title: 'Referencias canónicas',
