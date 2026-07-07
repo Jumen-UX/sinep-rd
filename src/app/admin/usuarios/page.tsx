@@ -49,6 +49,16 @@ type RoleMatrixRow = {
   permissions: EffectivePermission[] | string | null
 }
 
+type ScopeOption = {
+  scope_type: string
+  scope_entity_id: string
+  label: string
+  description: string | null
+  source_table: string
+  diocese_id: string | null
+  parent_id: string | null
+}
+
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
   active: 'Activo',
@@ -56,7 +66,7 @@ const statusLabels: Record<string, string> = {
   disabled: 'Desactivado',
 }
 
-const scopeOptions = [
+const scopeTypes = [
   { value: 'national', label: 'Nacional' },
   { value: 'diocese', label: 'Diócesis' },
   { value: 'vicariate', label: 'Vicaría' },
@@ -64,7 +74,7 @@ const scopeOptions = [
   { value: 'parish', label: 'Parroquia' },
   { value: 'pastoral_area', label: 'Área pastoral' },
   { value: 'pastoral_entity', label: 'Entidad pastoral' },
-  { value: 'entity', label: 'Entidad eclesial' },
+  { value: 'entity', label: 'Entidad eclesial / nodo' },
   { value: 'global', label: 'Global técnico' },
 ]
 
@@ -97,17 +107,28 @@ function getStatusLabel(status: string) {
   return statusLabels[status] ?? status
 }
 
+function scopeNeedsEntity(scopeType: string) {
+  return !['national', 'global'].includes(scopeType)
+}
+
 export default function AdminUsersPage() {
   const router = useRouter()
   const [users, setUsers] = useState<UserRow[]>([])
   const [roles, setRoles] = useState<RoleMatrixRow[]>([])
+  const [scopeOptions, setScopeOptions] = useState<ScopeOption[]>([])
   const [selectedUserId, setSelectedUserId] = useState('')
   const [selectedRoleId, setSelectedRoleId] = useState('')
   const [selectedScopeType, setSelectedScopeType] = useState('national')
+  const [selectedScopeEntityId, setSelectedScopeEntityId] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+
+  const visibleScopeOptions = useMemo(
+    () => scopeOptions.filter((option) => option.scope_type === selectedScopeType),
+    [scopeOptions, selectedScopeType],
+  )
 
   async function loadAccessData() {
     const supabase = createClient()
@@ -120,30 +141,39 @@ export default function AdminUsersPage() {
       return
     }
 
-    const [{ data: userRows, error: usersError }, { data: roleRows, error: rolesError }] = await Promise.all([
+    const [usersResponse, rolesResponse, scopesResponse] = await Promise.all([
       supabase.rpc('admin_list_users'),
       supabase.rpc('admin_list_roles_with_permissions'),
+      supabase.rpc('admin_list_role_scope_options', { p_scope_type: null }),
     ])
 
-    if (usersError || rolesError) {
-      setError(usersError?.message ?? rolesError?.message ?? 'No pudimos cargar usuarios y permisos.')
+    if (usersResponse.error || rolesResponse.error || scopesResponse.error) {
+      setError(
+        usersResponse.error?.message
+          ?? rolesResponse.error?.message
+          ?? scopesResponse.error?.message
+          ?? 'No pudimos cargar usuarios y permisos.',
+      )
       setLoading(false)
       return
     }
 
-    const normalizedUsers = ((userRows ?? []) as UserRow[]).map((user) => ({
+    const normalizedUsers = ((usersResponse.data ?? []) as UserRow[]).map((user) => ({
       ...user,
       active_roles: parseJsonArray<RoleAssignment>(user.active_roles),
       active_permissions: parseJsonArray<EffectivePermission>(user.active_permissions),
     }))
 
-    const normalizedRoles = ((roleRows ?? []) as RoleMatrixRow[]).map((role) => ({
+    const normalizedRoles = ((rolesResponse.data ?? []) as RoleMatrixRow[]).map((role) => ({
       ...role,
       permissions: parseJsonArray<EffectivePermission>(role.permissions),
     }))
 
+    const normalizedScopes = (scopesResponse.data ?? []) as ScopeOption[]
+
     setUsers(normalizedUsers)
     setRoles(normalizedRoles)
+    setScopeOptions(normalizedScopes)
     setSelectedUserId((current) => current || normalizedUsers[0]?.user_id || '')
     setSelectedRoleId((current) => current || normalizedRoles[0]?.role_id || '')
     setLoading(false)
@@ -154,13 +184,24 @@ export default function AdminUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (!scopeNeedsEntity(selectedScopeType)) {
+      setSelectedScopeEntityId('')
+      return
+    }
+
+    setSelectedScopeEntityId((current) => {
+      if (current && visibleScopeOptions.some((option) => option.scope_entity_id === current)) return current
+      return visibleScopeOptions[0]?.scope_entity_id ?? ''
+    })
+  }, [selectedScopeType, visibleScopeOptions])
+
   const metrics = useMemo(() => {
     const active = users.filter((user) => user.profile_status === 'active').length
     const pending = users.filter((user) => user.profile_status === 'pending').length
-    const restricted = users.filter((user) => ['suspended', 'disabled'].includes(user.profile_status)).length
     const assignments = users.reduce((total, user) => total + parseJsonArray<RoleAssignment>(user.active_roles).length, 0)
 
-    return { active, pending, restricted, assignments }
+    return { active, pending, assignments }
   }, [users])
 
   async function handleAssignRole(event: FormEvent<HTMLFormElement>) {
@@ -168,6 +209,11 @@ export default function AdminUsersPage() {
 
     if (!selectedUserId || !selectedRoleId) {
       setError('Selecciona usuario y rol antes de guardar.')
+      return
+    }
+
+    if (scopeNeedsEntity(selectedScopeType) && !selectedScopeEntityId) {
+      setError('Selecciona la entidad concreta donde aplicará el rol.')
       return
     }
 
@@ -181,6 +227,7 @@ export default function AdminUsersPage() {
         user_id: selectedUserId,
         role_id: selectedRoleId,
         scope_type: selectedScopeType,
+        scope_entity_id: scopeNeedsEntity(selectedScopeType) ? selectedScopeEntityId : null,
       },
     })
 
@@ -249,13 +296,13 @@ export default function AdminUsersPage() {
     <main className="container admin-dashboard">
       <div className="admin-topbar">
         <div>
-          <p className="eyebrow">Seguridad y acceso</p>
+          <p className="eyebrow">Acceso administrativo</p>
           <h1>Usuarios, roles y permisos</h1>
           <p className="lead">
             Administra quién puede entrar al portal, qué nivel tiene y sobre qué alcance puede trabajar.
           </p>
         </div>
-        <Link className="button button-secondary" href="/admin">Volver al panel</Link>
+        <Link className="button button-secondary" href="/admin/configuracion">Volver a configuración</Link>
       </div>
 
       <section className="dashboard-grid">
@@ -274,7 +321,7 @@ export default function AdminUsersPage() {
             <div>
               <p className="eyebrow">Asignación rápida</p>
               <h2>Asignar rol a usuario</h2>
-              <p className="meta">El alcance define dónde aplica el permiso. Más adelante se conectará al selector jerárquico de diócesis, vicaría, zona o parroquia.</p>
+              <p className="meta">El alcance ya puede apuntar a una diócesis, parroquia, nodo de estructura o entidad pastoral real.</p>
             </div>
           </div>
 
@@ -298,13 +345,26 @@ export default function AdminUsersPage() {
             </label>
 
             <label>
-              Alcance
+              Tipo de alcance
               <select value={selectedScopeType} onChange={(event) => setSelectedScopeType(event.target.value)} required>
-                {scopeOptions.map((scope) => (
+                {scopeTypes.map((scope) => (
                   <option key={scope.value} value={scope.value}>{scope.label}</option>
                 ))}
               </select>
             </label>
+
+            {scopeNeedsEntity(selectedScopeType) && (
+              <label>
+                Entidad del alcance
+                <select value={selectedScopeEntityId} onChange={(event) => setSelectedScopeEntityId(event.target.value)} required>
+                  {visibleScopeOptions.length === 0 ? (
+                    <option value="">No hay opciones activas para este alcance</option>
+                  ) : visibleScopeOptions.map((option) => (
+                    <option key={option.scope_entity_id} value={option.scope_entity_id}>{option.label} · {option.description}</option>
+                  ))}
+                </select>
+              </label>
+            )}
 
             <button className="button button-primary" disabled={saving || users.length === 0 || roles.length === 0} type="submit">
               {saving ? 'Guardando...' : 'Asignar rol'}
@@ -324,7 +384,7 @@ export default function AdminUsersPage() {
           <div className="access-flow">
             <div><strong>1</strong><span>Crear o invitar usuario en Supabase Auth.</span></div>
             <div><strong>2</strong><span>Verificar que aparezca en esta pantalla como pendiente o activo.</span></div>
-            <div><strong>3</strong><span>Asignar rol y alcance: nacional, diocesano, vicarial, zonal o parroquial.</span></div>
+            <div><strong>3</strong><span>Asignar rol, tipo de alcance y entidad concreta.</span></div>
             <div><strong>4</strong><span>Auditar cambios de acceso desde los registros internos.</span></div>
           </div>
         </article>
@@ -343,14 +403,14 @@ export default function AdminUsersPage() {
             const activeRoles = parseJsonArray<RoleAssignment>(user.active_roles)
             const activePermissions = parseJsonArray<EffectivePermission>(user.active_permissions)
             return (
-              <article className="access-user-card" key={user.user_id}>
+              <article className="access-user-card entity-card" key={user.user_id}>
                 <div className="access-user-main">
                   <div>
                     <p className="entity-type">{getStatusLabel(user.profile_status)}</p>
                     <h2>{user.full_name ?? user.email ?? 'Usuario sin nombre'}</h2>
                     <p className="meta">{user.email ?? 'Correo no registrado'} · Último acceso: {formatDate(user.last_sign_in_at)}</p>
                   </div>
-                  <div className="access-actions">
+                  <div className="access-actions actions">
                     <button className="button button-secondary" disabled={saving || user.profile_status === 'active'} onClick={() => handleStatusChange(user.user_id, 'active')} type="button">Activar</button>
                     <button className="button button-secondary" disabled={saving || user.profile_status === 'suspended'} onClick={() => handleStatusChange(user.user_id, 'suspended')} type="button">Suspender</button>
                     <button className="button button-secondary" disabled={saving || user.profile_status === 'disabled'} onClick={() => handleStatusChange(user.user_id, 'disabled')} type="button">Desactivar</button>
@@ -378,7 +438,7 @@ export default function AdminUsersPage() {
       <section className="card admin-section">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Matriz de seguridad</p>
+            <p className="eyebrow">Matriz de acceso</p>
             <h2>Roles del sistema</h2>
             <p className="meta">Cada rol agrupa permisos; los permisos se aplican junto al alcance asignado al usuario.</p>
           </div>
