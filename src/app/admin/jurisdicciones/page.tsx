@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type SupabaseClient = ReturnType<typeof createClient>
+type ViewMode = 'canonical' | 'civil' | 'internal' | 'collegial'
 
 type SuiIurisChurch = {
   id: string
@@ -32,6 +33,21 @@ type JurisdictionTreeRow = {
   is_metropolitan: boolean
   provincial_role: string | null
   canonical_status: string | null
+  status: string
+  has_children: boolean
+}
+
+type InternalTreeRow = {
+  entity_id: string
+  parent_entity_id: string | null
+  depth: number
+  path_ids: string[]
+  path_names: string[]
+  entity_type_key: string
+  entity_type_name: string
+  name: string
+  official_name: string | null
+  relationship_type: string | null
   status: string
   has_children: boolean
 }
@@ -106,8 +122,14 @@ type JurisdictionProfile = {
 type ActionSuggestion = {
   title: string
   description: string
-  tone?: 'primary' | 'secondary'
 }
+
+const viewTabs: Array<{ key: ViewMode; title: string; description: string }> = [
+  { key: 'canonical', title: 'Territorial-canónica', description: 'Iglesia sui iuris → provincia → sede metropolitana / sufragáneas.' },
+  { key: 'civil', title: 'Geográfica civil', description: 'País, provincia civil, municipio y barrio como capa paralela.' },
+  { key: 'internal', title: 'Pastoral interna', description: 'Vicarías, zonas, parroquias, capillas y sectores por diócesis.' },
+  { key: 'collegial', title: 'Colegial', description: 'Conferencias, colegios, consejos y comisiones como estructuras alternas.' },
+]
 
 const pageStyles = `
   .jurisdiction-page select,
@@ -145,7 +167,9 @@ const pageStyles = `
   .jurisdiction-profile-grid,
   .jurisdiction-action-grid,
   .relationship-list,
-  .layer-map {
+  .layer-map,
+  .mode-panel,
+  .tree-list {
     display: grid;
     gap: 14px;
   }
@@ -168,17 +192,23 @@ const pageStyles = `
   }
 
   .jurisdiction-view-tab {
+    appearance: none;
     background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 18px;
+    cursor: pointer;
     display: grid;
     gap: 6px;
     padding: 18px;
+    text-align: left;
   }
 
   .jurisdiction-view-tab strong,
   .layer-node strong,
-  .profile-tile strong {
+  .profile-tile strong,
+  .tree-row strong,
+  .action-card strong,
+  .relationship-card strong {
     color: var(--foreground);
   }
 
@@ -186,7 +216,8 @@ const pageStyles = `
   .profile-tile span,
   .layer-node span,
   .tree-row small,
-  .relationship-card small {
+  .relationship-card small,
+  .action-card span {
     color: var(--muted);
     font-size: 13px;
     line-height: 1.45;
@@ -243,6 +274,7 @@ const pageStyles = `
   }
 
   .tree-dot {
+    align-items: center;
     background: #fbf8f1;
     border: 1px solid var(--border);
     border-radius: 999px;
@@ -253,14 +285,7 @@ const pageStyles = `
     font-weight: 900;
     height: 28px;
     justify-content: center;
-    align-items: center;
     width: 28px;
-  }
-
-  .badge-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
   }
 
   .mini-badge {
@@ -285,14 +310,17 @@ const pageStyles = `
     margin-top: 6px;
   }
 
-  .jurisdiction-profile-grid {
+  .jurisdiction-profile-grid,
+  .relationship-list,
+  .layer-map {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .profile-tile,
   .relationship-card,
   .layer-node,
-  .action-card {
+  .action-card,
+  .mode-card {
     background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -301,19 +329,12 @@ const pageStyles = `
     padding: 14px;
   }
 
-  .relationship-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .layer-map {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .layer-node.canonical {
     border-color: rgba(122, 31, 31, 0.35);
   }
 
-  .layer-node.civil {
+  .layer-node.civil,
+  .mode-card.highlight {
     background: #fbf8f1;
     border-style: dashed;
   }
@@ -409,7 +430,7 @@ function actionSuggestions(selected: JurisdictionTreeRow | null, profile: Jurisd
 
   if (relationship === 'has_metropolitan_see' || profile?.jurisdiction?.provincial_role === 'metropolitan_see') {
     return [
-      { title: 'Ver diócesis sufragáneas', description: 'Consultar las jurisdicciones de la provincia que preside.' },
+      { title: 'Ver sufragáneas', description: 'Consultar las jurisdicciones de la provincia que preside.' },
       { title: 'Modificar territorio', description: 'Registrar cambio de límites con mapa y fuente oficial.' },
       { title: 'Definir estructura interna', description: 'Pasar a vicarías, zonas pastorales, parroquias, capillas o sectores.' },
     ]
@@ -438,6 +459,118 @@ function actionSuggestions(selected: JurisdictionTreeRow | null, profile: Jurisd
   ]
 }
 
+function internalLevelLabel(row: InternalTreeRow) {
+  if (row.entity_type_key === 'archdiocese') return 'Arquidiócesis'
+  if (row.entity_type_key === 'diocese') return 'Diócesis'
+  if (row.entity_type_key === 'vicariate') return 'Vicaría'
+  if (row.entity_type_key === 'pastoral_zone') return 'Zona pastoral'
+  if (row.entity_type_key === 'parish') return 'Parroquia'
+  if (row.entity_type_key === 'chapel') return 'Capilla'
+  if (row.entity_type_key === 'community') return 'Comunidad'
+  return row.entity_type_name
+}
+
+function ModeContent({
+  viewMode,
+  selectedRow,
+  profile,
+  internalRows,
+}: {
+  viewMode: ViewMode
+  selectedRow: JurisdictionTreeRow | null
+  profile: JurisdictionProfile | null
+  internalRows: InternalTreeRow[]
+}) {
+  if (viewMode === 'internal') {
+    const childRows = internalRows.filter((row) => row.depth > 0)
+    return (
+      <div className="mode-panel">
+        <div className="mode-card highlight">
+          <strong>Estructura interna de la jurisdicción seleccionada</strong>
+          <span className="meta">Esta vista representa cómo trabaja internamente una diócesis o arquidiócesis: vicarías, zonas, parroquias, capillas, sectores u otros niveles configurables.</span>
+        </div>
+        {childRows.length === 0 && (
+          <div className="empty-state">Esta entidad todavía no tiene estructura interna cargada. Al definirla, aparecerá aquí como árbol separado de la jerarquía canónica.</div>
+        )}
+        <div className="tree-list">
+          {internalRows.map((row) => (
+            <div
+              className="tree-row"
+              key={`internal-${row.entity_id}-${row.parent_entity_id ?? 'root'}`}
+              style={{ marginLeft: `${Math.min(row.depth, 5) * 16}px`, width: `calc(100% - ${Math.min(row.depth, 5) * 16}px)` }}
+            >
+              <div className="tree-row-main">
+                <div className="tree-row-title">
+                  <span className="tree-dot">{row.depth + 1}</span>
+                  <strong>{row.name}</strong>
+                </div>
+                <span className="mini-badge">{internalLevelLabel(row)}</span>
+              </div>
+              <small>{row.path_names.join(' → ')}</small>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (viewMode === 'civil') {
+    return (
+      <div className="mode-panel">
+        <div className="mode-card highlight">
+          <strong>Capa geográfica civil</strong>
+          <span className="meta">El país, la provincia civil, el municipio, el distrito y el barrio se conectan por territorio/intersección. No mandan sobre la provincia eclesiástica.</span>
+        </div>
+        <div className="layer-map">
+          <div className="layer-node canonical"><strong>Entidad canónica</strong><span>{selectedRow?.path_names.join(' → ') ?? 'Selecciona una entidad.'}</span></div>
+          <div className="layer-node civil"><strong>Geografía civil</strong><span>Pendiente de cargar polígonos oficiales para detectar municipios, barrios y zonas intersectadas.</span></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (viewMode === 'collegial') {
+    return (
+      <div className="mode-panel">
+        <div className="mode-card highlight">
+          <strong>Estructuras colegiales y orgánicas</strong>
+          <span className="meta">Aquí irán conferencias episcopales, colegios, consejos, comisiones, tribunales, curia y otras relaciones que no son territorio.</span>
+        </div>
+        <div className="relationship-card">
+          <strong>Regla de lectura</strong>
+          <small>Estas estructuras podrán relacionarse con personas y cargos sin alterar el árbol territorial-canónico.</small>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mode-panel">
+      <div className="layer-map">
+        <div className="layer-node canonical"><strong>Capa canónica</strong><span>{selectedRow?.path_names.join(' → ') ?? 'Selecciona una entidad del árbol.'}</span></div>
+        <div className="layer-node civil"><strong>Capa civil paralela</strong><span>País / municipio / barrio se conectan por territorio o intersección, no como padre canónico.</span></div>
+      </div>
+      <div className="relationship-list">
+        <div className="relationship-card">
+          <strong>Relaciones superiores</strong>
+          {(profile?.incoming_relationships ?? []).length === 0 && <small>Sin relación superior activa en esta vista.</small>}
+          {(profile?.incoming_relationships ?? []).map((rel) => <small key={`${rel.relationship_key}-${rel.entity_id}`}>{rel.relationship_name}: {rel.name}</small>)}
+        </div>
+        <div className="relationship-card">
+          <strong>Relaciones hijas</strong>
+          {(profile?.outgoing_relationships ?? []).length === 0 && <small>Sin hijos canónicos activos.</small>}
+          {(profile?.outgoing_relationships ?? []).map((rel) => <small key={`${rel.relationship_key}-${rel.entity_id}`}>{rel.relationship_name}: {rel.name}</small>)}
+        </div>
+      </div>
+      <div className="relationship-card">
+        <strong>Línea histórica</strong>
+        {(profile?.events ?? []).length === 0 && <small>Todavía no hay eventos canónicos migrados para esta entidad. Los próximos cambios se crearán como eventos, no como edición directa.</small>}
+        {(profile?.events ?? []).map((event) => <small key={event.id}>{formatDate(event.effective_date ?? event.event_date)} · {event.event_type_name}: {event.title}</small>)}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminJurisdiccionesPage() {
   const router = useRouter()
   const supabase = useMemo<SupabaseClient>(() => createClient(), [])
@@ -446,7 +579,9 @@ export default function AdminJurisdiccionesPage() {
   const [selectedChurchId, setSelectedChurchId] = useState('')
   const [asOfDate, setAsOfDate] = useState(todayIso())
   const [treeRows, setTreeRows] = useState<JurisdictionTreeRow[]>([])
+  const [internalRows, setInternalRows] = useState<InternalTreeRow[]>([])
   const [selectedEntityId, setSelectedEntityId] = useState('')
+  const [viewMode, setViewMode] = useState<ViewMode>('canonical')
   const [profile, setProfile] = useState<JurisdictionProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingProfile, setLoadingProfile] = useState(false)
@@ -491,25 +626,40 @@ export default function AdminJurisdiccionesPage() {
     setLoading(false)
   }
 
-  async function loadProfile(entityId: string) {
+  async function loadEntityDetails(entityId: string) {
     if (!entityId) {
       setProfile(null)
+      setInternalRows([])
       return
     }
 
     setLoadingProfile(true)
     setError(null)
 
-    const { data, error: profileError } = await supabase.rpc('get_jurisdiction_profile', {
-      p_entity_id: entityId,
-      p_as_of: asOfDate || todayIso(),
-    })
+    const [profileRes, internalRes] = await Promise.all([
+      supabase.rpc('get_jurisdiction_profile', {
+        p_entity_id: entityId,
+        p_as_of: asOfDate || todayIso(),
+      }),
+      supabase.rpc('get_entity_internal_tree', {
+        p_root_entity_id: entityId,
+        p_as_of: asOfDate || todayIso(),
+        p_include_historical: false,
+      }),
+    ])
 
-    if (profileError) {
-      setError(profileError.message)
+    if (profileRes.error) {
+      setError(profileRes.error.message)
       setProfile(null)
     } else {
-      setProfile((data ?? null) as JurisdictionProfile | null)
+      setProfile((profileRes.data ?? null) as JurisdictionProfile | null)
+    }
+
+    if (internalRes.error) {
+      setError(internalRes.error.message)
+      setInternalRows([])
+    } else {
+      setInternalRows((internalRes.data ?? []) as InternalTreeRow[])
     }
 
     setLoadingProfile(false)
@@ -521,7 +671,7 @@ export default function AdminJurisdiccionesPage() {
   }, [selectedChurchId, asOfDate])
 
   useEffect(() => {
-    if (selectedEntityId) loadProfile(selectedEntityId)
+    if (selectedEntityId) loadEntityDetails(selectedEntityId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEntityId, asOfDate])
 
@@ -569,10 +719,12 @@ export default function AdminJurisdiccionesPage() {
       </section>
 
       <section className="jurisdiction-view-tabs">
-        <div className="jurisdiction-view-tab active"><strong>Territorial-canónica</strong><span>Iglesia sui iuris → provincia → sede metropolitana / sufragáneas.</span></div>
-        <div className="jurisdiction-view-tab"><strong>Geográfica civil</strong><span>País, provincia civil, municipio y barrio como capa paralela.</span></div>
-        <div className="jurisdiction-view-tab"><strong>Pastoral interna</strong><span>Vicarías, zonas, parroquias, capillas y sectores por diócesis.</span></div>
-        <div className="jurisdiction-view-tab"><strong>Colegial</strong><span>Conferencias, colegios, consejos y comisiones como estructuras alternas.</span></div>
+        {viewTabs.map((tab) => (
+          <button className={`jurisdiction-view-tab ${viewMode === tab.key ? 'active' : ''}`} key={tab.key} onClick={() => setViewMode(tab.key)} type="button">
+            <strong>{tab.title}</strong>
+            <span>{tab.description}</span>
+          </button>
+        ))}
       </section>
 
       <section className="jurisdiction-visual-grid">
@@ -624,29 +776,7 @@ export default function AdminJurisdiccionesPage() {
             <div className="profile-tile"><strong>Ordinario actual</strong><span>{profile?.entity?.current_ordinary_name ? `${profile.entity.current_ordinary_title ?? ''} ${profile.entity.current_ordinary_name}`.trim() : '—'}</span></div>
           </div>
 
-          <div className="layer-map">
-            <div className="layer-node canonical"><strong>Capa canónica</strong><span>{selectedRow?.path_names.join(' → ') ?? 'Selecciona una entidad del árbol.'}</span></div>
-            <div className="layer-node civil"><strong>Capa civil paralela</strong><span>País / municipio / barrio se conectan por territorio o intersección, no como padre canónico.</span></div>
-          </div>
-
-          <div className="relationship-list">
-            <div className="relationship-card">
-              <strong>Relaciones superiores</strong>
-              {(profile?.incoming_relationships ?? []).length === 0 && <small>Sin relación superior activa en esta vista.</small>}
-              {(profile?.incoming_relationships ?? []).map((rel) => <small key={`${rel.relationship_key}-${rel.entity_id}`}>{rel.relationship_name}: {rel.name}</small>)}
-            </div>
-            <div className="relationship-card">
-              <strong>Relaciones hijas</strong>
-              {(profile?.outgoing_relationships ?? []).length === 0 && <small>Sin hijos canónicos activos.</small>}
-              {(profile?.outgoing_relationships ?? []).map((rel) => <small key={`${rel.relationship_key}-${rel.entity_id}`}>{rel.relationship_name}: {rel.name}</small>)}
-            </div>
-          </div>
-
-          <div className="relationship-card">
-            <strong>Línea histórica</strong>
-            {(profile?.events ?? []).length === 0 && <small>Todavía no hay eventos canónicos migrados para esta entidad. Los próximos cambios se crearán como eventos, no como edición directa.</small>}
-            {(profile?.events ?? []).map((event) => <small key={event.id}>{formatDate(event.effective_date ?? event.event_date)} · {event.event_type_name}: {event.title}</small>)}
-          </div>
+          <ModeContent viewMode={viewMode} selectedRow={selectedRow} profile={profile} internalRows={internalRows} />
         </div>
       </section>
 
