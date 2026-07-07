@@ -59,22 +59,22 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
 
 const featuredAdminActions: ModuleCard[] = [
   {
+    href: '/admin/eventos',
+    type: 'Motor histórico',
+    title: 'Registro de eventos',
+    description: 'Reconstruye la historia inicial y prepara eventos nuevos con documentos, entidades, fechas y nivel de evidencia.',
+  },
+  {
+    href: '/admin/jurisdicciones',
+    type: 'Vista canónica',
+    title: 'Explorar jurisdicciones',
+    description: 'Valida el árbol Iglesia sui iuris → provincia eclesiástica → sede metropolitana y jurisdicciones sufragáneas.',
+  },
+  {
     href: '/admin/estructura',
     type: 'Motor flexible',
-    title: 'Configurar estructura por diócesis',
-    description: 'Define niveles propios por diócesis: vicarías, zonas pastorales, parroquias, sectores, capillas, comunidades u otras unidades internas.',
-  },
-  {
-    href: '/diocesis',
-    type: 'Vista nacional',
-    title: 'Revisar jerarquía territorial',
-    description: 'Valida el contexto país → provincia eclesiástica → jurisdicción antes de editar niveles internos o crear unidades.',
-  },
-  {
-    href: '/admin/asignaciones',
-    type: 'Nombramientos',
-    title: 'Asignar responsables',
-    description: 'Registra cargos, vacantes, traslados y responsables vinculados a entidades o niveles de la estructura.',
+    title: 'Configurar estructura interna',
+    description: 'Define niveles propios por diócesis: vicarías, zonas pastorales, parroquias, sectores, capillas y comunidades.',
   },
 ]
 
@@ -119,6 +119,31 @@ const moduleGroups: ModuleGroup[] = [
         type: 'Nombramientos',
         title: 'Asignar cargos',
         description: 'Registrar nombramientos, traslados, vacantes y cargos internos o públicos.',
+      },
+    ],
+  },
+  {
+    eyebrow: 'Motor histórico-documental',
+    title: 'Eventos, historia y fuentes',
+    description: 'El sistema se alimenta desde eventos: primero carga histórica; luego eventos nuevos con fuente y validación.',
+    modules: [
+      {
+        href: '/admin/eventos',
+        type: 'Eventos',
+        title: 'Registro de eventos',
+        description: 'Ver eventos históricos, fechas derivadas, fuentes y datos pendientes de documento.',
+      },
+      {
+        href: '/admin/eventos',
+        type: 'Carga histórica',
+        title: 'Reconstruir historia',
+        description: 'Cargar hechos pasados como eventos documentados, parciales o importados vigentes.',
+      },
+      {
+        href: '/admin/eventos',
+        type: 'Evento nuevo',
+        title: 'Registrar cambio nuevo',
+        description: 'Preparar cambios futuros para revisión, aprobación y aplicación al estado actual.',
       },
     ],
   },
@@ -308,8 +333,8 @@ export default function AdminPage() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Prioridad operativa</p>
-            <h2>Motor flexible de estructuras</h2>
-            <p className="meta">Empieza por definir la estructura de cada diócesis. Después los formularios de parroquias, cargos y personas podrán usar esos niveles como filtros jerárquicos.</p>
+            <h2>Motor histórico-documental</h2>
+            <p className="meta">Primero se reconstruye la historia. Después el sistema queda vivo y se alimenta por eventos nuevos.</p>
           </div>
         </div>
         <div className="grid admin-modules">
@@ -335,7 +360,7 @@ export default function AdminPage() {
           </div>
           <div className="grid admin-modules">
             {group.modules.map((module) => (
-              <article className="entity-card admin-module" key={module.href}>
+              <article className="entity-card admin-module" key={`${module.href}-${module.title}`}>
                 <p className="entity-type">{module.type}</p>
                 <h2>{module.title}</h2>
                 <p className="meta">{module.description}</p>
