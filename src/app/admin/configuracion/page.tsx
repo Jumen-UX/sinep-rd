@@ -14,6 +14,18 @@ type ConfigCard = {
 
 const configSections: { title: string; description: string; items: ConfigCard[] }[] = [
   {
+    title: 'Usuarios y seguridad',
+    description: 'Controla accesos administrativos, roles, permisos efectivos y estados de cuenta.',
+    items: [
+      {
+        href: '/admin/usuarios',
+        label: 'Acceso',
+        title: 'Usuarios, roles y permisos',
+        description: 'Ver usuarios, activar o suspender cuentas, asignar niveles de acceso y cerrar roles activos.',
+      },
+    ],
+  },
+  {
     title: 'Cargos, oficios y nombramientos',
     description: 'Define cómo se llaman los cargos, quién puede ejercerlos y en qué ámbito se usan.',
     items: [
@@ -22,12 +34,6 @@ const configSections: { title: string; description: string; items: ConfigCard[] 
         label: 'Cargos',
         title: 'Cargos y oficios',
         description: 'Administrar cargos como párroco, administrador parroquial, vicario general, obispo auxiliar o director de pastoral.',
-      },
-      {
-        href: '/admin/estructura/cargos',
-        label: 'Reglas por nivel',
-        title: 'Cargos permitidos por nivel estructural',
-        description: 'Indicar qué cargos pueden usarse en cada nivel de una diócesis: diócesis, vicaría, zona, parroquia, sector, capilla o unidad administrativa.',
       },
       {
         href: '/admin/referencias-canonicas/cargos',
