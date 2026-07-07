@@ -65,6 +65,14 @@ type RawAssignment = {
   title_override: string | null
 }
 
+type StructureNodeLevel = {
+  level_id: string | null
+}
+
+type LevelOfficeConfiguration = {
+  office_configuration_id: string
+}
+
 const statusOptions = [
   ['active', 'Activo'],
   ['term_expired_still_serving', 'Período vencido, continúa en funciones'],
@@ -124,6 +132,8 @@ export default function AdminAsignacionesPage() {
   const [pastoralEntities, setPastoralEntities] = useState<PastoralEntity[]>([])
   const [assignments, setAssignments] = useState<AssignmentRow[]>([])
   const [rawAssignments, setRawAssignments] = useState<RawAssignment[]>([])
+  const [levelOfficeConfigIds, setLevelOfficeConfigIds] = useState<string[]>([])
+  const [levelFilterMessage, setLevelFilterMessage] = useState('Selecciona una entidad para filtrar cargos por nivel estructural.')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -135,6 +145,9 @@ export default function AdminAsignacionesPage() {
   const [selectedEntityId, setSelectedEntityId] = useState('')
 
   const selectedConfig = configs.find((item) => item.id === selectedConfigId)
+  const filteredConfigs = selectedEntityId && levelOfficeConfigIds.length > 0
+    ? configs.filter((config) => levelOfficeConfigIds.includes(config.id))
+    : configs
   const defaultTermEnd = selectedConfig?.default_term_months && selectedStartDate
     ? addMonths(selectedStartDate, selectedConfig.default_term_months)
     : ''
@@ -177,6 +190,59 @@ export default function AdminAsignacionesPage() {
   useEffect(() => {
     loadData()
   }, [])
+
+  useEffect(() => {
+    async function loadLevelOfficeConfigurations() {
+      setLevelOfficeConfigIds([])
+
+      if (!selectedEntityId) {
+        setLevelFilterMessage('Selecciona una entidad para filtrar cargos por nivel estructural.')
+        return
+      }
+
+      const { data: nodeData, error: nodeError } = await supabase
+        .from('structure_nodes')
+        .select('level_id')
+        .eq('linked_ecclesiastical_entity_id', selectedEntityId)
+        .eq('status', 'active')
+        .limit(1)
+
+      if (nodeError) {
+        setLevelFilterMessage(`No se pudo identificar el nivel estructural: ${nodeError.message}`)
+        return
+      }
+
+      const levelId = ((nodeData ?? []) as StructureNodeLevel[])[0]?.level_id
+      if (!levelId) {
+        setLevelFilterMessage('La entidad seleccionada no tiene nodo estructural activo vinculado. Se muestran todos los cargos.')
+        return
+      }
+
+      const { data: levelOfficeData, error: levelOfficeError } = await supabase
+        .from('structure_level_office_configurations')
+        .select('office_configuration_id')
+        .eq('level_id', levelId)
+        .eq('status', 'active')
+        .order('sort_order')
+
+      if (levelOfficeError) {
+        setLevelFilterMessage(`No se pudieron cargar los cargos permitidos: ${levelOfficeError.message}`)
+        return
+      }
+
+      const allowedIds = ((levelOfficeData ?? []) as LevelOfficeConfiguration[]).map((item) => item.office_configuration_id)
+      setLevelOfficeConfigIds(allowedIds)
+      setLevelFilterMessage(allowedIds.length > 0 ? 'Cargos filtrados por el nivel estructural seleccionado.' : 'Este nivel no tiene cargos configurados todavía. Se muestran todos los cargos.')
+    }
+
+    loadLevelOfficeConfigurations()
+  }, [selectedEntityId, supabase])
+
+  useEffect(() => {
+    if (selectedConfigId && !filteredConfigs.some((config) => config.id === selectedConfigId)) {
+      setSelectedConfigId('')
+    }
+  }, [selectedConfigId, filteredConfigs])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -310,8 +376,9 @@ export default function AdminAsignacionesPage() {
 
           <select name="office_configuration_id" value={selectedConfigId} onChange={(event) => setSelectedConfigId(event.target.value)}>
             <option value="">Cargo configurado</option>
-            {configs.map((config) => <option key={config.id} value={config.id}>{config.display_name}</option>)}
+            {filteredConfigs.map((config) => <option key={config.id} value={config.id}>{config.display_name}</option>)}
           </select>
+          <p className="meta">{levelFilterMessage}</p>
 
           <input name="title_override" placeholder="Título visible opcional" />
 
@@ -327,7 +394,7 @@ export default function AdminAsignacionesPage() {
 
           <StructureEntityPicker
             emptyLabel="Sin entidad eclesiástica seleccionada"
-            help="Selecciona la entidad del nombramiento usando la estructura activa de la diócesis. En una fase posterior los cargos se filtrarán por el nivel seleccionado."
+            help="Selecciona la entidad del nombramiento usando la estructura activa de la diócesis. Los cargos se filtran si el nivel tiene cargos configurados."
             label="Entidad eclesiástica"
             name="ecclesiastical_entity_id"
             value={selectedEntityId}
