@@ -4,6 +4,7 @@ import Link from 'next/link'
 import './globals.css'
 import './hierarchy.css'
 import './dashboard.css'
+import './home.css'
 
 export const metadata: Metadata = {
   title: 'SINEP RD',
