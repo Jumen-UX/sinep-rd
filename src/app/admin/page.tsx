@@ -71,10 +71,37 @@ const featuredAdminActions: ModuleCard[] = [
     description: 'Valida el árbol Iglesia sui iuris → provincia eclesiástica → sede metropolitana y jurisdicciones sufragáneas.',
   },
   {
-    href: '/admin/estructura',
+    href: '/admin/estructura?kind=territorial',
     type: 'Motor flexible',
     title: 'Configurar estructura interna',
     description: 'Define niveles propios por diócesis: vicarías, zonas pastorales, parroquias, sectores, capillas y comunidades.',
+  },
+]
+
+const structureCatalogShortcuts: ModuleCard[] = [
+  {
+    href: '/admin/estructura?kind=territorial',
+    type: 'Territorial',
+    title: 'Territorial-canónico',
+    description: 'Organiza el árbol operativo de diócesis, vicarías, zonas, parroquias, sectores, capillas y comunidades.',
+  },
+  {
+    href: '/admin/estructura?kind=pastoral',
+    type: 'Pastoral',
+    title: 'Pastoral-operativo',
+    description: 'Configura áreas pastorales, comisiones, movimientos, comunidades, servicios y equipos de misión.',
+  },
+  {
+    href: '/admin/estructura?kind=administrative',
+    type: 'Administrativo',
+    title: 'Administrativo',
+    description: 'Define curia, oficinas, departamentos, dependencias internas, procesos y unidades de soporte.',
+  },
+  {
+    href: '/admin/estructura?kind=organic',
+    type: 'Orgánico',
+    title: 'Orgánico / organigrama',
+    description: 'Prepara líneas de responsabilidad, unidades internas y estructura para organigramas visuales.',
   },
 ]
 
@@ -178,7 +205,7 @@ const moduleGroups: ModuleGroup[] = [
         description: 'Ver el árbol Iglesia sui iuris → provincia eclesiástica → sede metropolitana y diócesis sufragáneas.',
       },
       {
-        href: '/admin/estructura',
+        href: '/admin/estructura?kind=territorial',
         type: 'Estructura interna',
         title: 'Estructura pastoral / administrativa',
         description: 'Organizar vicarías, zonas, parroquias, sectores, capillas y unidades internas de cada diócesis.',
@@ -344,6 +371,26 @@ export default function AdminPage() {
               <h2>{module.title}</h2>
               <p className="meta">{module.description}</p>
               <Link className="button button-primary" href={module.href}>Abrir</Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Motor flexible</p>
+            <h2>Accesos rápidos por tipo de catálogo</h2>
+            <p className="meta">Cada catálogo abre el mismo configurador con un contexto distinto. Úsalo para no mezclar organización territorial, pastoral, administrativa y orgánica.</p>
+          </div>
+        </div>
+        <div className="grid admin-modules">
+          {structureCatalogShortcuts.map((module) => (
+            <article className="entity-card admin-module" key={module.href}>
+              <p className="entity-type">{module.type}</p>
+              <h2>{module.title}</h2>
+              <p className="meta">{module.description}</p>
+              <Link className="button button-primary" href={module.href}>Abrir catálogo</Link>
             </article>
           ))}
         </div>
