@@ -3,7 +3,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import EntityHierarchyPicker, { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
+import type { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
+import StructureEntityPicker from '@/components/admin/StructureEntityPicker'
 import { createClient } from '@/lib/supabase/client'
 
 type OfficeConfig = {
@@ -450,15 +451,14 @@ export default function NuevoSacerdotePage() {
             {entities.filter((entity) => ['archdiocese', 'diocese', 'military_ordinariate'].includes(entity.direct_entity_type_key ?? '')).map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name}</option>)}
           </select>
           <div className="empty-state"><strong>Incardinación</strong><span>{incardination?.hierarchy_path ?? incardination?.direct_entity_name ?? (priestType === 'religious' ? 'En religiosos puede dejarse vacío si la incardinación no aplica igual que en un sacerdote diocesano.' : 'Selecciona la diócesis o jurisdicción si aplica.')}</span></div>
-          <EntityHierarchyPicker
-            allowCreateParish
-            entities={entities}
-            help="Primero selecciona la jurisdicción. Si esa estructura tiene vicarías o zonas, aparecerán como filtros antes de elegir la parroquia. Si la parroquia no existe, puedes crearla aquí mismo."
+          <StructureEntityPicker
+            allowCreate
+            createEntityTypeKey="parish"
+            help="Selecciona la diócesis y avanza por los niveles configurados. Si la parroquia no existe, créala debajo del padre correcto."
             label="Servicio actual"
             name="current_service_entity_id"
             value={serviceId}
             onChange={(value) => { setServiceId(value); setQuickEntityId(value); setDraftField('current_service_entity_id', value); setDraftField('quick_entity_id', value) }}
-            onCreated={loadData}
           />
         </section>
 
@@ -471,15 +471,14 @@ export default function NuevoSacerdotePage() {
             {officeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
           </select>
           <input name="quick_title_override" placeholder="Título para mostrar" defaultValue={fieldValue('quick_title_override')} />
-          <EntityHierarchyPicker
-            allowCreateParish
-            entities={entities}
-            help="Selecciona la parroquia o crea una nueva dentro de la jurisdicción, vicaría o zona correspondiente. Esto evita confundir parroquias con nombres parecidos."
+          <StructureEntityPicker
+            allowCreate
+            createEntityTypeKey="parish"
+            help="Selecciona la entidad del cargo usando los niveles configurados por la diócesis. Esto evita confundir parroquias con nombres parecidos."
             label="Entidad del cargo"
             name="quick_entity_id"
             value={quickEntityId}
             onChange={(value) => { setQuickEntityId(value); setDraftField('quick_entity_id', value) }}
-            onCreated={loadData}
           />
           <label>Fecha de inicio del cargo<input name="quick_start_date" type="date" defaultValue={fieldValue('quick_start_date')} /></label>
           <textarea name="quick_notes_public" placeholder="Notas visibles del cargo" defaultValue={fieldValue('quick_notes_public')} />
