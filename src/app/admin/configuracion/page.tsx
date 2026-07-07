@@ -23,6 +23,12 @@ const configSections: { title: string; description: string; items: ConfigCard[] 
         title: 'Usuarios, roles y permisos',
         description: 'Ver usuarios, activar o suspender cuentas, asignar niveles de acceso y cerrar roles activos.',
       },
+      {
+        href: '/admin/usuarios/invitar',
+        label: 'Invitación',
+        title: 'Invitar usuario',
+        description: 'Crear invitaciones seguras, completar perfil inicial y asignar un primer rol con alcance definido.',
+      },
     ],
   },
   {
