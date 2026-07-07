@@ -161,6 +161,50 @@
   color: var(--primary);
 }
 
+.home-flow-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-flow-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+.home-flow-card h3 {
+  font-size: 21px;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.home-flow-card p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.home-flow-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.home-flow-steps span {
+  background: #fbf8f1;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 10px;
+}
+
 .home-data-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -264,6 +308,7 @@
   .home-hero-panel,
   .home-metric-strip,
   .home-view-grid,
+  .home-flow-grid,
   .home-data-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -279,6 +324,7 @@
   .home-hero-panel,
   .home-metric-strip,
   .home-view-grid,
+  .home-flow-grid,
   .home-data-grid,
   .home-data-pairs {
     grid-template-columns: 1fr;
