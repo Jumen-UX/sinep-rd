@@ -70,8 +70,8 @@ const publicViewCards: ViewCard[] = [
     label: 'Pastoral-operativa',
     title: 'Estructuras internas por diócesis',
     description: 'Base para navegar vicarías, zonas pastorales, parroquias, sectores, capillas y comunidades según la estructura activa de cada diócesis.',
-    href: '/diocesis',
-    action: 'Explorar por diócesis',
+    href: '/admin/estructura',
+    action: 'Configurar estructura',
   },
   {
     label: 'Personas y ministerios',
@@ -86,6 +86,33 @@ const publicViewCards: ViewCard[] = [
     description: 'Entrada al portal administrativo para completar fichas, validar solicitudes y trabajar nombramientos.',
     href: '/admin',
     action: 'Ir al portal',
+  },
+]
+
+const navigationFlows = [
+  {
+    label: 'Consulta pública',
+    title: 'Ver una jurisdicción',
+    description: 'Para entrar desde el país, filtrar por provincia eclesiástica y abrir la ficha de una diócesis o arquidiócesis.',
+    href: '/diocesis',
+    action: 'Abrir diócesis',
+    steps: ['País', 'Provincia eclesiástica', 'Jurisdicción', 'Ficha'],
+  },
+  {
+    label: 'Estructura interna',
+    title: 'Organizar una diócesis',
+    description: 'Para trabajar vicarías, zonas pastorales, parroquias, sectores, capillas y relaciones internas configurables.',
+    href: '/admin/estructura',
+    action: 'Abrir estructura',
+    steps: ['Diócesis', 'Niveles activos', 'Nodos', 'Relaciones'],
+  },
+  {
+    label: 'Personas y cargos',
+    title: 'Encontrar responsables',
+    description: 'Para localizar obispos, sacerdotes, diáconos, religiosos/as o laicos/as y luego revisar su ficha y nombramientos.',
+    href: '/personas',
+    action: 'Abrir personas',
+    steps: ['Tipo de persona', 'Listado', 'Ficha', 'Nombramientos'],
   },
 ]
 
@@ -170,7 +197,7 @@ export default function HomePage() {
       return { ...card, metric: 'Portal protegido' }
     }
 
-    return { ...card, metric: 'Estructura configurable' }
+    return { ...card, metric: 'Motor flexible' }
   })
 
   return (
@@ -190,8 +217,8 @@ export default function HomePage() {
             <Link className="button button-secondary" href="/personas?tipo=bishop">
               Ver obispos
             </Link>
-            <Link className="button button-secondary" href="/admin">
-              Portal administrativo
+            <Link className="button button-secondary" href="/admin/estructura">
+              Configurar estructuras
             </Link>
           </div>
         </div>
@@ -253,6 +280,30 @@ export default function HomePage() {
               <span className="home-view-meta">{card.metric}</span>
               <span className="home-view-action">{card.action} →</span>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="card dashboard-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Flujos de trabajo</p>
+            <h2>Qué vista usar según la tarea</h2>
+          </div>
+          <span className="meta">Pensado para que el usuario seleccione primero y escriba lo menos posible.</span>
+        </div>
+
+        <div className="home-flow-grid">
+          {navigationFlows.map((flow) => (
+            <article className="home-flow-card" key={flow.title}>
+              <span className="home-view-label">{flow.label}</span>
+              <h3>{flow.title}</h3>
+              <p>{flow.description}</p>
+              <div className="home-flow-steps" aria-label={`Pasos para ${flow.title}`}>
+                {flow.steps.map((step) => <span key={step}>{step}</span>)}
+              </div>
+              <Link className="inline-link" href={flow.href}>{flow.action}</Link>
+            </article>
           ))}
         </div>
       </section>
