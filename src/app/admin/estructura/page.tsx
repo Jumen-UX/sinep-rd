@@ -201,13 +201,15 @@ const pageStyles = `
   .structure-catalog-summary small,
   .catalog-level small,
   .catalog-node small,
-  .catalog-preset-card small {
+  .catalog-preset-card small,
+  .catalog-kind-card span {
     color: var(--muted);
     font-size: 13px;
     line-height: 1.45;
   }
 
   .structure-toolbar,
+  .catalog-kind-grid,
   .catalog-form-grid,
   .catalog-tabs,
   .catalog-layout,
@@ -228,11 +230,13 @@ const pageStyles = `
 
   .catalog-form-grid,
   .catalog-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .catalog-preset-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .catalog-preset-grid,
+  .catalog-kind-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
   .catalog-column,
   .catalog-form,
-  .catalog-preset-card {
+  .catalog-preset-card,
+  .catalog-kind-card {
     display: grid;
     gap: 12px;
   }
@@ -248,11 +252,27 @@ const pageStyles = `
 
   .catalog-node,
   .catalog-level,
-  .catalog-preset-card {
+  .catalog-preset-card,
+  .catalog-kind-card {
     background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 14px;
+  }
+
+  .catalog-kind-card {
+    appearance: none;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    min-height: 112px;
+    text-align: left;
+  }
+
+  .catalog-kind-card strong {
+    color: var(--foreground);
+    font-size: 17px;
+    line-height: 1.2;
   }
 
   .catalog-level-header,
@@ -330,7 +350,8 @@ const pageStyles = `
     .catalog-layout,
     .catalog-form-grid,
     .catalog-tabs,
-    .catalog-preset-grid { grid-template-columns: 1fr; }
+    .catalog-preset-grid,
+    .catalog-kind-grid { grid-template-columns: 1fr; }
   }
 `
 
@@ -448,6 +469,29 @@ export default function AdminEstructuraPage() {
     const params = new URLSearchParams(window.location.search)
     const requested = params.get('kind') ?? params.get('catalog') ?? params.get('tipo')
     return isStructureKindKey(requested) ? requested : 'territorial'
+  }
+
+  function syncUrl(nextDioceseId: string, nextKind: StructureKindKey) {
+    const params = new URLSearchParams(window.location.search)
+    if (nextDioceseId) params.set('diocese', nextDioceseId)
+    params.set('kind', nextKind)
+    window.history.replaceState(null, '', `/admin/estructura?${params.toString()}`)
+  }
+
+  function changeDiocese(dioceseId: string) {
+    setSelectedDioceseId(dioceseId)
+    setSelectedTemplateId('')
+    setSelectedParentNodeId('')
+    syncUrl(dioceseId, activeKind)
+  }
+
+  function changeKind(kind: StructureKindKey) {
+    setActiveKind(kind)
+    setSelectedTemplateId('')
+    setLevels([])
+    setTreeNodes([])
+    setChildLevelOptions([])
+    syncUrl(selectedDioceseId, kind)
   }
 
   async function createRootNode(templateId: string, rootLevelId: string) {
@@ -889,13 +933,13 @@ export default function AdminEstructuraPage() {
       <section className="card dashboard-section">
         <div className="structure-toolbar">
           <label>Diócesis
-            <select value={selectedDioceseId} onChange={(event) => setSelectedDioceseId(event.target.value)}>
+            <select value={selectedDioceseId} onChange={(event) => changeDiocese(event.target.value)}>
               <option value="">Seleccionar diócesis</option>
               {dioceses.map((diocese) => <option key={diocese.id} value={diocese.id}>{diocese.name}</option>)}
             </select>
           </label>
           <label>Catálogo
-            <select value={activeKind} onChange={(event) => setActiveKind(event.target.value as StructureKindKey)}>
+            <select value={activeKind} onChange={(event) => changeKind(event.target.value as StructureKindKey)}>
               {structureKinds.map((kind) => <option key={kind.key} value={kind.key}>{kind.name}</option>)}
             </select>
           </label>
@@ -905,6 +949,15 @@ export default function AdminEstructuraPage() {
               {templates.map((template) => <option key={template.id} value={template.id}>{template.name}{template.is_primary ? ' · principal' : ''}</option>)}
             </select>
           </label>
+        </div>
+
+        <div className="catalog-kind-grid" aria-label="Tipos de catálogo">
+          {structureKinds.map((kind) => (
+            <button className={`catalog-kind-card ${activeKind === kind.key ? 'active-filter' : ''}`} key={kind.key} onClick={() => changeKind(kind.key)} type="button">
+              <strong>{kind.name}</strong>
+              <span>{kind.description ?? 'Catálogo configurable por diócesis.'}</span>
+            </button>
+          ))}
         </div>
 
         {!selectedTemplate && (
