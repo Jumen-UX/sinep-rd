@@ -92,6 +92,21 @@ type StructureTreeNode = {
   has_children: boolean
 }
 
+type StructurePresetLevel = {
+  levelKey: string
+  name: string
+  pluralName: string
+  scope?: string
+  entityTypeKeys?: string[]
+}
+
+type StructurePreset = {
+  key: string
+  title: string
+  description: string
+  levels: StructurePresetLevel[]
+}
+
 type RpcResult = {
   success?: boolean
   id?: string
@@ -105,6 +120,49 @@ const fallbackKinds: StructureKind[] = [
   { key: 'pastoral', name: 'Pastoral', description: 'Áreas, comisiones, movimientos, comunidades y servicios.' },
   { key: 'administrative', name: 'Administrativa', description: 'Curia, oficinas, departamentos y dependencias internas.' },
   { key: 'organic', name: 'Orgánica', description: 'Organigramas, unidades y líneas de responsabilidad.' },
+]
+
+const structurePresets: StructurePreset[] = [
+  {
+    key: 'zona-parroquia',
+    title: 'Zona pastoral → Parroquia',
+    description: 'Para diócesis que organizan directamente sus parroquias por zonas pastorales.',
+    levels: [
+      { levelKey: 'zona-pastoral', name: 'Zona Pastoral', pluralName: 'Zonas Pastorales', scope: 'pastoral' },
+      { levelKey: 'parroquia', name: 'Parroquia', pluralName: 'Parroquias', scope: 'ecclesial', entityTypeKeys: ['parish'] },
+    ],
+  },
+  {
+    key: 'vicaria-zona-parroquia',
+    title: 'Vicaría → Zona → Parroquia',
+    description: 'Para arquidiócesis o diócesis con vicarías como nivel intermedio superior.',
+    levels: [
+      { levelKey: 'vicaria', name: 'Vicaría', pluralName: 'Vicarías', scope: 'pastoral' },
+      { levelKey: 'zona-pastoral', name: 'Zona Pastoral', pluralName: 'Zonas Pastorales', scope: 'pastoral' },
+      { levelKey: 'parroquia', name: 'Parroquia', pluralName: 'Parroquias', scope: 'ecclesial', entityTypeKeys: ['parish'] },
+    ],
+  },
+  {
+    key: 'vicaria-zona-parroquia-sector',
+    title: 'Vicaría → Zona → Parroquia → Sector',
+    description: 'Para estructuras con sectores bajo parroquias o unidades territoriales menores.',
+    levels: [
+      { levelKey: 'vicaria', name: 'Vicaría', pluralName: 'Vicarías', scope: 'pastoral' },
+      { levelKey: 'zona-pastoral', name: 'Zona Pastoral', pluralName: 'Zonas Pastorales', scope: 'pastoral' },
+      { levelKey: 'parroquia', name: 'Parroquia', pluralName: 'Parroquias', scope: 'ecclesial', entityTypeKeys: ['parish'] },
+      { levelKey: 'sector', name: 'Sector', pluralName: 'Sectores', scope: 'pastoral' },
+    ],
+  },
+  {
+    key: 'area-comision-equipo',
+    title: 'Área pastoral → Comisión → Equipo',
+    description: 'Para organizar unidades funcionales no territoriales, pastorales o administrativas.',
+    levels: [
+      { levelKey: 'area-pastoral', name: 'Área Pastoral', pluralName: 'Áreas Pastorales', scope: 'pastoral' },
+      { levelKey: 'comision', name: 'Comisión', pluralName: 'Comisiones', scope: 'pastoral' },
+      { levelKey: 'equipo', name: 'Equipo', pluralName: 'Equipos', scope: 'pastoral' },
+    ],
+  },
 ]
 
 const pageStyles = `
@@ -149,7 +207,8 @@ const pageStyles = `
   .structure-catalog-summary span,
   .structure-catalog-summary small,
   .catalog-level small,
-  .catalog-node small {
+  .catalog-node small,
+  .catalog-preset-card small {
     color: var(--muted);
     font-size: 13px;
     line-height: 1.45;
@@ -158,7 +217,8 @@ const pageStyles = `
   .structure-toolbar,
   .catalog-form-grid,
   .catalog-tabs,
-  .catalog-layout {
+  .catalog-layout,
+  .catalog-preset-grid {
     display: grid;
     gap: 14px;
   }
@@ -178,8 +238,13 @@ const pageStyles = `
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .catalog-preset-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .catalog-column,
-  .catalog-form {
+  .catalog-form,
+  .catalog-preset-card {
     display: grid;
     gap: 12px;
   }
@@ -194,17 +259,17 @@ const pageStyles = `
   }
 
   .catalog-node,
-  .catalog-level {
+  .catalog-level,
+  .catalog-preset-card {
     background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 16px;
-    display: grid;
-    gap: 8px;
     padding: 14px;
   }
 
   .catalog-level-header,
-  .catalog-node-header {
+  .catalog-node-header,
+  .catalog-preset-header {
     align-items: center;
     display: flex;
     gap: 10px;
@@ -235,10 +300,27 @@ const pageStyles = `
     font: inherit;
   }
 
-  .catalog-level-actions {
+  .catalog-level-actions,
+  .catalog-preset-steps {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .catalog-preset-card h3 {
+    font-size: 18px;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .catalog-preset-steps span {
+    background: #fbf8f1;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    padding: 7px 10px;
   }
 
   .catalog-tabs .metric-card strong {
@@ -265,7 +347,8 @@ const pageStyles = `
     .structure-toolbar,
     .catalog-layout,
     .catalog-form-grid,
-    .catalog-tabs {
+    .catalog-tabs,
+    .catalog-preset-grid {
       grid-template-columns: 1fr;
     }
   }
@@ -363,6 +446,11 @@ export default function AdminEstructuraPage() {
 
   function childLevelLabel(option: ChildLevelOption) {
     return `Nivel ${option.level_order + 1} · ${option.level_name}`
+  }
+
+  function entityTypeIdByKeys(keys?: string[]) {
+    if (!keys || keys.length === 0) return null
+    return entityTypes.find((type) => keys.includes(type.key))?.id ?? null
   }
 
   async function createRootNode(templateId: string, rootLevelId: string) {
@@ -660,6 +748,64 @@ export default function AdminEstructuraPage() {
     }
   }
 
+  async function applyPreset(preset: StructurePreset) {
+    setSaving(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      if (!selectedTemplateId || !rootJurisdictionLevel) {
+        throw new Error('Selecciona o crea un catálogo antes de aplicar una plantilla.')
+      }
+
+      let parentLevelId = rootJurisdictionLevel.id
+      let createdCount = 0
+      let reusedCount = 0
+
+      for (const [index, presetLevel] of preset.levels.entries()) {
+        const existingLevel = customLevels.find((level) => level.level_key === presetLevel.levelKey)
+
+        if (existingLevel) {
+          parentLevelId = existingLevel.id
+          reusedCount += 1
+          continue
+        }
+
+        const { data, error: presetError } = await supabase.rpc('admin_save_structure_level', {
+          payload: {
+            template_id: selectedTemplateId,
+            parent_level_id: parentLevelId,
+            linked_entity_type_id: entityTypeIdByKeys(presetLevel.entityTypeKeys),
+            level_key: presetLevel.levelKey,
+            name: presetLevel.name,
+            plural_name: presetLevel.pluralName,
+            description: `Nivel creado desde la plantilla ${preset.title}.`,
+            level_order: dbOrderFromVisibleLevel(index + 3),
+            scope: presetLevel.scope ?? 'ecclesial',
+            is_entry_point: index === 0,
+            is_required: true,
+            allows_multiple_entities: true,
+            allows_new_nodes: true,
+          },
+        })
+
+        if (presetError) throw new Error(presetError.message)
+        const result = data as RpcResult | null
+        if (!result?.id) throw new Error(`No se recibió el identificador para el nivel ${presetLevel.name}.`)
+        parentLevelId = result.id
+        createdCount += 1
+      }
+
+      await loadTemplateDetails(selectedTemplateId)
+      setMode('unit')
+      setMessage(`Plantilla aplicada: ${preset.title}. Niveles creados: ${createdCount}. Niveles ya existentes reutilizados: ${reusedCount}.`)
+    } catch (presetError) {
+      setError(presetError instanceof Error ? presetError.message : 'No se pudo aplicar la plantilla.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function saveUnit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
@@ -768,6 +914,36 @@ export default function AdminEstructuraPage() {
       </section>
 
       {selectedTemplate && (
+        <section className="card dashboard-section">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Plantillas rápidas</p>
+              <h2>Crear niveles comunes sin escribirlos uno por uno</h2>
+              <p className="meta">Selecciona una plantilla para insertar niveles debajo de la diócesis. Si un nivel ya existe por clave interna, se reutiliza y no se duplica.</p>
+            </div>
+          </div>
+
+          <div className="catalog-preset-grid">
+            {structurePresets.map((preset) => (
+              <article className="catalog-preset-card" key={preset.key}>
+                <div className="catalog-preset-header">
+                  <h3>{preset.title}</h3>
+                  <span className="catalog-badge">{preset.levels.length} niveles</span>
+                </div>
+                <small>{preset.description}</small>
+                <div className="catalog-preset-steps">
+                  {preset.levels.map((level) => <span key={level.levelKey}>{level.name}</span>)}
+                </div>
+                <button className="button button-secondary" disabled={saving || !rootJurisdictionLevel} onClick={() => applyPreset(preset)} type="button">
+                  {saving ? 'Aplicando...' : 'Aplicar plantilla'}
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {selectedTemplate && (
         <section className="catalog-layout">
           <div className="card dashboard-section catalog-column">
             <div>
@@ -796,7 +972,7 @@ export default function AdminEstructuraPage() {
               </div>
             ))}
 
-            {customLevels.length === 0 && <p className="catalog-help">Todavía no hay niveles personalizados. Agrega primero el nivel 3, por ejemplo “Vicaría”, “Zona Pastoral” o “Área Pastoral”.</p>}
+            {customLevels.length === 0 && <p className="catalog-help">Todavía no hay niveles personalizados. Puedes usar una plantilla rápida o agregar primero el nivel 3 manualmente, por ejemplo “Vicaría”, “Zona Pastoral” o “Área Pastoral”.</p>}
           </div>
 
           <div className="card dashboard-section catalog-column">
@@ -906,7 +1082,7 @@ export default function AdminEstructuraPage() {
                 <label>Fecha de inicio<input name="start_date" type="date" /></label>
               </div>
               <textarea name="description" placeholder="Fuente o nota" />
-              {childLevelOptions.length === 0 && <p className="catalog-help">No hay un nivel permitido debajo del padre seleccionado. Ve a “Agregar / mover nivel” y crea primero un nivel hijo, por ejemplo “Área Pastoral”, “Vicaría” o “Zona Pastoral”.</p>}
+              {childLevelOptions.length === 0 && <p className="catalog-help">No hay un nivel permitido debajo del padre seleccionado. Usa una plantilla rápida o ve a “Agregar / mover nivel” y crea primero un nivel hijo, por ejemplo “Área Pastoral”, “Vicaría” o “Zona Pastoral”.</p>}
               <button className="button button-primary" disabled={saving || childLevelOptions.length === 0 || !rootNode} type="submit">{saving ? 'Guardando...' : 'Agregar unidad'}</button>
             </form>
           )}
