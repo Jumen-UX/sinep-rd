@@ -8,6 +8,8 @@ export default function AdminUsersLayout({ children }: { children: ReactNode }) 
         <Link href="/admin/usuarios">Usuarios y permisos</Link>
         <span aria-hidden="true"> · </span>
         <Link href="/admin/usuarios/invitar">Invitar usuario</Link>
+        <span aria-hidden="true"> · </span>
+        <Link href="/admin/usuarios/recuperar">Recuperar cuenta</Link>
       </nav>
       {children}
     </>
