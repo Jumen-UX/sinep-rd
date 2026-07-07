@@ -188,7 +188,7 @@ export default function DiocesisPage() {
             <span>{activeProvince ?? 'Todas las provincias eclesiásticas'}</span>
             <span>{activeType === 'all' ? 'Todos los tipos' : filterTitle()}</span>
           </div>
-          <Link className="inline-link" href="/admin/estructura">Configurar niveles internos</Link>
+          <Link className="inline-link" href="/admin/estructura?kind=territorial">Configurar niveles internos</Link>
         </aside>
       </div>
 
@@ -297,7 +297,7 @@ export default function DiocesisPage() {
                   Cada diócesis puede usar sus propios niveles: vicarías, zonas pastorales, parroquias, sectores, capillas o comunidades. Esta vista prepara el contexto; la configuración se realiza en el módulo administrativo.
                 </p>
               </div>
-              <Link className="button button-primary" href="/admin/estructura">Abrir configurador</Link>
+              <Link className="button button-primary" href="/admin/estructura?kind=territorial">Abrir configurador</Link>
             </div>
 
             <div className="hierarchy-preview-grid">
@@ -350,7 +350,7 @@ export default function DiocesisPage() {
                         <td>{formatDate(item.erected_at)}</td>
                         <td className="table-actions">
                           <Link className="inline-link" href={`/entidades/${item.slug}`}>Ficha</Link>
-                          <Link className="inline-link" href={`/admin/estructura?diocese=${encodeURIComponent(item.id)}`}>Estructura</Link>
+                          <Link className="inline-link" href={`/admin/estructura?diocese=${encodeURIComponent(item.id)}&kind=territorial`}>Estructura</Link>
                         </td>
                       </tr>
                     ))}
