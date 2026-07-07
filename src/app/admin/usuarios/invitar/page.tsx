@@ -102,7 +102,7 @@ export default function InviteUserPage() {
     setError(null)
     setNotice(null)
 
-    const response = await fetch('/api/admin/users/invite', {
+    const response = await fetch('/api/admin/users/create-invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
