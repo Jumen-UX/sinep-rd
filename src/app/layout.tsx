@@ -32,7 +32,7 @@ export default function RootLayout({
               <div className="nav-links">
                 <Link href="/diocesis">Diócesis</Link>
                 <Link href="/personas">Clero y agentes</Link>
-                <Link href="/admin">Administración</Link>
+                <Link href="/admin/login">Iniciar sesión</Link>
               </div>
             </nav>
           </header>
