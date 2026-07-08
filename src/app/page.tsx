@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 type PublicView = 'territorial' | 'clero' | 'pastoral' | 'administrativa' | 'colegial'
 type TerritoryMode = 'country' | 'province' | 'jurisdiction' | 'special'
+type PersonKind = 'bishop' | 'priest' | 'deacon' | 'religious' | 'layperson'
 
 type Diocese = {
   id: string
@@ -21,6 +22,31 @@ type Diocese = {
 
 type Parish = { id: string; diocese_id: string | null; diocese_name: string | null; diocese_slug: string | null }
 type Person = { id: string; display_name: string; slug: string; person_type: string | null; status: string | null; death_date: string | null }
+
+type Assignment = {
+  id: string
+  person_id: string
+  person_name: string | null
+  person_slug: string | null
+  person_type: string | null
+  position_title: string | null
+  base_role_name: string | null
+  direct_entity_name: string | null
+  direct_entity_slug: string | null
+  direct_entity_type_name: string | null
+  parish_name: string | null
+  parish_slug: string | null
+  zone_name: string | null
+  zone_slug: string | null
+  vicariate_name: string | null
+  vicariate_slug: string | null
+  diocese_name: string | null
+  diocese_slug: string | null
+  pastoral_entity_name: string | null
+  pastoral_entity_slug: string | null
+  is_current: boolean | null
+  assignment_status: string | null
+}
 
 type PastoralEntity = {
   id: string
@@ -46,6 +72,7 @@ type PublicDashboardData = {
   dioceses: Diocese[]
   parishes: Parish[]
   people: Person[]
+  assignments?: Assignment[]
   pastoral_entities: PastoralEntity[]
   organization_charts: OrganizationChart[]
   organization_units: OrganizationUnit[]
@@ -78,6 +105,7 @@ type DashboardSummary = {
 type ViewMeta = { key: PublicView; title: string; shortTitle: string; eyebrow: string; icon: string; description: string }
 type SelectOption = { value: string; label: string }
 type PastoralLevelGroup = { name: string; count: number; order: number; items: PastoralEntity[] }
+type ClergyListItem = { id: string; name: string; slug: string | null; person_type: string | null; role: string; scope: string; status: string }
 
 const publicViews: ViewMeta[] = [
   { key: 'territorial', title: 'Vista territorial', shortTitle: 'Territorial', eyebrow: 'Territorio', icon: '▱', description: 'País, provincias eclesiásticas, arquidiócesis, diócesis y jurisdicciones personales.' },
@@ -145,10 +173,6 @@ function personTypeLabel(value: string | null) {
   return value ? (labels[value] ?? value) : 'Persona'
 }
 
-function statusLabel(item: Person) {
-  return item.status === 'active' && !item.death_date ? 'Activo' : 'Histórico'
-}
-
 function isArchdiocese(item: Diocese) {
   return normalizeText(item.entity_type_name).includes('arquidiocesis')
 }
@@ -169,6 +193,17 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string) {
     map.set(key, (map.get(key) ?? 0) + 1)
     return map
   }, new Map<string, number>())
+}
+
+function assignmentMatchesSlug(assignment: Assignment, slug: string) {
+  return [
+    assignment.direct_entity_slug,
+    assignment.parish_slug,
+    assignment.zone_slug,
+    assignment.vicariate_slug,
+    assignment.diocese_slug,
+    assignment.pastoral_entity_slug,
+  ].some((value) => value === slug)
 }
 
 function MetricCard({ icon, label, value, detail, onClick, active }: { icon: string; label: string; value: string | number; detail: string; onClick?: () => void; active?: boolean }) {
@@ -211,6 +246,17 @@ function OrdinaryItem({ item }: { item: Diocese }) {
       <strong>{item.current_ordinary_name ?? 'Ordinario no registrado'}</strong>
       <span>{item.current_ordinary_title ?? 'Ordinario'} · {item.name}</span>
       <span className="public-link">Ver jurisdicción →</span>
+    </Link>
+  )
+}
+
+function ClergyItemCard({ item }: { item: ClergyListItem }) {
+  const href = item.slug ? `/personas/${item.slug}` : '#'
+  return (
+    <Link className="public-directory-item" href={href}>
+      <strong>{item.name}</strong>
+      <span>{item.role} · {item.scope}</span>
+      <span>{personTypeLabel(item.person_type)} · {item.status}</span>
     </Link>
   )
 }
@@ -312,6 +358,7 @@ export default function HomePage() {
   const [jurisdictionFilter, setJurisdictionFilter] = useState('')
   const [personTypeFilter, setPersonTypeFilter] = useState('')
   const [pastoralLevelFilter, setPastoralLevelFilter] = useState('')
+  const [clergyTerritorySlug, setClergyTerritorySlug] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -340,6 +387,7 @@ export default function HomePage() {
   const dioceses = data?.dioceses ?? []
   const parishes = data?.parishes ?? []
   const people = data?.people ?? []
+  const assignments = data?.assignments ?? []
   const pastoralEntities = data?.pastoral_entities ?? []
   const organizationCharts = data?.organization_charts ?? []
   const organizationUnits = data?.organization_units ?? []
@@ -371,7 +419,6 @@ export default function HomePage() {
   const countryTerritorialJurisdictions = countryDioceses.filter((item) => !isSpecialJurisdiction(item))
   const countrySpecialJurisdictions = countryDioceses.filter(isSpecialJurisdiction)
   const visibleTerritorialJurisdictions = scopedTerritorialJurisdictions.slice(0, 6)
-  const visibleSpecialJurisdictions = scopedSpecialJurisdictions.slice(0, 3)
   const scopedDioceseIds = new Set(scopedDioceses.map((item) => item.id))
   const scopedDioceseSlugs = new Set(scopedDioceses.map((item) => item.slug))
   const scopeIsFiltered = !!provinceFilter || !!jurisdictionFilter || countryFilter !== 'DO'
@@ -396,9 +443,6 @@ export default function HomePage() {
     if (!scopeIsFiltered) return true
     return (!!parish.diocese_id && scopedDioceseIds.has(parish.diocese_id)) || (!!parish.diocese_slug && scopedDioceseSlugs.has(parish.diocese_slug))
   })
-
-  const filteredPeople = people.filter((item) => !personTypeFilter || item.person_type === personTypeFilter)
-  const visiblePeople = filteredPeople.slice(0, 12)
 
   const scopedPastoralEntities = pastoralEntities.filter((item) => {
     if (countryFilter !== 'DO') return false
@@ -427,6 +471,61 @@ export default function HomePage() {
   const administrativeUnits = organizationUnits.filter((item) => !/(consejo|comision|comisión|comite|comité|colegio|equipo)/i.test(item.name))
   const collegialUnits = organizationUnits.filter((item) => /(consejo|comision|comisión|comite|comité|colegio|equipo)/i.test(item.name))
 
+  const scopedAssignments = assignments.filter((assignment) => {
+    if (clergyTerritorySlug) return assignmentMatchesSlug(assignment, clergyTerritorySlug)
+    if (territoryMode === 'country') return countryFilter === 'DO'
+    if (selectedJurisdiction) return assignmentMatchesSlug(assignment, selectedJurisdiction.slug)
+    return !!assignment.diocese_slug && scopedDioceseSlugs.has(assignment.diocese_slug)
+  })
+
+  const assignmentPeople = Array.from(new Map(scopedAssignments.map((assignment) => [
+    assignment.person_id,
+    {
+      id: assignment.person_id,
+      name: assignment.person_name ?? 'Persona sin nombre',
+      slug: assignment.person_slug,
+      person_type: assignment.person_type,
+      role: assignment.position_title ?? assignment.base_role_name ?? 'Asignación vigente',
+      scope: assignment.direct_entity_name ?? assignment.pastoral_entity_name ?? assignment.parish_name ?? assignment.diocese_name ?? scopeTitle,
+      status: assignment.assignment_status ?? 'Vigente',
+    } satisfies ClergyListItem,
+  ])).values())
+
+  const ordinaryPeople: ClergyListItem[] = scopedTerritorialJurisdictions
+    .filter((item) => item.current_ordinary_name)
+    .map((item) => ({
+      id: item.id,
+      name: item.current_ordinary_name ?? 'Ordinario no registrado',
+      slug: null,
+      person_type: 'bishop',
+      role: item.current_ordinary_title ?? 'Obispo / ordinario',
+      scope: item.name,
+      status: 'Activo',
+    }))
+
+  const countryPeople: ClergyListItem[] = people.map((item) => ({
+    id: item.id,
+    name: item.display_name,
+    slug: item.slug,
+    person_type: item.person_type,
+    role: personTypeLabel(item.person_type),
+    scope: selectedCountryName ?? 'República Dominicana',
+    status: item.status === 'active' && !item.death_date ? 'Activo' : 'Histórico',
+  }))
+
+  const baseClergyPeople = territoryMode === 'country' && scopedAssignments.length === 0 ? countryPeople : [...ordinaryPeople, ...assignmentPeople]
+  const visibleClergyPeople = baseClergyPeople
+    .filter((item) => !personTypeFilter || item.person_type === personTypeFilter)
+    .slice(0, 12)
+  const hasScopedAssignments = scopedAssignments.length > 0
+
+  function countPeopleByType(type: PersonKind) {
+    if (territoryMode === 'country' && !hasScopedAssignments) {
+      return countryPeople.filter((item) => item.person_type === type).length
+    }
+    return baseClergyPeople.filter((item) => item.person_type === type).length
+  }
+
   const countryOptions = countries.map((country) => ({ value: country.key, label: country.name }))
   const provinceOptions = [{ value: '', label: 'Todas las provincias' }, ...provinces.map((province) => ({ value: province.name, label: province.name }))]
   const jurisdictionOptions = [{ value: '', label: 'Todas las jurisdicciones' }, ...diocesesByProvince.map((item) => ({ value: item.id, label: item.name }))]
@@ -438,12 +537,20 @@ export default function HomePage() {
     setJurisdictionFilter('')
     setPastoralLevelFilter('')
     setPersonTypeFilter('')
+    setClergyTerritorySlug('')
   }
 
-  function selectProvince(name: string) {
+  function selectProvince(name: string, nextView: PublicView = 'territorial') {
     setProvinceFilter(name)
     setJurisdictionFilter('')
-    setActiveView('territorial')
+    setClergyTerritorySlug('')
+    setActiveView(nextView)
+  }
+
+  function selectJurisdiction(id: string, nextView: PublicView = 'territorial') {
+    setJurisdictionFilter(id)
+    setClergyTerritorySlug('')
+    setActiveView(nextView)
   }
 
   const peopleSummary = summary?.people
@@ -508,9 +615,9 @@ export default function HomePage() {
           </div>
 
           <div className="public-filter-grid">
-            <SearchableSelect label="País" value={countryFilter} options={countryOptions} onChange={(nextCountry) => { setCountryFilter(nextCountry); setProvinceFilter(''); setJurisdictionFilter('') }} />
-            <SearchableSelect label="Provincia eclesiástica" value={provinceFilter} options={provinceOptions} onChange={(nextProvince) => { setProvinceFilter(nextProvince); setJurisdictionFilter('') }} />
-            <SearchableSelect label="Jurisdicción" value={jurisdictionFilter} options={jurisdictionOptions} onChange={setJurisdictionFilter} />
+            <SearchableSelect label="País" value={countryFilter} options={countryOptions} onChange={(nextCountry) => { setCountryFilter(nextCountry); setProvinceFilter(''); setJurisdictionFilter(''); setClergyTerritorySlug('') }} />
+            <SearchableSelect label="Provincia eclesiástica" value={provinceFilter} options={provinceOptions} onChange={(nextProvince) => { setProvinceFilter(nextProvince); setJurisdictionFilter(''); setClergyTerritorySlug('') }} />
+            <SearchableSelect label="Jurisdicción" value={jurisdictionFilter} options={jurisdictionOptions} onChange={(value) => selectJurisdiction(value, activeView)} />
             <SearchableSelect label="Vista activa" value={activeView} options={viewOptions} onChange={(nextView) => setActiveView(nextView as PublicView)} />
           </div>
         </section>
@@ -560,7 +667,7 @@ export default function HomePage() {
             {territoryMode === 'country' && (
               <section className="public-metrics-grid" aria-label="Resumen territorial nacional">
                 <MetricCard icon="◎" label="País" value={countryFilter === 'DO' ? 1 : 0} detail={selectedCountryName ?? 'Sin país'} onClick={() => resetTerritory('territorial')} />
-                <MetricCard icon="▥" label="Provincias eclesiásticas" value={loading ? '—' : displayedProvinces.length} detail="Agrupaciones metropolitanas" onClick={() => resetTerritory('territorial')} active={!!provinceFilter} />
+                <MetricCard icon="▥" label="Provincias eclesiásticas" value={loading ? '—' : displayedProvinces.length} detail="Agrupaciones metropolitanas" />
                 <MetricCard icon="⌂" label="Arquidiócesis" value={loading ? '—' : countryTerritorialJurisdictions.filter(isArchdiocese).length} detail="Sedes metropolitanas" />
                 <MetricCard icon="✛" label="Diócesis territoriales" value={loading ? '—' : countryTerritorialJurisdictions.filter(isDiocese).length} detail="Jurisdicciones diocesanas" />
                 <MetricCard icon="盾" label="Jurisdicción especial" value={loading ? '—' : countrySpecialJurisdictions.length} detail="No adscrita a provincia" />
@@ -600,49 +707,24 @@ export default function HomePage() {
             {territoryMode === 'country' && (
               <section className="public-content-grid public-country-content-grid">
                 <article className="public-panel public-section-card">
-                  <div className="public-section-title">
-                    <p className="eyebrow">Provincias eclesiásticas</p>
-                    <h2>Selecciona una provincia</h2>
-                    <p>Agrupaciones de iglesias locales bajo una sede metropolitana.</p>
-                  </div>
+                  <div className="public-section-title"><p className="eyebrow">Provincias eclesiásticas</p><h2>Selecciona una provincia</h2><p>Agrupaciones de iglesias locales bajo una sede metropolitana.</p></div>
                   <div className="public-province-list">
-                    {displayedProvinces.length === 0 && <EmptyViewNote title="Sin provincias" detail="No hay provincias eclesiásticas para el ámbito seleccionado." />}
                     {displayedProvinces.map((province) => (
                       <article className="public-province-card" key={province.name}>
                         <span className="public-node-icon" aria-hidden="true">⌂</span>
-                        <button onClick={() => selectProvince(province.name)} type="button">
-                          <strong>{province.name}</strong>
-                          <span>{province.count} jurisdicciones territoriales</span>
-                        </button>
+                        <button onClick={() => selectProvince(province.name)} type="button"><strong>{province.name}</strong><span>{province.count} jurisdicciones territoriales</span></button>
                         <Link className="public-link" href={`/provincias-eclesiasticas/${slugify(province.name)}`}>Ver ficha →</Link>
                       </article>
                     ))}
                   </div>
                 </article>
-
                 <article className="public-panel public-section-card">
-                  <div className="public-section-title">
-                    <p className="eyebrow">Jurisdicciones territoriales</p>
-                    <h2>{countryTerritorialJurisdictions.length} resultados</h2>
-                    <p>Arquidiócesis y diócesis integradas en provincias eclesiásticas.</p>
-                  </div>
-                  <div className="public-table">
-                    <div className="public-table-head"><span>Jurisdicción</span><span>Tipo</span><span>Acción</span></div>
-                    {countryTerritorialJurisdictions.slice(0, 5).map((item) => <JurisdictionRow item={item} key={item.id} />)}
-                    <div className="public-list-footer"><Link className="public-link" href="/diocesis">Ver todas las jurisdicciones territoriales →</Link></div>
-                  </div>
+                  <div className="public-section-title"><p className="eyebrow">Jurisdicciones territoriales</p><h2>{countryTerritorialJurisdictions.length} resultados</h2><p>Arquidiócesis y diócesis integradas en provincias eclesiásticas.</p></div>
+                  <div className="public-table"><div className="public-table-head"><span>Jurisdicción</span><span>Tipo</span><span>Acción</span></div>{countryTerritorialJurisdictions.slice(0, 5).map((item) => <JurisdictionRow item={item} key={item.id} />)}<div className="public-list-footer"><Link className="public-link" href="/diocesis">Ver todas las jurisdicciones territoriales →</Link></div></div>
                 </article>
-
                 <article className="public-panel public-section-card">
-                  <div className="public-section-title">
-                    <p className="eyebrow">Jurisdicciones especiales</p>
-                    <h2>{countrySpecialJurisdictions.length} resultado</h2>
-                    <p>No pertenecen a una provincia eclesiástica.</p>
-                  </div>
-                  <div className="public-directory-grid">
-                    {countrySpecialJurisdictions.length === 0 && <EmptyViewNote title="Sin jurisdicciones especiales" detail="No hay ordinariatos o jurisdicciones personales publicados." />}
-                    {countrySpecialJurisdictions.map((item) => <OrdinaryItem item={item} key={item.id} />)}
-                  </div>
+                  <div className="public-section-title"><p className="eyebrow">Jurisdicciones especiales</p><h2>{countrySpecialJurisdictions.length} resultado</h2><p>No pertenecen a una provincia eclesiástica.</p></div>
+                  <div className="public-directory-grid">{countrySpecialJurisdictions.length === 0 && <EmptyViewNote title="Sin jurisdicciones especiales" detail="No hay ordinariatos o jurisdicciones personales publicados." />}{countrySpecialJurisdictions.map((item) => <OrdinaryItem item={item} key={item.id} />)}</div>
                   <div className="public-info-banner compact">Las jurisdicciones especiales, como los ordinariatos militares, no se integran a las provincias eclesiásticas.</div>
                 </article>
               </section>
@@ -652,29 +734,12 @@ export default function HomePage() {
               <>
                 <section className="public-content-grid public-province-content-grid">
                   <article className="public-panel public-section-card">
-                    <div className="public-section-title">
-                      <p className="eyebrow">Jurisdicciones de la provincia</p>
-                      <h2>{scopedTerritorialJurisdictions.length} resultados</h2>
-                      <p>Arquidiócesis metropolitana y diócesis sufragáneas.</p>
-                    </div>
-                    <div className="public-table">
-                      <div className="public-table-head"><span>Jurisdicción</span><span>Tipo</span><span>Acción</span></div>
-                      {visibleTerritorialJurisdictions.length === 0 && <div className="public-empty">No hay jurisdicciones para mostrar.</div>}
-                      {visibleTerritorialJurisdictions.map((item) => <JurisdictionRow active={jurisdictionFilter === item.id} item={item} key={item.id} />)}
-                      <div className="public-list-footer"><Link className="public-link" href="/diocesis">Ver todas las jurisdicciones de la provincia →</Link></div>
-                    </div>
+                    <div className="public-section-title"><p className="eyebrow">Jurisdicciones de la provincia</p><h2>{scopedTerritorialJurisdictions.length} resultados</h2><p>Arquidiócesis metropolitana y diócesis sufragáneas.</p></div>
+                    <div className="public-table"><div className="public-table-head"><span>Jurisdicción</span><span>Tipo</span><span>Acción</span></div>{visibleTerritorialJurisdictions.length === 0 && <div className="public-empty">No hay jurisdicciones para mostrar.</div>}{visibleTerritorialJurisdictions.map((item) => <JurisdictionRow active={jurisdictionFilter === item.id} item={item} key={item.id} />)}<div className="public-list-footer"><Link className="public-link" href="/diocesis">Ver todas las jurisdicciones de la provincia →</Link></div></div>
                   </article>
-
                   <article className="public-panel public-section-card">
-                    <div className="public-section-title">
-                      <p className="eyebrow">Obispos y ordinarios</p>
-                      <h2>{ordinaryCount} registros</h2>
-                      <p>Pastores responsables de las jurisdicciones de esta provincia.</p>
-                    </div>
-                    <div className="public-directory-grid">
-                      {scopedTerritorialJurisdictions.filter((item) => item.current_ordinary_name).map((item) => <OrdinaryItem item={item} key={item.id} />)}
-                      {ordinaryCount === 0 && <EmptyViewNote title="Sin ordinarios publicados" detail="No hay obispos u ordinarios registrados para esta provincia." />}
-                    </div>
+                    <div className="public-section-title"><p className="eyebrow">Obispos y ordinarios</p><h2>{ordinaryCount} registros</h2><p>Pastores responsables de las jurisdicciones de esta provincia.</p></div>
+                    <div className="public-directory-grid">{scopedTerritorialJurisdictions.filter((item) => item.current_ordinary_name).map((item) => <OrdinaryItem item={item} key={item.id} />)}{ordinaryCount === 0 && <EmptyViewNote title="Sin ordinarios publicados" detail="No hay obispos u ordinarios registrados para esta provincia." />}</div>
                   </article>
                 </section>
                 {countrySpecialJurisdictions.length > 0 && <div className="public-info-banner">El Obispado Castrense de República Dominicana no se muestra en este listado porque no pertenece a la provincia eclesiástica seleccionada.</div>}
@@ -684,77 +749,16 @@ export default function HomePage() {
             {territoryMode === 'jurisdiction' && selectedJurisdiction && (
               <>
                 <section className="public-content-grid public-diocese-content-grid">
-                  <article className="public-panel public-section-card">
-                    <div className="public-section-title">
-                      <p className="eyebrow">Obispo / ordinario</p>
-                      <h2>Pastor propio</h2>
-                    </div>
-                    <div className="public-directory-item public-feature-card">
-                      <strong>{selectedJurisdiction.current_ordinary_name ?? 'Ordinario no registrado'}</strong>
-                      <span>{selectedJurisdiction.current_ordinary_title ?? 'Obispo / ordinario'} · {selectedJurisdiction.name}</span>
-                      <Link className="public-link" href={`/entidades/${selectedJurisdiction.slug}`}>Ver ficha →</Link>
-                    </div>
-                    <div className="public-info-banner compact">Es el pastor propio de esta porción del Pueblo de Dios.</div>
-                  </article>
-
-                  <article className="public-panel public-section-card">
-                    <div className="public-section-title">
-                      <p className="eyebrow">Sacerdotes</p>
-                      <h2>Ministerio sacerdotal</h2>
-                      <p>La distribución por cargo requiere asignaciones vigentes publicadas.</p>
-                    </div>
-                    <div className="public-table public-compact-table">
-                      {priestRoleRows.map((row) => <div className="public-row" key={row.label}><span className="public-row-main"><span className="public-row-icon" aria-hidden="true">✛</span><span><strong>{row.label}</strong><small>Asignación por jurisdicción</small></span></span><span className="public-type">{row.value}</span><span /> </div>)}
-                      <div className="public-list-footer"><Link className="public-link" href="/personas">Ver todos los sacerdotes →</Link></div>
-                    </div>
-                  </article>
-
-                  <article className="public-panel public-section-card public-diocese-structure-card">
-                    <div className="public-section-title">
-                      <p className="eyebrow">Organización territorial o pastoral</p>
-                      <h2>Próximos niveles configurados</h2>
-                      <p>Los niveles mostrados corresponden a la configuración territorial de esta jurisdicción.</p>
-                    </div>
-                    <div className="public-level-grid">
-                      {nextPastoralLevels.length === 0 && <EmptyViewNote title="Niveles por configurar" detail="No hay niveles pastorales publicados para esta jurisdicción." />}
-                      {nextPastoralLevels.map((level, index) => (
-                        <article className="public-level-card" key={level.name}>
-                          <div className="public-section-title">
-                            <p className="eyebrow">Nivel {index + 1}</p>
-                            <h2>{level.name}</h2>
-                            <p>{level.count} registros publicados</p>
-                          </div>
-                          <div className="public-directory-grid">
-                            {level.items.slice(0, 3).map((item) => <Link className="public-directory-item" href={item.linked_entity_slug ? `/entidades/${item.linked_entity_slug}` : `/pastoral/${item.slug}`} key={item.id}><strong>{item.name}</strong><span>{item.diocese_name ?? selectedJurisdiction.name}</span></Link>)}
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </article>
+                  <article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Obispo / ordinario</p><h2>Pastor propio</h2></div><div className="public-directory-item public-feature-card"><strong>{selectedJurisdiction.current_ordinary_name ?? 'Ordinario no registrado'}</strong><span>{selectedJurisdiction.current_ordinary_title ?? 'Obispo / ordinario'} · {selectedJurisdiction.name}</span><Link className="public-link" href={`/entidades/${selectedJurisdiction.slug}`}>Ver ficha →</Link></div><div className="public-info-banner compact">Es el pastor propio de esta porción del Pueblo de Dios.</div></article>
+                  <article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Sacerdotes</p><h2>Ministerio sacerdotal</h2><p>La distribución por cargo requiere asignaciones vigentes publicadas.</p></div><div className="public-table public-compact-table">{priestRoleRows.map((row) => <div className="public-row" key={row.label}><span className="public-row-main"><span className="public-row-icon" aria-hidden="true">✛</span><span><strong>{row.label}</strong><small>Asignación por jurisdicción</small></span></span><span className="public-type">{row.value}</span><span /></div>)}<div className="public-list-footer"><Link className="public-link" href="/personas">Ver todos los sacerdotes →</Link></div></div></article>
+                  <article className="public-panel public-section-card public-diocese-structure-card"><div className="public-section-title"><p className="eyebrow">Organización territorial o pastoral</p><h2>Próximos niveles configurados</h2><p>Los niveles mostrados corresponden a la configuración territorial de esta jurisdicción.</p></div><div className="public-level-grid">{nextPastoralLevels.length === 0 && <EmptyViewNote title="Niveles por configurar" detail="No hay niveles pastorales publicados para esta jurisdicción." />}{nextPastoralLevels.map((level, index) => <article className="public-level-card" key={level.name}><div className="public-section-title"><p className="eyebrow">Nivel {index + 1}</p><h2>{level.name}</h2><p>{level.count} registros publicados</p></div><div className="public-directory-grid">{level.items.slice(0, 3).map((item) => <Link className="public-directory-item" href={item.linked_entity_slug ? `/entidades/${item.linked_entity_slug}` : `/pastoral/${item.slug}`} key={item.id}><strong>{item.name}</strong><span>{item.diocese_name ?? selectedJurisdiction.name}</span></Link>)}</div></article>)}</div></article>
                 </section>
                 <div className="public-info-banner">Los datos presentados corresponden únicamente a {selectedJurisdiction.name} y a los niveles territoriales configurados en esta jurisdicción.</div>
               </>
             )}
 
             {territoryMode === 'special' && selectedJurisdiction && (
-              <section className="public-content-grid public-province-content-grid">
-                <article className="public-panel public-section-card">
-                  <div className="public-section-title">
-                    <p className="eyebrow">Jurisdicción especial</p>
-                    <h2>{selectedJurisdiction.name}</h2>
-                    <p>No está adscrita a una provincia eclesiástica.</p>
-                  </div>
-                  <JurisdictionRow item={selectedJurisdiction} active />
-                </article>
-                <article className="public-panel public-section-card">
-                  <div className="public-section-title">
-                    <p className="eyebrow">Ordinario y estructura propia</p>
-                    <h2>{selectedJurisdiction.current_ordinary_name ?? 'Ordinario no registrado'}</h2>
-                    <p>La estructura pastoral propia se publicará según las asignaciones configuradas.</p>
-                  </div>
-                  <div className="public-info-banner compact">Provincia eclesiástica: No aplica. Las jurisdicciones especiales tienen estatuto propio.</div>
-                </article>
-              </section>
+              <section className="public-content-grid public-province-content-grid"><article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Jurisdicción especial</p><h2>{selectedJurisdiction.name}</h2><p>No está adscrita a una provincia eclesiástica.</p></div><JurisdictionRow item={selectedJurisdiction} active /></article><article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Ordinario y estructura propia</p><h2>{selectedJurisdiction.current_ordinary_name ?? 'Ordinario no registrado'}</h2><p>La estructura pastoral propia se publicará según las asignaciones configuradas.</p></div><div className="public-info-banner compact">Provincia eclesiástica: No aplica. Las jurisdicciones especiales tienen estatuto propio.</div></article></section>
             )}
           </section>
         )}
@@ -763,21 +767,46 @@ export default function HomePage() {
           <section className="public-directory-card public-panel" id="panel-clero" role="tabpanel" aria-labelledby="tab-clero">
             <div className="public-section-title">
               <p className="eyebrow">{activeViewMeta.eyebrow}</p>
-              <h2>{activeViewMeta.title}</h2>
-              <p>{activeViewMeta.description}</p>
+              <h2>Clero y agentes en {scopeTitle}</h2>
+              <p>La vista responde al país, provincia, diócesis o nivel territorial seleccionado en el ámbito de consulta.</p>
             </div>
-            <section className="public-metrics-grid" aria-label="Resumen de personas">
-              <MetricCard icon="♙" label="Obispos" value={loading ? '—' : (peopleSummary?.bishops ?? people.filter((item) => item.person_type === 'bishop').length)} detail="Ordinarios, auxiliares y eméritos" onClick={() => setPersonTypeFilter('bishop')} active={personTypeFilter === 'bishop'} />
-              <MetricCard icon="✛" label="Presbíteros" value={loading ? '—' : (peopleSummary?.priests ?? people.filter((item) => item.person_type === 'priest').length)} detail="Clero presbiteral" onClick={() => setPersonTypeFilter('priest')} active={personTypeFilter === 'priest'} />
-              <MetricCard icon="◇" label="Diáconos" value={loading ? '—' : (peopleSummary?.deacons ?? people.filter((item) => item.person_type === 'deacon').length)} detail="Ministerio diaconal" onClick={() => setPersonTypeFilter('deacon')} active={personTypeFilter === 'deacon'} />
-              <MetricCard icon="☧" label="Vida consagrada" value={loading ? '—' : (peopleSummary?.religious ?? people.filter((item) => item.person_type === 'religious').length)} detail="Religiosos y religiosas" onClick={() => setPersonTypeFilter('religious')} active={personTypeFilter === 'religious'} />
-              <MetricCard icon="♧" label="Laicos/as" value={loading ? '—' : (peopleSummary?.laypeople ?? people.filter((item) => item.person_type === 'layperson').length)} detail="Agentes con responsabilidad" onClick={() => setPersonTypeFilter('layperson')} active={personTypeFilter === 'layperson'} />
-              <MetricCard icon="◎" label="Activos" value={loading ? '—' : (peopleSummary?.active ?? people.filter((item) => item.status === 'active' && !item.death_date).length)} detail="Registros públicos vigentes" />
+            <section className="public-metrics-grid" aria-label="Resumen de clero y agentes filtrado">
+              <MetricCard icon="♙" label="Obispos / ordinarios" value={loading ? '—' : countPeopleByType('bishop')} detail="Según el ámbito seleccionado" onClick={() => setPersonTypeFilter('bishop')} active={personTypeFilter === 'bishop'} />
+              <MetricCard icon="✛" label="Sacerdotes" value={loading ? '—' : countPeopleByType('priest')} detail={hasScopedAssignments || territoryMode === 'country' ? 'Registros publicados' : 'Requiere asignaciones'} onClick={() => setPersonTypeFilter('priest')} active={personTypeFilter === 'priest'} />
+              <MetricCard icon="◇" label="Diáconos" value={loading ? '—' : countPeopleByType('deacon')} detail={hasScopedAssignments || territoryMode === 'country' ? 'Registros publicados' : 'Requiere asignaciones'} onClick={() => setPersonTypeFilter('deacon')} active={personTypeFilter === 'deacon'} />
+              <MetricCard icon="☧" label="Religiosos/as" value={loading ? '—' : countPeopleByType('religious')} detail={hasScopedAssignments || territoryMode === 'country' ? 'Registros publicados' : 'Requiere asignaciones'} onClick={() => setPersonTypeFilter('religious')} active={personTypeFilter === 'religious'} />
+              <MetricCard icon="♧" label="Laicos/as agentes" value={loading ? '—' : countPeopleByType('layperson')} detail={hasScopedAssignments || territoryMode === 'country' ? 'Registros publicados' : 'Requiere asignaciones'} onClick={() => setPersonTypeFilter('layperson')} active={personTypeFilter === 'layperson'} />
             </section>
-            <div className="public-directory-grid">
-              {visiblePeople.length === 0 && <EmptyViewNote title="Sin personas" detail="No hay personas públicas para mostrar con el filtro actual." />}
-              {visiblePeople.map((item) => <Link className="public-directory-item" href={`/personas/${item.slug}`} key={item.id}><strong>{item.display_name}</strong><span>{personTypeLabel(item.person_type)} · {statusLabel(item)}</span><span className="public-link">Ver ficha →</span></Link>)}
-            </div>
+
+            <section className="public-content-grid public-province-content-grid">
+              <article className="public-panel public-section-card">
+                <div className="public-section-title">
+                  <p className="eyebrow">Filtros territoriales</p>
+                  <h2>{territoryMode === 'country' ? 'Provincias y jurisdicciones' : territoryMode === 'province' ? 'Jurisdicciones de la provincia' : territoryMode === 'jurisdiction' ? 'Niveles territoriales' : 'Estructura propia'}</h2>
+                  <p>Usa estas tarjetas para delimitar el listado de personas.</p>
+                </div>
+                <div className="public-province-list">
+                  {territoryMode === 'country' && displayedProvinces.map((province) => <article className="public-province-card" key={province.name}><span className="public-node-icon" aria-hidden="true">⌂</span><button onClick={() => selectProvince(province.name, 'clero')} type="button"><strong>{province.name}</strong><span>{province.count} jurisdicciones</span></button><span className="public-link">Filtrar →</span></article>)}
+                  {territoryMode === 'province' && scopedTerritorialJurisdictions.map((item) => <article className="public-province-card" key={item.id}><span className="public-node-icon" aria-hidden="true">⌂</span><button onClick={() => selectJurisdiction(item.id, 'clero')} type="button"><strong>{item.name}</strong><span>{item.entity_type_name ?? 'Jurisdicción'}</span></button><Link className="public-link" href={`/entidades/${item.slug}`}>Ver ficha →</Link></article>)}
+                  {territoryMode === 'jurisdiction' && nextPastoralLevels.flatMap((level) => level.items.slice(0, 4).map((item) => <article className={`public-province-card ${clergyTerritorySlug === item.slug ? 'active' : ''}`} key={item.id}><span className="public-node-icon" aria-hidden="true">▥</span><button onClick={() => setClergyTerritorySlug(item.slug)} type="button"><strong>{item.name}</strong><span>{level.name}</span></button><span className="public-link">Filtrar →</span></article>))}
+                  {territoryMode === 'special' && <EmptyViewNote title="Estructura especial" detail="Este ámbito no pertenece a una provincia eclesiástica. Las personas se listarán desde asignaciones propias publicadas." />}
+                  {clergyTerritorySlug && <button className="public-clear-button" onClick={() => setClergyTerritorySlug('')} type="button">Limpiar filtro territorial</button>}
+                </div>
+              </article>
+
+              <article className="public-panel public-section-card">
+                <div className="public-section-title">
+                  <p className="eyebrow">Personas encontradas</p>
+                  <h2>{visibleClergyPeople.length} visibles</h2>
+                  <p>{personTypeFilter ? personTypeLabel(personTypeFilter) : 'Todos los tipos'} · {scopeTitle}</p>
+                </div>
+                <div className="public-directory-grid">
+                  {visibleClergyPeople.map((item) => <ClergyItemCard item={item} key={`${item.id}-${item.role}`} />)}
+                  {visibleClergyPeople.length === 0 && <EmptyViewNote title="Sin personas publicadas para este ámbito" detail="Faltan asignaciones vigentes y públicas que conecten personas con esta provincia, diócesis o nivel territorial." />}
+                </div>
+                {!hasScopedAssignments && territoryMode !== 'country' && <div className="public-info-banner compact">Los conteos de sacerdotes, diáconos, religiosos y laicos dependen de asignaciones vigentes publicadas por jurisdicción o nivel territorial.</div>}
+              </article>
+            </section>
           </section>
         )}
 
@@ -795,11 +824,7 @@ export default function HomePage() {
         {activeView === 'administrativa' && (
           <section className="public-directory-card public-panel" id="panel-administrativa" role="tabpanel" aria-labelledby="tab-administrativa">
             <div className="public-section-title"><p className="eyebrow">{activeViewMeta.eyebrow}</p><h2>{activeViewMeta.title}</h2><p>{activeViewMeta.description}</p></div>
-            <section className="public-metrics-grid" aria-label="Resumen administrativo">
-              <MetricCard icon="▣" label="Organigramas" value={organizationCharts.length} detail="Cartas organizativas públicas" />
-              <MetricCard icon="▤" label="Unidades" value={administrativeUnits.length} detail="Curia, oficinas y departamentos" />
-              <MetricCard icon="⌂" label="Dependencias superiores" value={administrativeUnits.filter((item) => !item.parent_unit_id).length} detail="Primer nivel administrativo" />
-            </section>
+            <section className="public-metrics-grid" aria-label="Resumen administrativo"><MetricCard icon="▣" label="Organigramas" value={organizationCharts.length} detail="Cartas organizativas públicas" /><MetricCard icon="▤" label="Unidades" value={administrativeUnits.length} detail="Curia, oficinas y departamentos" /><MetricCard icon="⌂" label="Dependencias superiores" value={administrativeUnits.filter((item) => !item.parent_unit_id).length} detail="Primer nivel administrativo" /></section>
             {administrativeUnits.length === 0 ? <EmptyViewNote title="Vista administrativa en preparación" detail="No hay unidades administrativas públicas todavía. Cuando se publiquen, responderán a los filtros del encabezado." /> : <div className="public-directory-grid">{administrativeUnits.slice(0, 16).map((item) => <Link className="public-directory-item" href={`/oficinas/${item.id}`} key={item.id}><strong>{item.name}</strong><span>{item.description ?? 'Unidad administrativa'}</span></Link>)}</div>}
           </section>
         )}
@@ -807,10 +832,7 @@ export default function HomePage() {
         {activeView === 'colegial' && (
           <section className="public-directory-card public-panel" id="panel-colegial" role="tabpanel" aria-labelledby="tab-colegial">
             <div className="public-section-title"><p className="eyebrow">{activeViewMeta.eyebrow}</p><h2>{activeViewMeta.title}</h2><p>{activeViewMeta.description}</p></div>
-            <section className="public-metrics-grid" aria-label="Resumen colegial">
-              <MetricCard icon="♧" label="Organismos colegiales" value={collegialUnits.length} detail="Consejos, comisiones y comités" />
-              <MetricCard icon="▣" label="Órganos superiores" value={collegialUnits.filter((item) => !item.parent_unit_id).length} detail="Primer nivel colegial" />
-            </section>
+            <section className="public-metrics-grid" aria-label="Resumen colegial"><MetricCard icon="♧" label="Organismos colegiales" value={collegialUnits.length} detail="Consejos, comisiones y comités" /><MetricCard icon="▣" label="Órganos superiores" value={collegialUnits.filter((item) => !item.parent_unit_id).length} detail="Primer nivel colegial" /></section>
             {collegialUnits.length === 0 ? <EmptyViewNote title="Vista colegial en preparación" detail="No hay organismos colegiales públicos todavía. Esta vista queda separada para consejos, comisiones, comités y equipos transversales." /> : <div className="public-directory-grid">{collegialUnits.slice(0, 16).map((item) => <Link className="public-directory-item" href={`/organismos/${item.id}`} key={item.id}><strong>{item.name}</strong><span>{item.description ?? 'Organismo colegial'}</span></Link>)}</div>}
           </section>
         )}
