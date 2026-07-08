@@ -37,6 +37,8 @@ type PastoralEntity = {
   level_name: string | null
   level_key: string | null
   level_order: number | null
+  linked_entity_name?: string | null
+  linked_entity_slug?: string | null
   parent_pastoral_entity_id: string | null
   parent_pastoral_entity_name: string | null
 }
@@ -100,6 +102,10 @@ function formatNumber(value: number | null | undefined) {
 
 function normalizeText(value?: string | null) {
   return (value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+function slugify(value: string) {
+  return normalizeText(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
 function personTypeLabel(value: string | null) {
@@ -292,14 +298,14 @@ export default function HomePage() {
               <div className="section-heading"><div><p className="eyebrow">Provincias eclesiásticas</p><h2>Selecciona una provincia</h2></div></div>
               <div className="home-province-grid">
                 {provinces.length === 0 && <EmptyViewNote title="Sin provincias" detail="Todavía no hay provincias eclesiásticas publicadas." />}
-                {provinces.map((province) => <button className={`home-province-card public-card-button ${provinceFilter === province.name ? 'active' : ''}`} key={province.name} onClick={() => selectProvince(province.name)} type="button"><strong>{province.name}</strong><span>{province.count} jurisdicciones</span></button>)}
+                {provinces.map((province) => <article className={`home-province-card public-card-button ${provinceFilter === province.name ? 'active' : ''}`} key={province.name}><button className="public-node-main" onClick={() => selectProvince(province.name)} type="button"><strong>{province.name}</strong><span>{province.count} jurisdicciones</span></button><Link className="inline-link" href={`/provincias-eclesiasticas/${slugify(province.name)}`}>Ver ficha →</Link></article>)}
               </div>
             </article>
             <article className="card dashboard-section">
               <div className="section-heading"><div><p className="eyebrow">Jurisdicciones</p><h2>{scopedDioceses.length} resultados</h2></div></div>
               <div className="list-table compact-list-table">
                 {scopedDioceses.length === 0 && <div className="home-empty-row">No hay jurisdicciones para mostrar.</div>}
-                {scopedDioceses.map((item) => <button className={`list-row public-list-button ${jurisdictionFilter === item.id ? 'active' : ''}`} key={item.id} onClick={() => selectJurisdiction(item.id)} type="button"><span><strong>{item.name}</strong><small>{item.entity_type_name ?? 'Jurisdicción'}</small></span><span>{item.current_ordinary_title ?? 'Sin cargo registrado'}</span><span>{item.current_ordinary_name ?? 'Sin ordinario registrado'}</span></button>)}
+                {scopedDioceses.map((item) => <div className={`list-row public-list-row ${jurisdictionFilter === item.id ? 'active' : ''}`} key={item.id}><button className="public-list-main" onClick={() => selectJurisdiction(item.id)} type="button"><span><strong>{item.name}</strong><small>{item.entity_type_name ?? 'Jurisdicción'}</small></span><span>{item.current_ordinary_title ?? 'Sin cargo registrado'}</span><span>{item.current_ordinary_name ?? 'Sin ordinario registrado'}</span></button><Link className="inline-link" href={`/entidades/${item.slug}`}>Ver ficha →</Link></div>)}
               </div>
             </article>
           </section>
@@ -333,7 +339,7 @@ export default function HomePage() {
           </section>
           <section className="card dashboard-section">
             <div className="section-heading"><div><p className="eyebrow">Organización pastoral</p><h2>{filteredPastoral.length} registros</h2></div></div>
-            {filteredPastoral.length === 0 ? <EmptyViewNote title="Vista pastoral en preparación" detail="La estructura flexible ya existe; falta publicar nodos pastorales suficientes para esta vista." /> : <div className="home-province-grid">{filteredPastoral.slice(0, 16).map((item) => <Link className="home-province-card" href={`/pastoral/${item.slug}`} key={item.id}><strong>{item.name}</strong><span>{item.level_name ?? 'Nivel pastoral'} · {item.diocese_name ?? 'Sin jurisdicción'}</span></Link>)}</div>}
+            {filteredPastoral.length === 0 ? <EmptyViewNote title="Vista pastoral en preparación" detail="La estructura flexible ya existe; falta publicar nodos pastorales suficientes para esta vista." /> : <div className="home-province-grid">{filteredPastoral.slice(0, 16).map((item) => <Link className="home-province-card" href={item.linked_entity_slug ? `/entidades/${item.linked_entity_slug}` : `/pastoral/${item.slug}`} key={item.id}><strong>{item.name}</strong><span>{item.level_name ?? 'Nivel pastoral'} · {item.diocese_name ?? 'Sin jurisdicción'}</span></Link>)}</div>}
           </section>
         </section>
       )}
@@ -347,7 +353,7 @@ export default function HomePage() {
           </section>
           <section className="card dashboard-section">
             <div className="section-heading"><div><p className="eyebrow">Organización administrativa</p><h2>Curia, oficinas y departamentos</h2></div></div>
-            {administrativeUnits.length === 0 ? <EmptyViewNote title="Vista administrativa en preparación" detail="No hay unidades administrativas públicas todavía. Cuando se publiquen, responderán a los filtros del encabezado." /> : <div className="home-province-grid">{administrativeUnits.slice(0, 16).map((item) => <article className="home-province-card" key={item.id}><strong>{item.name}</strong><span>{item.description ?? 'Unidad administrativa'}</span></article>)}</div>}
+            {administrativeUnits.length === 0 ? <EmptyViewNote title="Vista administrativa en preparación" detail="No hay unidades administrativas públicas todavía. Cuando se publiquen, responderán a los filtros del encabezado." /> : <div className="home-province-grid">{administrativeUnits.slice(0, 16).map((item) => <Link className="home-province-card" href={`/oficinas/${item.id}`} key={item.id}><strong>{item.name}</strong><span>{item.description ?? 'Unidad administrativa'}</span></Link>)}</div>}
           </section>
         </section>
       )}
@@ -360,7 +366,7 @@ export default function HomePage() {
           </section>
           <section className="card dashboard-section">
             <div className="section-heading"><div><p className="eyebrow">Organización colegial</p><h2>Consejos, comisiones y organismos</h2></div></div>
-            {collegialUnits.length === 0 ? <EmptyViewNote title="Vista colegial en preparación" detail="No hay organismos colegiales públicos todavía. Esta vista queda separada para consejos, comisiones, comités y equipos transversales." /> : <div className="home-province-grid">{collegialUnits.slice(0, 16).map((item) => <article className="home-province-card" key={item.id}><strong>{item.name}</strong><span>{item.description ?? 'Organismo colegial'}</span></article>)}</div>}
+            {collegialUnits.length === 0 ? <EmptyViewNote title="Vista colegial en preparación" detail="No hay organismos colegiales públicos todavía. Esta vista queda separada para consejos, comisiones, comités y equipos transversales." /> : <div className="home-province-grid">{collegialUnits.slice(0, 16).map((item) => <Link className="home-province-card" href={`/organismos/${item.id}`} key={item.id}><strong>{item.name}</strong><span>{item.description ?? 'Organismo colegial'}</span></Link>)}</div>}
           </section>
         </section>
       )}
