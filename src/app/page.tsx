@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import Link from 'next/link'
 
 type PublicView = 'territorial' | 'clero' | 'pastoral' | 'administrativa' | 'colegial'
@@ -165,7 +165,7 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string) {
 function MetricCard({ icon, label, value, detail, onClick, active }: { icon: string; label: string; value: string | number; detail: string; onClick?: () => void; active?: boolean }) {
   const content = (
     <>
-      <span className="public-metric-icon">{icon}</span>
+      <span className="public-metric-icon" aria-hidden="true">{icon}</span>
       <strong>{label}</strong>
       <b>{value}</b>
       <small>{detail}</small>
@@ -182,6 +182,7 @@ function EmptyViewNote({ title, detail }: { title: string; detail: string }) {
 
 function SearchableSelect({ label, value, options, onChange, emptyMessage = 'Sin resultados' }: { label: string; value: string; options: SelectOption[]; onChange: (value: string) => void; emptyMessage?: string }) {
   const selectedOption = options.find((option) => option.value === value)
+  const listboxId = useId()
   const [query, setQuery] = useState(selectedOption?.label ?? '')
   const [open, setOpen] = useState(false)
 
@@ -207,7 +208,10 @@ function SearchableSelect({ label, value, options, onChange, emptyMessage = 'Sin
       <span className="public-combobox">
         <input
           aria-autocomplete="list"
+          aria-controls={listboxId}
           aria-expanded={open}
+          aria-haspopup="listbox"
+          autoComplete="off"
           className="public-combobox-input"
           onBlur={() => window.setTimeout(() => { setOpen(false); setQuery(selectedOption?.label ?? '') }, 120)}
           onChange={(event) => { setQuery(event.target.value); setOpen(true) }}
@@ -225,12 +229,13 @@ function SearchableSelect({ label, value, options, onChange, emptyMessage = 'Sin
           role="combobox"
           value={query}
         />
-        <button aria-label={`Abrir opciones de ${label}`} className="public-combobox-toggle" onMouseDown={(event) => { event.preventDefault(); setOpen((current) => !current) }} type="button">⌄</button>
+        <button aria-expanded={open} aria-label={`Abrir opciones de ${label}`} className="public-combobox-toggle" onMouseDown={(event) => { event.preventDefault(); setOpen((current) => !current) }} type="button">⌄</button>
         {open && (
-          <div className="public-combobox-list" role="listbox">
+          <div className="public-combobox-list" id={listboxId} role="listbox">
             {filteredOptions.length === 0 && <div className="public-combobox-empty">{emptyMessage}</div>}
             {filteredOptions.map((option) => (
               <button
+                aria-selected={option.value === value}
                 className={`public-combobox-option ${option.value === value ? 'active' : ''}`}
                 key={`${label}-${option.value || 'all'}`}
                 onMouseDown={(event) => { event.preventDefault(); commitSelection(option) }}
@@ -376,32 +381,34 @@ export default function HomePage() {
   const activeViewMeta = publicViews.find((view) => view.key === activeView) ?? publicViews[0]
 
   return (
-    <main className="public-dashboard-layout">
+    <div className="public-dashboard-layout">
+      <a className="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
+
       <header className="public-mobile-header">
-        <Link className="public-mobile-brand" href="/">
-          <span className="public-brand-mark">✛</span>
+        <Link className="public-mobile-brand" href="/" aria-label="Ir al inicio de SINEP RD">
+          <span className="public-brand-mark" aria-hidden="true">✛</span>
           <span>
             <span className="public-brand-title">SINEP RD</span>
             <span className="public-brand-subtitle">Sistema de Información<br />Eclesial Pastoral</span>
           </span>
         </Link>
         <Link className="public-mobile-icon-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
-        <button className="public-mobile-menu-button" type="button" aria-label="Abrir menú">☰</button>
+        <button className="public-mobile-menu-button" type="button" aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menú principal">☰</button>
       </header>
 
       <aside className="public-sidebar" aria-label="Menú principal">
-        <Link className="public-sidebar-brand" href="/">
-          <span className="public-brand-mark">✛</span>
+        <Link className="public-sidebar-brand" href="/" aria-label="Ir al inicio de SINEP RD">
+          <span className="public-brand-mark" aria-hidden="true">✛</span>
           <span>
             <span className="public-brand-title">SINEP RD</span>
             <span className="public-brand-subtitle">Sistema de Información<br />Eclesial Pastoral</span>
           </span>
         </Link>
 
-        <nav className="public-sidebar-nav">
+        <nav className="public-sidebar-nav" id="menu-principal" aria-label="Navegación principal">
           {sideNav.map((item) => (
-            <Link className={`public-sidebar-link ${item.active ? 'active' : ''}`} href={item.href} key={item.label}>
-              <span>{item.icon}</span>
+            <Link aria-current={item.active ? 'page' : undefined} className={`public-sidebar-link ${item.active ? 'active' : ''}`} href={item.href} key={item.label}>
+              <span aria-hidden="true">{item.icon}</span>
               <span>{item.label}</span>
             </Link>
           ))}
@@ -414,14 +421,14 @@ export default function HomePage() {
         </div>
       </aside>
 
-      <div className="public-main">
+      <main className="public-main" id="contenido-principal" tabIndex={-1}>
         <div className="public-topbar">
           <Link className="public-user-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
         </div>
 
-        <section className="public-panel public-filter-panel">
+        <section className="public-panel public-filter-panel" aria-labelledby="ambito-consulta-title">
           <div className="public-panel-title">
-            <div className="public-heading-accent"><h1>Ámbito de consulta</h1></div>
+            <div className="public-heading-accent"><h1 id="ambito-consulta-title">Ámbito de consulta</h1></div>
             <button className="public-clear-button" onClick={() => resetTerritory()} type="button">↻ Limpiar filtros</button>
           </div>
 
@@ -433,19 +440,28 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="public-tabs" aria-label="Vistas públicas">
+        <section className="public-tabs" role="tablist" aria-label="Vistas públicas">
           {publicViews.map((view) => (
-            <button className={`public-tab ${activeView === view.key ? 'active' : ''}`} key={view.key} onClick={() => setActiveView(view.key)} type="button">
-              <span>{view.icon}</span>
+            <button
+              aria-controls={`panel-${view.key}`}
+              aria-selected={activeView === view.key}
+              className={`public-tab ${activeView === view.key ? 'active' : ''}`}
+              id={`tab-${view.key}`}
+              key={view.key}
+              onClick={() => setActiveView(view.key)}
+              role="tab"
+              type="button"
+            >
+              <span aria-hidden="true">{view.icon}</span>
               <span>{view.shortTitle}</span>
             </button>
           ))}
         </section>
 
         {activeView === 'territorial' && (
-          <>
-            <section className="public-panel public-scope-card">
-              <span className="public-country-mark">▰</span>
+          <section id="panel-territorial" role="tabpanel" aria-labelledby="tab-territorial">
+            <section className="public-panel public-scope-card" aria-live="polite">
+              <span className="public-country-mark" aria-hidden="true">▰</span>
               <div>
                 <h2>{scopeTitle}</h2>
                 <div className="public-scope-summary">
@@ -478,7 +494,7 @@ export default function HomePage() {
                   {displayedProvinces.length === 0 && <EmptyViewNote title="Sin provincias" detail="No hay provincias eclesiásticas para el ámbito seleccionado." />}
                   {displayedProvinces.map((province) => (
                     <article className={`public-province-card ${provinceFilter === province.name ? 'active' : ''}`} key={province.name}>
-                      <span className="public-node-icon">⌂</span>
+                      <span className="public-node-icon" aria-hidden="true">⌂</span>
                       <button onClick={() => selectProvince(province.name)} type="button">
                         <strong>{province.name}</strong>
                         <span>{province.count} jurisdicciones</span>
@@ -500,7 +516,7 @@ export default function HomePage() {
                   {visibleJurisdictions.length === 0 && <div className="public-empty">No hay jurisdicciones para mostrar.</div>}
                   {visibleJurisdictions.map((item) => (
                     <Link className={`public-row ${jurisdictionFilter === item.id ? 'active' : ''}`} href={`/entidades/${item.slug}`} key={item.id}>
-                      <span className="public-row-main"><span className="public-row-icon">⌂</span><span><strong>{item.name}</strong><small>{item.current_ordinary_name ?? 'Sin ordinario registrado'}</small></span></span>
+                      <span className="public-row-main"><span className="public-row-icon" aria-hidden="true">⌂</span><span><strong>{item.name}</strong><small>{item.current_ordinary_name ?? 'Sin ordinario registrado'}</small></span></span>
                       <span className="public-type">{item.entity_type_name ?? 'Jurisdicción'}</span>
                       <span className="public-link">Ver ficha →</span>
                     </Link>
@@ -509,11 +525,11 @@ export default function HomePage() {
                 </div>
               </article>
             </section>
-          </>
+          </section>
         )}
 
         {activeView === 'clero' && (
-          <section className="public-directory-card public-panel">
+          <section className="public-directory-card public-panel" id="panel-clero" role="tabpanel" aria-labelledby="tab-clero">
             <div className="public-section-title">
               <p className="eyebrow">{activeViewMeta.eyebrow}</p>
               <h2>{activeViewMeta.title}</h2>
@@ -535,7 +551,7 @@ export default function HomePage() {
         )}
 
         {activeView === 'pastoral' && (
-          <section className="public-directory-card public-panel">
+          <section className="public-directory-card public-panel" id="panel-pastoral" role="tabpanel" aria-labelledby="tab-pastoral">
             <div className="public-section-title"><p className="eyebrow">{activeViewMeta.eyebrow}</p><h2>{activeViewMeta.title}</h2><p>{activeViewMeta.description}</p></div>
             <section className="public-metrics-grid" aria-label="Resumen pastoral">
               {pastoralLevels.length === 0 && <MetricCard icon="⌂" label="Estructura pastoral" value={formatNumber(registeredParishes)} detail="Parroquias registradas en BD" />}
@@ -546,7 +562,7 @@ export default function HomePage() {
         )}
 
         {activeView === 'administrativa' && (
-          <section className="public-directory-card public-panel">
+          <section className="public-directory-card public-panel" id="panel-administrativa" role="tabpanel" aria-labelledby="tab-administrativa">
             <div className="public-section-title"><p className="eyebrow">{activeViewMeta.eyebrow}</p><h2>{activeViewMeta.title}</h2><p>{activeViewMeta.description}</p></div>
             <section className="public-metrics-grid" aria-label="Resumen administrativo">
               <MetricCard icon="▣" label="Organigramas" value={organizationCharts.length} detail="Cartas organizativas públicas" />
@@ -558,7 +574,7 @@ export default function HomePage() {
         )}
 
         {activeView === 'colegial' && (
-          <section className="public-directory-card public-panel">
+          <section className="public-directory-card public-panel" id="panel-colegial" role="tabpanel" aria-labelledby="tab-colegial">
             <div className="public-section-title"><p className="eyebrow">{activeViewMeta.eyebrow}</p><h2>{activeViewMeta.title}</h2><p>{activeViewMeta.description}</p></div>
             <section className="public-metrics-grid" aria-label="Resumen colegial">
               <MetricCard icon="♧" label="Organismos colegiales" value={collegialUnits.length} detail="Consejos, comisiones y comités" />
@@ -567,11 +583,11 @@ export default function HomePage() {
             {collegialUnits.length === 0 ? <EmptyViewNote title="Vista colegial en preparación" detail="No hay organismos colegiales públicos todavía. Esta vista queda separada para consejos, comisiones, comités y equipos transversales." /> : <div className="public-directory-grid">{collegialUnits.slice(0, 16).map((item) => <Link className="public-directory-item" href={`/organismos/${item.id}`} key={item.id}><strong>{item.name}</strong><span>{item.description ?? 'Organismo colegial'}</span></Link>)}</div>}
           </section>
         )}
-      </div>
+      </main>
 
       <nav className="public-bottom-nav" aria-label="Navegación móvil">
-        {bottomNav.map((item) => <Link className={item.active ? 'active' : ''} href={item.href} key={item.label}><span>{item.icon}</span><span>{item.label}</span></Link>)}
+        {bottomNav.map((item) => <Link aria-current={item.active ? 'page' : undefined} className={item.active ? 'active' : ''} href={item.href} key={item.label}><span aria-hidden="true">{item.icon}</span><span>{item.label}</span></Link>)}
       </nav>
-    </main>
+    </div>
   )
 }
