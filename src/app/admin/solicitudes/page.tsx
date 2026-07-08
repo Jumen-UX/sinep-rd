@@ -182,6 +182,10 @@ export default function SolicitudesPage() {
                 <p className="meta"><strong>Enviada por:</strong> {item.submitted_by_name ?? item.submitted_by_email ?? 'No indicado'}</p>
                 <p className="meta"><strong>Fecha:</strong> {formatDate(item.submitted_at ?? item.created_at)}</p>
               </div>
+
+              <div className="admin-actions">
+                <Link className="button button-primary" href={`/admin/solicitudes/${item.id}`}>Revisar solicitud</Link>
+              </div>
             </article>
           ))}
         </section>
