@@ -1,18 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type PersonRow = {
-  id: string
-  display_name: string
-  slug: string
+  person_id: string
+  display_name: string | null
   person_type: string | null
   status: string | null
-  death_date: string | null
-  birth_place: string | null
+  visibility: string | null
+  current_entity_id: string | null
+  current_entity_name: string | null
+  current_pastoral_entity_id: string | null
+  current_pastoral_entity_name: string | null
+  incardination_entity_id: string | null
+  incardination_entity_name: string | null
+  updated_at: string | null
 }
 
 type PersonFilter = 'active' | 'clergy' | 'religious' | 'layperson' | 'deceased' | 'all'
@@ -38,6 +43,17 @@ function statusLabel(value: string | null) {
   return value ?? 'No indicado'
 }
 
+function personName(person: PersonRow) {
+  return person.display_name ?? 'Persona sin nombre'
+}
+
+function personScope(person: PersonRow) {
+  return person.current_entity_name
+    ?? person.current_pastoral_entity_name
+    ?? person.incardination_entity_name
+    ?? 'Sin entidad vinculada visible'
+}
+
 export default function AdminPersonasPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -46,30 +62,43 @@ export default function AdminPersonasPage() {
   const [people, setPeople] = useState<PersonRow[]>([])
   const [filter, setFilter] = useState<PersonFilter>('active')
   const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
 
-  useEffect(() => {
-    async function loadPeople() {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) {
-        router.push('/admin/login')
-        return
-      }
+  async function loadPeople(query = search) {
+    setLoading(true)
+    setError(null)
 
-      const { data, error: peopleError } = await supabase
-        .from('persons')
-        .select('id,display_name,slug,person_type,status,death_date,birth_place')
-        .order('display_name')
-
-      if (peopleError) {
-        setError(peopleError.message)
-      } else {
-        setPeople((data ?? []) as PersonRow[])
-      }
-      setLoading(false)
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData.user) {
+      router.push('/admin/login')
+      return
     }
 
-    loadPeople()
-  }, [router, supabase])
+    const { data, error: peopleError } = await supabase.rpc('admin_list_people', {
+      p_search: query.trim() || null,
+      p_limit: 200,
+    })
+
+    if (peopleError) {
+      setError(peopleError.message)
+      setPeople([])
+    } else {
+      setPeople((data ?? []) as PersonRow[])
+    }
+
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    loadPeople('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSearch(searchInput)
+    loadPeople(searchInput)
+  }
 
   const clergy = people.filter((person) => ['bishop', 'priest', 'deacon'].includes(person.person_type ?? ''))
   const religious = people.filter((person) => person.person_type === 'religious')
@@ -78,17 +107,12 @@ export default function AdminPersonasPage() {
   const active = people.filter((person) => person.status !== 'deceased')
 
   const visiblePeople = people.filter((person) => {
-    const matchesFilter =
-      filter === 'all' ||
-      (filter === 'active' && person.status !== 'deceased') ||
-      (filter === 'clergy' && ['bishop', 'priest', 'deacon'].includes(person.person_type ?? '')) ||
-      (filter === 'religious' && person.person_type === 'religious') ||
-      (filter === 'layperson' && person.person_type === 'layperson') ||
-      (filter === 'deceased' && person.status === 'deceased')
-
-    const normalizedSearch = search.trim().toLowerCase()
-    const matchesSearch = normalizedSearch.length === 0 || person.display_name.toLowerCase().includes(normalizedSearch)
-    return matchesFilter && matchesSearch
+    return filter === 'all'
+      || (filter === 'active' && person.status !== 'deceased')
+      || (filter === 'clergy' && ['bishop', 'priest', 'deacon'].includes(person.person_type ?? ''))
+      || (filter === 'religious' && person.person_type === 'religious')
+      || (filter === 'layperson' && person.person_type === 'layperson')
+      || (filter === 'deceased' && person.status === 'deceased')
   })
 
   if (loading) return <main className="container"><div className="empty-state">Cargando personas...</div></main>
@@ -101,7 +125,7 @@ export default function AdminPersonasPage() {
         <div>
           <p className="eyebrow">Administración de personas</p>
           <h1>Personas registradas</h1>
-          <p className="lead">Busca una persona para ver su ficha pública o ejecutar acciones administrativas como marcar fallecimiento.</p>
+          <p className="lead">El listado respeta permisos por alcance: parroquia, zona, vicaría, diócesis, pastoral o nivel nacional.</p>
         </div>
       </section>
 
@@ -124,7 +148,7 @@ export default function AdminPersonasPage() {
           <strong>{deceased.length}</strong><span>Fallecidas</span>
         </button>
         <button className={`metric-card metric-button ${filter === 'all' ? 'active-filter' : ''}`} type="button" onClick={() => setFilter('all')}>
-          <strong>{people.length}</strong><span>Total</span>
+          <strong>{people.length}</strong><span>Total visible</span>
         </button>
       </section>
 
@@ -133,26 +157,32 @@ export default function AdminPersonasPage() {
           <div>
             <p className="eyebrow">Búsqueda</p>
             <h2>Listado administrativo</h2>
-            <p className="meta">Las acciones sensibles siguen protegidas por autenticación y permisos administrativos.</p>
+            <p className="meta">Los resultados salen de una RPC protegida; la búsqueda se ejecuta en servidor.</p>
           </div>
         </div>
 
-        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre" />
+        <form className="auth-form access-form" onSubmit={handleSearch}>
+          <label>
+            Buscar por nombre, tipo o entidad
+            <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Ej. Juan, sacerdote, Catedral" />
+          </label>
+          <button className="button button-primary" type="submit">Buscar</button>
+        </form>
 
         {visiblePeople.length === 0 ? (
-          <div className="empty-state">No hay personas para este filtro.</div>
+          <div className="empty-state">No hay personas visibles para este filtro o alcance.</div>
         ) : (
           <div className="grid admin-modules">
             {visiblePeople.map((person) => (
-              <article className="entity-card admin-module" key={person.id}>
+              <article className="entity-card admin-module" key={person.person_id}>
                 <p className="entity-type">{personTypeLabel(person.person_type)}</p>
-                <h2>{person.display_name}</h2>
+                <h2>{personName(person)}</h2>
                 <p className="role-pill">{statusLabel(person.status)}</p>
-                <p className="meta">{person.birth_place ?? 'Lugar de nacimiento no indicado'}</p>
+                <p className="meta">{personScope(person)}</p>
                 <div className="admin-actions">
-                  <Link className="button button-secondary" href={`/personas/${person.slug}`}>Ver ficha</Link>
+                  <Link className="button button-secondary" href={`/admin/personas/${person.person_id}`}>Abrir ficha</Link>
                   {person.status !== 'deceased' && (
-                    <Link className="button button-primary" href={`/admin/fallecimiento?person=${person.id}`}>Marcar fallecimiento</Link>
+                    <Link className="button button-primary" href={`/admin/fallecimiento?person=${person.person_id}`}>Marcar fallecimiento</Link>
                   )}
                 </div>
               </article>
