@@ -9,6 +9,7 @@ import './dashboard.css'
 import './home.css'
 import './public-dashboard.css'
 import './public-combobox.css'
+import './scope-back-controls.css'
 import './brand.css'
 import './admin-brand.css'
 
