@@ -62,7 +62,7 @@ const initialForm: DraftForm = {
 
 const pageStyles = `
   .structural-events-page select,.structural-events-page input,.structural-events-page textarea{border:1px solid var(--border);border-radius:14px;font:inherit;padding:11px 13px;width:100%}.structural-events-page textarea{min-height:86px;resize:vertical}
-  .phase-hero{align-items:stretch;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr)}.phase-summary,.event-card,.form-card,.metric-card-small{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:14px}.phase-summary,.form-card.highlight{background:#fbf8f1}.layout-grid,.event-list,.form-grid,.metric-grid{display:grid;gap:14px}.layout-grid{align-items:start;grid-template-columns:minmax(0,1fr) minmax(340px,.45fr)}.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid .full{grid-column:1/-1}.metric-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.field{color:var(--muted);display:grid;font-size:14px;font-weight:800;gap:6px}.button-row,.badge-row{display:flex;flex-wrap:wrap;gap:8px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}.mini-badge.danger{background:#fef2f2;color:#991b1b}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:980px){.phase-hero,.layout-grid,.form-grid,.metric-grid{grid-template-columns:1fr}}
+  .evolution-hero{align-items:stretch;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr)}.evolution-summary,.event-card,.form-card,.metric-card-small{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:14px}.evolution-summary,.form-card.highlight{background:#fbf8f1}.layout-grid,.event-list,.form-grid,.metric-grid{display:grid;gap:14px}.layout-grid{align-items:start;grid-template-columns:minmax(0,1fr) minmax(340px,.45fr)}.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid .full{grid-column:1/-1}.metric-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.field{color:var(--muted);display:grid;font-size:14px;font-weight:800;gap:6px}.button-row,.badge-row{display:flex;flex-wrap:wrap;gap:8px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}.mini-badge.danger{background:#fef2f2;color:#991b1b}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:980px){.evolution-hero,.layout-grid,.form-grid,.metric-grid{grid-template-columns:1fr}}
 `
 
 function statusLabel(status?: string) {
@@ -184,14 +184,14 @@ export default function StructuralEvolutionEventsPage() {
       <style>{pageStyles}</style>
       <div className="detail-backlink"><Link href="/admin">← Volver al panel administrativo</Link></div>
 
-      <section className="dashboard-hero card phase-hero">
+      <section className="dashboard-hero card evolution-hero">
         <div>
           <p className="eyebrow">Evolución estructural</p>
           <h1>Eventos de evolución estructural</h1>
           <p className="lead">Registra creación, desmembramiento, división, fusión, reorganización, supresión, cambio de nombre, límites, dependencia o nivel dentro de estructuras flexibles.</p>
           <div className="button-row"><Link className="button button-secondary" href="/admin/estructura">Motor de estructuras</Link><Link className="button button-secondary" href="/admin/estructura/eventos/verificacion">Verificación estructural</Link><Link className="button button-secondary" href="/admin/eventos/verificacion">Verificación de eventos</Link></div>
         </div>
-        <div className="phase-summary"><span className="mini-badge warning">Aplicación bloqueada</span><strong>Solo registra y aprueba eventos</strong><span className="meta">La mutación real de jerarquías queda para la aplicación auditada.</span></div>
+        <div className="evolution-summary"><span className="mini-badge warning">Aplicación bloqueada</span><strong>Solo registra y aprueba eventos</strong><span className="meta">La mutación real de jerarquías queda para la aplicación auditada.</span></div>
       </section>
 
       {error && <div className="error-box">{error}</div>}
