@@ -13,7 +13,7 @@ ENV NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN npm install -g pnpm@10.18.3 && pnpm install --frozen-lockfile
+RUN npm install -g pnpm@10.18.3 && pnpm install --no-frozen-lockfile
 
 COPY . .
 RUN pnpm run build
