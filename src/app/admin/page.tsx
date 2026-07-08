@@ -23,8 +23,8 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
 const featuredAdminActions: ModuleCard[] = [
   { href: '/admin/eventos', type: 'Motor histórico', title: 'Registro de eventos', description: 'Revisa carga histórica, fechas derivadas, eventos nuevos y datos pendientes de evidencia.' },
   { href: '/admin/eventos/nuevo', type: 'Asistente', title: 'Preparar evento', description: 'Crea una carga histórica, evento nuevo o foto inicial vigente como pendiente de revisión.' },
-  { href: '/admin/estructura/eventos', type: 'Fase 2', title: 'Evolución estructural', description: 'Registra creación, división, supresión, dependencia, límites y nivel de estructuras flexibles.' },
-  { href: '/admin/eventos/fase-1', type: 'Verificación', title: 'Cierre Fase 1', description: 'Valida backend, flujo operativo, contrato y prueba funcional antes de cerrar la fase.' },
+  { href: '/admin/estructura/eventos', type: 'Estructura', title: 'Evolución estructural', description: 'Registra creación, división, supresión, dependencia, límites y nivel de estructuras flexibles.' },
+  { href: '/admin/eventos/verificacion', type: 'Verificación', title: 'Flujo de eventos', description: 'Valida backend, flujo operativo, contrato y prueba funcional antes de cerrar el circuito.' },
 ]
 
 const moduleGroups: ModuleGroup[] = [
@@ -46,7 +46,7 @@ const moduleGroups: ModuleGroup[] = [
       { href: '/admin/eventos', type: 'Eventos', title: 'Registro de eventos', description: 'Ver eventos históricos, fechas derivadas, fuentes y datos pendientes.' },
       { href: '/admin/eventos/nuevo', type: 'Carga histórica', title: 'Reconstruir historia', description: 'Cargar hechos pasados como eventos documentados, parciales o importados vigentes.' },
       { href: '/admin/eventos/pendientes', type: 'Revisión', title: 'Cola de eventos', description: 'Revisar eventos creados por el asistente antes de aprobar, planificar o contratar.' },
-      { href: '/admin/eventos/fase-1', type: 'Cierre', title: 'Verificar Fase 1', description: 'Comprobar si el flujo está listo para prueba funcional y typecheck/build.' },
+      { href: '/admin/eventos/verificacion', type: 'Verificación', title: 'Verificar flujo de eventos', description: 'Comprobar si el flujo está listo para prueba funcional y typecheck/build.' },
     ],
   },
   {
