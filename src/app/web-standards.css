@@ -37,6 +37,17 @@
   opacity: 0.62;
 }
 
+.public-main > [role='tabpanel'] {
+  display: grid;
+  gap: 18px;
+}
+
+@media (max-width: 780px) {
+  .public-main > [role='tabpanel'] {
+    gap: 12px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
