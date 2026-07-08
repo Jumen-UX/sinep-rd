@@ -192,6 +192,15 @@ export default function AdminAsignacionesPage() {
   }, [])
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const requestedEntity = params.get('entity') ?? params.get('entity_id')
+    if (requestedEntity) {
+      setSelectedEntityId(requestedEntity)
+      setLevelFilterMessage('Entidad cargada desde una alerta. Verifica el cargo y completa el nombramiento.')
+    }
+  }, [])
+
+  useEffect(() => {
     async function loadLevelOfficeConfigurations() {
       setLevelOfficeConfigIds([])
 
@@ -393,7 +402,7 @@ export default function AdminAsignacionesPage() {
           </select>
 
           <StructureEntityPicker
-            emptyLabel="Sin entidad eclesiástica seleccionada"
+            emptyLabel={selectedEntityId ? 'Entidad cargada desde alerta' : 'Sin entidad eclesiástica seleccionada'}
             help="Selecciona la entidad del nombramiento usando la estructura activa de la diócesis. Los cargos se filtran si el nivel tiene cargos configurados."
             label="Entidad eclesiástica"
             name="ecclesiastical_entity_id"
