@@ -23,8 +23,8 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
 const featuredAdminActions: ModuleCard[] = [
   { href: '/admin/eventos', type: 'Motor histórico', title: 'Registro de eventos', description: 'Revisa carga histórica, fechas derivadas, eventos nuevos y datos pendientes de evidencia.' },
   { href: '/admin/eventos/nuevo', type: 'Asistente', title: 'Preparar evento', description: 'Crea una carga histórica, evento nuevo o foto inicial vigente como pendiente de revisión.' },
+  { href: '/admin/estructura/eventos', type: 'Fase 2', title: 'Evolución estructural', description: 'Registra creación, división, supresión, dependencia, límites y nivel de estructuras flexibles.' },
   { href: '/admin/eventos/fase-1', type: 'Verificación', title: 'Cierre Fase 1', description: 'Valida backend, flujo operativo, contrato y prueba funcional antes de cerrar la fase.' },
-  { href: '/admin/jurisdicciones', type: 'Vista canónica', title: 'Explorar jurisdicciones', description: 'Valida el árbol Iglesia sui iuris → provincia eclesiástica → sede metropolitana y sufragáneas.' },
 ]
 
 const moduleGroups: ModuleGroup[] = [
@@ -56,6 +56,7 @@ const moduleGroups: ModuleGroup[] = [
     modules: [
       { href: '/admin/jurisdicciones', type: 'Jurisdicciones', title: 'Jurisdicciones eclesiásticas', description: 'Ver Iglesia sui iuris, provincias, sedes metropolitanas y sufragáneas.' },
       { href: '/admin/estructura?kind=territorial', type: 'Territorial', title: 'Estructura interna', description: 'Organizar vicarías, zonas, parroquias, sectores y capillas.' },
+      { href: '/admin/estructura/eventos', type: 'Eventos estructurales', title: 'Evolución estructural', description: 'Registrar cambios de estructura como eventos verificables antes de aplicarlos.' },
       { href: '/admin/estructura?kind=pastoral', type: 'Pastoral', title: 'Pastoral-operativo', description: 'Configurar áreas pastorales, comisiones, movimientos y servicios.' },
       { href: '/admin/estructura?kind=administrative', type: 'Administrativo', title: 'Administrativo', description: 'Definir curia, oficinas, departamentos y dependencias internas.' },
     ],
