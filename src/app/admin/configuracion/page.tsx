@@ -29,6 +29,12 @@ const configSections: { title: string; description: string; items: ConfigCard[] 
         title: 'Invitar usuario',
         description: 'Crear invitaciones seguras, completar perfil inicial y asignar un primer rol con alcance definido.',
       },
+      {
+        href: '/admin/actividad',
+        label: 'Actividad',
+        title: 'Actividad administrativa',
+        description: 'Consultar movimientos recientes sobre usuarios, roles y cambios sensibles del sistema.',
+      },
     ],
   },
   {
