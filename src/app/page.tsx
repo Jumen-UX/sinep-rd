@@ -105,7 +105,7 @@ type DashboardSummary = {
 type ViewMeta = { key: PublicView; title: string; shortTitle: string; eyebrow: string; icon: string; description: string }
 type SelectOption = { value: string; label: string }
 type PastoralLevelGroup = { name: string; count: number; order: number; items: PastoralEntity[] }
-type ClergyListItem = { id: string; name: string; slug: string | null; person_type: string | null; role: string; scope: string; status: string }
+type ClergyListItem = { id: string; name: string; slug: string | null; href?: string; person_type: string | null; role: string; scope: string; status: string }
 
 const publicViews: ViewMeta[] = [
   { key: 'territorial', title: 'Vista territorial', shortTitle: 'Territorial', eyebrow: 'Territorio', icon: '▱', description: 'País, provincias eclesiásticas, arquidiócesis, diócesis y jurisdicciones personales.' },
@@ -160,6 +160,42 @@ function normalizeText(value?: string | null) {
 
 function slugify(value: string) {
   return normalizeText(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
+function splitSemicolonValues(value?: string | null) {
+  return (value ?? '').split(';').map((item) => item.trim()).filter(Boolean)
+}
+
+function isVacantOrdinaryName(value?: string | null) {
+  const normalized = normalizeText(value)
+  return normalized === 'vacante' || normalized.includes('sede vacante')
+}
+
+function primaryOrdinaryName(item: Diocese) {
+  const names = splitSemicolonValues(item.current_ordinary_name)
+  const firstPerson = names.find((name) => !isVacantOrdinaryName(name))
+  return firstPerson ?? item.current_ordinary_name ?? 'Ordinario no registrado'
+}
+
+function primaryOrdinaryTitle(item: Diocese) {
+  const titles = splitSemicolonValues(item.current_ordinary_title)
+  return titles[0] ?? item.current_ordinary_title ?? 'Obispo / ordinario'
+}
+
+function buildOrdinaryPeopleForDiocese(item: Diocese): ClergyListItem[] {
+  const names = splitSemicolonValues(item.current_ordinary_name).filter((name) => !isVacantOrdinaryName(name))
+  const titles = splitSemicolonValues(item.current_ordinary_title)
+
+  return names.map((name, index) => ({
+    id: `${item.id}-ordinary-${index}`,
+    name,
+    slug: null,
+    href: `/entidades/${item.slug}`,
+    person_type: 'bishop',
+    role: titles[index] ?? titles[0] ?? 'Obispo / ordinario',
+    scope: item.name,
+    status: 'Activo',
+  }))
 }
 
 function personTypeLabel(value: string | null) {
@@ -231,7 +267,7 @@ function JurisdictionRow({ item, active }: { item: Diocese; active?: boolean }) 
         <span className="public-row-icon" aria-hidden="true">{isSpecialJurisdiction(item) ? '盾' : '⌂'}</span>
         <span>
           <strong>{item.name}</strong>
-          <small>{item.current_ordinary_name ?? 'Sin ordinario registrado'}</small>
+          <small>{isVacantOrdinaryName(item.current_ordinary_name) ? 'Sede vacante' : primaryOrdinaryName(item)}</small>
         </span>
       </span>
       <span className="public-type">{item.entity_type_name ?? 'Jurisdicción'}</span>
@@ -243,15 +279,15 @@ function JurisdictionRow({ item, active }: { item: Diocese; active?: boolean }) 
 function OrdinaryItem({ item }: { item: Diocese }) {
   return (
     <Link className="public-directory-item" href={`/entidades/${item.slug}`}>
-      <strong>{item.current_ordinary_name ?? 'Ordinario no registrado'}</strong>
-      <span>{item.current_ordinary_title ?? 'Ordinario'} · {item.name}</span>
+      <strong>{primaryOrdinaryName(item)}</strong>
+      <span>{primaryOrdinaryTitle(item)} · {item.name}</span>
       <span className="public-link">Ver jurisdicción →</span>
     </Link>
   )
 }
 
 function ClergyItemCard({ item }: { item: ClergyListItem }) {
-  const href = item.slug ? `/personas/${item.slug}` : '#'
+  const href = item.href ?? (item.slug ? `/personas/${item.slug}` : '#')
   return (
     <Link className="public-directory-item" href={href}>
       <strong>{item.name}</strong>
@@ -491,17 +527,7 @@ export default function HomePage() {
     } satisfies ClergyListItem,
   ])).values())
 
-  const ordinaryPeople: ClergyListItem[] = scopedTerritorialJurisdictions
-    .filter((item) => item.current_ordinary_name)
-    .map((item) => ({
-      id: item.id,
-      name: item.current_ordinary_name ?? 'Ordinario no registrado',
-      slug: null,
-      person_type: 'bishop',
-      role: item.current_ordinary_title ?? 'Obispo / ordinario',
-      scope: item.name,
-      status: 'Activo',
-    }))
+  const scopedOrdinaryPeople = scopedTerritorialJurisdictions.flatMap(buildOrdinaryPeopleForDiocese)
 
   const countryPeople: ClergyListItem[] = people.map((item) => ({
     id: item.id,
@@ -513,7 +539,7 @@ export default function HomePage() {
     status: item.status === 'active' && !item.death_date ? 'Activo' : 'Histórico',
   }))
 
-  const baseClergyPeople = territoryMode === 'country' && scopedAssignments.length === 0 ? countryPeople : [...ordinaryPeople, ...assignmentPeople]
+  const baseClergyPeople = territoryMode === 'country' && scopedAssignments.length === 0 ? countryPeople : [...scopedOrdinaryPeople, ...assignmentPeople]
   const visibleClergyPeople = baseClergyPeople
     .filter((item) => !personTypeFilter || item.person_type === personTypeFilter)
     .slice(0, 12)
@@ -557,8 +583,8 @@ export default function HomePage() {
   const registeredParishes = countryFilter === 'DO' ? scopedParishes.length : 0
   const archdioceseCount = scopedTerritorialJurisdictions.filter(isArchdiocese).length
   const dioceseCount = scopedTerritorialJurisdictions.filter(isDiocese).length
-  const ordinaryCount = scopedTerritorialJurisdictions.filter((item) => item.current_ordinary_name).length
-  const selectedOrdinaryCount = selectedJurisdiction?.current_ordinary_name ? 1 : 0
+  const ordinaryCount = scopedOrdinaryPeople.length
+  const selectedOrdinaryCount = selectedJurisdiction ? buildOrdinaryPeopleForDiocese(selectedJurisdiction).length : 0
   const scopedPriestCount = selectedJurisdiction ? '—' : (peopleSummary?.priests ?? people.filter((item) => item.person_type === 'priest').length)
   const activeViewMeta = publicViews.find((view) => view.key === activeView) ?? publicViews[0]
 
@@ -739,7 +765,7 @@ export default function HomePage() {
                   </article>
                   <article className="public-panel public-section-card">
                     <div className="public-section-title"><p className="eyebrow">Obispos y ordinarios</p><h2>{ordinaryCount} registros</h2><p>Pastores responsables de las jurisdicciones de esta provincia.</p></div>
-                    <div className="public-directory-grid">{scopedTerritorialJurisdictions.filter((item) => item.current_ordinary_name).map((item) => <OrdinaryItem item={item} key={item.id} />)}{ordinaryCount === 0 && <EmptyViewNote title="Sin ordinarios publicados" detail="No hay obispos u ordinarios registrados para esta provincia." />}</div>
+                    <div className="public-directory-grid">{scopedOrdinaryPeople.map((item) => <ClergyItemCard item={item} key={item.id} />)}{ordinaryCount === 0 && <EmptyViewNote title="Sin ordinarios publicados" detail="No hay obispos u ordinarios registrados para esta provincia." />}</div>
                   </article>
                 </section>
                 {countrySpecialJurisdictions.length > 0 && <div className="public-info-banner">El Obispado Castrense de República Dominicana no se muestra en este listado porque no pertenece a la provincia eclesiástica seleccionada.</div>}
@@ -749,7 +775,7 @@ export default function HomePage() {
             {territoryMode === 'jurisdiction' && selectedJurisdiction && (
               <>
                 <section className="public-content-grid public-diocese-content-grid">
-                  <article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Obispo / ordinario</p><h2>Pastor propio</h2></div><div className="public-directory-item public-feature-card"><strong>{selectedJurisdiction.current_ordinary_name ?? 'Ordinario no registrado'}</strong><span>{selectedJurisdiction.current_ordinary_title ?? 'Obispo / ordinario'} · {selectedJurisdiction.name}</span><Link className="public-link" href={`/entidades/${selectedJurisdiction.slug}`}>Ver ficha →</Link></div><div className="public-info-banner compact">Es el pastor propio de esta porción del Pueblo de Dios.</div></article>
+                  <article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Obispo / ordinario</p><h2>Pastor propio</h2></div><div className="public-directory-grid">{buildOrdinaryPeopleForDiocese(selectedJurisdiction).map((item) => <ClergyItemCard item={item} key={item.id} />)}{selectedOrdinaryCount === 0 && <EmptyViewNote title="Sede vacante" detail="No hay obispo u ordinario titular registrado como persona activa." />}</div><div className="public-info-banner compact">Es el pastor propio de esta porción del Pueblo de Dios.</div></article>
                   <article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Sacerdotes</p><h2>Ministerio sacerdotal</h2><p>La distribución por cargo requiere asignaciones vigentes publicadas.</p></div><div className="public-table public-compact-table">{priestRoleRows.map((row) => <div className="public-row" key={row.label}><span className="public-row-main"><span className="public-row-icon" aria-hidden="true">✛</span><span><strong>{row.label}</strong><small>Asignación por jurisdicción</small></span></span><span className="public-type">{row.value}</span><span /></div>)}<div className="public-list-footer"><Link className="public-link" href="/personas">Ver todos los sacerdotes →</Link></div></div></article>
                   <article className="public-panel public-section-card public-diocese-structure-card"><div className="public-section-title"><p className="eyebrow">Organización territorial o pastoral</p><h2>Próximos niveles configurados</h2><p>Los niveles mostrados corresponden a la configuración territorial de esta jurisdicción.</p></div><div className="public-level-grid">{nextPastoralLevels.length === 0 && <EmptyViewNote title="Niveles por configurar" detail="No hay niveles pastorales publicados para esta jurisdicción." />}{nextPastoralLevels.map((level, index) => <article className="public-level-card" key={level.name}><div className="public-section-title"><p className="eyebrow">Nivel {index + 1}</p><h2>{level.name}</h2><p>{level.count} registros publicados</p></div><div className="public-directory-grid">{level.items.slice(0, 3).map((item) => <Link className="public-directory-item" href={item.linked_entity_slug ? `/entidades/${item.linked_entity_slug}` : `/pastoral/${item.slug}`} key={item.id}><strong>{item.name}</strong><span>{item.diocese_name ?? selectedJurisdiction.name}</span></Link>)}</div></article>)}</div></article>
                 </section>
@@ -758,7 +784,7 @@ export default function HomePage() {
             )}
 
             {territoryMode === 'special' && selectedJurisdiction && (
-              <section className="public-content-grid public-province-content-grid"><article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Jurisdicción especial</p><h2>{selectedJurisdiction.name}</h2><p>No está adscrita a una provincia eclesiástica.</p></div><JurisdictionRow item={selectedJurisdiction} active /></article><article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Ordinario y estructura propia</p><h2>{selectedJurisdiction.current_ordinary_name ?? 'Ordinario no registrado'}</h2><p>La estructura pastoral propia se publicará según las asignaciones configuradas.</p></div><div className="public-info-banner compact">Provincia eclesiástica: No aplica. Las jurisdicciones especiales tienen estatuto propio.</div></article></section>
+              <section className="public-content-grid public-province-content-grid"><article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Jurisdicción especial</p><h2>{selectedJurisdiction.name}</h2><p>No está adscrita a una provincia eclesiástica.</p></div><JurisdictionRow item={selectedJurisdiction} active /></article><article className="public-panel public-section-card"><div className="public-section-title"><p className="eyebrow">Ordinario y estructura propia</p><h2>{isVacantOrdinaryName(selectedJurisdiction.current_ordinary_name) ? 'Ordinario no registrado' : primaryOrdinaryName(selectedJurisdiction)}</h2><p>La estructura pastoral propia se publicará según las asignaciones configuradas.</p></div><div className="public-info-banner compact">Provincia eclesiástica: No aplica. Las jurisdicciones especiales tienen estatuto propio.</div></article></section>
             )}
           </section>
         )}
