@@ -23,6 +23,7 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
 const featuredAdminActions: ModuleCard[] = [
   { href: '/admin/eventos', type: 'Motor histórico', title: 'Registro de eventos', description: 'Revisa carga histórica, fechas derivadas, eventos nuevos y datos pendientes de evidencia.' },
   { href: '/admin/eventos/nuevo', type: 'Asistente', title: 'Preparar evento', description: 'Crea una carga histórica, evento nuevo o foto inicial vigente como pendiente de revisión.' },
+  { href: '/admin/eventos/fase-1', type: 'Verificación', title: 'Cierre Fase 1', description: 'Valida backend, flujo operativo, contrato y prueba funcional antes de cerrar la fase.' },
   { href: '/admin/jurisdicciones', type: 'Vista canónica', title: 'Explorar jurisdicciones', description: 'Valida el árbol Iglesia sui iuris → provincia eclesiástica → sede metropolitana y sufragáneas.' },
 ]
 
@@ -44,7 +45,8 @@ const moduleGroups: ModuleGroup[] = [
     modules: [
       { href: '/admin/eventos', type: 'Eventos', title: 'Registro de eventos', description: 'Ver eventos históricos, fechas derivadas, fuentes y datos pendientes.' },
       { href: '/admin/eventos/nuevo', type: 'Carga histórica', title: 'Reconstruir historia', description: 'Cargar hechos pasados como eventos documentados, parciales o importados vigentes.' },
-      { href: '/admin/eventos/nuevo', type: 'Evento nuevo', title: 'Registrar cambio nuevo', description: 'Preparar cambios futuros para revisión y aprobación.' },
+      { href: '/admin/eventos/pendientes', type: 'Revisión', title: 'Cola de eventos', description: 'Revisar eventos creados por el asistente antes de aprobar, planificar o contratar.' },
+      { href: '/admin/eventos/fase-1', type: 'Cierre', title: 'Verificar Fase 1', description: 'Comprobar si el flujo está listo para prueba funcional y typecheck/build.' },
     ],
   },
   {
