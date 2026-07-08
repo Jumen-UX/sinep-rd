@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { ScopeBackControls } from './scope-back-controls'
 import './globals.css'
 import './web-standards.css'
 import './hierarchy.css'
@@ -41,6 +42,7 @@ export default function RootLayout({
           </header>
 
           {children}
+          <ScopeBackControls />
 
           <footer className="site-footer">
             SINEP RD · Sistema Nacional de Información Eclesiástica y Pastoral
