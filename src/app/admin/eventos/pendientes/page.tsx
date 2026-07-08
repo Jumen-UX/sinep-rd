@@ -21,7 +21,7 @@ type PendingEvent = {
 }
 
 const pageStyles = `
-  .pending-events-layout,.pending-events-list{display:grid;gap:14px}.pending-event-card{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:16px}.pending-event-card.highlight{background:#fbf8f1;border-style:dashed}.badge-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}
+  .pending-events-layout,.pending-events-list{display:grid;gap:14px}.pending-event-card{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:16px}.pending-event-card.highlight{background:#fbf8f1;border-style:dashed}.badge-row,.button-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}
 `
 
 function formatDate(value?: string | null) {
@@ -113,7 +113,10 @@ export default function PendingEventsPage() {
               <span className="mini-badge">{evidenceLabel(event.evidence_status)}</span>
               {event.source_name && <span className="mini-badge">Fuente: {event.source_name}</span>}
             </div>
-            <Link className="button button-primary" href={`/admin/eventos/${event.event_id}`}>Revisar</Link>
+            <div className="button-row">
+              <Link className="button button-primary" href={`/admin/eventos/${event.event_id}`}>Revisar</Link>
+              <Link className="button button-secondary" href={`/admin/eventos/${event.event_id}/plan`}>Plan de acciones</Link>
+            </div>
           </article>
         ))}
       </section>
