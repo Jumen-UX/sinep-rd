@@ -7,7 +7,7 @@ type ReviewItem = {
   item_key: string
   item_type: string
   record_table: string
-  record_id: string
+  record_id: string | null
   title: string | null
   detail: string | null
   verification_status: string | null
@@ -20,6 +20,8 @@ type ReviewResponse = {
   error?: string
 }
 
+type ReviewDecision = 'approve_internal' | 'publish' | 'needs_correction' | 'dispute' | 'keep_internal'
+
 function formatDate(value: string | null) {
   if (!value) return 'Sin fecha'
   return new Intl.DateTimeFormat('es-DO', { dateStyle: 'medium' }).format(new Date(value))
@@ -28,6 +30,7 @@ function formatDate(value: string | null) {
 function itemTypeLabel(value: string) {
   if (value === 'missing_field') return 'Dato faltante'
   if (value === 'position_assignment') return 'Cargo por verificar'
+  if (value === 'person_candidate') return 'Persona por revisar'
   return value
 }
 
@@ -35,11 +38,15 @@ function statusLabel(value: string | null) {
   if (!value) return 'Pendiente'
   const labels: Record<string, string> = {
     unknown: 'No identificado',
+    pending: 'Pendiente',
     pending_review: 'Pendiente de revisión',
     not_identified: 'No identificado',
     incomplete: 'Incompleto',
     not_verified: 'No verificado',
     needs_review: 'Requiere revisión',
+    needs_correction: 'Requiere corrección',
+    disputed: 'En disputa',
+    verified: 'Verificado',
   }
   return labels[value] ?? value
 }
@@ -50,25 +57,72 @@ export default function AdminRevisionPage() {
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [actionBusy, setActionBusy] = useState<string | null>(null)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
+
+  async function loadReviewQueue() {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/admin/revision')
+      const data = await response.json() as ReviewResponse
+      if (!response.ok) throw new Error(data.error ?? 'No se pudo cargar la cola de revisión.')
+      setItems(data.items ?? [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo cargar la cola de revisión.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function loadReviewQueue() {
-      setLoading(true)
-      setError(null)
-      try {
-        const response = await fetch('/api/admin/revision')
-        const data = await response.json() as ReviewResponse
-        if (!response.ok) throw new Error(data.error ?? 'No se pudo cargar la cola de revisión.')
-        setItems(data.items ?? [])
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'No se pudo cargar la cola de revisión.')
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadReviewQueue()
   }, [])
+
+  async function reviewAssignment(item: ReviewItem, decision: ReviewDecision) {
+    if (!item.record_id) return
+
+    const isPublish = decision === 'publish'
+    const notes = window.prompt(
+      isPublish
+        ? 'Nota de publicación. Deja vacío si no aplica.'
+        : 'Nota interna de revisión. Deja vacío si no aplica.',
+      '',
+    )
+
+    if (notes === null) return
+
+    const publishPerson = isPublish
+      ? window.confirm('¿También publicar la ficha de la persona asociada?')
+      : false
+
+    if (isPublish && !window.confirm('Vas a publicar este nombramiento. ¿Confirmas la acción?')) return
+
+    setActionBusy(item.item_key)
+    setActionMessage(null)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/admin/revision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assignment_id: item.record_id,
+          decision,
+          notes,
+          publish_person: publishPerson,
+        }),
+      })
+      const data = await response.json() as { error?: string }
+      if (!response.ok) throw new Error(data.error ?? 'No se pudo actualizar el nombramiento.')
+      setActionMessage('Nombramiento actualizado correctamente.')
+      await loadReviewQueue()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo actualizar el nombramiento.')
+    } finally {
+      setActionBusy(null)
+    }
+  }
 
   const statuses = useMemo(() => Array.from(new Set(items.map((item) => item.verification_status).filter(Boolean) as string[])).sort(), [items])
   const itemTypes = useMemo(() => Array.from(new Set(items.map((item) => item.item_type))).sort(), [items])
@@ -85,6 +139,7 @@ export default function AdminRevisionPage() {
       total: items.length,
       missingFields: items.filter((item) => item.item_type === 'missing_field').length,
       assignments: items.filter((item) => item.item_type === 'position_assignment').length,
+      personCandidates: items.filter((item) => item.item_type === 'person_candidate').length,
     }
   }, [items])
 
@@ -101,11 +156,13 @@ export default function AdminRevisionPage() {
       </section>
 
       {error && <div className="error-box">{error}</div>}
+      {actionMessage && <div className="success-box">{actionMessage}</div>}
 
       <div className="dashboard-grid dashboard-summary">
         <article className="metric-card"><span>Total pendiente</span><strong>{counts.total}</strong></article>
         <article className="metric-card"><span>Datos faltantes</span><strong>{counts.missingFields}</strong></article>
         <article className="metric-card"><span>Cargos por verificar</span><strong>{counts.assignments}</strong></article>
+        <article className="metric-card"><span>Personas por revisar</span><strong>{counts.personCandidates}</strong></article>
       </div>
 
       <section className="card dashboard-section">
@@ -141,17 +198,31 @@ export default function AdminRevisionPage() {
           <div className="empty-state">No hay pendientes con los filtros seleccionados.</div>
         ) : (
           <div className="dashboard-list">
-            {filteredItems.map((item) => (
-              <article className="list-card" key={item.item_key}>
-                <div>
-                  <p className="eyebrow">{itemTypeLabel(item.item_type)} · {statusLabel(item.verification_status)}</p>
-                  <h3>{item.title || item.record_table}</h3>
-                  <p className="meta">{item.detail || 'Sin detalle adicional.'}</p>
-                  <p className="meta">Tabla: {item.record_table} · Registro: {item.record_id} · {formatDate(item.created_at)}</p>
-                </div>
-                <span className="role-pill">{item.issue_count ?? 1} pendiente</span>
-              </article>
-            ))}
+            {filteredItems.map((item) => {
+              const busy = actionBusy === item.item_key
+              const canActOnAssignment = item.item_type === 'position_assignment' && !!item.record_id
+
+              return (
+                <article className="list-card" key={item.item_key}>
+                  <div>
+                    <p className="eyebrow">{itemTypeLabel(item.item_type)} · {statusLabel(item.verification_status)}</p>
+                    <h3>{item.title || item.record_table}</h3>
+                    <p className="meta">{item.detail || 'Sin detalle adicional.'}</p>
+                    <p className="meta">Tabla: {item.record_table} · Registro: {item.record_id ?? 'sin id directo'} · {formatDate(item.created_at)}</p>
+                  </div>
+                  <div className="admin-card-actions">
+                    <span className="role-pill">{item.issue_count ?? 1} pendiente</span>
+                    {canActOnAssignment && (
+                      <>
+                        <button className="button button-secondary" disabled={busy} onClick={() => reviewAssignment(item, 'approve_internal')} type="button">Aprobar interno</button>
+                        <button className="button button-secondary" disabled={busy} onClick={() => reviewAssignment(item, 'needs_correction')} type="button">Corregir</button>
+                        <button className="button button-primary" disabled={busy} onClick={() => reviewAssignment(item, 'publish')} type="button">Publicar</button>
+                      </>
+                    )}
+                  </div>
+                </article>
+              )
+            })}
           </div>
         )}
       </section>
