@@ -14,6 +14,13 @@ type DioceseRow = {
   parishes_count: number | null
 }
 
+type ParishRow = {
+  id: string
+  diocese_id: string | null
+  diocese_name: string | null
+  diocese_slug: string | null
+}
+
 type PersonRow = {
   id: string
   display_name: string
@@ -63,9 +70,15 @@ async function safeFetch<T>(table: string, params: Record<string, string>) {
 
 export async function GET() {
   try {
-    const [dioceses, people, pastoralEntities, organizationCharts, organizationUnits] = await Promise.all([
+    const [dioceses, parishes, people, pastoralEntities, organizationCharts, organizationUnits] = await Promise.all([
       fetchSupabaseJson<DioceseRow[]>('public_dioceses', {
         select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count',
+        order: 'name.asc',
+      }),
+      safeFetch<ParishRow>('public_parishes', {
+        select: 'id,diocese_id,diocese_name,diocese_slug',
+        status: 'eq.active',
+        visibility: 'eq.public',
         order: 'name.asc',
       }),
       fetchSupabaseJson<PersonRow[]>('persons', {
@@ -97,6 +110,7 @@ export async function GET() {
     return NextResponse.json({
       countries: [{ key: 'DO', name: 'República Dominicana' }],
       dioceses,
+      parishes,
       people,
       pastoral_entities: pastoralEntities,
       organization_charts: organizationCharts,
