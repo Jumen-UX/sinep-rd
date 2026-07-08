@@ -219,6 +219,7 @@ export default function EventReviewPage() {
           <div className="impact-list">
             <div className="impact-card highlight"><strong>Impacto actual</strong><span className="meta">Aprobar no aplica cambios. Solo deja el evento validado para una futura fase de aplicación.</span></div>
             <div className="impact-card"><strong>Siguiente fase</strong><span className="meta">Aplicar evento deberá crear/cerrar relaciones, actualizar estado vigente y conservar historial.</span></div>
+            <div className="impact-card"><strong>Flujo de aplicación</strong><span className="meta">Después de revisar, abre el plan de acciones y el contrato de aplicación para validar conflictos y reglas antes de aplicar.</span></div>
           </div>
 
           <label className="meta">Nota de revisión
@@ -229,6 +230,8 @@ export default function EventReviewPage() {
             <button className="button button-primary" disabled={!canApprove || saving} onClick={() => reviewAction('approve')} type="button">Aprobar</button>
             <button className="button button-secondary" disabled={event.status !== 'pending_review' || saving} onClick={() => reviewAction('return_to_draft')} type="button">Devolver a borrador</button>
             <button className="button button-secondary" disabled={saving || event.status === 'cancelled' || event.status === 'applied'} onClick={() => reviewAction('cancel')} type="button">Cancelar</button>
+            <Link className="button button-secondary" href={`/admin/eventos/${eventId}/plan`}>Plan de acciones</Link>
+            <Link className="button button-secondary" href={`/admin/eventos/${eventId}/contrato`}>Contrato de aplicación</Link>
           </div>
         </aside>
       </section>
