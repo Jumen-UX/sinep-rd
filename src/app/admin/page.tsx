@@ -76,6 +76,18 @@ const moduleGroups: ModuleGroup[] = [
     ],
   },
   {
+    eyebrow: 'Usuarios y acceso',
+    title: 'Cuentas, roles, permisos y sesiones',
+    description: 'Administración de usuarios del sistema. Una persona eclesial puede tener usuario, pero persona y usuario no son lo mismo.',
+    modules: [
+      { href: '/admin/usuarios', type: 'Usuarios', title: 'Usuarios del sistema', description: 'Crear, activar, suspender y vincular usuarios con personas registradas.', status: 'planned' },
+      { href: '/admin/usuarios/roles', type: 'Roles', title: 'Roles y permisos', description: 'Asignar superadministrador, administrador nacional, diocesano, editor o validador según alcance.', status: 'planned' },
+      { href: '/admin/usuarios/invitaciones', type: 'Invitaciones', title: 'Invitaciones y altas', description: 'Invitar usuarios, completar registro y definir primer rol administrativo.', status: 'planned' },
+      { href: '/admin/usuarios/sesiones', type: 'Sesiones', title: 'Sesiones administrativas', description: 'Definir expiración por inactividad, vida máxima de sesión y cierre forzado.', status: 'planned' },
+      { href: '/admin/usuarios/auditoria', type: 'Auditoría', title: 'Auditoría de acceso', description: 'Consultar ingresos, cierres de sesión, cambios de rol y acciones sensibles.', status: 'planned' },
+    ],
+  },
+  {
     eyebrow: 'Territorio y mapas',
     title: 'Límites civiles, pastorales y canónicos',
     description: 'Separar división civil, delimitación pastoral y territorio eclesiástico sin forzar que coincidan.',
@@ -97,12 +109,11 @@ const moduleGroups: ModuleGroup[] = [
   },
   {
     eyebrow: 'Configuración',
-    title: 'Catálogos, reglas, permisos y seguridad',
-    description: 'Listas controladas, estándares oficiales, roles, permisos, validaciones y comprobaciones del sistema.',
+    title: 'Catálogos, reglas y validaciones',
+    description: 'Listas controladas, estándares oficiales, tipos canónicos, cargos, estados y comprobaciones del sistema.',
     modules: [
-      { href: '/admin/configuracion', type: 'Ajustes', title: 'Centro de configuración', description: 'Configurar cargos, estructuras, permisos, catálogos y reglas editoriales.' },
+      { href: '/admin/configuracion', type: 'Ajustes', title: 'Centro de configuración', description: 'Configurar cargos, estructuras, catálogos y reglas editoriales.' },
       { href: '/admin/configuracion/catalogos', type: 'Catálogos', title: 'Catálogos oficiales', description: 'Listas ISO, tipos canónicos, cargos, estados, fuentes y categorías.', status: 'planned' },
-      { href: '/admin/configuracion/seguridad', type: 'Seguridad', title: 'Roles y seguridad', description: 'Roles, permisos, expiración de sesión, políticas y auditoría administrativa.', status: 'planned' },
       { href: '/admin/eventos/verificacion', type: 'Verificación', title: 'Verificación del registro histórico', description: 'Comprobar el flujo histórico-documental.' },
       { href: '/admin/estructura/eventos/verificacion', type: 'Verificación', title: 'Verificación de evolución estructural', description: 'Comprobar el flujo de evolución estructural.' },
     ],
@@ -184,7 +195,7 @@ export default function AdminPage() {
   return (
     <main className="container admin-dashboard">
       <div className="admin-topbar">
-        <div><p className="eyebrow">Inicio</p><h1>Bienvenido, {profile?.full_name ?? profile?.email}</h1><p className="lead">Administra SINEP por áreas eclesiales: historia, gobierno, estructura, personas, territorio y configuración.</p></div>
+        <div><p className="eyebrow">Inicio</p><h1>Bienvenido, {profile?.full_name ?? profile?.email}</h1><p className="lead">Administra SINEP por áreas eclesiales: historia, gobierno, estructura, personas, usuarios, territorio y configuración.</p></div>
         <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
       </div>
       <section className="card admin-section"><h2>Roles activos</h2><div className="role-list">{roles.map((role) => { const roleInfo = getRoleInfo(role); return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span> })}</div></section>
