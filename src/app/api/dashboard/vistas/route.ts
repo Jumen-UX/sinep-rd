@@ -24,6 +24,8 @@ type ParishRow = {
 type PersonRow = {
   id: string
   display_name: string
+  formal_display_name: string | null
+  honorific_prefix: string | null
   slug: string
   person_type: string | null
   status: string | null
@@ -107,7 +109,7 @@ export async function GET() {
         order: 'name.asc',
       }),
       fetchSupabaseJson<PersonRow[]>('persons', {
-        select: 'id,display_name,slug,person_type,status,death_date',
+        select: 'id,display_name,formal_display_name,honorific_prefix,slug,person_type,status,death_date',
         status: 'eq.active',
         visibility: 'eq.public',
         order: 'display_name.asc',
