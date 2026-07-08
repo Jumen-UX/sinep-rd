@@ -46,3 +46,4 @@ Stack acordado para SINEP RD.
 
 - Regenerar y commitear `pnpm-lock.yaml` con las dependencias nuevas. Temporalmente CI y Docker usan `pnpm install --no-frozen-lockfile` para no bloquear la verificacion mientras se refresca el lockfile.
 - Migrar gradualmente la UI existente a componentes shadcn/ui. Ya existe la base, pero las pantallas actuales aun usan CSS legacy en muchas partes.
+- Ultima accion: forzar un nuevo run desde el workflow actualizado para refrescar el lockfile.
