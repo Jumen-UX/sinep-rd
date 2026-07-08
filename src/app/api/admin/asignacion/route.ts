@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Failed to save position assignment transactionally', error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json({ error: toSpanishAdminError(error, 'No se pudo guardar la asignación.') }, { status: 400 })
     }
 
     return NextResponse.json(data)
