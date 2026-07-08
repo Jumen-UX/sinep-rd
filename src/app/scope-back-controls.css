@@ -1,0 +1,99 @@
+.public-scope-backbar {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--public-border, #e5e8ef);
+  border-radius: 18px;
+  box-shadow: 0 12px 34px rgba(16, 35, 63, 0.08);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin-top: -6px;
+  padding: 12px 14px;
+}
+
+.public-scope-backbar[hidden] {
+  display: none;
+}
+
+.public-scope-back-label {
+  color: var(--public-muted, #68758a);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.public-scope-route,
+.public-scope-back-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
+}
+
+.public-scope-crumb {
+  background: #f6f8fb;
+  border: 1px solid rgba(16, 35, 63, 0.08);
+  border-radius: 999px;
+  color: #4a5f7a;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  max-width: 280px;
+  overflow: hidden;
+  padding: 8px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-scope-crumb.active {
+  background: var(--public-gold-soft, #fff8ea);
+  border-color: rgba(200, 149, 29, 0.34);
+  color: var(--public-gold, #9f7417);
+}
+
+.public-scope-back-button {
+  background: #10233f;
+  border: 0;
+  border-radius: 999px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+
+.public-scope-back-button:hover {
+  background: #1b4f9c;
+}
+
+@media (max-width: 780px) {
+  .public-scope-backbar {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .public-scope-route,
+  .public-scope-back-actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .public-scope-route::-webkit-scrollbar,
+  .public-scope-back-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .public-scope-crumb {
+    max-width: 220px;
+  }
+
+  .public-scope-back-button {
+    flex: 0 0 auto;
+  }
+}
