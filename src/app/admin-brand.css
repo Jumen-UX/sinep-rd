@@ -111,6 +111,24 @@
 }
 
 .admin-dashboard > .dashboard-grid .metric-card,
-.dashboard-summary .metric-card {
+.dashboard-summary .metric-card,
+.home-metric-card {
   border-top: 4px solid var(--primary);
+}
+
+.home-hero-panel {
+  background: #ffffff;
+  border-top: 5px solid var(--primary);
+}
+
+.home-view-card:hover,
+.home-data-pairs a:hover,
+.home-province-card:hover {
+  border-color: rgba(255, 192, 3, 0.85);
+}
+
+.home-warning-note {
+  background: var(--gold-soft);
+  border-color: rgba(255, 192, 3, 0.5);
+  color: var(--foreground);
 }
