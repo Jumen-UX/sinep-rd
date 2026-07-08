@@ -30,6 +30,31 @@ type PersonRow = {
   death_date: string | null
 }
 
+type AssignmentRow = {
+  id: string
+  person_id: string
+  person_name: string | null
+  person_slug: string | null
+  person_type: string | null
+  position_title: string | null
+  base_role_name: string | null
+  direct_entity_name: string | null
+  direct_entity_slug: string | null
+  direct_entity_type_name: string | null
+  parish_name: string | null
+  parish_slug: string | null
+  zone_name: string | null
+  zone_slug: string | null
+  vicariate_name: string | null
+  vicariate_slug: string | null
+  diocese_name: string | null
+  diocese_slug: string | null
+  pastoral_entity_name: string | null
+  pastoral_entity_slug: string | null
+  is_current: boolean | null
+  assignment_status: string | null
+}
+
 type PastoralEntityRow = {
   id: string
   name: string
@@ -70,7 +95,7 @@ async function safeFetch<T>(table: string, params: Record<string, string>) {
 
 export async function GET() {
   try {
-    const [dioceses, parishes, people, pastoralEntities, organizationCharts, organizationUnits] = await Promise.all([
+    const [dioceses, parishes, people, assignments, pastoralEntities, organizationCharts, organizationUnits] = await Promise.all([
       fetchSupabaseJson<DioceseRow[]>('public_dioceses', {
         select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count',
         order: 'name.asc',
@@ -86,6 +111,11 @@ export async function GET() {
         status: 'eq.active',
         visibility: 'eq.public',
         order: 'display_name.asc',
+      }),
+      safeFetch<AssignmentRow>('public_position_assignments_with_hierarchy', {
+        select: 'id,person_id,person_name,person_slug,person_type,position_title,base_role_name,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,parish_slug,zone_name,zone_slug,vicariate_name,vicariate_slug,diocese_name,diocese_slug,pastoral_entity_name,pastoral_entity_slug,is_current,assignment_status',
+        is_current: 'eq.true',
+        order: 'person_name.asc',
       }),
       safeFetch<PastoralEntityRow>('public_pastoral_entities', {
         select: 'id,name,slug,diocese_id,diocese_name,diocese_slug,level_name,level_key,level_order,parent_pastoral_entity_id,parent_pastoral_entity_name',
@@ -112,6 +142,7 @@ export async function GET() {
       dioceses,
       parishes,
       people,
+      assignments,
       pastoral_entities: pastoralEntities,
       organization_charts: organizationCharts,
       organization_units: organizationUnits,
