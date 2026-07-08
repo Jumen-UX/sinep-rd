@@ -5,13 +5,21 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type ParishAlert = {
-  parish_id: string
-  parish_name: string
-  parish_slug: string | null
+type StructureAlert = {
+  node_id: string
+  template_name: string | null
+  kind_key: string | null
+  level_name: string | null
+  level_key: string | null
+  diocese_name: string | null
+  entity_id: string
+  entity_name: string
+  entity_slug: string | null
   entity_type_name: string | null
   municipality: string | null
   province: string | null
+  responsible_office_name: string | null
+  responsible_office_key: string | null
   responsible_count: number
   responsible_names: string | null
   has_registered_vacancy: boolean
@@ -21,10 +29,16 @@ type ParishAlert = {
 
 type AlertFilter = 'needs_action' | 'possible' | 'registered' | 'resolved' | 'all'
 
-function statusDescription(status: ParishAlert['alert_status']) {
-  if (status === 'vacante_registrada') return 'Ya hay una vacancia registrada. Requiere asignar responsable cuando corresponda.'
-  if (status === 'posible_vacancia') return 'No tiene párroco ni administrador parroquial activo registrado.'
-  return 'Tiene responsable principal registrado.'
+function statusDescription(alert: StructureAlert) {
+  const office = alert.responsible_office_name ?? 'responsable principal'
+  if (alert.alert_status === 'vacante_registrada') return `Ya hay una vacancia registrada para ${office}. Requiere asignar responsable cuando corresponda.`
+  if (alert.alert_status === 'posible_vacancia') return `No tiene ${office} activo registrado.`
+  return `Tiene ${office} registrado.`
+}
+
+function locationLabel(alert: StructureAlert) {
+  const parts = [alert.diocese_name, alert.level_name, alert.municipality, alert.province].filter(Boolean)
+  return parts.length > 0 ? parts.join(' · ') : 'Ubicación o nivel no indicado'
 }
 
 export default function AdminAlertasPage() {
@@ -32,7 +46,7 @@ export default function AdminAlertasPage() {
   const supabase = useMemo(() => createClient(), [])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [alerts, setAlerts] = useState<ParishAlert[]>([])
+  const [alerts, setAlerts] = useState<StructureAlert[]>([])
   const [filter, setFilter] = useState<AlertFilter>('needs_action')
 
   useEffect(() => {
@@ -44,15 +58,17 @@ export default function AdminAlertasPage() {
       }
 
       const { data, error: alertsError } = await supabase
-        .from('admin_parish_responsibility_alerts')
-        .select('parish_id,parish_name,parish_slug,entity_type_name,municipality,province,responsible_count,responsible_names,has_registered_vacancy,alert_status,alert_label')
+        .from('admin_structure_responsibility_alerts')
+        .select('node_id,template_name,kind_key,level_name,level_key,diocese_name,entity_id,entity_name,entity_slug,entity_type_name,municipality,province,responsible_office_name,responsible_office_key,responsible_count,responsible_names,has_registered_vacancy,alert_status,alert_label')
         .order('alert_status', { ascending: false })
-        .order('parish_name')
+        .order('diocese_name')
+        .order('level_name')
+        .order('entity_name')
 
       if (alertsError) {
         setError(alertsError.message)
       } else {
-        setAlerts((data ?? []) as ParishAlert[])
+        setAlerts((data ?? []) as StructureAlert[])
       }
       setLoading(false)
     }
@@ -82,8 +98,8 @@ export default function AdminAlertasPage() {
       <section className="dashboard-hero card">
         <div>
           <p className="eyebrow">Alertas administrativas</p>
-          <h1>Parroquias sin responsable principal</h1>
-          <p className="lead">Una parroquia requiere atención cuando no tiene párroco ni administrador parroquial activo. El vicario parroquial no elimina la vacancia.</p>
+          <h1>Unidades sin responsable principal</h1>
+          <p className="lead">La alerta se genera desde la estructura flexible: cada nivel revisa el cargo marcado como predeterminado en Configuración → Cargos permitidos por nivel.</p>
         </div>
       </section>
 
@@ -122,8 +138,8 @@ export default function AdminAlertasPage() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Listado</p>
-            <h2>Parroquias</h2>
-            <p className="meta">Muestra parroquias y cuasiparroquias activas según los nombramientos actuales.</p>
+            <h2>Unidades estructurales monitoreadas</h2>
+            <p className="meta">Muestra unidades activas que tienen un cargo responsable configurado por nivel estructural.</p>
           </div>
         </div>
 
@@ -132,16 +148,17 @@ export default function AdminAlertasPage() {
         ) : (
           <div className="grid admin-modules">
             {visibleAlerts.map((alert) => (
-              <article className="entity-card admin-module" key={alert.parish_id}>
-                <p className="entity-type">{alert.entity_type_name ?? 'Parroquia'}</p>
-                <h2>{alert.parish_name}</h2>
+              <article className="entity-card admin-module" key={`${alert.node_id}-${alert.responsible_office_key ?? 'responsable'}`}>
+                <p className="entity-type">{alert.level_name ?? alert.entity_type_name ?? 'Unidad estructural'}</p>
+                <h2>{alert.entity_name}</h2>
                 <p className="role-pill">{alert.alert_label}</p>
-                <p className="meta">{statusDescription(alert.alert_status)}</p>
-                <p className="meta">{[alert.municipality, alert.province].filter(Boolean).join(' · ') || 'Ubicación no indicada'}</p>
+                <p className="meta">{statusDescription(alert)}</p>
+                <p className="meta">Cargo monitoreado: {alert.responsible_office_name ?? 'responsable principal'}</p>
+                <p className="meta">{locationLabel(alert)}</p>
                 {alert.responsible_names && <p className="meta">Responsable: {alert.responsible_names}</p>}
                 <div className="admin-actions">
-                  {alert.parish_slug && <Link className="button button-secondary" href={`/entidades/${alert.parish_slug}`}>Ver ficha</Link>}
-                  <Link className="button button-primary" href={`/admin/asignaciones?entity=${alert.parish_id}`}>Asignar responsable</Link>
+                  {alert.entity_slug && <Link className="button button-secondary" href={`/entidades/${alert.entity_slug}`}>Ver ficha</Link>}
+                  <Link className="button button-primary" href={`/admin/asignaciones?entity=${alert.entity_id}`}>Asignar responsable</Link>
                 </div>
               </article>
             ))}
