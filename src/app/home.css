@@ -73,6 +73,10 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.public-views-dashboard .home-metric-strip {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .home-metric-card {
   background: #ffffff;
   border: 1px solid var(--border);
@@ -83,6 +87,20 @@
   min-height: 142px;
   padding: 20px;
   text-decoration: none;
+}
+
+button.home-metric-card {
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.home-filter-card.active,
+.public-view-tab.active,
+.public-card-button.active,
+.public-list-button.active {
+  border-color: rgba(122, 31, 31, 0.55);
+  box-shadow: 0 16px 38px rgba(122, 31, 31, 0.12);
 }
 
 .home-metric-card span,
@@ -100,165 +118,73 @@
   line-height: 0.95;
 }
 
-.home-view-grid {
+.public-filter-panel select {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--foreground);
+  font: inherit;
+  padding: 11px 13px;
+  width: 100%;
+}
+
+.public-filter-grid {
   display: grid;
-  gap: 16px;
+  gap: 14px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.home-view-card {
-  background: #fbf8f1;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  color: inherit;
+.public-filter-grid label {
+  color: var(--muted);
+  display: grid;
+  font-size: 13px;
+  font-weight: 900;
+  gap: 7px;
+}
+
+.public-view-tabs {
   display: grid;
   gap: 12px;
-  min-height: 260px;
-  padding: 20px;
-  text-decoration: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.home-view-card:hover {
-  border-color: rgba(122, 31, 31, 0.45);
-  box-shadow: 0 16px 38px rgba(31, 41, 51, 0.1);
-  transform: translateY(-1px);
+.public-view-tab {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 6px;
+  min-height: 150px;
+  padding: 16px;
+  text-align: left;
 }
 
-.home-view-label,
-.home-view-meta,
-.home-view-action {
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-.home-view-label {
+.public-view-tab span {
   color: var(--primary);
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 
-.home-view-card strong {
+.public-view-tab strong {
   color: var(--foreground);
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.15;
 }
 
-.home-view-card p {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.55;
-  margin: 0;
-}
-
-.home-view-meta {
-  align-self: end;
-  color: var(--muted);
-}
-
-.home-view-action {
-  color: var(--primary);
-}
-
-.home-flow-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.home-flow-card {
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  display: grid;
-  gap: 12px;
-  padding: 20px;
-}
-
-.home-flow-card h3 {
-  font-size: 21px;
-  line-height: 1.15;
-  margin: 0;
-}
-
-.home-flow-card p {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.55;
-  margin: 0;
-}
-
-.home-flow-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.home-flow-steps span {
-  background: #fbf8f1;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-  padding: 7px 10px;
-}
-
-.home-data-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.home-data-card {
-  align-content: start;
-}
-
-.home-data-pairs {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.home-data-pairs div,
-.home-data-pairs a {
-  background: #fbf8f1;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  color: inherit;
-  display: grid;
-  gap: 6px;
-  padding: 16px;
-  text-decoration: none;
-}
-
-.home-data-pairs span {
+.public-view-tab small {
   color: var(--muted);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.35;
 }
 
-.home-data-pairs strong {
-  color: var(--foreground);
-  font-size: clamp(22px, 3vw, 30px);
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-.home-data-pairs a:hover {
-  border-color: rgba(122, 31, 31, 0.45);
-}
-
-.home-warning-note {
-  background: rgba(122, 31, 31, 0.07);
-  border: 1px solid rgba(122, 31, 31, 0.18);
-  border-radius: 16px;
-  color: var(--primary-dark);
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1.45;
-  margin: 0;
-  padding: 14px 16px;
+.public-view-stack {
+  display: grid;
+  gap: 18px;
 }
 
 .home-province-grid {
@@ -279,7 +205,17 @@
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-.home-province-card:hover {
+button.home-province-card,
+button.list-row {
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.home-province-card:hover,
+.public-view-tab:hover,
+.home-metric-card:hover {
   border-color: rgba(122, 31, 31, 0.45);
   box-shadow: 0 14px 32px rgba(31, 41, 51, 0.08);
   transform: translateY(-1px);
@@ -297,6 +233,23 @@
   font-weight: 800;
 }
 
+.public-view-empty {
+  align-items: start;
+  display: grid;
+  gap: 6px;
+}
+
+.public-view-empty strong {
+  color: var(--foreground);
+  font-size: 18px;
+}
+
+.public-view-empty span {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .home-empty-row {
   background: #ffffff;
   color: var(--muted);
@@ -304,12 +257,19 @@
   padding: 16px;
 }
 
+@media (max-width: 1100px) {
+  .public-view-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 980px) {
   .home-hero-panel,
   .home-metric-strip,
   .home-view-grid,
   .home-flow-grid,
-  .home-data-grid {
+  .home-data-grid,
+  .public-filter-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -326,12 +286,15 @@
   .home-view-grid,
   .home-flow-grid,
   .home-data-grid,
-  .home-data-pairs {
+  .home-data-pairs,
+  .public-filter-grid,
+  .public-view-tabs {
     grid-template-columns: 1fr;
   }
 
   .home-metric-card,
-  .home-view-card {
+  .home-view-card,
+  .public-view-tab {
     min-height: auto;
   }
 }
