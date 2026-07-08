@@ -7,43 +7,12 @@ import { createClient } from '@/lib/supabase/client'
 
 type SupabaseClient = ReturnType<typeof createClient>
 
-type Profile = {
-  full_name: string | null
-  email: string | null
-}
-
-type RoleInfo = {
-  key: string
-  name: string
-}
-
-type RoleRow = {
-  scope_type: string | null
-  status: string
-  roles: RoleInfo[] | RoleInfo | null
-}
-
-type Summary = {
-  active_entities: number
-  active_dioceses: number
-  active_pastoral_areas: number
-  pending_change_requests: number
-}
-
-type ModuleCard = {
-  href: string
-  type: string
-  title: string
-  description: string
-  cta?: string
-}
-
-type ModuleGroup = {
-  eyebrow: string
-  title: string
-  description: string
-  modules: ModuleCard[]
-}
+type Profile = { full_name: string | null; email: string | null }
+type RoleInfo = { key: string; name: string }
+type RoleRow = { scope_type: string | null; status: string; roles: RoleInfo[] | RoleInfo | null }
+type Summary = { active_entities: number; active_dioceses: number; active_pastoral_areas: number; pending_change_requests: number }
+type ModuleCard = { href: string; type: string; title: string; description: string }
+type ModuleGroup = { eyebrow: string; title: string; description: string; modules: ModuleCard[] }
 
 function getRoleInfo(role: RoleRow): RoleInfo | null {
   if (!role.roles) return null
@@ -52,24 +21,9 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
 }
 
 const featuredAdminActions: ModuleCard[] = [
-  {
-    href: '/admin/eventos',
-    type: 'Motor histórico',
-    title: 'Registro de eventos',
-    description: 'Revisa carga histórica, fechas derivadas, eventos nuevos y datos pendientes de evidencia.',
-  },
-  {
-    href: '/admin/eventos/nuevo',
-    type: 'Asistente',
-    title: 'Preparar evento',
-    description: 'Crea una carga histórica, evento nuevo o foto inicial vigente como pendiente de revisión.',
-  },
-  {
-    href: '/admin/jurisdicciones',
-    type: 'Vista canónica',
-    title: 'Explorar jurisdicciones',
-    description: 'Valida el árbol Iglesia sui iuris → provincia eclesiástica → sede metropolitana y sufragáneas.',
-  },
+  { href: '/admin/eventos', type: 'Motor histórico', title: 'Registro de eventos', description: 'Revisa carga histórica, fechas derivadas, eventos nuevos y datos pendientes de evidencia.' },
+  { href: '/admin/eventos/nuevo', type: 'Asistente', title: 'Preparar evento', description: 'Crea una carga histórica, evento nuevo o foto inicial vigente como pendiente de revisión.' },
+  { href: '/admin/jurisdicciones', type: 'Vista canónica', title: 'Explorar jurisdicciones', description: 'Valida el árbol Iglesia sui iuris → provincia eclesiástica → sede metropolitana y sufragáneas.' },
 ]
 
 const moduleGroups: ModuleGroup[] = [
@@ -134,29 +88,15 @@ export default function AdminPage() {
         return
       }
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('full_name,email')
-        .eq('id', userData.user.id)
-        .maybeSingle()
-
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_role_assignments')
-        .select('scope_type,status,roles(key,name)')
-        .eq('user_id', userData.user.id)
-        .eq('status', 'active')
-
+      const { data: profileData } = await supabase.from('profiles').select('full_name,email').eq('id', userData.user.id).maybeSingle()
+      const { data: roleData, error: roleError } = await supabase.from('user_role_assignments').select('scope_type,status,roles(key,name)').eq('user_id', userData.user.id).eq('status', 'active')
       if (roleError) {
         setError(roleError.message)
         setLoading(false)
         return
       }
 
-      const { data: summaryData } = await supabase
-        .from('admin_dashboard_summary')
-        .select('active_entities,active_dioceses,active_pastoral_areas,pending_change_requests')
-        .maybeSingle()
-
+      const { data: summaryData } = await supabase.from('admin_dashboard_summary').select('active_entities,active_dioceses,active_pastoral_areas,pending_change_requests').maybeSingle()
       setProfile((profileData as Profile | null) ?? { full_name: userData.user.email ?? null, email: userData.user.email ?? null })
       setRoles((roleData ?? []) as unknown as RoleRow[])
       setSummary((summaryData as Summary | null) ?? null)
@@ -191,62 +131,13 @@ export default function AdminPage() {
   return (
     <main className="container admin-dashboard">
       <div className="admin-topbar">
-        <div>
-          <p className="eyebrow">Panel administrativo</p>
-          <h1>Bienvenido, {profile?.full_name ?? profile?.email}</h1>
-          <p className="lead">Elige qué necesitas hacer. Cada sección agrupa acciones relacionadas.</p>
-        </div>
+        <div><p className="eyebrow">Panel administrativo</p><h1>Bienvenido, {profile?.full_name ?? profile?.email}</h1><p className="lead">Elige qué necesitas hacer. Cada sección agrupa acciones relacionadas.</p></div>
         <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
       </div>
-
-      <section className="card admin-section">
-        <h2>Roles activos</h2>
-        <div className="role-list">
-          {roles.map((role) => {
-            const roleInfo = getRoleInfo(role)
-            return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span>
-          })}
-        </div>
-      </section>
-
-      {summary && (
-        <section className="dashboard-grid">
-          <div className="metric-card"><strong>{summary.active_dioceses}</strong><span>Diócesis y jurisdicciones</span></div>
-          <div className="metric-card"><strong>{summary.active_entities}</strong><span>Entidades activas</span></div>
-          <div className="metric-card"><strong>{summary.active_pastoral_areas}</strong><span>Áreas pastorales</span></div>
-          <div className="metric-card"><strong>{summary.pending_change_requests}</strong><span>Solicitudes pendientes</span></div>
-        </section>
-      )}
-
-      <section className="card admin-section">
-        <div className="section-heading"><div><p className="eyebrow">Prioridad operativa</p><h2>Motor histórico-documental</h2><p className="meta">Primero se reconstruye la historia. Después el sistema queda vivo y se alimenta por eventos nuevos.</p></div></div>
-        <div className="grid admin-modules">
-          {featuredAdminActions.map((module) => (
-            <article className="entity-card admin-module" key={module.href}>
-              <p className="entity-type">{module.type}</p>
-              <h2>{module.title}</h2>
-              <p className="meta">{module.description}</p>
-              <Link className="button button-primary" href={module.href}>Abrir</Link>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {moduleGroups.map((group) => (
-        <section className="card admin-section" key={group.title}>
-          <div className="section-heading"><div><p className="eyebrow">{group.eyebrow}</p><h2>{group.title}</h2><p className="meta">{group.description}</p></div></div>
-          <div className="grid admin-modules">
-            {group.modules.map((module) => (
-              <article className="entity-card admin-module" key={`${module.href}-${module.title}`}>
-                <p className="entity-type">{module.type}</p>
-                <h2>{module.title}</h2>
-                <p className="meta">{module.description}</p>
-                <Link className="button button-primary" href={module.href}>Abrir</Link>
-              </article>
-            ))}
-          </div>
-        </section>
-      ))}
+      <section className="card admin-section"><h2>Roles activos</h2><div className="role-list">{roles.map((role) => { const roleInfo = getRoleInfo(role); return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span> })}</div></section>
+      {summary && <section className="dashboard-grid"><div className="metric-card"><strong>{summary.active_dioceses}</strong><span>Diócesis y jurisdicciones</span></div><div className="metric-card"><strong>{summary.active_entities}</strong><span>Entidades activas</span></div><div className="metric-card"><strong>{summary.active_pastoral_areas}</strong><span>Áreas pastorales</span></div><div className="metric-card"><strong>{summary.pending_change_requests}</strong><span>Solicitudes pendientes</span></div></section>}
+      <section className="card admin-section"><div className="section-heading"><div><p className="eyebrow">Prioridad operativa</p><h2>Motor histórico-documental</h2><p className="meta">Primero se reconstruye la historia. Después el sistema queda vivo y se alimenta por eventos nuevos.</p></div></div><div className="grid admin-modules">{featuredAdminActions.map((module) => <article className="entity-card admin-module" key={`${module.href}-${module.title}`}><p className="entity-type">{module.type}</p><h2>{module.title}</h2><p className="meta">{module.description}</p><Link className="button button-primary" href={module.href}>Abrir</Link></article>)}</div></section>
+      {moduleGroups.map((group) => <section className="card admin-section" key={group.title}><div className="section-heading"><div><p className="eyebrow">{group.eyebrow}</p><h2>{group.title}</h2><p className="meta">{group.description}</p></div></div><div className="grid admin-modules">{group.modules.map((module) => <article className="entity-card admin-module" key={`${module.href}-${module.title}`}><p className="entity-type">{module.type}</p><h2>{module.title}</h2><p className="meta">{module.description}</p><Link className="button button-primary" href={module.href}>Abrir</Link></article>)}</div></section>)}
     </main>
   )
 }
