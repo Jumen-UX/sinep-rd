@@ -96,11 +96,11 @@ begin
         else 'Nombre parecido'
       end as reason
     from public.persons p
-    where coalesce(p.status, 'active') <> 'deleted'
+    where coalesce(p.status::text, 'active') <> 'deleted'
       and (
         v_person_type is null
-        or p.person_type = v_person_type
-        or (v_person_type = 'priest' and p.person_type in ('priest', 'deacon'))
+        or p.person_type::text = v_person_type
+        or (v_person_type = 'priest' and p.person_type::text in ('priest', 'deacon'))
       )
   )
   select
@@ -253,7 +253,7 @@ begin
         1::integer as issue_count,
         coalesce(dfs.created_at, now())::timestamptz as created_at
       from public.data_field_statuses dfs
-      where dfs.status in ('unknown', 'pending_review', 'not_identified', 'incomplete')
+      where dfs.status::text in ('unknown', 'pending_review', 'not_identified', 'incomplete')
       order by coalesce(dfs.created_at, now()) desc
       limit $1
     $sql$ using v_limit;
@@ -272,8 +272,8 @@ begin
         1::integer as issue_count,
         coalesce(pa.created_at, now())::timestamptz as created_at
       from public.position_assignments pa
-      where pa.verification_status in ('pending_review', 'not_verified', 'needs_review')
-        and coalesce(pa.record_status, 'active') = 'active'
+      where pa.verification_status::text in ('pending_review', 'not_verified', 'needs_review')
+        and coalesce(pa.record_status::text, 'active') = 'active'
       order by coalesce(pa.created_at, now()) desc
       limit $1
     $sql$ using v_limit;
