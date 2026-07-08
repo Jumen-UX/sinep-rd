@@ -116,6 +116,7 @@ export default function PendingEventsPage() {
             <div className="button-row">
               <Link className="button button-primary" href={`/admin/eventos/${event.event_id}`}>Revisar</Link>
               <Link className="button button-secondary" href={`/admin/eventos/${event.event_id}/plan`}>Plan de acciones</Link>
+              <Link className="button button-secondary" href={`/admin/eventos/${event.event_id}/contrato`}>Contrato de aplicación</Link>
             </div>
           </article>
         ))}
