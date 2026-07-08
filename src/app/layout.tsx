@@ -5,6 +5,7 @@ import './globals.css'
 import './hierarchy.css'
 import './dashboard.css'
 import './home.css'
+import './public-dashboard.css'
 import './brand.css'
 import './admin-brand.css'
 
