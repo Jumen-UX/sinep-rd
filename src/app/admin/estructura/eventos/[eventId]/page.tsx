@@ -50,45 +50,11 @@ type ReviewChecks = {
   can_approve: boolean
 }
 
-type ReviewResponse = {
-  event: ReviewEvent
-  participants: Participant[]
-  review_checks: ReviewChecks
-}
-
+type ReviewResponse = { event: ReviewEvent; participants: Participant[]; review_checks: ReviewChecks }
 type ImpactMessage = { code: string; message: string; roles?: string[]; current_child_edges?: number }
-
-type ProposedAction = {
-  action_key: string
-  title: string
-  description: string
-  state_change: boolean
-  requires_payload: boolean
-  status: string
-}
-
-type ImpactSummary = {
-  participant_count: number
-  proposed_action_count: number
-  current_parent_edges_found: number
-  current_child_edges_found: number
-  blocker_count: number
-  warning_count: number
-  application_blocked: boolean
-  can_apply_in_phase_2: boolean
-}
-
-type ImpactResponse = {
-  event: ReviewEvent
-  participants: Participant[]
-  summary: ImpactSummary
-  proposed_actions: ProposedAction[]
-  blockers: ImpactMessage[]
-  warnings: ImpactMessage[]
-  required_roles: string[]
-  missing_roles: string[]
-  next_gate: string
-}
+type ProposedAction = { action_key: string; title: string; description: string; state_change: boolean; requires_payload: boolean; status: string }
+type ImpactSummary = { participant_count: number; proposed_action_count: number; current_parent_edges_found: number; current_child_edges_found: number; blocker_count: number; warning_count: number; application_blocked: boolean; can_apply_in_phase_2: boolean }
+type ImpactResponse = { event: ReviewEvent; participants: Participant[]; summary: ImpactSummary; proposed_actions: ProposedAction[]; blockers: ImpactMessage[]; warnings: ImpactMessage[]; required_roles: string[]; missing_roles: string[]; next_gate: string }
 
 const pageStyles = `
   .structural-impact-page textarea{border:1px solid var(--border);border-radius:14px;font:inherit;min-height:86px;padding:11px 13px;resize:vertical;width:100%}
@@ -209,6 +175,8 @@ export default function StructuralEvolutionImpactPage() {
           <h1>{event.title}</h1>
           <p className="lead">Vista previa de lo que el evento estructural debería crear, cerrar, mover o dejar histórico. Esta pantalla no aplica cambios.</p>
           <div className="button-row">
+            <Link className="button button-primary" href={`/admin/estructura/eventos/${eventId}/plan`}>Plan de aplicación</Link>
+            <Link className="button button-secondary" href={`/admin/estructura/eventos/${eventId}/contrato`}>Contrato</Link>
             <Link className="button button-secondary" href="/admin/estructura/eventos">Registro estructural</Link>
             <Link className="button button-secondary" href="/admin/estructura">Motor de estructuras</Link>
           </div>
@@ -231,7 +199,7 @@ export default function StructuralEvolutionImpactPage() {
 
       <section className="layout-grid">
         <div className="card dashboard-section">
-          <div className="section-heading"><div><p className="eyebrow">Impacto calculado</p><h2>Acciones estructurales propuestas</h2><p className="meta">Estas acciones son contrato preliminar. La aplicación real se habilitará después con auditoría.</p></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Impacto calculado</p><h2>Acciones estructurales propuestas</h2><p className="meta">Estas acciones alimentan el plan y el contrato antes de cualquier mutación real.</p></div></div>
           <div className="action-list">
             {(impact?.proposed_actions ?? []).length === 0 && <div className="empty-state">No hay acciones propuestas.</div>}
             {(impact?.proposed_actions ?? []).map((action) => (
@@ -265,6 +233,7 @@ export default function StructuralEvolutionImpactPage() {
             {['draft', 'submitted'].includes(event.status) && <button className="button button-secondary" disabled={saving} onClick={() => reviewEvent('reject')} type="button">Rechazar</button>}
             {event.status !== 'archived' && <button className="button button-secondary" disabled={saving} onClick={() => reviewEvent('archive')} type="button">Archivar</button>}
           </div>
+          <div className="impact-card highlight"><strong>Siguiente compuerta</strong><span className="meta">Generar plan, completar datos, revisar conflictos y consultar contrato.</span><div className="button-row"><Link className="button button-primary" href={`/admin/estructura/eventos/${eventId}/plan`}>Abrir plan</Link><Link className="button button-secondary" href={`/admin/estructura/eventos/${eventId}/contrato`}>Abrir contrato</Link></div></div>
         </aside>
       </section>
 
