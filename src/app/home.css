@@ -98,7 +98,7 @@ button.home-metric-card {
 .home-filter-card.active,
 .public-view-tab.active,
 .public-card-button.active,
-.public-list-button.active {
+.public-list-row.active {
   border-color: rgba(122, 31, 31, 0.55);
   box-shadow: 0 16px 38px rgba(122, 31, 31, 0.12);
 }
@@ -199,23 +199,51 @@ button.home-metric-card {
   border-radius: 18px;
   color: inherit;
   display: grid;
-  gap: 6px;
+  gap: 8px;
   padding: 18px;
   text-decoration: none;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-button.home-province-card,
-button.list-row {
+.public-node-main {
+  background: transparent;
+  border: 0;
+  color: inherit;
   cursor: pointer;
+  display: grid;
   font: inherit;
+  gap: 6px;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.public-list-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.public-list-main {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(180px, .75fr) minmax(180px, .75fr);
+  padding: 0;
   text-align: left;
   width: 100%;
 }
 
 .home-province-card:hover,
 .public-view-tab:hover,
-.home-metric-card:hover {
+.home-metric-card:hover,
+.public-list-row:hover {
   border-color: rgba(122, 31, 31, 0.45);
   box-shadow: 0 14px 32px rgba(31, 41, 51, 0.08);
   transform: translateY(-1px);
@@ -272,6 +300,10 @@ button.list-row {
   .public-filter-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .public-list-main {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 860px) {
@@ -288,7 +320,8 @@ button.list-row {
   .home-data-grid,
   .home-data-pairs,
   .public-filter-grid,
-  .public-view-tabs {
+  .public-view-tabs,
+  .public-list-row {
     grid-template-columns: 1fr;
   }
 
