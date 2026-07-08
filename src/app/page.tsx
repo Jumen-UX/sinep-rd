@@ -110,6 +110,13 @@ const sideNav = [
   { label: 'Ayuda', icon: '?', href: '#' },
 ]
 
+const bottomNav = [
+  { label: 'Inicio', icon: '⌂', href: '/', active: true },
+  { label: 'Territorio', icon: '▱', href: '/?vista=territorial' },
+  { label: 'Personas', icon: '♙', href: '/?vista=clero' },
+  { label: 'Más', icon: '•••', href: '#' },
+]
+
 const publicViewKeys = new Set<PublicView>(publicViews.map((view) => view.key))
 
 const personTypes = [
@@ -294,6 +301,18 @@ export default function HomePage() {
 
   return (
     <main className="public-dashboard-layout">
+      <header className="public-mobile-header">
+        <Link className="public-mobile-brand" href="/">
+          <span className="public-brand-mark">✛</span>
+          <span>
+            <span className="public-brand-title">SINEP RD</span>
+            <span className="public-brand-subtitle">Sistema de Información<br />Eclesial Pastoral</span>
+          </span>
+        </Link>
+        <Link className="public-mobile-icon-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
+        <button className="public-mobile-menu-button" type="button" aria-label="Abrir menú">☰</button>
+      </header>
+
       <aside className="public-sidebar" aria-label="Menú principal">
         <Link className="public-sidebar-brand" href="/">
           <span className="public-brand-mark">✛</span>
@@ -473,6 +492,10 @@ export default function HomePage() {
           </section>
         )}
       </div>
+
+      <nav className="public-bottom-nav" aria-label="Navegación móvil">
+        {bottomNav.map((item) => <Link className={item.active ? 'active' : ''} href={item.href} key={item.label}><span>{item.icon}</span><span>{item.label}</span></Link>)}
+      </nav>
     </main>
   )
 }
