@@ -140,6 +140,11 @@ h2 {
   font-weight: 700;
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
 .button-primary {
   background: var(--primary);
   border-color: var(--primary);
@@ -220,4 +225,44 @@ h2 {
 .entity-type {
   color: var(--primary);
   font-size: 13px;
+}
+
+.success-box,
+.error-box {
+  border-radius: 16px;
+  font-weight: 800;
+  margin: 16px 0;
+  padding: 14px 16px;
+}
+
+.success-box {
+  background: #edf7ed;
+  border: 1px solid #b9dfba;
+  color: #225d25;
+}
+
+.error-box {
+  background: #fff2f0;
+  border: 1px solid #ffc7c2;
+  color: #8a1f11;
+}
+
+.admin-card-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.admin-card-actions .button {
+  font-size: 12px;
+  min-height: 36px;
+  padding: 0 13px;
+}
+
+@media (max-width: 780px) {
+  .admin-card-actions {
+    justify-content: flex-start;
+  }
 }
