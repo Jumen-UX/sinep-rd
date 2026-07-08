@@ -28,6 +28,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <Link href="/admin/eventos">Registro histórico</Link>
               <Link href="/admin/jurisdicciones">Gobierno eclesial</Link>
               <Link href="/admin/estructura">Estructura</Link>
+              <Link href="/admin/revision">Pendientes</Link>
               <Link href="/admin/usuarios">Usuarios</Link>
               <Link href="/">Portal público</Link>
             </div>
