@@ -89,13 +89,18 @@ function updateBackbar() {
   const hasProvince = !isDefaultValue(province, ['Todas las provincias'])
   const hasJurisdiction = !isDefaultValue(jurisdiction, ['Todas las jurisdicciones'])
   const hasTerritorialLevel = !!Array.from(document.querySelectorAll<HTMLButtonElement>('button.public-clear-button')).find((item) => normalize(item.textContent ?? '').includes('Limpiar filtro territorial'))
+  const signature = [country, hasProvince ? province : '', hasJurisdiction ? jurisdiction : '', hasTerritorialLevel ? 'territorial-level' : ''].join('|')
 
   if (!hasProvince && !hasJurisdiction && !hasTerritorialLevel) {
+    if (bar.dataset.signature === 'hidden') return
+    bar.dataset.signature = 'hidden'
     bar.hidden = true
     bar.replaceChildren()
     return
   }
 
+  if (bar.dataset.signature === signature) return
+  bar.dataset.signature = signature
   bar.hidden = false
 
   const route = document.createElement('div')
