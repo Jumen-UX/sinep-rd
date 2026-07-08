@@ -1,0 +1,12 @@
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --muted: #54565a;
+  --card: #ffffff;
+  --border: #d0d0ce;
+  --primary: #ffc003;
+  --primary-dark: #d9a100;
+  --gold: #ffc003;
+  --danger: #da291c;
+  --warning: #e87722;
+}
