@@ -5,6 +5,7 @@ import './globals.css'
 import './hierarchy.css'
 import './dashboard.css'
 import './home.css'
+import './brand.css'
 
 export const metadata: Metadata = {
   title: 'SINEP RD',
