@@ -189,7 +189,7 @@ export default function StructuralEvolutionEventsPage() {
           <p className="eyebrow">Evolución estructural</p>
           <h1>Eventos de evolución estructural</h1>
           <p className="lead">Registra creación, desmembramiento, división, fusión, reorganización, supresión, cambio de nombre, límites, dependencia o nivel dentro de estructuras flexibles.</p>
-          <div className="button-row"><Link className="button button-secondary" href="/admin/estructura">Motor de estructuras</Link><Link className="button button-secondary" href="/admin/estructura/eventos/verificacion">Verificación del flujo</Link><Link className="button button-secondary" href="/admin/eventos/fase-1">Verificar Fase 1</Link></div>
+          <div className="button-row"><Link className="button button-secondary" href="/admin/estructura">Motor de estructuras</Link><Link className="button button-secondary" href="/admin/estructura/eventos/verificacion">Verificación estructural</Link><Link className="button button-secondary" href="/admin/eventos/verificacion">Verificación de eventos</Link></div>
         </div>
         <div className="phase-summary"><span className="mini-badge warning">Aplicación bloqueada</span><strong>Solo registra y aprueba eventos</strong><span className="meta">La mutación real de jerarquías queda para la aplicación auditada.</span></div>
       </section>
