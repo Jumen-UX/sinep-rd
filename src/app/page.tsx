@@ -86,6 +86,8 @@ const publicViews: Array<{ key: PublicView; title: string; eyebrow: string; desc
   { key: 'colegial', title: 'Organización colegial', eyebrow: 'Colegial', description: 'Consejos, comisiones, comités, organismos colegiados y equipos transversales.' },
 ]
 
+const publicViewKeys = new Set<PublicView>(publicViews.map((view) => view.key))
+
 const personTypes = [
   { key: '', label: 'Todas las personas' },
   { key: 'bishop', label: 'Obispos' },
@@ -94,6 +96,10 @@ const personTypes = [
   { key: 'religious', label: 'Religiosos/as' },
   { key: 'layperson', label: 'Laicos/as' },
 ]
+
+function isPublicView(value: string | null): value is PublicView {
+  return !!value && publicViewKeys.has(value as PublicView)
+}
 
 function formatNumber(value: number | null | undefined) {
   if (value === null || value === undefined) return '—'
@@ -167,6 +173,12 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const view = params.get('vista')
+    if (isPublicView(view)) setActiveView(view)
+  }, [])
+
+  useEffect(() => {
     async function loadDashboard() {
       try {
         const [summaryResponse, viewsResponse] = await Promise.all([
@@ -193,6 +205,14 @@ export default function HomePage() {
     const grouped = groupBy(dioceses.filter((item) => item.ecclesiastical_province_name), (item) => item.ecclesiastical_province_name ?? '')
     return Array.from(grouped, ([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name, 'es'))
   }, [dioceses])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const province = params.get('provincia')
+    if (!province || provinces.length === 0) return
+    const match = provinces.find((item) => item.name === province || slugify(item.name) === province)
+    if (match) setProvinceFilter(match.name)
+  }, [provinces])
 
   const diocesesByProvince = useMemo(() => {
     return provinceFilter ? dioceses.filter((item) => item.ecclesiastical_province_name === provinceFilter) : dioceses
