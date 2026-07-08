@@ -219,6 +219,7 @@ export default function StructuralEvolutionEventsPage() {
                 <div className="badge-row"><span className={`mini-badge ${statusClass(event.status)}`}>{statusLabel(event.status)}</span><span className="mini-badge">{event.kind_key ?? 'estructura'}</span><span className="mini-badge">{event.participant_count} participantes</span>{event.source_name && <span className="mini-badge">Fuente: {event.source_name}</span>}</div>
                 {event.reason && <p className="meta">{event.reason}</p>}
                 <div className="button-row">
+                  <Link className="button button-secondary" href={`/admin/estructura/eventos/${event.event_id}`}>Vista de impacto</Link>
                   {event.status === 'draft' && <button className="button button-primary" disabled={saving} onClick={() => reviewEvent(event.event_id, 'submit')} type="button">Enviar a revisión</button>}
                   {event.status === 'submitted' && <button className="button button-primary" disabled={saving} onClick={() => reviewEvent(event.event_id, 'approve')} type="button">Aprobar</button>}
                   {event.status === 'submitted' && <button className="button button-secondary" disabled={saving} onClick={() => reviewEvent(event.event_id, 'return_to_draft')} type="button">Devolver</button>}
