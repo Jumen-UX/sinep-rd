@@ -22,17 +22,21 @@ type PersonSummaryRow = {
   death_date: string | null
 }
 
+function normalizeText(value?: string | null) {
+  return (value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
 function isArchdiocese(item: DioceseSummaryRow) {
-  return item.entity_type_name?.toLowerCase().includes('arquidiócesis') ?? false
+  return normalizeText(item.entity_type_name).includes('arquidiocesis')
 }
 
 function isDiocese(item: DioceseSummaryRow) {
-  const name = item.entity_type_name?.toLowerCase() ?? ''
-  return name.includes('diócesis') && !name.includes('arquidiócesis')
+  const name = normalizeText(item.entity_type_name)
+  return name.includes('diocesis') && !name.includes('arquidiocesis')
 }
 
 function isMilitary(item: DioceseSummaryRow) {
-  const name = `${item.entity_type_name ?? ''} ${item.name}`.toLowerCase()
+  const name = normalizeText(`${item.entity_type_name ?? ''} ${item.name}`)
   return name.includes('castrense') || name.includes('militar')
 }
 
@@ -68,7 +72,7 @@ export async function GET() {
       .sort((a, b) => a.name.localeCompare(b.name, 'es'))
 
     const countPeople = (type: string) => people.filter((item) => item.person_type === type).length
-    const reportedParishes = dioceses.reduce((sum, item) => sum + (item.parishes_count ?? 0), 0)
+    const registeredParishes = parishes.length
 
     return NextResponse.json({
       dioceses: {
@@ -79,9 +83,9 @@ export async function GET() {
         provinces,
         total_catholics: dioceses.reduce((sum, item) => sum + (item.catholics_total ?? 0), 0),
         total_population: dioceses.reduce((sum, item) => sum + (item.population_total ?? 0), 0),
-        total_parishes: parishes.length,
-        loaded_parishes: parishes.length,
-        reported_parishes: reportedParishes,
+        total_parishes: registeredParishes,
+        loaded_parishes: registeredParishes,
+        reported_parishes: registeredParishes,
       },
       people: {
         total: people.length,
