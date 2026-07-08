@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type SupabaseClient = ReturnType<typeof createClient>
+type ActionStatus = 'planned' | 'ready' | 'skipped' | 'failed'
 
 type PlanEvent = {
   id: string
@@ -26,7 +27,7 @@ type PlanAction = {
   description: string | null
   changes_state: boolean
   requires_manual_review: boolean
-  status: string
+  status: ActionStatus
   notes: string | null
   subject_entity_name: string | null
   target_entity_name: string | null
@@ -37,6 +38,10 @@ type PlanAction = {
 
 type PlanSummary = {
   action_count: number
+  ready_count: number
+  planned_count: number
+  skipped_count: number
+  failed_count: number
   state_changing_count: number
   manual_review_count: number
   can_generate_plan: boolean
@@ -53,7 +58,7 @@ type ApplicationPlan = {
 const pageStyles = `
   .plan-hero{align-items:stretch;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr)}
   .plan-summary,.plan-card,.action-card{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:14px}
-  .plan-summary,.plan-card.highlight{background:#fbf8f1}.plan-grid,.actions-list,.metric-grid{display:grid;gap:14px}.plan-grid{align-items:start;grid-template-columns:minmax(0,1fr) minmax(300px,.4fr)}.metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.badge-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}.button-row{align-items:center;display:flex;flex-wrap:wrap;gap:12px}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:980px){.plan-hero,.plan-grid,.metric-grid{grid-template-columns:1fr}}
+  .plan-summary,.plan-card.highlight{background:#fbf8f1}.plan-grid,.actions-list,.metric-grid,.status-grid{display:grid;gap:14px}.plan-grid{align-items:start;grid-template-columns:minmax(0,1fr) minmax(300px,.4fr)}.metric-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.status-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.badge-row,.button-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}.mini-badge.danger{background:#fef2f2;color:#991b1b}.action-controls{border-top:1px solid var(--border);display:grid;gap:10px;margin-top:8px;padding-top:12px}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:980px){.plan-hero,.plan-grid,.metric-grid,.status-grid{grid-template-columns:1fr}}
 `
 
 function statusLabel(status?: string) {
@@ -64,6 +69,8 @@ function statusLabel(status?: string) {
   if (status === 'draft') return 'Borrador'
   if (status === 'planned') return 'Planificada'
   if (status === 'ready') return 'Lista'
+  if (status === 'skipped') return 'Omitida'
+  if (status === 'failed') return 'Con observación'
   return status ?? '—'
 }
 
@@ -77,6 +84,13 @@ function modeLabel(mode?: string) {
 function formatDate(value?: string | null) {
   if (!value) return '—'
   return new Intl.DateTimeFormat('es-DO', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
+}
+
+function statusClass(status: ActionStatus) {
+  if (status === 'ready') return 'success'
+  if (status === 'failed') return 'danger'
+  if (status === 'skipped') return 'warning'
+  return ''
 }
 
 export default function EventActionPlanPage() {
@@ -130,6 +144,24 @@ export default function EventActionPlanPage() {
     setSaving(false)
   }
 
+  async function updateAction(actionId: string, status: ActionStatus) {
+    setSaving(true)
+    setError(null)
+
+    const { data, error: updateError } = await supabase.rpc('admin_update_event_action', {
+      payload: { action_id: actionId, status },
+    })
+
+    if (updateError) {
+      setError(updateError.message)
+      setSaving(false)
+      return
+    }
+
+    setPlan(data as ApplicationPlan | null)
+    setSaving(false)
+  }
+
   useEffect(() => {
     if (eventId) loadPlan()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,6 +171,7 @@ export default function EventActionPlanPage() {
   if (!plan?.event) return <main className="container"><div className="error-box">No se encontró el evento.</div></main>
 
   const summary = plan.summary
+  const allReviewed = summary.action_count > 0 && summary.planned_count === 0
 
   return (
     <main className="container dashboard-page event-action-plan-page">
@@ -149,9 +182,9 @@ export default function EventActionPlanPage() {
         <div>
           <p className="eyebrow">Fase 1 · plan de aplicación</p>
           <h1>{plan.event.title}</h1>
-          <p className="lead">Esta pantalla traduce el evento aprobado o pendiente en acciones aplicables. En esta fase solo se genera el plan: todavía no modifica relaciones ni fichas vigentes.</p>
+          <p className="lead">Esta pantalla traduce el evento en acciones aplicables. En esta fase se revisa cada acción, pero todavía no modifica relaciones ni fichas vigentes.</p>
           <div className="button-row">
-            <button className="button button-primary" disabled={!summary.can_generate_plan || saving} onClick={generatePlan} type="button">{saving ? 'Generando...' : 'Generar / regenerar plan'}</button>
+            <button className="button button-primary" disabled={!summary.can_generate_plan || saving} onClick={generatePlan} type="button">{saving ? 'Procesando...' : 'Generar / regenerar plan'}</button>
             <Link className="button button-secondary" href={`/admin/eventos/${eventId}`}>Revisar evento</Link>
           </div>
         </div>
@@ -168,11 +201,19 @@ export default function EventActionPlanPage() {
         <div className="plan-card"><strong>{summary.action_count}</strong><span className="meta">acciones generadas</span></div>
         <div className="plan-card"><strong>{summary.state_changing_count}</strong><span className="meta">cambiarían estado</span></div>
         <div className="plan-card"><strong>{summary.manual_review_count}</strong><span className="meta">requieren revisión manual</span></div>
+        <div className="plan-card"><strong>{summary.ready_count}</strong><span className="meta">listas</span></div>
+      </section>
+
+      <section className="status-grid">
+        <div className="plan-card"><strong>{summary.planned_count}</strong><span className="meta">planificadas</span></div>
+        <div className="plan-card"><strong>{summary.ready_count}</strong><span className="meta">listas</span></div>
+        <div className="plan-card"><strong>{summary.skipped_count}</strong><span className="meta">omitidas</span></div>
+        <div className="plan-card"><strong>{summary.failed_count}</strong><span className="meta">con observación</span></div>
       </section>
 
       <section className="plan-grid">
         <div className="card dashboard-section">
-          <div className="section-heading"><div><p className="eyebrow">Acciones</p><h2>Plan generado</h2><p className="meta">Cada acción es una instrucción explícita que luego podrá aplicarse con control y auditoría.</p></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Acciones</p><h2>Plan generado</h2><p className="meta">Marca cada acción como lista, planificada, omitida o con observación. Esto aún no aplica cambios.</p></div></div>
           <div className="actions-list">
             {plan.actions.length === 0 && <div className="empty-state">Este evento todavía no tiene plan. Usa Generar plan.</div>}
             {plan.actions.map((action) => (
@@ -183,7 +224,7 @@ export default function EventActionPlanPage() {
                   <p className="meta">{action.description ?? action.notes ?? 'Sin descripción.'}</p>
                 </div>
                 <div className="badge-row">
-                  <span className={`mini-badge ${action.status === 'ready' ? 'success' : ''}`}>{statusLabel(action.status)}</span>
+                  <span className={`mini-badge ${statusClass(action.status)}`}>{statusLabel(action.status)}</span>
                   {action.changes_state && <span className="mini-badge warning">Cambia estado</span>}
                   {action.requires_manual_review && <span className="mini-badge warning">Revisión manual</span>}
                   {action.subject_entity_name && <span className="mini-badge">Entidad: {action.subject_entity_name}</span>}
@@ -191,6 +232,15 @@ export default function EventActionPlanPage() {
                   {action.relationship_type_name && <span className="mini-badge">Relación: {action.relationship_type_name}</span>}
                 </div>
                 {action.notes && <p className="meta">{action.notes}</p>}
+                <div className="action-controls">
+                  <strong>Revisión de acción</strong>
+                  <div className="button-row">
+                    <button className="button button-secondary" disabled={saving || action.status === 'planned'} onClick={() => updateAction(action.id, 'planned')} type="button">Planificada</button>
+                    <button className="button button-primary" disabled={saving || action.status === 'ready'} onClick={() => updateAction(action.id, 'ready')} type="button">Lista</button>
+                    <button className="button button-secondary" disabled={saving || action.status === 'skipped'} onClick={() => updateAction(action.id, 'skipped')} type="button">Omitir</button>
+                    <button className="button button-secondary" disabled={saving || action.status === 'failed'} onClick={() => updateAction(action.id, 'failed')} type="button">Observación</button>
+                  </div>
+                </div>
               </article>
             ))}
           </div>
@@ -201,6 +251,10 @@ export default function EventActionPlanPage() {
           <div className="plan-card highlight">
             <strong>No se aplican cambios todavía</strong>
             <span className="meta">{summary.apply_lock_reason}</span>
+          </div>
+          <div className="plan-card">
+            <strong>Revisión del plan</strong>
+            <span className="meta">{allReviewed ? 'Todas las acciones fueron revisadas.' : 'Todavía hay acciones planificadas sin decisión.'}</span>
           </div>
           <div className="plan-card">
             <strong>Qué se está validando</strong>
