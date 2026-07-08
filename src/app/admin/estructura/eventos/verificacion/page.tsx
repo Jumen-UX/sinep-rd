@@ -35,7 +35,7 @@ export default function StructuralWorkflowVerificationPage() {
     async function loadHealth() {
       const { data: userData } = await supabase.auth.getUser()
       if (!userData.user) { router.push('/admin/login'); return }
-      const { data, error: healthError } = await supabase.rpc('get_phase2_structural_workflow_health')
+      const { data, error: healthError } = await supabase.rpc('get_structural_workflow_health')
       if (healthError) setError(healthError.message)
       setHealth((data ?? null) as HealthResponse | null)
       setLoading(false)
