@@ -88,6 +88,11 @@ type ViewMeta = {
   description: string
 }
 
+type SelectOption = {
+  value: string
+  label: string
+}
+
 const publicViews: ViewMeta[] = [
   { key: 'territorial', title: 'Vista territorial', shortTitle: 'Territorial', eyebrow: 'Territorio', icon: '▱', description: 'País, provincias eclesiásticas, arquidiócesis, diócesis y jurisdicciones personales.' },
   { key: 'clero', title: 'Clero y agentes', shortTitle: 'Clero y agentes', eyebrow: 'Personas', icon: '♙', description: 'Obispos, presbíteros, diáconos, vida consagrada y laicos con responsabilidad.' },
@@ -201,6 +206,73 @@ function EmptyViewNote({ title, detail }: { title: string; detail: string }) {
   return <div className="public-empty"><strong>{title}</strong><br /><span>{detail}</span></div>
 }
 
+function SearchableSelect({ label, value, options, onChange, emptyMessage = 'Sin resultados' }: { label: string; value: string; options: SelectOption[]; onChange: (value: string) => void; emptyMessage?: string }) {
+  const selectedOption = options.find((option) => option.value === value)
+  const [query, setQuery] = useState(selectedOption?.label ?? '')
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    setQuery(selectedOption?.label ?? '')
+  }, [selectedOption?.label])
+
+  const filteredOptions = useMemo(() => {
+    const normalizedQuery = normalizeText(query.trim())
+    if (!normalizedQuery) return options.slice(0, 60)
+    return options.filter((option) => normalizeText(option.label).includes(normalizedQuery)).slice(0, 60)
+  }, [options, query])
+
+  function commitSelection(option: SelectOption) {
+    onChange(option.value)
+    setQuery(option.label)
+    setOpen(false)
+  }
+
+  return (
+    <label>
+      {label}
+      <span className="public-combobox">
+        <input
+          aria-autocomplete="list"
+          aria-expanded={open}
+          className="public-combobox-input"
+          onBlur={() => window.setTimeout(() => { setOpen(false); setQuery(selectedOption?.label ?? '') }, 120)}
+          onChange={(event) => { setQuery(event.target.value); setOpen(true) }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && filteredOptions[0]) {
+              event.preventDefault()
+              commitSelection(filteredOptions[0])
+            }
+            if (event.key === 'Escape') {
+              setOpen(false)
+              setQuery(selectedOption?.label ?? '')
+            }
+          }}
+          role="combobox"
+          value={query}
+        />
+        <button aria-label={`Abrir opciones de ${label}`} className="public-combobox-toggle" onMouseDown={(event) => { event.preventDefault(); setOpen((current) => !current) }} type="button">⌄</button>
+        {open && (
+          <div className="public-combobox-list" role="listbox">
+            {filteredOptions.length === 0 && <div className="public-combobox-empty">{emptyMessage}</div>}
+            {filteredOptions.map((option) => (
+              <button
+                className={`public-combobox-option ${option.value === value ? 'active' : ''}`}
+                key={`${label}-${option.value || 'all'}`}
+                onMouseDown={(event) => { event.preventDefault(); commitSelection(option) }}
+                role="option"
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </span>
+    </label>
+  )
+}
+
 export default function HomePage() {
   const [activeView, setActiveView] = useState<PublicView>('territorial')
   const [data, setData] = useState<PublicDashboardData | null>(null)
@@ -280,6 +352,11 @@ export default function HomePage() {
   const administrativeUnits = organizationUnits.filter((item) => !/(consejo|comision|comisión|comite|comité|colegio|equipo)/i.test(item.name))
   const collegialUnits = organizationUnits.filter((item) => /(consejo|comision|comisión|comite|comité|colegio|equipo)/i.test(item.name))
 
+  const countryOptions = countries.map((country) => ({ value: country.key, label: country.name }))
+  const provinceOptions = [{ value: '', label: 'Todas las provincias' }, ...provinces.map((province) => ({ value: province.name, label: province.name }))]
+  const jurisdictionOptions = [{ value: '', label: 'Todas las jurisdicciones' }, ...diocesesByProvince.map((item) => ({ value: item.id, label: item.name }))]
+  const viewOptions = publicViews.map((view) => ({ value: view.key, label: view.title }))
+
   function resetTerritory(nextView?: PublicView) {
     if (nextView) setActiveView(nextView)
     setProvinceFilter('')
@@ -350,10 +427,10 @@ export default function HomePage() {
           </div>
 
           <div className="public-filter-grid">
-            <label>País<select value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}>{countries.map((country) => <option key={country.key} value={country.key}>{country.name}</option>)}</select></label>
-            <label>Provincia eclesiástica<select value={provinceFilter} onChange={(event) => { setProvinceFilter(event.target.value); setJurisdictionFilter('') }}><option value="">Todas las provincias</option>{provinces.map((province) => <option key={province.name} value={province.name}>{province.name}</option>)}</select></label>
-            <label>Jurisdicción<select value={jurisdictionFilter} onChange={(event) => setJurisdictionFilter(event.target.value)}><option value="">Todas las jurisdicciones</option>{diocesesByProvince.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-            <label>Vista activa<select value={activeView} onChange={(event) => setActiveView(event.target.value as PublicView)}>{publicViews.map((view) => <option key={view.key} value={view.key}>{view.title}</option>)}</select></label>
+            <SearchableSelect label="País" value={countryFilter} options={countryOptions} onChange={setCountryFilter} />
+            <SearchableSelect label="Provincia eclesiástica" value={provinceFilter} options={provinceOptions} onChange={(nextProvince) => { setProvinceFilter(nextProvince); setJurisdictionFilter('') }} />
+            <SearchableSelect label="Jurisdicción" value={jurisdictionFilter} options={jurisdictionOptions} onChange={setJurisdictionFilter} />
+            <SearchableSelect label="Vista activa" value={activeView} options={viewOptions} onChange={(nextView) => setActiveView(nextView as PublicView)} />
           </div>
         </section>
 
