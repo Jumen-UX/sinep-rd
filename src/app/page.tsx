@@ -18,6 +18,13 @@ type Diocese = {
   parishes_count: number | null
 }
 
+type Parish = {
+  id: string
+  diocese_id: string | null
+  diocese_name: string | null
+  diocese_slug: string | null
+}
+
 type Person = {
   id: string
   display_name: string
@@ -49,6 +56,7 @@ type OrganizationUnit = { id: string; organization_chart_id: string | null; pare
 type PublicDashboardData = {
   countries: { key: string; name: string }[]
   dioceses: Diocese[]
+  parishes: Parish[]
   people: Person[]
   pastoral_entities: PastoralEntity[]
   organization_charts: OrganizationChart[]
@@ -123,15 +131,6 @@ const bottomNav = [
 ]
 
 const publicViewKeys = new Set<PublicView>(publicViews.map((view) => view.key))
-
-const personTypes = [
-  { key: '', label: 'Todas las personas' },
-  { key: 'bishop', label: 'Obispos' },
-  { key: 'priest', label: 'Presbíteros' },
-  { key: 'deacon', label: 'Diáconos' },
-  { key: 'religious', label: 'Religiosos/as' },
-  { key: 'layperson', label: 'Laicos/as' },
-]
 
 function isPublicView(value: string | null): value is PublicView {
   return !!value && publicViewKeys.has(value as PublicView)
@@ -308,15 +307,18 @@ export default function HomePage() {
 
   const countries = data?.countries ?? [{ key: 'DO', name: 'República Dominicana' }]
   const dioceses = data?.dioceses ?? []
+  const parishes = data?.parishes ?? []
   const people = data?.people ?? []
   const pastoralEntities = data?.pastoral_entities ?? []
   const organizationCharts = data?.organization_charts ?? []
   const organizationUnits = data?.organization_units ?? []
+  const countryDioceses = countryFilter === 'DO' ? dioceses : []
 
   const provinces = useMemo(() => {
-    const grouped = groupBy(dioceses.filter((item) => item.ecclesiastical_province_name), (item) => item.ecclesiastical_province_name ?? '')
+    const source = countryFilter === 'DO' ? dioceses : []
+    const grouped = groupBy(source.filter((item) => item.ecclesiastical_province_name), (item) => item.ecclesiastical_province_name ?? '')
     return Array.from(grouped, ([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name, 'es'))
-  }, [dioceses])
+  }, [countryFilter, dioceses])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -327,24 +329,48 @@ export default function HomePage() {
   }, [provinces])
 
   const diocesesByProvince = useMemo(() => {
-    return provinceFilter ? dioceses.filter((item) => item.ecclesiastical_province_name === provinceFilter) : dioceses
-  }, [dioceses, provinceFilter])
+    return provinceFilter ? countryDioceses.filter((item) => item.ecclesiastical_province_name === provinceFilter) : countryDioceses
+  }, [countryDioceses, provinceFilter])
 
-  const selectedJurisdiction = dioceses.find((item) => item.id === jurisdictionFilter) ?? null
-  const scopedDioceses = jurisdictionFilter ? dioceses.filter((item) => item.id === jurisdictionFilter) : diocesesByProvince
+  const selectedJurisdiction = countryDioceses.find((item) => item.id === jurisdictionFilter) ?? null
+  const scopedDioceses = jurisdictionFilter ? countryDioceses.filter((item) => item.id === jurisdictionFilter) : diocesesByProvince
   const visibleJurisdictions = scopedDioceses.slice(0, 5)
+  const scopedDioceseIds = new Set(scopedDioceses.map((item) => item.id))
+  const scopedDioceseSlugs = new Set(scopedDioceses.map((item) => item.slug))
+  const scopeIsFiltered = !!provinceFilter || !!jurisdictionFilter || countryFilter !== 'DO'
+
+  const displayedProvinces = provinces
+    .filter((province) => {
+      if (provinceFilter) return province.name === provinceFilter
+      if (selectedJurisdiction?.ecclesiastical_province_name) return province.name === selectedJurisdiction.ecclesiastical_province_name
+      return true
+    })
+    .map((province) => ({
+      name: province.name,
+      count: scopeIsFiltered ? scopedDioceses.filter((item) => item.ecclesiastical_province_name === province.name).length : province.count,
+    }))
+
+  const scopedParishes = parishes.filter((parish) => {
+    if (countryFilter !== 'DO') return false
+    if (!scopeIsFiltered) return true
+    return (!!parish.diocese_id && scopedDioceseIds.has(parish.diocese_id)) || (!!parish.diocese_slug && scopedDioceseSlugs.has(parish.diocese_slug))
+  })
 
   const filteredPeople = people.filter((item) => !personTypeFilter || item.person_type === personTypeFilter)
   const visiblePeople = filteredPeople.slice(0, 12)
 
-  const pastoralLevels = useMemo(() => {
-    const scoped = jurisdictionFilter ? pastoralEntities.filter((item) => item.diocese_id === jurisdictionFilter || item.diocese_slug === selectedJurisdiction?.slug) : pastoralEntities
-    const grouped = groupBy(scoped, (item) => item.level_name ?? 'Sin nivel')
-    return Array.from(grouped, ([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name, 'es'))
-  }, [jurisdictionFilter, pastoralEntities, selectedJurisdiction?.slug])
+  const scopedPastoralEntities = pastoralEntities.filter((item) => {
+    if (countryFilter !== 'DO') return false
+    if (!scopeIsFiltered) return true
+    return (!!item.diocese_id && scopedDioceseIds.has(item.diocese_id)) || (!!item.diocese_slug && scopedDioceseSlugs.has(item.diocese_slug))
+  })
 
-  const filteredPastoral = pastoralEntities.filter((item) => {
-    if (jurisdictionFilter && item.diocese_id !== jurisdictionFilter && item.diocese_slug !== selectedJurisdiction?.slug) return false
+  const pastoralLevels = useMemo(() => {
+    const grouped = groupBy(scopedPastoralEntities, (item) => item.level_name ?? 'Sin nivel')
+    return Array.from(grouped, ([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name, 'es'))
+  }, [scopedPastoralEntities])
+
+  const filteredPastoral = scopedPastoralEntities.filter((item) => {
     if (pastoralLevelFilter && item.level_name !== pastoralLevelFilter) return false
     return true
   })
@@ -372,8 +398,7 @@ export default function HomePage() {
   }
 
   const peopleSummary = summary?.people
-  const diocesesSummary = summary?.dioceses
-  const registeredParishes = diocesesSummary?.loaded_parishes ?? diocesesSummary?.reported_parishes ?? 0
+  const registeredParishes = countryFilter === 'DO' ? scopedParishes.length : 0
   const activeViewMeta = publicViews.find((view) => view.key === activeView) ?? publicViews[0]
 
   return (
@@ -427,7 +452,7 @@ export default function HomePage() {
           </div>
 
           <div className="public-filter-grid">
-            <SearchableSelect label="País" value={countryFilter} options={countryOptions} onChange={setCountryFilter} />
+            <SearchableSelect label="País" value={countryFilter} options={countryOptions} onChange={(nextCountry) => { setCountryFilter(nextCountry); setProvinceFilter(''); setJurisdictionFilter('') }} />
             <SearchableSelect label="Provincia eclesiástica" value={provinceFilter} options={provinceOptions} onChange={(nextProvince) => { setProvinceFilter(nextProvince); setJurisdictionFilter('') }} />
             <SearchableSelect label="Jurisdicción" value={jurisdictionFilter} options={jurisdictionOptions} onChange={setJurisdictionFilter} />
             <SearchableSelect label="Vista activa" value={activeView} options={viewOptions} onChange={(nextView) => setActiveView(nextView as PublicView)} />
@@ -448,9 +473,9 @@ export default function HomePage() {
             <section className="public-panel public-scope-card">
               <span className="public-country-mark">▰</span>
               <div>
-                <h2>República Dominicana</h2>
+                <h2>{selectedJurisdiction?.name ?? provinceFilter || countries.find((country) => country.key === countryFilter)?.name ?? 'Ámbito seleccionado'}</h2>
                 <div className="public-scope-summary">
-                  <span>{loading ? '—' : provinces.length} provincias eclesiásticas</span>
+                  <span>{loading ? '—' : displayedProvinces.length} provincias eclesiásticas</span>
                   <span>{loading ? '—' : scopedDioceses.filter(isArchdiocese).length} arquidiócesis</span>
                   <span>{loading ? '—' : scopedDioceses.filter(isDiocese).length} diócesis</span>
                   <span>{loading ? '—' : scopedDioceses.filter(isMilitary).length} ordinariato</span>
@@ -460,8 +485,8 @@ export default function HomePage() {
             </section>
 
             <section className="public-metrics-grid" aria-label="Resumen territorial">
-              <MetricCard icon="◎" label="País" value={countryFilter === 'DO' ? 1 : 0} detail="República Dominicana" onClick={() => resetTerritory('territorial')} />
-              <MetricCard icon="▥" label="Provincias eclesiásticas" value={loading ? '—' : provinces.length} detail="Selecciona una para filtrar" onClick={() => resetTerritory('territorial')} active={!!provinceFilter} />
+              <MetricCard icon="◎" label="País" value={countryFilter === 'DO' ? 1 : 0} detail={countries.find((country) => country.key === countryFilter)?.name ?? 'Sin país'} onClick={() => resetTerritory('territorial')} />
+              <MetricCard icon="▥" label="Provincias eclesiásticas" value={loading ? '—' : displayedProvinces.length} detail={provinceFilter ? 'Provincia seleccionada' : 'Selecciona una para filtrar'} onClick={() => resetTerritory('territorial')} active={!!provinceFilter} />
               <MetricCard icon="⌂" label="Arquidiócesis" value={loading ? '—' : scopedDioceses.filter(isArchdiocese).length} detail="Sedes metropolitanas o arquidiocesanas" />
               <MetricCard icon="✛" label="Diócesis" value={loading ? '—' : scopedDioceses.filter(isDiocese).length} detail="Jurisdicciones diocesanas" />
               <MetricCard icon="盾" label="Ordinariatos" value={loading ? '—' : scopedDioceses.filter(isMilitary).length} detail="Jurisdicciones personales o militares" />
@@ -472,12 +497,12 @@ export default function HomePage() {
               <article className="public-panel public-section-card">
                 <div className="public-section-title">
                   <p className="eyebrow">Provincias eclesiásticas</p>
-                  <h2>Selecciona una provincia</h2>
+                  <h2>{provinceFilter || selectedJurisdiction ? 'Provincia en el ámbito' : 'Selecciona una provincia'}</h2>
                 </div>
 
                 <div className="public-province-list">
-                  {provinces.length === 0 && <EmptyViewNote title="Sin provincias" detail="Todavía no hay provincias eclesiásticas publicadas." />}
-                  {provinces.map((province) => (
+                  {displayedProvinces.length === 0 && <EmptyViewNote title="Sin provincias" detail="No hay provincias eclesiásticas para el ámbito seleccionado." />}
+                  {displayedProvinces.map((province) => (
                     <article className={`public-province-card ${provinceFilter === province.name ? 'active' : ''}`} key={province.name}>
                       <span className="public-node-icon">⌂</span>
                       <button onClick={() => selectProvince(province.name)} type="button">
@@ -542,7 +567,7 @@ export default function HomePage() {
               {pastoralLevels.length === 0 && <MetricCard icon="⌂" label="Estructura pastoral" value={formatNumber(registeredParishes)} detail="Parroquias registradas en BD" />}
               {pastoralLevels.slice(0, 6).map((level) => <MetricCard key={level.name} icon="✝" label={level.name} value={level.count} detail="Nivel publicado" onClick={() => setPastoralLevelFilter(level.name)} active={pastoralLevelFilter === level.name} />)}
             </section>
-            {filteredPastoral.length === 0 ? <EmptyViewNote title="Vista pastoral en preparación" detail="La estructura flexible ya existe; falta publicar nodos pastorales suficientes para esta vista." /> : <div className="public-directory-grid">{filteredPastoral.slice(0, 16).map((item) => <Link className="public-directory-item" href={item.linked_entity_slug ? `/entidades/${item.linked_entity_slug}` : `/pastoral/${item.slug}`} key={item.id}><strong>{item.name}</strong><span>{item.level_name ?? 'Nivel pastoral'} · {item.diocese_name ?? 'Sin jurisdicción'}</span></Link>)}</div>}
+            {filteredPastoral.length === 0 ? <EmptyViewNote title="Vista pastoral en preparación" detail="La estructura flexible ya existe; falta publicar nodos pastorales suficientes para esta vista o ámbito." /> : <div className="public-directory-grid">{filteredPastoral.slice(0, 16).map((item) => <Link className="public-directory-item" href={item.linked_entity_slug ? `/entidades/${item.linked_entity_slug}` : `/pastoral/${item.slug}`} key={item.id}><strong>{item.name}</strong><span>{item.level_name ?? 'Nivel pastoral'} · {item.diocese_name ?? 'Sin jurisdicción'}</span></Link>)}</div>}
           </section>
         )}
 
