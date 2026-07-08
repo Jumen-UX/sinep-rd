@@ -215,8 +215,13 @@ function SearchableSelect({ label, value, options, onChange, emptyMessage = 'Sin
           className="public-combobox-input"
           onBlur={() => window.setTimeout(() => { setOpen(false); setQuery(selectedOption?.label ?? '') }, 120)}
           onChange={(event) => { setQuery(event.target.value); setOpen(true) }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => { setQuery(''); setOpen(true) }}
           onKeyDown={(event) => {
+            if (event.key === 'ArrowDown') {
+              event.preventDefault()
+              setQuery('')
+              setOpen(true)
+            }
             if (event.key === 'Enter' && filteredOptions[0]) {
               event.preventDefault()
               commitSelection(filteredOptions[0])
@@ -226,10 +231,21 @@ function SearchableSelect({ label, value, options, onChange, emptyMessage = 'Sin
               setQuery(selectedOption?.label ?? '')
             }
           }}
+          placeholder={selectedOption?.label ?? `Buscar ${label.toLowerCase()}`}
           role="combobox"
           value={query}
         />
-        <button aria-expanded={open} aria-label={`Abrir opciones de ${label}`} className="public-combobox-toggle" onMouseDown={(event) => { event.preventDefault(); setOpen((current) => !current) }} type="button">⌄</button>
+        <button
+          aria-expanded={open}
+          aria-label={`Abrir opciones de ${label}`}
+          className="public-combobox-toggle"
+          onMouseDown={(event) => {
+            event.preventDefault()
+            if (!open) setQuery('')
+            setOpen((current) => !current)
+          }}
+          type="button"
+        >⌄</button>
         {open && (
           <div className="public-combobox-list" id={listboxId} role="listbox">
             {filteredOptions.length === 0 && <div className="public-combobox-empty">{emptyMessage}</div>}
