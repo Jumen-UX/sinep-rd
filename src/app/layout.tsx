@@ -6,6 +6,7 @@ import './hierarchy.css'
 import './dashboard.css'
 import './home.css'
 import './public-dashboard.css'
+import './public-combobox.css'
 import './brand.css'
 import './admin-brand.css'
 
