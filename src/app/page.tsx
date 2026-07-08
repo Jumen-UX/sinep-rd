@@ -18,21 +18,8 @@ type Diocese = {
   parishes_count: number | null
 }
 
-type Parish = {
-  id: string
-  diocese_id: string | null
-  diocese_name: string | null
-  diocese_slug: string | null
-}
-
-type Person = {
-  id: string
-  display_name: string
-  slug: string
-  person_type: string | null
-  status: string | null
-  death_date: string | null
-}
+type Parish = { id: string; diocese_id: string | null; diocese_name: string | null; diocese_slug: string | null }
+type Person = { id: string; display_name: string; slug: string; person_type: string | null; status: string | null; death_date: string | null }
 
 type PastoralEntity = {
   id: string
@@ -87,19 +74,8 @@ type DashboardSummary = {
   }
 }
 
-type ViewMeta = {
-  key: PublicView
-  title: string
-  shortTitle: string
-  eyebrow: string
-  icon: string
-  description: string
-}
-
-type SelectOption = {
-  value: string
-  label: string
-}
+type ViewMeta = { key: PublicView; title: string; shortTitle: string; eyebrow: string; icon: string; description: string }
+type SelectOption = { value: string; label: string }
 
 const publicViews: ViewMeta[] = [
   { key: 'territorial', title: 'Vista territorial', shortTitle: 'Territorial', eyebrow: 'Territorio', icon: '▱', description: 'País, provincias eclesiásticas, arquidiócesis, diócesis y jurisdicciones personales.' },
@@ -157,7 +133,7 @@ function personTypeLabel(value: string | null) {
     religious: 'Religioso/a',
     layperson: 'Laico/a',
   }
-  return value ? labels[value] ?? value : 'Persona'
+  return value ? (labels[value] ?? value) : 'Persona'
 }
 
 function statusLabel(item: Person) {
@@ -197,7 +173,6 @@ function MetricCard({ icon, label, value, detail, onClick, active }: { icon: str
   )
 
   if (!onClick) return <article className="public-metric-card">{content}</article>
-
   return <button className={`public-metric-card ${active ? 'active' : ''}`} onClick={onClick} type="button">{content}</button>
 }
 
@@ -338,6 +313,9 @@ export default function HomePage() {
   const scopedDioceseIds = new Set(scopedDioceses.map((item) => item.id))
   const scopedDioceseSlugs = new Set(scopedDioceses.map((item) => item.slug))
   const scopeIsFiltered = !!provinceFilter || !!jurisdictionFilter || countryFilter !== 'DO'
+  const selectedCountryName = countries.find((country) => country.key === countryFilter)?.name
+  const scopeFallbackTitle = provinceFilter || selectedCountryName || 'Ámbito seleccionado'
+  const scopeTitle = selectedJurisdiction?.name ?? scopeFallbackTitle
 
   const displayedProvinces = provinces
     .filter((province) => {
@@ -370,11 +348,7 @@ export default function HomePage() {
     return Array.from(grouped, ([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name, 'es'))
   }, [scopedPastoralEntities])
 
-  const filteredPastoral = scopedPastoralEntities.filter((item) => {
-    if (pastoralLevelFilter && item.level_name !== pastoralLevelFilter) return false
-    return true
-  })
-
+  const filteredPastoral = scopedPastoralEntities.filter((item) => !pastoralLevelFilter || item.level_name === pastoralLevelFilter)
   const administrativeUnits = organizationUnits.filter((item) => !/(consejo|comision|comisión|comite|comité|colegio|equipo)/i.test(item.name))
   const collegialUnits = organizationUnits.filter((item) => /(consejo|comision|comisión|comite|comité|colegio|equipo)/i.test(item.name))
 
@@ -473,7 +447,7 @@ export default function HomePage() {
             <section className="public-panel public-scope-card">
               <span className="public-country-mark">▰</span>
               <div>
-                <h2>{selectedJurisdiction?.name ?? provinceFilter || countries.find((country) => country.key === countryFilter)?.name ?? 'Ámbito seleccionado'}</h2>
+                <h2>{scopeTitle}</h2>
                 <div className="public-scope-summary">
                   <span>{loading ? '—' : displayedProvinces.length} provincias eclesiásticas</span>
                   <span>{loading ? '—' : scopedDioceses.filter(isArchdiocese).length} arquidiócesis</span>
@@ -485,7 +459,7 @@ export default function HomePage() {
             </section>
 
             <section className="public-metrics-grid" aria-label="Resumen territorial">
-              <MetricCard icon="◎" label="País" value={countryFilter === 'DO' ? 1 : 0} detail={countries.find((country) => country.key === countryFilter)?.name ?? 'Sin país'} onClick={() => resetTerritory('territorial')} />
+              <MetricCard icon="◎" label="País" value={countryFilter === 'DO' ? 1 : 0} detail={selectedCountryName ?? 'Sin país'} onClick={() => resetTerritory('territorial')} />
               <MetricCard icon="▥" label="Provincias eclesiásticas" value={loading ? '—' : displayedProvinces.length} detail={provinceFilter ? 'Provincia seleccionada' : 'Selecciona una para filtrar'} onClick={() => resetTerritory('territorial')} active={!!provinceFilter} />
               <MetricCard icon="⌂" label="Arquidiócesis" value={loading ? '—' : scopedDioceses.filter(isArchdiocese).length} detail="Sedes metropolitanas o arquidiocesanas" />
               <MetricCard icon="✛" label="Diócesis" value={loading ? '—' : scopedDioceses.filter(isDiocese).length} detail="Jurisdicciones diocesanas" />
@@ -546,12 +520,12 @@ export default function HomePage() {
               <p>{activeViewMeta.description}</p>
             </div>
             <section className="public-metrics-grid" aria-label="Resumen de personas">
-              <MetricCard icon="♙" label="Obispos" value={loading ? '—' : peopleSummary?.bishops ?? people.filter((item) => item.person_type === 'bishop').length} detail="Ordinarios, auxiliares y eméritos" onClick={() => setPersonTypeFilter('bishop')} active={personTypeFilter === 'bishop'} />
-              <MetricCard icon="✛" label="Presbíteros" value={loading ? '—' : peopleSummary?.priests ?? people.filter((item) => item.person_type === 'priest').length} detail="Clero presbiteral" onClick={() => setPersonTypeFilter('priest')} active={personTypeFilter === 'priest'} />
-              <MetricCard icon="◇" label="Diáconos" value={loading ? '—' : peopleSummary?.deacons ?? people.filter((item) => item.person_type === 'deacon').length} detail="Ministerio diaconal" onClick={() => setPersonTypeFilter('deacon')} active={personTypeFilter === 'deacon'} />
-              <MetricCard icon="☧" label="Vida consagrada" value={loading ? '—' : peopleSummary?.religious ?? people.filter((item) => item.person_type === 'religious').length} detail="Religiosos y religiosas" onClick={() => setPersonTypeFilter('religious')} active={personTypeFilter === 'religious'} />
-              <MetricCard icon="♧" label="Laicos/as" value={loading ? '—' : peopleSummary?.laypeople ?? people.filter((item) => item.person_type === 'layperson').length} detail="Agentes con responsabilidad" onClick={() => setPersonTypeFilter('layperson')} active={personTypeFilter === 'layperson'} />
-              <MetricCard icon="◎" label="Activos" value={loading ? '—' : peopleSummary?.active ?? people.filter((item) => item.status === 'active' && !item.death_date).length} detail="Registros públicos vigentes" />
+              <MetricCard icon="♙" label="Obispos" value={loading ? '—' : (peopleSummary?.bishops ?? people.filter((item) => item.person_type === 'bishop').length)} detail="Ordinarios, auxiliares y eméritos" onClick={() => setPersonTypeFilter('bishop')} active={personTypeFilter === 'bishop'} />
+              <MetricCard icon="✛" label="Presbíteros" value={loading ? '—' : (peopleSummary?.priests ?? people.filter((item) => item.person_type === 'priest').length)} detail="Clero presbiteral" onClick={() => setPersonTypeFilter('priest')} active={personTypeFilter === 'priest'} />
+              <MetricCard icon="◇" label="Diáconos" value={loading ? '—' : (peopleSummary?.deacons ?? people.filter((item) => item.person_type === 'deacon').length)} detail="Ministerio diaconal" onClick={() => setPersonTypeFilter('deacon')} active={personTypeFilter === 'deacon'} />
+              <MetricCard icon="☧" label="Vida consagrada" value={loading ? '—' : (peopleSummary?.religious ?? people.filter((item) => item.person_type === 'religious').length)} detail="Religiosos y religiosas" onClick={() => setPersonTypeFilter('religious')} active={personTypeFilter === 'religious'} />
+              <MetricCard icon="♧" label="Laicos/as" value={loading ? '—' : (peopleSummary?.laypeople ?? people.filter((item) => item.person_type === 'layperson').length)} detail="Agentes con responsabilidad" onClick={() => setPersonTypeFilter('layperson')} active={personTypeFilter === 'layperson'} />
+              <MetricCard icon="◎" label="Activos" value={loading ? '—' : (peopleSummary?.active ?? people.filter((item) => item.status === 'active' && !item.death_date).length)} detail="Registros públicos vigentes" />
             </section>
             <div className="public-directory-grid">
               {visiblePeople.length === 0 && <EmptyViewNote title="Sin personas" detail="No hay personas públicas para mostrar con el filtro actual." />}
