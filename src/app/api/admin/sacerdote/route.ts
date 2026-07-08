@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
 
 type SavePriestResult = {
   person_id?: string
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Failed to save priest transactionally', error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json({ error: toSpanishAdminError(error, 'No se pudo guardar el sacerdote.') }, { status: 400 })
     }
 
     const result = data as SavePriestResult
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       const { error: profileError } = await query
       if (profileError) {
         console.error('Failed to update priest type fields', profileError)
-        return NextResponse.json({ error: profileError.message }, { status: 400 })
+        return NextResponse.json({ error: toSpanishAdminError(profileError, 'El sacerdote fue creado, pero no se pudieron actualizar los datos religiosos.') }, { status: 400 })
       }
     }
 
