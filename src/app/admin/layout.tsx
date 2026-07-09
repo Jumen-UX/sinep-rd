@@ -1,6 +1,27 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 
+type AdminNavItem = {
+  href: string
+  icon: string
+  label: string
+  sublabel?: string
+}
+
+const adminNavItems: AdminNavItem[] = [
+  { href: '/admin', icon: '⌂', label: 'Inicio', sublabel: 'Panel general' },
+  { href: '/admin/nuevo', icon: '＋', label: 'Agregar nueva ficha', sublabel: 'Asistentes de registro' },
+  { href: '/admin/jurisdicciones', icon: '▥', label: 'Jurisdicciones', sublabel: 'Diócesis y provincias' },
+  { href: '/admin/estructura', icon: '▦', label: 'Estructura interna', sublabel: 'Niveles, nodos y catálogos' },
+  { href: '/admin/personas', icon: '◉', label: 'Personas', sublabel: 'Clero, religiosos, laicos' },
+  { href: '/admin/asignaciones', icon: '▣', label: 'Nombramientos', sublabel: 'Cargos y asignaciones' },
+  { href: '/admin/paises', icon: '◎', label: 'Países ISO', sublabel: 'Banderas y visibilidad' },
+  { href: '/admin/eventos', icon: '◷', label: 'Eventos históricos', sublabel: 'Fuentes y trazabilidad' },
+  { href: '/admin/revision', icon: '!', label: 'Pendientes', sublabel: 'Validación y revisión' },
+  { href: '/admin/usuarios', icon: '♙', label: 'Usuarios y permisos', sublabel: 'Roles y accesos' },
+  { href: '/admin/configuracion', icon: '⚙', label: 'Configuración', sublabel: 'Catálogos y reglas' },
+]
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <>
@@ -8,33 +29,42 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .site-shell > .site-header,
         .site-shell > .site-footer{display:none}
         .admin-area{min-height:100vh;background:#fbfaf7}
-        .admin-area-header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
-        .admin-area-nav{align-items:center;display:flex;gap:18px;justify-content:space-between;margin:0 auto;max-width:1180px;padding:14px 24px}
-        .admin-area-brand{color:var(--primary);display:grid;font-weight:900;text-decoration:none}
-        .admin-area-brand span:last-child{color:var(--muted);font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
-        .admin-area-links{align-items:center;display:flex;flex-wrap:wrap;gap:10px}
-        .admin-area-links a{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);font-size:13px;font-weight:900;padding:8px 11px;text-decoration:none}
-        @media(max-width:820px){.admin-area-nav{align-items:flex-start;display:grid}.admin-area-links{gap:7px}}
       `}</style>
       <div className="admin-area">
-        <header className="admin-area-header">
-          <nav className="admin-area-nav" aria-label="Navegación administrativa">
-            <Link className="admin-area-brand" href="/admin">
-              <span>SINEP RD</span>
-              <span>Portal administrativo</span>
+        <div className="admin-redesign">
+          <aside className="admin-sidebar" aria-label="Navegación administrativa">
+            <Link className="admin-brand-block" href="/admin">
+              <span className="admin-brand-shield">SD</span>
+              <span>
+                <strong>SINEP RD</strong>
+                <small>Sistema de Información Eclesial</small>
+              </span>
             </Link>
-            <div className="admin-area-links">
-              <Link href="/admin">Inicio</Link>
-              <Link href="/admin/eventos">Registro histórico</Link>
-              <Link href="/admin/jurisdicciones">Gobierno eclesial</Link>
-              <Link href="/admin/estructura">Estructura</Link>
-              <Link href="/admin/revision">Pendientes</Link>
-              <Link href="/admin/usuarios">Usuarios</Link>
-              <Link href="/">Portal público</Link>
+
+            <nav className="admin-sidebar-nav">
+              {adminNavItems.map((item) => (
+                <Link href={item.href} key={`${item.href}-${item.label}`}>
+                  <span aria-hidden="true">{item.icon}</span>
+                  <span>
+                    <strong>{item.label}</strong>
+                    {item.sublabel && <small>{item.sublabel}</small>}
+                  </span>
+                </Link>
+              ))}
+            </nav>
+
+            <div className="admin-sidebar-help">
+              <span>☏</span>
+              <strong>Soporte administrativo</strong>
+              <small>Consulta configuración, catálogos o validaciones del sistema.</small>
+              <Link href="/admin/configuracion">Centro de ayuda</Link>
             </div>
-          </nav>
-        </header>
-        {children}
+          </aside>
+
+          <div className="admin-workspace">
+            {children}
+          </div>
+        </div>
       </div>
     </>
   )
