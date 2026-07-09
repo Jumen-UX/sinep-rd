@@ -121,6 +121,12 @@ const moduleGroups: ModuleGroup[] = [
   },
 ]
 
+function openModule(href: string) {
+  if (typeof window !== 'undefined') {
+    window.location.assign(href)
+  }
+}
+
 function ModuleCardView({ module }: { module: ModuleCard }) {
   const isPlanned = module.status === 'planned'
   return (
@@ -128,7 +134,11 @@ function ModuleCardView({ module }: { module: ModuleCard }) {
       <p className="entity-type">{module.type}{isPlanned ? ' · Próximo' : ''}</p>
       <h2>{module.title}</h2>
       <p className="meta">{module.description}</p>
-      {isPlanned ? <span className="button button-secondary">Pendiente</span> : <Link className="button button-primary" href={module.href}>Abrir</Link>}
+      {isPlanned ? (
+        <span className="button button-secondary">Pendiente</span>
+      ) : (
+        <button className="button button-primary" onClick={() => openModule(module.href)} type="button">Abrir</button>
+      )}
     </article>
   )
 }
