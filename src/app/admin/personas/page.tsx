@@ -89,6 +89,7 @@ function formatDate(value: string | null) {
 }
 
 const quickAccesses: QuickAccess[] = [
+  { href: '/admin/importar', icon: '⇪', title: 'Cargar por lotes', description: 'Importar personas desde CSV o Excel con revisión previa.' },
   { href: '/admin/nuevo/sacerdote', icon: '●', title: 'Registrar sacerdote', description: 'Alta clerical, ordenación y cargo inicial.' },
   { href: '/admin/nuevo/obispo', icon: '◍', title: 'Registrar obispo', description: 'Perfil episcopal y jurisdicción vinculada.' },
   { href: '/admin/nuevo/diacono', icon: '◌', title: 'Registrar diácono', description: 'Diaconado, incardinación y servicio actual.' },
@@ -200,6 +201,7 @@ export default function AdminPersonasPage() {
         </div>
         <div className="admin-top-actions">
           <a className="button button-secondary" href="/admin" onClick={(event) => forceNavigation(event, '/admin')}>Volver al panel</a>
+          <a className="button button-secondary" href="/admin/importar" onClick={(event) => forceNavigation(event, '/admin/importar')}>Carga por lotes</a>
           <a className="button button-secondary" href="/admin/asignaciones" onClick={(event) => forceNavigation(event, '/admin/asignaciones')}>Nombramientos</a>
           <a className="button button-primary" href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>Agregar ficha</a>
         </div>
@@ -224,8 +226,8 @@ export default function AdminPersonasPage() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Accesos rápidos</p>
-            <h2>Registrar o mantener información personal</h2>
-            <p className="meta">Usa asistentes específicos para reducir escritura libre y mantener datos consistentes.</p>
+            <h2>Registrar, importar o mantener información personal</h2>
+            <p className="meta">Usa asistentes específicos para registros individuales o carga masiva para lotes revisables.</p>
           </div>
           <button className="button button-secondary" disabled={refreshing} onClick={() => loadPeople(search)} type="button">{refreshing ? 'Actualizando...' : 'Actualizar listado'}</button>
         </div>
