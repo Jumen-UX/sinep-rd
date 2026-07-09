@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 
 type AdminNavItem = {
@@ -54,6 +54,12 @@ function isActiveNavItem(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+function forceNavigation(event: MouseEvent<HTMLAnchorElement>, href: string) {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  event.preventDefault()
+  window.location.assign(href)
+}
+
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
@@ -65,7 +71,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     <div className="admin-area">
       <div className="admin-redesign">
         <aside className="admin-sidebar" aria-label="Navegación administrativa">
-          <a className="admin-brand-block" href="/admin">
+          <a className="admin-brand-block" href="/admin" onClick={(event) => forceNavigation(event, '/admin')}>
             <span className="admin-brand-shield">SD</span>
             <span>
               <strong>SINEP RD</strong>
@@ -79,7 +85,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 <p>{section.title}</p>
                 <div>
                   {section.items.map((item) => (
-                    <a aria-current={isActiveNavItem(pathname, item.href) ? 'page' : undefined} href={item.href} key={`${item.href}-${item.label}`}>
+                    <a aria-current={isActiveNavItem(pathname, item.href) ? 'page' : undefined} href={item.href} key={`${item.href}-${item.label}`} onClick={(event) => forceNavigation(event, item.href)}>
                       <span aria-hidden="true">{item.icon}</span>
                       <span>
                         <strong>{item.label}</strong>
@@ -96,7 +102,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             <span>?</span>
             <strong>Ayuda</strong>
             <small>Configuración, catálogos y validaciones.</small>
-            <a href="/admin/configuracion">Centro de ayuda</a>
+            <a href="/admin/configuracion" onClick={(event) => forceNavigation(event, '/admin/configuracion')}>Centro de ayuda</a>
           </div>
         </aside>
 
