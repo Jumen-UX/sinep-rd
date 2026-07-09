@@ -8,6 +8,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .site-shell > .site-header,
         .site-shell > .site-footer{display:none}
         .admin-area{min-height:100vh;background:#fbfaf7}
+        .admin-redesign{align-items:start}
         .admin-sidebar{gap:18px;grid-template-rows:auto minmax(0,1fr) auto;padding:22px 16px}
         .admin-brand-block{padding:0 4px 12px}
         .admin-brand-shield{border-radius:14px;flex-basis:46px;height:46px;width:46px}
@@ -32,8 +33,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .admin-workspace > main.container .dashboard-hero{border-radius:28px;box-shadow:0 20px 58px rgba(31,41,51,.06)}
         .admin-workspace .detail-backlink{margin:0}
         .admin-workspace .detail-backlink a{color:var(--primary);font-weight:900;text-decoration-color:rgba(122,31,31,.35);text-underline-offset:4px}
+        @media (min-width:1181px){
+          .admin-sidebar{align-self:start;height:calc(100vh - 24px);overflow:hidden;position:sticky;top:12px}
+          .admin-sidebar-nav{max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding-bottom:12px}
+        }
         @media (max-width:1180px){
-          .admin-sidebar{padding:16px}.admin-sidebar-nav{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden}.admin-sidebar-section{flex:0 0 auto;min-width:210px}.admin-sidebar-section > div{display:flex}.admin-sidebar-nav a{flex:0 0 210px}.admin-sidebar-section > p{padding:0 2px 4px}
+          .admin-redesign{align-items:stretch}.admin-sidebar{height:auto;overflow:visible;padding:16px;position:static;top:auto}.admin-sidebar-nav{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden}.admin-sidebar-section{flex:0 0 auto;min-width:210px}.admin-sidebar-section > div{display:flex}.admin-sidebar-nav a{flex:0 0 210px}.admin-sidebar-section > p{padding:0 2px 4px}
         }
       `}</style>
       <AdminShell>{children}</AdminShell>
