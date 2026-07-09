@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+type EntityTypeRelation = { key: string; name: string }
+
 type DioceseOption = {
   id: string
   name: string
   official_name: string | null
   slug: string
+  entity_types: EntityTypeRelation[] | EntityTypeRelation | null
 }
 
 type StructureTemplate = {
@@ -85,6 +88,8 @@ type Props = {
   onChange: (value: string) => void
 }
 
+const dioceseEntityTypeKeys = ['archdiocese', 'diocese', 'military_ordinariate', 'ordinariate', 'apostolic_vicariate', 'vicariate']
+
 function slugify(value: string) {
   return value
     .normalize('NFD')
@@ -98,8 +103,17 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10)
 }
 
-function isDioceseLike(name: string) {
-  return /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato apost[oó]lico/i.test(name)
+function toEntityTypes(entity: Pick<DioceseOption, 'entity_types'>) {
+  if (!entity.entity_types) return []
+  return Array.isArray(entity.entity_types) ? entity.entity_types : [entity.entity_types]
+}
+
+function hasEntityType(entity: Pick<DioceseOption, 'entity_types'>, keys: string[]) {
+  return toEntityTypes(entity).some((type) => keys.includes(type.key))
+}
+
+function isDioceseLike(entity: DioceseOption) {
+  return hasEntityType(entity, dioceseEntityTypeKeys) || /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato apost[oó]lico/i.test(entity.name)
 }
 
 function directChildren(nodes: StructureNode[], parentNodeId: string | null) {
@@ -174,7 +188,7 @@ export default function StructureEntityPicker({
 
       const { data, error } = await supabase
         .from('ecclesiastical_entities')
-        .select('id,name,official_name,slug')
+        .select('id,name,official_name,slug,entity_types(key,name)')
         .eq('status', 'active')
         .order('name')
 
@@ -184,7 +198,7 @@ export default function StructureEntityPicker({
         return
       }
 
-      const loaded = ((data ?? []) as DioceseOption[]).filter((item) => isDioceseLike(item.name))
+      const loaded = ((data ?? []) as unknown as DioceseOption[]).filter((item) => isDioceseLike(item))
       setDioceses(loaded)
       setLoading(false)
     }
@@ -364,7 +378,7 @@ export default function StructureEntityPicker({
     <div className="card compact-section">
       <h3>{label}</h3>
       {help && <p className="meta">{help}</p>}
-      <input name={name} type="hidden" value={value} />
+      <input name={name} type="hidden" value={value} readOnly />
 
       {loading && <div className="empty-state">Cargando diócesis...</div>}
       {localError && <div className="error-box">{localError}</div>}
