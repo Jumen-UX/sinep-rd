@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { PublicCountryFlagEnhancements } from './public-country-flag-enhancements'
 import { PublicDashboardEntityCards } from './public-dashboard-entity-cards'
 import { PublicJurisdictionStructureNavigation } from './public-jurisdiction-structure-navigation'
 import { PublicPastoralEnhancements } from './public-pastoral-enhancements'
@@ -48,6 +49,7 @@ export default function RootLayout({
 
           {children}
           <ScopeBackControls />
+          <PublicCountryFlagEnhancements />
           <PublicDashboardEntityCards />
           <PublicJurisdictionStructureNavigation />
           <PublicPastoralEnhancements />
