@@ -284,44 +284,53 @@ export default function AdminUsersPage() {
     setSaving(false)
   }
 
-  if (loading) {
-    return (
-      <main className="container">
-        <div className="empty-state">Cargando usuarios, roles y permisos...</div>
-      </main>
-    )
-  }
+  if (loading) return <div className="empty-state">Cargando usuarios, roles y permisos...</div>
 
   return (
-    <main className="container admin-dashboard">
-      <div className="admin-topbar">
+    <main className="admin-access-page" id="top">
+      <header className="admin-top-header">
+        <div className="admin-top-title">
+          <span className="admin-mini-mark">ACCESO</span>
+          <strong>Usuarios, roles y permisos</strong>
+        </div>
+        <div className="admin-top-actions">
+          <Link className="button button-secondary" href="/admin">Volver al panel</Link>
+          <Link className="button button-secondary" href="/admin/configuracion">Configuración</Link>
+        </div>
+      </header>
+
+      <section className="admin-welcome-panel">
         <div>
           <p className="eyebrow">Acceso administrativo</p>
-          <h1>Usuarios, roles y permisos</h1>
-          <p className="lead">
-            Administra quién puede entrar al portal, qué nivel tiene y sobre qué alcance puede trabajar.
-          </p>
+          <h1>Control de usuarios</h1>
+          <p className="lead">Administra quién puede entrar al portal, qué nivel tiene y sobre qué alcance puede trabajar.</p>
+          <div className="role-list admin-role-list">
+            <span className="role-pill">Alcances jerárquicos</span>
+            <span className="role-pill">Roles activos</span>
+            <span className="role-pill">Permisos efectivos</span>
+          </div>
         </div>
-        <Link className="button button-secondary" href="/admin/configuracion">Volver a configuración</Link>
-      </div>
+        <div className="admin-welcome-illustration" aria-hidden="true">♙</div>
+      </section>
 
-      <section className="dashboard-grid">
-        <div className="metric-card"><strong>{users.length}</strong><span>Usuarios registrados</span></div>
-        <div className="metric-card"><strong>{metrics.active}</strong><span>Usuarios activos</span></div>
-        <div className="metric-card"><strong>{metrics.pending}</strong><span>Pendientes de activación</span></div>
-        <div className="metric-card"><strong>{metrics.assignments}</strong><span>Roles activos asignados</span></div>
+      <section className="admin-stat-strip" aria-label="Resumen de acceso">
+        <a href="#users"><span>♙</span><strong>{users.length}</strong><small>Usuarios registrados</small></a>
+        <a href="#users"><span>✓</span><strong>{metrics.active}</strong><small>Usuarios activos</small></a>
+        <a href="#users"><span>!</span><strong>{metrics.pending}</strong><small>Pendientes de activación</small></a>
+        <a href="#assign-role"><span>▣</span><strong>{metrics.assignments}</strong><small>Roles activos asignados</small></a>
+        <a href="#roles"><span>◇</span><strong>{roles.length}</strong><small>Roles del sistema</small></a>
       </section>
 
       {error && <div className="error-box">{error}</div>}
-      {notice && <div className="empty-state">{notice}</div>}
+      {notice && <div className="success-box">{notice}</div>}
 
-      <section className="grid two-panel-grid">
+      <section className="grid two-panel-grid" id="assign-role">
         <article className="card admin-section">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Asignación rápida</p>
               <h2>Asignar rol a usuario</h2>
-              <p className="meta">El alcance ya puede apuntar a una diócesis, parroquia, nodo de estructura o entidad pastoral real.</p>
+              <p className="meta">El alcance puede apuntar a una diócesis, parroquia, nodo de estructura o entidad pastoral real.</p>
             </div>
           </div>
 
@@ -390,7 +399,7 @@ export default function AdminUsersPage() {
         </article>
       </section>
 
-      <section className="card admin-section">
+      <section className="card admin-section" id="users">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Usuarios</p>
@@ -435,7 +444,7 @@ export default function AdminUsersPage() {
         </div>
       </section>
 
-      <section className="card admin-section">
+      <section className="card admin-section" id="roles">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Matriz de acceso</p>
