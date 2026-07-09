@@ -87,6 +87,25 @@
   background: #1b4f9c;
 }
 
+.public-country-flag-mark {
+  overflow: hidden;
+}
+
+.public-country-flag-mark img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.public-country-flag-emoji {
+  align-items: center;
+  display: inline-flex;
+  font-size: clamp(34px, 4vw, 54px);
+  justify-content: center;
+  line-height: 1;
+}
+
 .public-directory-button {
   cursor: pointer;
   text-align: left;
