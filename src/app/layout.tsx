@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { PublicDashboardEntityCards } from './public-dashboard-entity-cards'
 import { PublicPastoralEnhancements } from './public-pastoral-enhancements'
+import { PublicTerritorialLevelEnhancements } from './public-territorial-level-enhancements'
 import { ScopeBackControls } from './scope-back-controls'
 import './globals.css'
 import './web-standards.css'
@@ -48,6 +49,7 @@ export default function RootLayout({
           <ScopeBackControls />
           <PublicDashboardEntityCards />
           <PublicPastoralEnhancements />
+          <PublicTerritorialLevelEnhancements />
 
           <footer className="site-footer">
             SINEP RD · Sistema Nacional de Información Eclesiástica y Pastoral
