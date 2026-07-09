@@ -37,6 +37,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .admin-quick-card,
         .admin-module-card.is-active,
         .admin-stat-strip a,
+        .admin-stat-strip button,
         .admin-section-top-link,
         .admin-system-card a{cursor:pointer;pointer-events:auto;position:relative;z-index:3}
         .admin-quick-card > *,
@@ -44,6 +45,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .admin-stat-strip a > *,
         .admin-sidebar-nav a > *,
         .admin-brand-block > *{pointer-events:none}
+        .admin-stat-strip button{align-items:center;background:transparent;border:0;border-right:1px solid var(--border);color:inherit;display:grid;font:inherit;gap:7px;min-height:128px;padding:20px;text-align:left}
+        .admin-stat-strip button:last-child{border-right:0}
+        .admin-stat-strip button:hover,
+        .admin-stat-strip button:focus-visible,
+        .admin-stat-strip button.active-filter{background:#fff8ea;outline:none}
+        .admin-stat-strip button:nth-child(2n) span{background:#fff1c7;color:var(--gold,#b38b2d)}
+        .role-list button.role-pill{border:0;cursor:pointer;font:inherit}
+        .role-list button.role-pill.active-filter{background:#fff8ea;color:var(--primary)}
         .admin-module-card::before{pointer-events:none}
         .admin-module-card.is-planned{cursor:not-allowed;pointer-events:none}
         .admin-workspace{position:relative;z-index:1}
