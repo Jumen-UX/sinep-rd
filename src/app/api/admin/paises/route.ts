@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminAccess } from '@/lib/admin/authorization'
 
 type EnableCountryResponse = string | { id?: string; country_id?: string } | null
 
@@ -14,19 +14,15 @@ function optionalText(value: unknown) {
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
+    const auth = await requireAdminAccess()
+    if (!auth.ok) return auth.response
 
     const [enabledCountries, publicCountries] = await Promise.all([
-      supabase
+      auth.supabase
         .from('countries')
         .select('id,iso2,iso3,name,official_name,flag_emoji,flag_image_url,flag_alt,status,visibility,created_at,updated_at')
         .order('name'),
-      supabase
+      auth.supabase
         .from('public_countries')
         .select('key,iso2,name,flag_emoji,flag_image_url')
         .order('name'),
@@ -52,12 +48,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
+    const auth = await requireAdminAccess()
+    if (!auth.ok) return auth.response
 
     const payload = await request.json()
     const iso2 = normalizeIso2(payload.iso2)
@@ -67,7 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Selecciona un país válido del catálogo ISO.' }, { status: 400 })
     }
 
-    const { data, error } = await supabase.rpc('enable_country_from_catalog', {
+    const { data, error } = await auth.supabase.rpc('enable_country_from_catalog', {
       p_iso2: iso2,
       p_flag_image_url: flagImageUrl,
     })

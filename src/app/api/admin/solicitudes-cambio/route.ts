@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminAccess } from '@/lib/admin/authorization'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
+    const auth = await requireAdminAccess()
+    if (!auth.ok) return auth.response
 
     const payload = await request.json()
-    const { data, error } = await supabase.rpc('admin_review_change_request', { payload })
+    const { data, error } = await auth.supabase.rpc('admin_review_change_request', { payload })
 
     if (error) {
       console.error('Failed to review change request', error)

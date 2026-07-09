@@ -1,17 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminAccess } from '@/lib/admin/authorization'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data: userData, error: userError } = await supabase.auth.getUser()
+    const auth = await requireAdminAccess()
+    if (!auth.ok) return auth.response
 
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
-
-    const { data, error } = await supabase.rpc('admin_review_queue', { payload: { limit: 200 } })
+    const { data, error } = await auth.supabase.rpc('admin_review_queue', { payload: { limit: 200 } })
 
     if (error) {
       console.error('Failed to load admin review queue', error)
@@ -27,12 +23,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
+    const auth = await requireAdminAccess()
+    if (!auth.ok) return auth.response
 
     const body = await request.json().catch(() => null) as {
       assignment_id?: string
@@ -45,7 +37,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Faltan assignment_id o decision.' }, { status: 400 })
     }
 
-    const { data, error } = await supabase.rpc('admin_review_imported_appointment', {
+    const { data, error } = await auth.supabase.rpc('admin_review_imported_appointment', {
       payload: {
         assignment_id: body.assignment_id,
         decision: body.decision,

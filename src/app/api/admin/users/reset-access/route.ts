@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
+import { requireAdminAccess } from '@/lib/admin/authorization'
 import { getAppBaseUrl } from '@/lib/appBaseUrl'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 
 function normalizeEmail(value: unknown) {
   return typeof value === 'string' ? value.trim().toLowerCase() : ''
@@ -12,21 +12,13 @@ function isValidEmail(value: string) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: userData, error: userError } = await supabase.auth.getUser()
-
-  if (userError || !userData.user) {
-    return NextResponse.json({ error: 'No autenticado.' }, { status: 401 })
-  }
-
-  const { data: canManage } = await supabase.rpc('current_user_has_permission', {
-    p_permission_key: 'users.manage',
+  const auth = await requireAdminAccess({
+    permissionKey: 'users.manage',
+    unauthenticatedMessage: 'No autenticado.',
+    forbiddenMessage: 'No autorizado para reenviar acceso.',
   })
-  const { data: canAdmin } = await supabase.rpc('current_user_is_super_or_national')
 
-  if (canManage !== true && canAdmin !== true) {
-    return NextResponse.json({ error: 'No autorizado para reenviar acceso.' }, { status: 403 })
-  }
+  if (!auth.ok) return auth.response
 
   let payload: { email?: string }
 

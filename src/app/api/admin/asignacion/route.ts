@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminAccess } from '@/lib/admin/authorization'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
+    const auth = await requireAdminAccess()
+    if (!auth.ok) return auth.response
 
     const payload = await request.json()
-    const { data, error } = await supabase.rpc('admin_save_position_assignment', { payload })
+    const { data, error } = await auth.supabase.rpc('admin_save_position_assignment', { payload })
 
     if (error) {
       console.error('Failed to save position assignment transactionally', error)

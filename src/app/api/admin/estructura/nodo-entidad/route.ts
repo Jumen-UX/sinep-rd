@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminAccess } from '@/lib/admin/authorization'
 
 type SaveEntityResponse = {
   entity_id?: string
@@ -19,23 +19,8 @@ function toText(value: unknown) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
-
-    const { data: hasAdminRole, error: roleError } = await supabase.rpc('current_user_has_admin_role')
-
-    if (roleError) {
-      console.error('Failed to validate admin role for structure node entity API', roleError)
-      return NextResponse.json({ error: 'No se pudo validar el rol administrativo.' }, { status: 403 })
-    }
-
-    if (hasAdminRole !== true) {
-      return NextResponse.json({ error: 'No tienes un rol administrativo activo.' }, { status: 403 })
-    }
+    const auth = await requireAdminAccess()
+    if (!auth.ok) return auth.response
 
     const payload = await request.json()
     const templateId = toText(payload.template_id)
@@ -51,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Faltan datos para crear la unidad estructural.' }, { status: 400 })
     }
 
-    const { data: entityData, error: entityError } = await supabase.rpc('admin_save_ecclesiastical_entity', {
+    const { data: entityData, error: entityError } = await auth.supabase.rpc('admin_save_ecclesiastical_entity', {
       payload: {
         entity_type_key: entityTypeKey,
         name,
@@ -75,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'La entidad fue creada sin identificador retornado.' }, { status: 400 })
     }
 
-    const { data: nodeData, error: nodeError } = await supabase.rpc('admin_save_structure_node', {
+    const { data: nodeData, error: nodeError } = await auth.supabase.rpc('admin_save_structure_node', {
       payload: {
         template_id: templateId,
         level_id: levelId,

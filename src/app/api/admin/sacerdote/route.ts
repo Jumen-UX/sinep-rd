@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminAccess } from '@/lib/admin/authorization'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
 
 type SavePriestResult = {
@@ -16,12 +16,9 @@ function cleanText(value: unknown) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
+    const auth = await requireAdminAccess()
+    if (!auth.ok) return auth.response
+    const supabase = auth.supabase
 
     const payload = await request.json()
     const { data, error } = await supabase.rpc('admin_save_priest', { payload })
