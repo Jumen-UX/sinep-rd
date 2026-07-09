@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { PublicCountryFlagEnhancements } from './public-country-flag-enhancements'
 import { PublicDashboardEntityCards } from './public-dashboard-entity-cards'
 import { PublicJurisdictionStructureNavigation } from './public-jurisdiction-structure-navigation'
+import { PublicMultiCountryDashboard } from './public-multi-country-dashboard'
 import { PublicPastoralEnhancements } from './public-pastoral-enhancements'
 import { PublicTerritorialLevelEnhancements } from './public-territorial-level-enhancements'
 import { ScopeBackControls } from './scope-back-controls'
@@ -52,6 +53,7 @@ export default function RootLayout({
           <PublicCountryFlagEnhancements />
           <PublicDashboardEntityCards />
           <PublicJurisdictionStructureNavigation />
+          <PublicMultiCountryDashboard />
           <PublicPastoralEnhancements />
           <PublicTerritorialLevelEnhancements />
 
