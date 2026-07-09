@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
+import { parseJsonObjectBody, ValidationError } from '@/lib/admin/validation'
 
 type EnableCountryResponse = string | { id?: string; country_id?: string } | null
 
@@ -42,7 +44,7 @@ export async function GET() {
     })
   } catch (error) {
     console.error('Unexpected admin countries API error', error)
-    return NextResponse.json({ error: 'No se pudieron cargar los países.' }, { status: 500 })
+    return NextResponse.json({ error: 'No se pudieron cargar los paises.' }, { status: 500 })
   }
 }
 
@@ -51,12 +53,12 @@ export async function POST(request: NextRequest) {
     const auth = await requireAdminAccess()
     if (!auth.ok) return auth.response
 
-    const payload = await request.json()
+    const payload = await parseJsonObjectBody(request, 'Solicitud invalida.')
     const iso2 = normalizeIso2(payload.iso2)
     const flagImageUrl = optionalText(payload.flag_image_url)
 
     if (!/^[A-Z]{2}$/.test(iso2)) {
-      return NextResponse.json({ error: 'Selecciona un país válido del catálogo ISO.' }, { status: 400 })
+      return NextResponse.json({ error: 'Selecciona un pais valido del catalogo ISO.' }, { status: 400 })
     }
 
     const { data, error } = await auth.supabase.rpc('enable_country_from_catalog', {
@@ -72,9 +74,20 @@ export async function POST(request: NextRequest) {
     const saved = data as EnableCountryResponse
     const countryId = typeof saved === 'string' ? saved : (saved?.country_id ?? saved?.id ?? null)
 
+    await recordAdminAudit(auth.supabase, {
+      action: 'countries.enable',
+      targetTable: 'countries',
+      targetId: countryId,
+      metadata: { iso2 },
+    })
+
     return NextResponse.json({ country_id: countryId, iso2 })
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
     console.error('Unexpected enable country API error', error)
-    return NextResponse.json({ error: 'No se pudo habilitar el país.' }, { status: 500 })
+    return NextResponse.json({ error: 'No se pudo habilitar el pais.' }, { status: 500 })
   }
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
+import { parseJsonObjectBody, ValidationError } from '@/lib/admin/validation'
 
 type SaveEntityResponse = {
   entity_id?: string
@@ -22,7 +24,7 @@ export async function POST(request: NextRequest) {
     const auth = await requireAdminAccess()
     if (!auth.ok) return auth.response
 
-    const payload = await request.json()
+    const payload = await parseJsonObjectBody(request, 'Solicitud invalida.')
     const templateId = toText(payload.template_id)
     const levelId = toText(payload.level_id)
     const parentNodeId = toText(payload.parent_node_id)
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
         entity_type_key: entityTypeKey,
         name,
         slug,
-        country: 'República Dominicana',
+        country: 'Republica Dominicana',
         parent_entity_id: parentEntityId || null,
         status: 'active',
         visibility: 'public',
@@ -81,12 +83,29 @@ export async function POST(request: NextRequest) {
     }
 
     const savedNode = nodeData as SaveNodeResponse | null
+    const nodeId = savedNode?.id ?? savedNode?.node_id ?? null
+
+    await recordAdminAudit(auth.supabase, {
+      action: 'structure.node_entity.create',
+      targetTable: 'structure_nodes',
+      targetId: nodeId,
+      metadata: {
+        entity_id: entityId,
+        template_id: templateId,
+        level_id: levelId,
+        entity_type_key: entityTypeKey,
+      },
+    })
 
     return NextResponse.json({
       entity_id: entityId,
-      node_id: savedNode?.id ?? savedNode?.node_id ?? null,
+      node_id: nodeId,
     })
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
     console.error('Unexpected structure node entity API error', error)
     return NextResponse.json({ error: 'No se pudo crear la unidad estructural.' }, { status: 500 })
   }

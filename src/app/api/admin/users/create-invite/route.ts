@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
+import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
+import { emailDomain, optionalText, parseJsonObjectBody, requiredEmail, ValidationError } from '@/lib/admin/validation'
 import { getAppBaseUrl } from '@/lib/appBaseUrl'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -13,18 +15,6 @@ type Payload = {
   scope_entity_id?: string
 }
 
-function text(value: unknown) {
-  return typeof value === 'string' ? value.trim() : ''
-}
-
-function emailText(value: unknown) {
-  return text(value).toLowerCase()
-}
-
-function validEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-}
-
 export async function POST(request: Request) {
   const auth = await requireAdminAccess({
     permissionKey: 'users.manage',
@@ -34,27 +24,16 @@ export async function POST(request: Request) {
 
   if (!auth.ok) return auth.response
 
-  let payload: Payload
-
   try {
-    payload = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'Solicitud inválida.' }, { status: 400 })
-  }
+    const payload = await parseJsonObjectBody(request, 'Solicitud invalida.') as Payload
+    const email = requiredEmail(payload.email)
+    const fullName = optionalText(payload.full_name, 180)
+    const phone = optionalText(payload.phone, 80)
+    const roleId = optionalText(payload.role_id, 36)
+    const roleKey = optionalText(payload.role_key, 80)
+    const scopeType = optionalText(payload.scope_type, 80) || 'national'
+    const scopeEntityId = optionalText(payload.scope_entity_id, 36)
 
-  const email = emailText(payload.email)
-  const fullName = text(payload.full_name)
-  const phone = text(payload.phone)
-  const roleId = text(payload.role_id)
-  const roleKey = text(payload.role_key)
-  const scopeType = text(payload.scope_type) || 'national'
-  const scopeEntityId = text(payload.scope_entity_id)
-
-  if (!validEmail(email)) {
-    return NextResponse.json({ error: 'Correo inválido.' }, { status: 400 })
-  }
-
-  try {
     const admin = createAdminClient()
     const redirectTo = new URL('/admin/login', getAppBaseUrl()).toString()
     const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
@@ -112,14 +91,41 @@ export async function POST(request: Request) {
       })
 
       if (error) {
+        await recordAdminAudit(auth.supabase, {
+          action: 'users.invite',
+          targetTable: 'profiles',
+          targetId: userId,
+          metadata: {
+            email_domain: emailDomain(email),
+            existing_user: existingUser,
+            role_assignment_warning: error.message,
+          },
+        })
+
         return NextResponse.json({ user_id: userId, email, existing_user: existingUser, warning: error.message }, { status: 201 })
       }
 
       assignment = data
     }
 
+    await recordAdminAudit(auth.supabase, {
+      action: 'users.invite',
+      targetTable: 'profiles',
+      targetId: userId,
+      metadata: {
+        email_domain: emailDomain(email),
+        existing_user: existingUser,
+        role_assigned: Boolean(roleId || roleKey),
+        scope_type: scopeType,
+      },
+    })
+
     return NextResponse.json({ user_id: userId, email, existing_user: existingUser, assignment }, { status: 201 })
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
     const message = error instanceof Error ? error.message : 'Error inesperado invitando usuario.'
     return NextResponse.json({ error: message }, { status: 500 })
   }
