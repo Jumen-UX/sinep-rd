@@ -1,0 +1,391 @@
+create table if not exists public.country_catalog (
+  iso2 char(2) primary key,
+  iso3 char(3) unique,
+  name_en text not null,
+  official_name_en text,
+  common_name_en text,
+  name_es text,
+  flag_emoji text,
+  flag_alt text,
+  is_enabled_by_default boolean not null default true,
+  is_custom boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.country_catalog is 'Catálogo ISO 3166-1 precargado de países, territorios y áreas especiales usadas para selección en SINEP RD.';
+comment on column public.country_catalog.iso2 is 'Código ISO 3166-1 alpha-2.';
+comment on column public.country_catalog.iso3 is 'Código ISO 3166-1 alpha-3.';
+comment on column public.country_catalog.name_en is 'Nombre corto en inglés usado por la fuente ISO/pycountry.';
+comment on column public.country_catalog.name_es is 'Nombre preferido en español cuando esté definido por SINEP.';
+comment on column public.country_catalog.flag_emoji is 'Bandera derivada del código ISO2 como emoji Unicode.';
+
+insert into public.country_catalog (
+  iso2,
+  iso3,
+  name_en,
+  official_name_en,
+  common_name_en,
+  name_es,
+  flag_emoji,
+  flag_alt
+)
+values
+  ('AD', 'AND', 'Andorra', 'Principality of Andorra', null, null, '🇦🇩', 'Bandera de Andorra'),
+  ('AE', 'ARE', 'United Arab Emirates', null, null, null, '🇦🇪', 'Bandera de United Arab Emirates'),
+  ('AF', 'AFG', 'Afghanistan', 'Islamic Republic of Afghanistan', null, null, '🇦🇫', 'Bandera de Afghanistan'),
+  ('AG', 'ATG', 'Antigua and Barbuda', null, null, null, '🇦🇬', 'Bandera de Antigua and Barbuda'),
+  ('AI', 'AIA', 'Anguilla', null, null, null, '🇦🇮', 'Bandera de Anguilla'),
+  ('AL', 'ALB', 'Albania', 'Republic of Albania', null, null, '🇦🇱', 'Bandera de Albania'),
+  ('AM', 'ARM', 'Armenia', 'Republic of Armenia', null, null, '🇦🇲', 'Bandera de Armenia'),
+  ('AO', 'AGO', 'Angola', 'Republic of Angola', null, null, '🇦🇴', 'Bandera de Angola'),
+  ('AQ', 'ATA', 'Antarctica', null, null, null, '🇦🇶', 'Bandera de Antarctica'),
+  ('AR', 'ARG', 'Argentina', 'Argentine Republic', null, 'Argentina', '🇦🇷', 'Bandera de Argentina'),
+  ('AS', 'ASM', 'American Samoa', null, null, null, '🇦🇸', 'Bandera de American Samoa'),
+  ('AT', 'AUT', 'Austria', 'Republic of Austria', null, 'Austria', '🇦🇹', 'Bandera de Austria'),
+  ('AU', 'AUS', 'Australia', null, null, 'Australia', '🇦🇺', 'Bandera de Australia'),
+  ('AW', 'ABW', 'Aruba', null, null, null, '🇦🇼', 'Bandera de Aruba'),
+  ('AX', 'ALA', 'Åland Islands', null, null, null, '🇦🇽', 'Bandera de Åland Islands'),
+  ('AZ', 'AZE', 'Azerbaijan', 'Republic of Azerbaijan', null, null, '🇦🇿', 'Bandera de Azerbaijan'),
+  ('BA', 'BIH', 'Bosnia and Herzegovina', null, null, null, '🇧🇦', 'Bandera de Bosnia and Herzegovina'),
+  ('BB', 'BRB', 'Barbados', null, null, null, '🇧🇧', 'Bandera de Barbados'),
+  ('BD', 'BGD', 'Bangladesh', 'People''s Republic of Bangladesh', null, null, '🇧🇩', 'Bandera de Bangladesh'),
+  ('BE', 'BEL', 'Belgium', 'Kingdom of Belgium', null, 'Bélgica', '🇧🇪', 'Bandera de Bélgica'),
+  ('BF', 'BFA', 'Burkina Faso', null, null, null, '🇧🇫', 'Bandera de Burkina Faso'),
+  ('BG', 'BGR', 'Bulgaria', 'Republic of Bulgaria', null, null, '🇧🇬', 'Bandera de Bulgaria'),
+  ('BH', 'BHR', 'Bahrain', 'Kingdom of Bahrain', null, null, '🇧🇭', 'Bandera de Bahrain'),
+  ('BI', 'BDI', 'Burundi', 'Republic of Burundi', null, null, '🇧🇮', 'Bandera de Burundi'),
+  ('BJ', 'BEN', 'Benin', 'Republic of Benin', null, null, '🇧🇯', 'Bandera de Benin'),
+  ('BL', 'BLM', 'Saint Barthélemy', null, null, null, '🇧🇱', 'Bandera de Saint Barthélemy'),
+  ('BM', 'BMU', 'Bermuda', null, null, null, '🇧🇲', 'Bandera de Bermuda'),
+  ('BN', 'BRN', 'Brunei Darussalam', null, null, null, '🇧🇳', 'Bandera de Brunei Darussalam'),
+  ('BO', 'BOL', 'Bolivia, Plurinational State of', 'Plurinational State of Bolivia', 'Bolivia', 'Bolivia', '🇧🇴', 'Bandera de Bolivia'),
+  ('BQ', 'BES', 'Bonaire, Sint Eustatius and Saba', null, null, null, '🇧🇶', 'Bandera de Bonaire, Sint Eustatius and Saba'),
+  ('BR', 'BRA', 'Brazil', 'Federative Republic of Brazil', null, 'Brasil', '🇧🇷', 'Bandera de Brasil'),
+  ('BS', 'BHS', 'Bahamas', 'Commonwealth of the Bahamas', null, null, '🇧🇸', 'Bandera de Bahamas'),
+  ('BT', 'BTN', 'Bhutan', 'Kingdom of Bhutan', null, null, '🇧🇹', 'Bandera de Bhutan'),
+  ('BV', 'BVT', 'Bouvet Island', null, null, null, '🇧🇻', 'Bandera de Bouvet Island'),
+  ('BW', 'BWA', 'Botswana', 'Republic of Botswana', null, null, '🇧🇼', 'Bandera de Botswana'),
+  ('BY', 'BLR', 'Belarus', 'Republic of Belarus', null, null, '🇧🇾', 'Bandera de Belarus'),
+  ('BZ', 'BLZ', 'Belize', null, null, 'Belice', '🇧🇿', 'Bandera de Belice'),
+  ('CA', 'CAN', 'Canada', null, null, 'Canadá', '🇨🇦', 'Bandera de Canadá'),
+  ('CC', 'CCK', 'Cocos (Keeling) Islands', null, null, null, '🇨🇨', 'Bandera de Cocos (Keeling) Islands'),
+  ('CD', 'COD', 'Congo, The Democratic Republic of the', null, null, null, '🇨🇩', 'Bandera de Congo, The Democratic Republic of the'),
+  ('CF', 'CAF', 'Central African Republic', null, null, null, '🇨🇫', 'Bandera de Central African Republic'),
+  ('CG', 'COG', 'Congo', 'Republic of the Congo', null, null, '🇨🇬', 'Bandera de Congo'),
+  ('CH', 'CHE', 'Switzerland', 'Swiss Confederation', null, 'Suiza', '🇨🇭', 'Bandera de Suiza'),
+  ('CI', 'CIV', 'Côte d''Ivoire', 'Republic of Côte d''Ivoire', null, null, '🇨🇮', 'Bandera de Côte d''Ivoire'),
+  ('CK', 'COK', 'Cook Islands', null, null, null, '🇨🇰', 'Bandera de Cook Islands'),
+  ('CL', 'CHL', 'Chile', 'Republic of Chile', null, 'Chile', '🇨🇱', 'Bandera de Chile'),
+  ('CM', 'CMR', 'Cameroon', 'Republic of Cameroon', null, null, '🇨🇲', 'Bandera de Cameroon'),
+  ('CN', 'CHN', 'China', 'People''s Republic of China', null, 'China', '🇨🇳', 'Bandera de China'),
+  ('CO', 'COL', 'Colombia', 'Republic of Colombia', null, 'Colombia', '🇨🇴', 'Bandera de Colombia'),
+  ('CR', 'CRI', 'Costa Rica', 'Republic of Costa Rica', null, 'Costa Rica', '🇨🇷', 'Bandera de Costa Rica'),
+  ('CU', 'CUB', 'Cuba', 'Republic of Cuba', null, 'Cuba', '🇨🇺', 'Bandera de Cuba'),
+  ('CV', 'CPV', 'Cabo Verde', 'Republic of Cabo Verde', null, null, '🇨🇻', 'Bandera de Cabo Verde'),
+  ('CW', 'CUW', 'Curaçao', 'Country of Curaçao', null, null, '🇨🇼', 'Bandera de Curaçao'),
+  ('CX', 'CXR', 'Christmas Island', null, null, null, '🇨🇽', 'Bandera de Christmas Island'),
+  ('CY', 'CYP', 'Cyprus', 'Republic of Cyprus', null, null, '🇨🇾', 'Bandera de Cyprus'),
+  ('CZ', 'CZE', 'Czechia', 'Czech Republic', null, null, '🇨🇿', 'Bandera de Czechia'),
+  ('DE', 'DEU', 'Germany', 'Federal Republic of Germany', null, 'Alemania', '🇩🇪', 'Bandera de Alemania'),
+  ('DJ', 'DJI', 'Djibouti', 'Republic of Djibouti', null, null, '🇩🇯', 'Bandera de Djibouti'),
+  ('DK', 'DNK', 'Denmark', 'Kingdom of Denmark', null, null, '🇩🇰', 'Bandera de Denmark'),
+  ('DM', 'DMA', 'Dominica', 'Commonwealth of Dominica', null, null, '🇩🇲', 'Bandera de Dominica'),
+  ('DO', 'DOM', 'Dominican Republic', null, null, 'República Dominicana', '🇩🇴', 'Bandera de República Dominicana'),
+  ('DZ', 'DZA', 'Algeria', 'People''s Democratic Republic of Algeria', null, null, '🇩🇿', 'Bandera de Algeria'),
+  ('EC', 'ECU', 'Ecuador', 'Republic of Ecuador', null, 'Ecuador', '🇪🇨', 'Bandera de Ecuador'),
+  ('EE', 'EST', 'Estonia', 'Republic of Estonia', null, null, '🇪🇪', 'Bandera de Estonia'),
+  ('EG', 'EGY', 'Egypt', 'Arab Republic of Egypt', null, 'Egipto', '🇪🇬', 'Bandera de Egipto'),
+  ('EH', 'ESH', 'Western Sahara', null, null, null, '🇪🇭', 'Bandera de Western Sahara'),
+  ('ER', 'ERI', 'Eritrea', 'the State of Eritrea', null, null, '🇪🇷', 'Bandera de Eritrea'),
+  ('ES', 'ESP', 'Spain', 'Kingdom of Spain', null, 'España', '🇪🇸', 'Bandera de España'),
+  ('ET', 'ETH', 'Ethiopia', 'Federal Democratic Republic of Ethiopia', null, null, '🇪🇹', 'Bandera de Ethiopia'),
+  ('FI', 'FIN', 'Finland', 'Republic of Finland', null, null, '🇫🇮', 'Bandera de Finland'),
+  ('FJ', 'FJI', 'Fiji', 'Republic of Fiji', null, null, '🇫🇯', 'Bandera de Fiji'),
+  ('FK', 'FLK', 'Falkland Islands (Malvinas)', null, null, null, '🇫🇰', 'Bandera de Falkland Islands (Malvinas)'),
+  ('FM', 'FSM', 'Micronesia, Federated States of', 'Federated States of Micronesia', 'Micronesia', null, '🇫🇲', 'Bandera de Micronesia, Federated States of'),
+  ('FO', 'FRO', 'Faroe Islands', null, null, null, '🇫🇴', 'Bandera de Faroe Islands'),
+  ('FR', 'FRA', 'France', 'French Republic', null, 'Francia', '🇫🇷', 'Bandera de Francia'),
+  ('GA', 'GAB', 'Gabon', 'Gabonese Republic', null, null, '🇬🇦', 'Bandera de Gabon'),
+  ('GB', 'GBR', 'United Kingdom', 'United Kingdom of Great Britain and Northern Ireland', null, 'Reino Unido', '🇬🇧', 'Bandera de Reino Unido'),
+  ('GD', 'GRD', 'Grenada', null, null, null, '🇬🇩', 'Bandera de Grenada'),
+  ('GE', 'GEO', 'Georgia', null, null, null, '🇬🇪', 'Bandera de Georgia'),
+  ('GF', 'GUF', 'French Guiana', null, null, null, '🇬🇫', 'Bandera de French Guiana'),
+  ('GG', 'GGY', 'Guernsey', null, null, null, '🇬🇬', 'Bandera de Guernsey'),
+  ('GH', 'GHA', 'Ghana', 'Republic of Ghana', null, null, '🇬🇭', 'Bandera de Ghana'),
+  ('GI', 'GIB', 'Gibraltar', null, null, null, '🇬🇮', 'Bandera de Gibraltar'),
+  ('GL', 'GRL', 'Greenland', null, null, null, '🇬🇱', 'Bandera de Greenland'),
+  ('GM', 'GMB', 'Gambia', 'Republic of the Gambia', null, null, '🇬🇲', 'Bandera de Gambia'),
+  ('GN', 'GIN', 'Guinea', 'Republic of Guinea', null, null, '🇬🇳', 'Bandera de Guinea'),
+  ('GP', 'GLP', 'Guadeloupe', null, null, null, '🇬🇵', 'Bandera de Guadeloupe'),
+  ('GQ', 'GNQ', 'Equatorial Guinea', 'Republic of Equatorial Guinea', null, null, '🇬🇶', 'Bandera de Equatorial Guinea'),
+  ('GR', 'GRC', 'Greece', 'Hellenic Republic', null, null, '🇬🇷', 'Bandera de Greece'),
+  ('GS', 'SGS', 'South Georgia and the South Sandwich Islands', null, null, null, '🇬🇸', 'Bandera de South Georgia and the South Sandwich Islands'),
+  ('GT', 'GTM', 'Guatemala', 'Republic of Guatemala', null, 'Guatemala', '🇬🇹', 'Bandera de Guatemala'),
+  ('GU', 'GUM', 'Guam', null, null, null, '🇬🇺', 'Bandera de Guam'),
+  ('GW', 'GNB', 'Guinea-Bissau', 'Republic of Guinea-Bissau', null, null, '🇬🇼', 'Bandera de Guinea-Bissau'),
+  ('GY', 'GUY', 'Guyana', 'Republic of Guyana', null, null, '🇬🇾', 'Bandera de Guyana'),
+  ('HK', 'HKG', 'Hong Kong', 'Hong Kong Special Administrative Region of China', null, null, '🇭🇰', 'Bandera de Hong Kong'),
+  ('HM', 'HMD', 'Heard Island and McDonald Islands', null, null, null, '🇭🇲', 'Bandera de Heard Island and McDonald Islands'),
+  ('HN', 'HND', 'Honduras', 'Republic of Honduras', null, 'Honduras', '🇭🇳', 'Bandera de Honduras'),
+  ('HR', 'HRV', 'Croatia', 'Republic of Croatia', null, null, '🇭🇷', 'Bandera de Croatia'),
+  ('HT', 'HTI', 'Haiti', 'Republic of Haiti', null, 'Haití', '🇭🇹', 'Bandera de Haití'),
+  ('HU', 'HUN', 'Hungary', null, null, null, '🇭🇺', 'Bandera de Hungary'),
+  ('ID', 'IDN', 'Indonesia', 'Republic of Indonesia', null, null, '🇮🇩', 'Bandera de Indonesia'),
+  ('IE', 'IRL', 'Ireland', null, null, 'Irlanda', '🇮🇪', 'Bandera de Irlanda'),
+  ('IL', 'ISR', 'Israel', 'State of Israel', null, 'Israel', '🇮🇱', 'Bandera de Israel'),
+  ('IM', 'IMN', 'Isle of Man', null, null, null, '🇮🇲', 'Bandera de Isle of Man'),
+  ('IN', 'IND', 'India', 'Republic of India', null, 'India', '🇮🇳', 'Bandera de India'),
+  ('IO', 'IOT', 'British Indian Ocean Territory', null, null, null, '🇮🇴', 'Bandera de British Indian Ocean Territory'),
+  ('IQ', 'IRQ', 'Iraq', 'Republic of Iraq', null, null, '🇮🇶', 'Bandera de Iraq'),
+  ('IR', 'IRN', 'Iran, Islamic Republic of', 'Islamic Republic of Iran', 'Iran', null, '🇮🇷', 'Bandera de Iran, Islamic Republic of'),
+  ('IS', 'ISL', 'Iceland', 'Republic of Iceland', null, null, '🇮🇸', 'Bandera de Iceland'),
+  ('IT', 'ITA', 'Italy', 'Italian Republic', null, 'Italia', '🇮🇹', 'Bandera de Italia'),
+  ('JE', 'JEY', 'Jersey', null, null, null, '🇯🇪', 'Bandera de Jersey'),
+  ('JM', 'JAM', 'Jamaica', null, null, null, '🇯🇲', 'Bandera de Jamaica'),
+  ('JO', 'JOR', 'Jordan', 'Hashemite Kingdom of Jordan', null, null, '🇯🇴', 'Bandera de Jordan'),
+  ('JP', 'JPN', 'Japan', null, null, 'Japón', '🇯🇵', 'Bandera de Japón'),
+  ('KE', 'KEN', 'Kenya', 'Republic of Kenya', null, null, '🇰🇪', 'Bandera de Kenya'),
+  ('KG', 'KGZ', 'Kyrgyzstan', 'Kyrgyz Republic', null, null, '🇰🇬', 'Bandera de Kyrgyzstan'),
+  ('KH', 'KHM', 'Cambodia', 'Kingdom of Cambodia', null, null, '🇰🇭', 'Bandera de Cambodia'),
+  ('KI', 'KIR', 'Kiribati', 'Republic of Kiribati', null, null, '🇰🇮', 'Bandera de Kiribati'),
+  ('KM', 'COM', 'Comoros', 'Union of the Comoros', null, null, '🇰🇲', 'Bandera de Comoros'),
+  ('KN', 'KNA', 'Saint Kitts and Nevis', null, null, null, '🇰🇳', 'Bandera de Saint Kitts and Nevis'),
+  ('KP', 'PRK', 'Korea, Democratic People''s Republic of', 'Democratic People''s Republic of Korea', 'North Korea', null, '🇰🇵', 'Bandera de Korea, Democratic People''s Republic of'),
+  ('KR', 'KOR', 'Korea, Republic of', null, 'South Korea', 'Corea del Sur', '🇰🇷', 'Bandera de Corea del Sur'),
+  ('KW', 'KWT', 'Kuwait', 'State of Kuwait', null, null, '🇰🇼', 'Bandera de Kuwait'),
+  ('KY', 'CYM', 'Cayman Islands', null, null, null, '🇰🇾', 'Bandera de Cayman Islands'),
+  ('KZ', 'KAZ', 'Kazakhstan', 'Republic of Kazakhstan', null, null, '🇰🇿', 'Bandera de Kazakhstan'),
+  ('LA', 'LAO', 'Lao People''s Democratic Republic', null, null, null, '🇱🇦', 'Bandera de Lao People''s Democratic Republic'),
+  ('LB', 'LBN', 'Lebanon', 'Lebanese Republic', null, null, '🇱🇧', 'Bandera de Lebanon'),
+  ('LC', 'LCA', 'Saint Lucia', null, null, null, '🇱🇨', 'Bandera de Saint Lucia'),
+  ('LI', 'LIE', 'Liechtenstein', 'Principality of Liechtenstein', null, null, '🇱🇮', 'Bandera de Liechtenstein'),
+  ('LK', 'LKA', 'Sri Lanka', 'Democratic Socialist Republic of Sri Lanka', null, null, '🇱🇰', 'Bandera de Sri Lanka'),
+  ('LR', 'LBR', 'Liberia', 'Republic of Liberia', null, null, '🇱🇷', 'Bandera de Liberia'),
+  ('LS', 'LSO', 'Lesotho', 'Kingdom of Lesotho', null, null, '🇱🇸', 'Bandera de Lesotho'),
+  ('LT', 'LTU', 'Lithuania', 'Republic of Lithuania', null, null, '🇱🇹', 'Bandera de Lithuania'),
+  ('LU', 'LUX', 'Luxembourg', 'Grand Duchy of Luxembourg', null, null, '🇱🇺', 'Bandera de Luxembourg'),
+  ('LV', 'LVA', 'Latvia', 'Republic of Latvia', null, null, '🇱🇻', 'Bandera de Latvia'),
+  ('LY', 'LBY', 'Libya', 'State of Libya', null, null, '🇱🇾', 'Bandera de Libya'),
+  ('MA', 'MAR', 'Morocco', 'Kingdom of Morocco', null, 'Marruecos', '🇲🇦', 'Bandera de Marruecos'),
+  ('MC', 'MCO', 'Monaco', 'Principality of Monaco', null, null, '🇲🇨', 'Bandera de Monaco'),
+  ('MD', 'MDA', 'Moldova, Republic of', 'Republic of Moldova', 'Moldova', null, '🇲🇩', 'Bandera de Moldova, Republic of'),
+  ('ME', 'MNE', 'Montenegro', null, null, null, '🇲🇪', 'Bandera de Montenegro'),
+  ('MF', 'MAF', 'Saint Martin (French part)', null, null, null, '🇲🇫', 'Bandera de Saint Martin (French part)'),
+  ('MG', 'MDG', 'Madagascar', 'Republic of Madagascar', null, null, '🇲🇬', 'Bandera de Madagascar'),
+  ('MH', 'MHL', 'Marshall Islands', 'Republic of the Marshall Islands', null, null, '🇲🇭', 'Bandera de Marshall Islands'),
+  ('MK', 'MKD', 'North Macedonia', 'Republic of North Macedonia', null, null, '🇲🇰', 'Bandera de North Macedonia'),
+  ('ML', 'MLI', 'Mali', 'Republic of Mali', null, null, '🇲🇱', 'Bandera de Mali'),
+  ('MM', 'MMR', 'Myanmar', 'Republic of Myanmar', null, null, '🇲🇲', 'Bandera de Myanmar'),
+  ('MN', 'MNG', 'Mongolia', null, null, null, '🇲🇳', 'Bandera de Mongolia'),
+  ('MO', 'MAC', 'Macao', 'Macao Special Administrative Region of China', null, null, '🇲🇴', 'Bandera de Macao'),
+  ('MP', 'MNP', 'Northern Mariana Islands', 'Commonwealth of the Northern Mariana Islands', null, null, '🇲🇵', 'Bandera de Northern Mariana Islands'),
+  ('MQ', 'MTQ', 'Martinique', null, null, null, '🇲🇶', 'Bandera de Martinique'),
+  ('MR', 'MRT', 'Mauritania', 'Islamic Republic of Mauritania', null, null, '🇲🇷', 'Bandera de Mauritania'),
+  ('MS', 'MSR', 'Montserrat', null, null, null, '🇲🇸', 'Bandera de Montserrat'),
+  ('MT', 'MLT', 'Malta', 'Republic of Malta', null, null, '🇲🇹', 'Bandera de Malta'),
+  ('MU', 'MUS', 'Mauritius', 'Republic of Mauritius', null, null, '🇲🇺', 'Bandera de Mauritius'),
+  ('MV', 'MDV', 'Maldives', 'Republic of Maldives', null, null, '🇲🇻', 'Bandera de Maldives'),
+  ('MW', 'MWI', 'Malawi', 'Republic of Malawi', null, null, '🇲🇼', 'Bandera de Malawi'),
+  ('MX', 'MEX', 'Mexico', 'United Mexican States', null, 'México', '🇲🇽', 'Bandera de México'),
+  ('MY', 'MYS', 'Malaysia', null, null, null, '🇲🇾', 'Bandera de Malaysia'),
+  ('MZ', 'MOZ', 'Mozambique', 'Republic of Mozambique', null, null, '🇲🇿', 'Bandera de Mozambique'),
+  ('NA', 'NAM', 'Namibia', 'Republic of Namibia', null, null, '🇳🇦', 'Bandera de Namibia'),
+  ('NC', 'NCL', 'New Caledonia', null, null, null, '🇳🇨', 'Bandera de New Caledonia'),
+  ('NE', 'NER', 'Niger', 'Republic of the Niger', null, null, '🇳🇪', 'Bandera de Niger'),
+  ('NF', 'NFK', 'Norfolk Island', null, null, null, '🇳🇫', 'Bandera de Norfolk Island'),
+  ('NG', 'NGA', 'Nigeria', 'Federal Republic of Nigeria', null, null, '🇳🇬', 'Bandera de Nigeria'),
+  ('NI', 'NIC', 'Nicaragua', 'Republic of Nicaragua', null, 'Nicaragua', '🇳🇮', 'Bandera de Nicaragua'),
+  ('NL', 'NLD', 'Netherlands, Kingdom of the', 'Kingdom of the Netherlands', null, 'Países Bajos', '🇳🇱', 'Bandera de Países Bajos'),
+  ('NO', 'NOR', 'Norway', 'Kingdom of Norway', null, null, '🇳🇴', 'Bandera de Norway'),
+  ('NP', 'NPL', 'Nepal', 'Federal Democratic Republic of Nepal', null, null, '🇳🇵', 'Bandera de Nepal'),
+  ('NR', 'NRU', 'Nauru', 'Republic of Nauru', null, null, '🇳🇷', 'Bandera de Nauru'),
+  ('NU', 'NIU', 'Niue', null, null, null, '🇳🇺', 'Bandera de Niue'),
+  ('NZ', 'NZL', 'New Zealand', null, null, 'Nueva Zelanda', '🇳🇿', 'Bandera de Nueva Zelanda'),
+  ('OM', 'OMN', 'Oman', 'Sultanate of Oman', null, null, '🇴🇲', 'Bandera de Oman'),
+  ('PA', 'PAN', 'Panama', 'Republic of Panama', null, 'Panamá', '🇵🇦', 'Bandera de Panamá'),
+  ('PE', 'PER', 'Peru', 'Republic of Peru', null, 'Perú', '🇵🇪', 'Bandera de Perú'),
+  ('PF', 'PYF', 'French Polynesia', null, null, null, '🇵🇫', 'Bandera de French Polynesia'),
+  ('PG', 'PNG', 'Papua New Guinea', 'Independent State of Papua New Guinea', null, null, '🇵🇬', 'Bandera de Papua New Guinea'),
+  ('PH', 'PHL', 'Philippines', 'Republic of the Philippines', null, 'Filipinas', '🇵🇭', 'Bandera de Filipinas'),
+  ('PK', 'PAK', 'Pakistan', 'Islamic Republic of Pakistan', null, null, '🇵🇰', 'Bandera de Pakistan'),
+  ('PL', 'POL', 'Poland', 'Republic of Poland', null, 'Polonia', '🇵🇱', 'Bandera de Polonia'),
+  ('PM', 'SPM', 'Saint Pierre and Miquelon', null, null, null, '🇵🇲', 'Bandera de Saint Pierre and Miquelon'),
+  ('PN', 'PCN', 'Pitcairn', null, null, null, '🇵🇳', 'Bandera de Pitcairn'),
+  ('PR', 'PRI', 'Puerto Rico', null, null, 'Puerto Rico', '🇵🇷', 'Bandera de Puerto Rico'),
+  ('PS', 'PSE', 'Palestine, State of', 'the State of Palestine', 'Palestine', null, '🇵🇸', 'Bandera de Palestine, State of'),
+  ('PT', 'PRT', 'Portugal', 'Portuguese Republic', null, 'Portugal', '🇵🇹', 'Bandera de Portugal'),
+  ('PW', 'PLW', 'Palau', 'Republic of Palau', null, null, '🇵🇼', 'Bandera de Palau'),
+  ('PY', 'PRY', 'Paraguay', 'Republic of Paraguay', null, 'Paraguay', '🇵🇾', 'Bandera de Paraguay'),
+  ('QA', 'QAT', 'Qatar', 'State of Qatar', null, null, '🇶🇦', 'Bandera de Qatar'),
+  ('RE', 'REU', 'Réunion', null, null, null, '🇷🇪', 'Bandera de Réunion'),
+  ('RO', 'ROU', 'Romania', null, null, null, '🇷🇴', 'Bandera de Romania'),
+  ('RS', 'SRB', 'Serbia', 'Republic of Serbia', null, null, '🇷🇸', 'Bandera de Serbia'),
+  ('RU', 'RUS', 'Russian Federation', null, null, 'Rusia', '🇷🇺', 'Bandera de Rusia'),
+  ('RW', 'RWA', 'Rwanda', 'Rwandese Republic', null, null, '🇷🇼', 'Bandera de Rwanda'),
+  ('SA', 'SAU', 'Saudi Arabia', 'Kingdom of Saudi Arabia', null, null, '🇸🇦', 'Bandera de Saudi Arabia'),
+  ('SB', 'SLB', 'Solomon Islands', null, null, null, '🇸🇧', 'Bandera de Solomon Islands'),
+  ('SC', 'SYC', 'Seychelles', 'Republic of Seychelles', null, null, '🇸🇨', 'Bandera de Seychelles'),
+  ('SD', 'SDN', 'Sudan', 'Republic of the Sudan', null, null, '🇸🇩', 'Bandera de Sudan'),
+  ('SE', 'SWE', 'Sweden', 'Kingdom of Sweden', null, null, '🇸🇪', 'Bandera de Sweden'),
+  ('SG', 'SGP', 'Singapore', 'Republic of Singapore', null, null, '🇸🇬', 'Bandera de Singapore'),
+  ('SH', 'SHN', 'Saint Helena, Ascension and Tristan da Cunha', null, null, null, '🇸🇭', 'Bandera de Saint Helena, Ascension and Tristan da Cunha'),
+  ('SI', 'SVN', 'Slovenia', 'Republic of Slovenia', null, null, '🇸🇮', 'Bandera de Slovenia'),
+  ('SJ', 'SJM', 'Svalbard and Jan Mayen', null, null, null, '🇸🇯', 'Bandera de Svalbard and Jan Mayen'),
+  ('SK', 'SVK', 'Slovakia', 'Slovak Republic', null, null, '🇸🇰', 'Bandera de Slovakia'),
+  ('SL', 'SLE', 'Sierra Leone', 'Republic of Sierra Leone', null, null, '🇸🇱', 'Bandera de Sierra Leone'),
+  ('SM', 'SMR', 'San Marino', 'Republic of San Marino', null, null, '🇸🇲', 'Bandera de San Marino'),
+  ('SN', 'SEN', 'Senegal', 'Republic of Senegal', null, null, '🇸🇳', 'Bandera de Senegal'),
+  ('SO', 'SOM', 'Somalia', 'Federal Republic of Somalia', null, null, '🇸🇴', 'Bandera de Somalia'),
+  ('SR', 'SUR', 'Suriname', 'Republic of Suriname', null, null, '🇸🇷', 'Bandera de Suriname'),
+  ('SS', 'SSD', 'South Sudan', 'Republic of South Sudan', null, null, '🇸🇸', 'Bandera de South Sudan'),
+  ('ST', 'STP', 'Sao Tome and Principe', 'Democratic Republic of Sao Tome and Principe', null, null, '🇸🇹', 'Bandera de Sao Tome and Principe'),
+  ('SV', 'SLV', 'El Salvador', 'Republic of El Salvador', null, 'El Salvador', '🇸🇻', 'Bandera de El Salvador'),
+  ('SX', 'SXM', 'Sint Maarten (Dutch part)', null, null, null, '🇸🇽', 'Bandera de Sint Maarten (Dutch part)'),
+  ('SY', 'SYR', 'Syrian Arab Republic', null, null, null, '🇸🇾', 'Bandera de Syrian Arab Republic'),
+  ('SZ', 'SWZ', 'Eswatini', 'Kingdom of Eswatini', null, null, '🇸🇿', 'Bandera de Eswatini'),
+  ('TC', 'TCA', 'Turks and Caicos Islands', null, null, null, '🇹🇨', 'Bandera de Turks and Caicos Islands'),
+  ('TD', 'TCD', 'Chad', 'Republic of Chad', null, null, '🇹🇩', 'Bandera de Chad'),
+  ('TF', 'ATF', 'French Southern Territories', null, null, null, '🇹🇫', 'Bandera de French Southern Territories'),
+  ('TG', 'TGO', 'Togo', 'Togolese Republic', null, null, '🇹🇬', 'Bandera de Togo'),
+  ('TH', 'THA', 'Thailand', 'Kingdom of Thailand', null, null, '🇹🇭', 'Bandera de Thailand'),
+  ('TJ', 'TJK', 'Tajikistan', 'Republic of Tajikistan', null, null, '🇹🇯', 'Bandera de Tajikistan'),
+  ('TK', 'TKL', 'Tokelau', null, null, null, '🇹🇰', 'Bandera de Tokelau'),
+  ('TL', 'TLS', 'Timor-Leste', 'Democratic Republic of Timor-Leste', null, null, '🇹🇱', 'Bandera de Timor-Leste'),
+  ('TM', 'TKM', 'Turkmenistan', null, null, null, '🇹🇲', 'Bandera de Turkmenistan'),
+  ('TN', 'TUN', 'Tunisia', 'Republic of Tunisia', null, null, '🇹🇳', 'Bandera de Tunisia'),
+  ('TO', 'TON', 'Tonga', 'Kingdom of Tonga', null, null, '🇹🇴', 'Bandera de Tonga'),
+  ('TR', 'TUR', 'Türkiye', 'Republic of Türkiye', null, null, '🇹🇷', 'Bandera de Türkiye'),
+  ('TT', 'TTO', 'Trinidad and Tobago', 'Republic of Trinidad and Tobago', null, null, '🇹🇹', 'Bandera de Trinidad and Tobago'),
+  ('TV', 'TUV', 'Tuvalu', null, null, null, '🇹🇻', 'Bandera de Tuvalu'),
+  ('TW', 'TWN', 'Taiwan, Province of China', null, 'Taiwan', null, '🇹🇼', 'Bandera de Taiwan, Province of China'),
+  ('TZ', 'TZA', 'Tanzania, United Republic of', 'United Republic of Tanzania', 'Tanzania', null, '🇹🇿', 'Bandera de Tanzania, United Republic of'),
+  ('UA', 'UKR', 'Ukraine', null, null, 'Ucrania', '🇺🇦', 'Bandera de Ucrania'),
+  ('UG', 'UGA', 'Uganda', 'Republic of Uganda', null, null, '🇺🇬', 'Bandera de Uganda'),
+  ('UM', 'UMI', 'United States Minor Outlying Islands', null, null, null, '🇺🇲', 'Bandera de United States Minor Outlying Islands'),
+  ('US', 'USA', 'United States', 'United States of America', null, 'Estados Unidos', '🇺🇸', 'Bandera de Estados Unidos'),
+  ('UY', 'URY', 'Uruguay', 'Eastern Republic of Uruguay', null, 'Uruguay', '🇺🇾', 'Bandera de Uruguay'),
+  ('UZ', 'UZB', 'Uzbekistan', 'Republic of Uzbekistan', null, null, '🇺🇿', 'Bandera de Uzbekistan'),
+  ('VA', 'VAT', 'Holy See (Vatican City State)', null, null, 'Santa Sede', '🇻🇦', 'Bandera de Santa Sede'),
+  ('VC', 'VCT', 'Saint Vincent and the Grenadines', null, null, null, '🇻🇨', 'Bandera de Saint Vincent and the Grenadines'),
+  ('VE', 'VEN', 'Venezuela, Bolivarian Republic of', 'Bolivarian Republic of Venezuela', 'Venezuela', 'Venezuela', '🇻🇪', 'Bandera de Venezuela'),
+  ('VG', 'VGB', 'Virgin Islands, British', 'British Virgin Islands', null, null, '🇻🇬', 'Bandera de Virgin Islands, British'),
+  ('VI', 'VIR', 'Virgin Islands, U.S.', 'Virgin Islands of the United States', null, null, '🇻🇮', 'Bandera de Virgin Islands, U.S.'),
+  ('VN', 'VNM', 'Viet Nam', 'Socialist Republic of Viet Nam', null, null, '🇻🇳', 'Bandera de Viet Nam'),
+  ('VU', 'VUT', 'Vanuatu', 'Republic of Vanuatu', null, null, '🇻🇺', 'Bandera de Vanuatu'),
+  ('WF', 'WLF', 'Wallis and Futuna', null, null, null, '🇼🇫', 'Bandera de Wallis and Futuna'),
+  ('WS', 'WSM', 'Samoa', 'Independent State of Samoa', null, null, '🇼🇸', 'Bandera de Samoa'),
+  ('YE', 'YEM', 'Yemen', 'Republic of Yemen', null, null, '🇾🇪', 'Bandera de Yemen'),
+  ('YT', 'MYT', 'Mayotte', null, null, null, '🇾🇹', 'Bandera de Mayotte'),
+  ('ZA', 'ZAF', 'South Africa', 'Republic of South Africa', null, 'Sudáfrica', '🇿🇦', 'Bandera de Sudáfrica'),
+  ('ZM', 'ZMB', 'Zambia', 'Republic of Zambia', null, null, '🇿🇲', 'Bandera de Zambia'),
+  ('ZW', 'ZWE', 'Zimbabwe', 'Republic of Zimbabwe', null, null, '🇿🇼', 'Bandera de Zimbabwe')
+on conflict (iso2) do update set
+  iso3 = excluded.iso3,
+  name_en = excluded.name_en,
+  official_name_en = excluded.official_name_en,
+  common_name_en = excluded.common_name_en,
+  name_es = excluded.name_es,
+  flag_emoji = excluded.flag_emoji,
+  flag_alt = excluded.flag_alt,
+  updated_at = now();
+
+create or replace view public.public_country_catalog as
+select
+  iso2 as key,
+  iso2,
+  iso3,
+  coalesce(name_es, name_en) as name,
+  name_en,
+  official_name_en,
+  common_name_en,
+  flag_emoji,
+  coalesce(flag_alt, 'Bandera de ' || coalesce(name_es, name_en)) as flag_alt
+from public.country_catalog
+where is_enabled_by_default = true
+order by coalesce(name_es, name_en);
+
+create or replace function public.enable_country_from_catalog(
+  p_iso2 text,
+  p_flag_image_url text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_catalog public.country_catalog%rowtype;
+  v_country_id uuid;
+begin
+  select *
+    into v_catalog
+  from public.country_catalog
+  where iso2 = upper(trim(p_iso2))::char(2);
+
+  if not found then
+    raise exception 'País no encontrado en el catálogo ISO: %', p_iso2;
+  end if;
+
+  insert into public.countries (
+    iso2,
+    iso3,
+    name,
+    official_name,
+    flag_emoji,
+    flag_image_url,
+    flag_alt,
+    status,
+    visibility
+  )
+  values (
+    v_catalog.iso2,
+    v_catalog.iso3,
+    coalesce(v_catalog.name_es, v_catalog.name_en),
+    coalesce(v_catalog.official_name_en, v_catalog.common_name_en, v_catalog.name_en),
+    v_catalog.flag_emoji,
+    p_flag_image_url,
+    coalesce(v_catalog.flag_alt, 'Bandera de ' || coalesce(v_catalog.name_es, v_catalog.name_en)),
+    'active',
+    'public'
+  )
+  on conflict (iso2) do update set
+    iso3 = excluded.iso3,
+    name = excluded.name,
+    official_name = excluded.official_name,
+    flag_emoji = excluded.flag_emoji,
+    flag_image_url = coalesce(excluded.flag_image_url, public.countries.flag_image_url),
+    flag_alt = excluded.flag_alt,
+    status = 'active',
+    visibility = 'public',
+    updated_at = now()
+  returning id into v_country_id;
+
+  return v_country_id;
+end;
+$$;
+
+create or replace view public.public_countries as
+select
+  c.id,
+  c.iso2 as key,
+  c.iso2,
+  c.iso3,
+  c.name,
+  c.official_name,
+  c.flag_emoji,
+  c.flag_image_url,
+  coalesce(c.flag_alt, 'Bandera de ' || c.name) as flag_alt
+from public.countries c
+where c.status = 'active'
+  and c.visibility = 'public'
+  and exists (
+    select 1
+    from public.ecclesiastical_entities ee
+    join public.entity_types et on et.id = ee.entity_type_id
+    where ee.country_iso2 = c.iso2
+      and ee.status = 'active'
+      and ee.visibility = 'public'
+      and et.key = any (array['archdiocese','diocese','military_ordinariate'])
+  )
+order by c.name;
