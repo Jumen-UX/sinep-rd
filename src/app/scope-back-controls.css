@@ -69,6 +69,11 @@
   background: #1b4f9c;
 }
 
+.public-directory-button {
+  cursor: pointer;
+  text-align: left;
+}
+
 @media (max-width: 780px) {
   .public-scope-backbar {
     align-items: stretch;
