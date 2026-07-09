@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         entity_type_key: entityTypeKey,
         country_iso2: normalizedPayload.country_iso2,
-        parent_entity_id: typeof normalizedPayload.parent_entity_id === 'string' ? normalizedPayload.parent_entity_id : null,
+        parent_entity_id: typeof payload.parent_entity_id === 'string' ? payload.parent_entity_id : null,
       },
     })
 

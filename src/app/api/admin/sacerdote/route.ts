@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
     }
 
     const result = data as SavePriestResult
-    const religiousInstituteName = cleanText(normalizedPayload.religious_institute_name) ?? cleanText(normalizedPayload.religious_order)
-    const religiousProvinceName = cleanText(normalizedPayload.religious_province_name)
-    const religiousHouseEntityId = cleanText(normalizedPayload.religious_house_entity_id)
+    const religiousInstituteName = cleanText(payload.religious_institute_name) ?? cleanText(payload.religious_order)
+    const religiousProvinceName = cleanText(payload.religious_province_name)
+    const religiousHouseEntityId = cleanText(payload.religious_house_entity_id)
 
     if (result.clergy_profile_id || result.person_id) {
       let query = supabase
