@@ -116,6 +116,64 @@
   border-top: 4px solid var(--primary);
 }
 
+.success-box {
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  border-radius: 18px;
+  color: #166534;
+  font-weight: 800;
+  padding: 14px 16px;
+}
+
+.admin-country-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.admin-country-card {
+  gap: 14px;
+}
+
+.admin-country-heading {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.admin-country-flag {
+  align-items: center;
+  background: var(--gold-soft);
+  border: 1px solid rgba(255, 192, 3, 0.45);
+  border-radius: 18px;
+  display: inline-flex;
+  flex: 0 0 62px;
+  height: 46px;
+  justify-content: center;
+  overflow: hidden;
+  width: 62px;
+}
+
+.admin-country-flag-image {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.admin-country-flag-emoji {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.admin-check-list {
+  color: var(--muted);
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+}
+
 .home-hero-panel {
   background: #ffffff;
   border-top: 5px solid var(--primary);
