@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -148,14 +149,14 @@ function StatusBadge({ status }: { status?: ModuleStatus }) {
 
 function QuickActionCard({ module }: { module: ModuleCard }) {
   return (
-    <a className="admin-quick-card" href={module.href}>
+    <Link className="admin-quick-card" href={module.href}>
       <span className="admin-card-icon">{module.icon}</span>
       <span>
         <strong>{module.title}</strong>
         <small>{module.type}</small>
       </span>
       <span className="admin-card-arrow" aria-hidden="true">→</span>
-    </a>
+    </Link>
   )
 }
 
@@ -182,7 +183,7 @@ function ModuleCardView({ module }: { module: ModuleCard }) {
   )
 
   if (isPlanned) return <article className={className}>{content}</article>
-  return <a className={className} href={module.href}>{content}</a>
+  return <Link className={className} href={module.href}>{content}</Link>
 }
 
 export default function AdminPage() {
@@ -257,7 +258,7 @@ export default function AdminPage() {
           <strong>Portal administrativo</strong>
         </div>
         <div className="admin-top-actions">
-          <a className="button button-secondary" href="/">Ver sitio público</a>
+          <Link className="button button-secondary" href="/">Ver sitio público</Link>
           <div className="admin-user-chip">
             <span className="admin-user-avatar">{getInitials(profile)}</span>
             <span>
@@ -290,18 +291,18 @@ export default function AdminPage() {
             <p className="eyebrow">Acciones rápidas</p>
             <h2>Trabajo frecuente</h2>
           </div>
-          <a className="admin-section-top-link" href="/admin/nuevo">Ver todos</a>
+          <Link className="admin-section-top-link" href="/admin/nuevo">Ver todos</Link>
         </div>
         <div className="admin-quick-grid">{quickActions.map((module) => <QuickActionCard module={module} key={module.href} />)}</div>
       </section>
 
       {summary && (
         <section className="admin-stat-strip" aria-label="Resumen administrativo">
-          <a href="/admin/jurisdicciones"><span>▥</span><strong>{summary.active_dioceses}</strong><small>Jurisdicciones registradas</small></a>
-          <a href="/admin/estructura?kind=territorial"><span>▦</span><strong>{summary.active_entities}</strong><small>Entidades eclesiales</small></a>
-          <a href="/admin/personas"><span>◉</span><strong>{summary.active_pastoral_areas}</strong><small>Áreas pastorales</small></a>
-          <a href="/admin/asignaciones"><span>▣</span><strong>{activeAssignments ?? '—'}</strong><small>Nombramientos activos</small></a>
-          <a href="/admin/eventos/pendientes"><span>!</span><strong>{summary.pending_change_requests}</strong><small>Pendientes de validación</small></a>
+          <Link href="/admin/jurisdicciones"><span>▥</span><strong>{summary.active_dioceses}</strong><small>Jurisdicciones registradas</small></Link>
+          <Link href="/admin/estructura?kind=territorial"><span>▦</span><strong>{summary.active_entities}</strong><small>Entidades eclesiales</small></Link>
+          <Link href="/admin/personas"><span>◉</span><strong>{summary.active_pastoral_areas}</strong><small>Áreas pastorales</small></Link>
+          <Link href="/admin/asignaciones"><span>▣</span><strong>{activeAssignments ?? '—'}</strong><small>Nombramientos activos</small></Link>
+          <Link href="/admin/eventos/pendientes"><span>!</span><strong>{summary.pending_change_requests}</strong><small>Pendientes de validación</small></Link>
         </section>
       )}
 
@@ -336,7 +337,7 @@ export default function AdminPage() {
               <p className="eyebrow">Actividad reciente</p>
               <h2>Últimos movimientos</h2>
             </div>
-            <a className="admin-section-top-link" href="/admin/eventos">Ver todas</a>
+            <Link className="admin-section-top-link" href="/admin/eventos">Ver todas</Link>
           </div>
           <ul>
             <li><span>▦</span><strong>Nueva estructura territorial actualizada</strong><small>Registro administrativo reciente</small></li>
@@ -351,7 +352,7 @@ export default function AdminPage() {
           <div><span>Base de datos</span><strong>Operativo</strong></div>
           <div><span>Catálogos</span><strong>Activo</strong></div>
           <div><span>Validación histórica</span><strong>Activo</strong></div>
-          <a href="/admin/configuracion">Ver estado completo →</a>
+          <Link href="/admin/configuracion">Ver estado completo →</Link>
         </article>
       </section>
     </div>
