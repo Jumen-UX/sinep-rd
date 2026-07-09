@@ -45,6 +45,15 @@ const flowGroups: FlowGroup[] = [
       { title: 'Registrar capilla', type: 'Capilla', description: 'Crear capilla dependiente de parroquia, sector u otra entidad existente.', href: '/admin/nuevo/capilla', status: 'Disponible', icon: '⌂', items: ['Entidad madre', 'Comunidad', 'Fuente'] },
     ],
   },
+  {
+    eyebrow: 'Carga masiva',
+    title: 'Cargar registros por lotes',
+    description: 'Entrada controlada para importar CSV o Excel con personas, parroquias, nombramientos o eventos, siempre con revisión antes de aplicar.',
+    icon: '⇪',
+    items: [
+      { title: 'Carga por lotes', type: 'Importación', description: 'Preparar archivo CSV/XLSX para validación, revisión y aplicación controlada.', href: '/admin/importar', status: 'Disponible', icon: '⇪', items: ['CSV / Excel', 'Validación previa', 'Cola de revisión'] },
+    ],
+  },
 ]
 
 function FlowCard({ item }: { item: FlowItem }) {
@@ -77,6 +86,7 @@ export default function AdminNuevoPage() {
         </div>
         <div className="admin-top-actions">
           <Link className="button button-secondary" href="/admin">Volver al panel</Link>
+          <Link className="button button-secondary" href="/admin/importar">Carga por lotes</Link>
           <Link className="button button-secondary" href="/admin/estructura">Configurar estructura</Link>
         </div>
       </header>
@@ -90,6 +100,7 @@ export default function AdminNuevoPage() {
             <span className="role-pill">{totalFlows} flujos disponibles</span>
             <span className="role-pill">Antiduplicados</span>
             <span className="role-pill">Trazabilidad</span>
+            <span className="role-pill">Carga masiva</span>
           </div>
         </div>
         <div className="admin-welcome-illustration" aria-hidden="true">＋</div>
