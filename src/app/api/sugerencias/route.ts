@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const fallbackUrl = 'https://hrvgpceqaxujlttpimdz.supabase.co'
-const fallbackKey = 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP'
-
-function getApiKey() {
-  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || fallbackKey
-}
+import { buildSupabaseRestUrl } from '@/lib/supabase/rest'
+import { getSupabaseRestHeaders } from '@/lib/supabase/config'
 
 function clean(value: unknown) {
   const text = String(value ?? '').trim()
@@ -13,9 +8,6 @@ function clean(value: unknown) {
 }
 
 export async function POST(request: NextRequest) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || fallbackUrl
-  const key = getApiKey()
-
   try {
     const body = await request.json()
     const targetTable = clean(body.target_table)
@@ -49,11 +41,10 @@ export async function POST(request: NextRequest) {
       priority: 'normal',
     }
 
-    const response = await fetch(`${url}/rest/v1/public_change_suggestions`, {
+    const response = await fetch(buildSupabaseRestUrl('public_change_suggestions'), {
       method: 'POST',
       headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
+        ...getSupabaseRestHeaders(),
         'Content-Type': 'application/json',
         Prefer: 'return=representation',
       },
@@ -63,12 +54,17 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const details = await response.text()
-      return NextResponse.json({ error: 'No se pudo enviar la sugerencia.', details }, { status: response.status })
+      console.error('Public suggestion submission failed', {
+        status: response.status,
+        details,
+      })
+      return NextResponse.json({ error: 'No se pudo enviar la sugerencia.' }, { status: response.status })
     }
 
     const result = await response.json()
     return NextResponse.json({ ok: true, suggestion: result[0] ?? null })
   } catch (error) {
-    return NextResponse.json({ error: 'No se pudo procesar la sugerencia.', details: error instanceof Error ? error.message : 'Error desconocido' }, { status: 500 })
+    console.error('Unexpected public suggestion API error', error)
+    return NextResponse.json({ error: 'No se pudo procesar la sugerencia.' }, { status: 500 })
   }
 }

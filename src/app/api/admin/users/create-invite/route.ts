@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getAppBaseUrl } from '@/lib/appBaseUrl'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
 
   try {
     const admin = createAdminClient()
-    const redirectTo = new URL('/admin/login', request.url).toString()
+    const redirectTo = new URL('/admin/login', getAppBaseUrl()).toString()
     const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
       data: {
         full_name: fullName || email,

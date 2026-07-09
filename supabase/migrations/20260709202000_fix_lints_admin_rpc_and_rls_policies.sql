@@ -68,8 +68,8 @@ begin
       on public.import_clergy_directory_review
       for all
       to authenticated
-      using (current_user_is_admin())
-      with check (current_user_is_admin());
+      using (current_user_has_admin_role())
+      with check (current_user_has_admin_role());
   end if;
 end $$;
 
@@ -85,8 +85,8 @@ begin
       on public.import_parish_directory_person_candidates_sto_dgo_2026
       for all
       to authenticated
-      using (current_user_is_admin())
-      with check (current_user_is_admin());
+      using (current_user_has_admin_role())
+      with check (current_user_has_admin_role());
   end if;
 end $$;
 
@@ -102,8 +102,8 @@ begin
       on public.import_parish_directory_staging
       for all
       to authenticated
-      using (current_user_is_admin())
-      with check (current_user_is_admin());
+      using (current_user_has_admin_role())
+      with check (current_user_has_admin_role());
   end if;
 end $$;
 
@@ -119,7 +119,7 @@ begin
       on public.import_parish_directory_sto_dgo_2026
       for all
       to authenticated
-      using (current_user_is_admin())
-      with check (current_user_is_admin());
+      using (current_user_has_admin_role())
+      with check (current_user_has_admin_role());
   end if;
 end $$;

@@ -78,17 +78,13 @@ export async function middleware(request: NextRequest) {
     return redirectToLogin(request)
   }
 
-  const { count: activeRoleCount, error: roleError } = await supabase
-    .from('user_role_assignments')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .eq('status', 'active')
+  const { data: hasAdminRole, error: roleError } = await supabase.rpc('current_user_has_admin_role')
 
   if (roleError) {
     console.warn(`[sinep-admin-role-check] user=${user.id} error=${roleError.message}`)
   }
 
-  if (roleError || (activeRoleCount ?? 0) < 1) {
+  if (roleError || hasAdminRole !== true) {
     return pathname === ADMIN_PREFIX ? decorateAdminResponse(response, request) : redirectToAdmin(request)
   }
 
