@@ -76,15 +76,6 @@ function emptyToNull(value: FormDataEntryValue | null) {
   return text.length > 0 ? text : null
 }
 
-function slugify(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
 function parentHelp(typeKey: string) {
   if (typeKey === 'ecclesiastical_province') return 'No requiere entidad superior. El país se selecciona desde el catálogo habilitado.'
   if (typeKey === 'archdiocese') return 'Selecciona la provincia eclesiástica del mismo país; se creará relación metropolitan_see.'
@@ -191,7 +182,6 @@ export default function NuevaJurisdiccionPage() {
 
     const form = new FormData(event.currentTarget)
     const name = String(form.get('name') ?? '').trim()
-    const slugInput = String(form.get('slug') ?? '').trim()
 
     if (!name) {
       setError('El nombre de la jurisdicción es obligatorio.')
@@ -209,7 +199,6 @@ export default function NuevaJurisdiccionPage() {
       entity_type_key: typeKey,
       name,
       official_name: emptyToNull(form.get('official_name')),
-      slug: slugInput || slugify(name),
       description: emptyToNull(form.get('description')),
       country_iso2: selectedCountry.iso2,
       country: selectedCountry.name,
@@ -251,8 +240,8 @@ export default function NuevaJurisdiccionPage() {
         throw new Error(data.error ?? 'No se pudo guardar la jurisdicción.')
       }
 
-      setSavedSlug(data.slug ?? payload.slug)
-      setMessage('Jurisdicción creada correctamente.')
+      setSavedSlug(data.slug ?? null)
+      setMessage('Jurisdicción creada correctamente. El sistema asignó la URL automáticamente.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar la jurisdicción.')
     } finally {
@@ -309,7 +298,7 @@ export default function NuevaJurisdiccionPage() {
             <input name="name" placeholder="Nombre: Diócesis de..." required />
             <input name="official_name" placeholder="Nombre oficial completo" />
             <input name="latin_name" placeholder="Nombre latino, si aplica" />
-            <input name="slug" placeholder="Slug opcional" />
+            <div className="empty-state"><strong>URL automática</strong><span>El sistema generará internamente la dirección pública a partir del nombre y evitará duplicados.</span></div>
             <textarea name="description" placeholder="Descripción pública breve" />
           </section>
         )}
@@ -392,7 +381,7 @@ export default function NuevaJurisdiccionPage() {
           <section>
             <p className="eyebrow">Paso 6</p>
             <h2>Revisión y guardado</h2>
-            <p className="lead">Guarda la jurisdicción. El sistema creará la ficha pública, la vinculará al país habilitado y, si seleccionaste una dependencia, registrará la relación jerárquica correspondiente.</p>
+            <p className="lead">Guarda la jurisdicción. El sistema creará la ficha pública, generará su URL automáticamente, la vinculará al país habilitado y, si seleccionaste una dependencia, registrará la relación jerárquica correspondiente.</p>
           </section>
         )}
 
