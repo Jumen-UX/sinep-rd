@@ -92,6 +92,7 @@ const moduleGroups: ModuleGroup[] = [
     title: 'Límites civiles, pastorales y canónicos',
     description: 'Separar división civil, delimitación pastoral y territorio eclesiástico sin forzar que coincidan.',
     modules: [
+      { href: '/admin/paises', type: 'Países', title: 'Países ISO', description: 'Habilitar países desde catálogo ISO, gestionar banderas y controlar visibilidad pública.' },
       { href: '/admin/territorio', type: 'Civil', title: 'División civil', description: 'Países, provincias, municipios, distritos y barrios con listas oficiales.', status: 'planned' },
       { href: '/admin/territorio/mapas', type: 'Mapas', title: 'Mapas y delimitaciones', description: 'Dibujar o validar límites territoriales, pastorales y canónicos.', status: 'planned' },
       { href: '/admin/territorio/intersecciones', type: 'Cruces', title: 'Intersecciones territoriales', description: 'Ver qué municipios, barrios o sectores caen dentro de una estructura eclesial.', status: 'planned' },
