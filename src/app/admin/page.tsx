@@ -13,7 +13,6 @@ type Summary = { active_entities: number; active_dioceses: number; active_pastor
 type ModuleStatus = 'active' | 'planned' | 'config'
 type ModuleCard = { href: string; icon: string; type: string; title: string; description: string; status?: ModuleStatus; items?: string[] }
 type ModuleGroup = { id: string; icon: string; eyebrow: string; title: string; description: string; modules: ModuleCard[] }
-type SidebarItem = { href: string; icon: string; label: string; sublabel?: string; status?: ModuleStatus }
 
 function getRoleInfo(role: RoleRow): RoleInfo | null {
   if (!role.roles) return null
@@ -30,20 +29,6 @@ function getInitials(profile: Profile | null) {
     .map((part) => part[0]?.toUpperCase())
     .join('') || 'AD'
 }
-
-const sidebarItems: SidebarItem[] = [
-  { href: '#top', icon: '⌂', label: 'Inicio' },
-  { href: '/admin/nuevo', icon: '＋', label: 'Agregar nueva ficha' },
-  { href: '#gobierno', icon: '▥', label: 'Jurisdicciones', sublabel: 'Diócesis y provincias' },
-  { href: '#estructura', icon: '▦', label: 'Estructura interna', sublabel: 'Zonas, decanatos, sectores' },
-  { href: '#personas', icon: '◉', label: 'Personas', sublabel: 'Clero, religiosos, laicos' },
-  { href: '/admin/asignaciones', icon: '▣', label: 'Nombramientos', sublabel: 'Cargos y asignaciones' },
-  { href: '#territorio', icon: '◎', label: 'Territorio y mapas', sublabel: 'Países, límites, mapas' },
-  { href: '#historia', icon: '◷', label: 'Eventos históricos', sublabel: 'Hechos y cronología' },
-  { href: '#usuarios', icon: '♙', label: 'Usuarios y permisos', sublabel: 'Roles y accesos' },
-  { href: '#organismos', icon: '◇', label: 'Organismos y consejos', sublabel: 'Organización colegial' },
-  { href: '#configuracion', icon: '⚙', label: 'Configuración', sublabel: 'Catálogos y sistema' },
-]
 
 const quickActions: ModuleCard[] = [
   { href: '/admin/nuevo/jurisdiccion', icon: '⛪', type: 'Gobierno', title: 'Nueva jurisdicción', description: 'Provincia, arquidiócesis, diócesis u ordinariato.' },
@@ -124,9 +109,9 @@ const moduleGroups: ModuleGroup[] = [
     title: 'Cuentas, roles, permisos y sesiones',
     description: 'Administración de usuarios del sistema, roles por alcance y auditoría de acceso.',
     modules: [
-      { href: '/admin/usuarios', icon: '♙', type: 'Próximo', title: 'Usuarios del sistema', description: 'Crear, activar, suspender y vincular usuarios.', status: 'planned', items: ['Usuarios', 'Personas vinculadas', 'Estado'] },
-      { href: '/admin/usuarios/roles', icon: '◇', type: 'Próximo', title: 'Roles y permisos', description: 'Asignar roles por país, diócesis o módulo.', status: 'planned', items: ['Alcance', 'Rol', 'Permisos'] },
-      { href: '/admin/usuarios/auditoria', icon: '◷', type: 'Próximo', title: 'Auditoría de acceso', description: 'Consultar ingresos, sesiones y acciones sensibles.', status: 'planned', items: ['Sesiones', 'Cambios', 'Seguridad'] },
+      { href: '/admin/usuarios', icon: '♙', type: 'Activo', title: 'Usuarios del sistema', description: 'Crear, activar, suspender y vincular usuarios.', items: ['Usuarios', 'Personas vinculadas', 'Estado'] },
+      { href: '/admin/usuarios', icon: '◇', type: 'Activo', title: 'Roles y permisos', description: 'Asignar roles por país, diócesis o módulo.', items: ['Alcance', 'Rol', 'Permisos'] },
+      { href: '/admin/usuarios', icon: '◷', type: 'Activo', title: 'Auditoría de acceso', description: 'Consultar ingresos, sesiones y acciones sensibles disponibles.', items: ['Sesiones', 'Cambios', 'Seguridad'] },
     ],
   },
   {
@@ -207,6 +192,7 @@ export default function AdminPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [roles, setRoles] = useState<RoleRow[]>([])
   const [summary, setSummary] = useState<Summary | null>(null)
+  const [activeAssignments, setActiveAssignments] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -228,10 +214,15 @@ export default function AdminPage() {
         return
       }
 
-      const { data: summaryData } = await supabase.from('admin_dashboard_summary').select('active_entities,active_dioceses,active_pastoral_areas,pending_change_requests').maybeSingle()
+      const [{ data: summaryData }, assignmentCountResponse] = await Promise.all([
+        supabase.from('admin_dashboard_summary').select('active_entities,active_dioceses,active_pastoral_areas,pending_change_requests').maybeSingle(),
+        supabase.from('position_assignments').select('id', { count: 'exact', head: true }).eq('is_current', true).eq('assignment_status', 'active'),
+      ])
+
       setProfile((profileData as Profile | null) ?? { full_name: userData.user.email ?? null, email: userData.user.email ?? null })
       setRoles((roleData ?? []) as unknown as RoleRow[])
       setSummary((summaryData as Summary | null) ?? null)
+      setActiveAssignments(assignmentCountResponse.error ? null : assignmentCountResponse.count ?? 0)
       setLoading(false)
     }
 
@@ -244,158 +235,125 @@ export default function AdminPage() {
     router.push('/admin/login')
   }
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando portal administrativo...</div></main>
-  if (error) return <main className="container"><div className="error-box">{error}</div></main>
+  if (loading) return <div className="empty-state">Cargando portal administrativo...</div>
+  if (error) return <div className="error-box">{error}</div>
 
   if (roles.length === 0) {
     return (
-      <main className="container">
-        <div className="card">
-          <p className="eyebrow">Acceso pendiente</p>
-          <h1>Usuario sin rol activo</h1>
-          <p className="lead">Tu cuenta existe, pero todavía no tiene un rol administrativo activo.</p>
-          <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
-        </div>
-      </main>
+      <section className="card">
+        <p className="eyebrow">Acceso pendiente</p>
+        <h1>Usuario sin rol activo</h1>
+        <p className="lead">Tu cuenta existe, pero todavía no tiene un rol administrativo activo.</p>
+        <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
+      </section>
     )
   }
 
   return (
-    <main className="admin-redesign" id="top">
-      <aside className="admin-sidebar" aria-label="Navegación administrativa">
-        <a className="admin-brand-block" href="/admin">
-          <span className="admin-brand-shield">SD</span>
-          <span>
-            <strong>SINEP RD</strong>
-            <small>Sistema de Información Eclesial</small>
-          </span>
-        </a>
-
-        <nav className="admin-sidebar-nav">
-          {sidebarItems.map((item) => (
-            <a href={item.href} key={`${item.href}-${item.label}`}>
-              <span aria-hidden="true">{item.icon}</span>
-              <span>
-                <strong>{item.label}</strong>
-                {item.sublabel && <small>{item.sublabel}</small>}
-              </span>
-            </a>
-          ))}
-        </nav>
-
-        <div className="admin-sidebar-help">
-          <span>☏</span>
-          <strong>¿Necesitas ayuda?</strong>
-          <small>Consulta documentación o soporte interno.</small>
-          <a href="/admin/configuracion">Centro de ayuda</a>
+    <div id="top">
+      <header className="admin-top-header">
+        <div className="admin-top-title">
+          <span className="admin-mini-mark">SINEP RD</span>
+          <strong>Portal administrativo</strong>
         </div>
-      </aside>
-
-      <section className="admin-workspace">
-        <header className="admin-top-header">
-          <div className="admin-top-title">
-            <span className="admin-mini-mark">SINEP RD</span>
-            <strong>Portal administrativo</strong>
+        <div className="admin-top-actions">
+          <a className="button button-secondary" href="/">Ver sitio público</a>
+          <div className="admin-user-chip">
+            <span className="admin-user-avatar">{getInitials(profile)}</span>
+            <span>
+              <strong>{profile?.full_name ?? profile?.email}</strong>
+              <small>Administrador</small>
+            </span>
           </div>
-          <div className="admin-top-actions">
-            <a className="button button-secondary" href="/">Ver sitio público</a>
-            <div className="admin-user-chip">
-              <span className="admin-user-avatar">{getInitials(profile)}</span>
-              <span>
-                <strong>{profile?.full_name ?? profile?.email}</strong>
-                <small>Administrador</small>
-              </span>
-            </div>
-            <button className="button button-secondary" onClick={handleSignOut} type="button">Salir</button>
+          <button className="button button-secondary" onClick={handleSignOut} type="button">Salir</button>
+        </div>
+      </header>
+
+      <section className="admin-welcome-panel">
+        <div>
+          <p className="eyebrow">Bienvenido</p>
+          <h1>{profile?.full_name ?? profile?.email}</h1>
+          <p className="lead">Gestiona la información eclesial, pastoral y territorial desde un flujo ordenado, seguro y verificable.</p>
+          <div className="role-list admin-role-list">
+            {roles.map((role) => {
+              const roleInfo = getRoleInfo(role)
+              return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span>
+            })}
           </div>
-        </header>
-
-        <section className="admin-welcome-panel">
-          <div>
-            <p className="eyebrow">Bienvenido</p>
-            <h1>{profile?.full_name ?? profile?.email}</h1>
-            <p className="lead">Gestiona la información eclesial, pastoral y territorial desde un flujo ordenado, seguro y verificable.</p>
-            <div className="role-list admin-role-list">
-              {roles.map((role) => {
-                const roleInfo = getRoleInfo(role)
-                return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span>
-              })}
-            </div>
-          </div>
-          <div className="admin-welcome-illustration" aria-hidden="true">♰</div>
-        </section>
-
-        <section className="admin-action-panel card">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Acciones rápidas</p>
-              <h2>Trabajo frecuente</h2>
-            </div>
-            <a className="admin-section-top-link" href="/admin/nuevo">Ver todos</a>
-          </div>
-          <div className="admin-quick-grid">{quickActions.map((module) => <QuickActionCard module={module} key={module.href} />)}</div>
-        </section>
-
-        {summary && (
-          <section className="admin-stat-strip" aria-label="Resumen administrativo">
-            <a href="/admin/jurisdicciones"><span>▥</span><strong>{summary.active_dioceses}</strong><small>Jurisdicciones registradas</small></a>
-            <a href="/admin/estructura?kind=territorial"><span>▦</span><strong>{summary.active_entities}</strong><small>Entidades eclesiales</small></a>
-            <a href="/admin/personas"><span>◉</span><strong>{summary.active_pastoral_areas}</strong><small>Áreas pastorales</small></a>
-            <a href="/admin/asignaciones"><span>▣</span><strong>48</strong><small>Nombramientos activos</small></a>
-            <a href="/admin/eventos/pendientes"><span>!</span><strong>{summary.pending_change_requests}</strong><small>Pendientes de validación</small></a>
-          </section>
-        )}
-
-        <section className="admin-main-modules">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Módulos principales</p>
-              <h2>Centro de administración</h2>
-            </div>
-          </div>
-
-          {moduleGroups.map((group) => (
-            <article className="admin-module-group" id={group.id} key={group.id}>
-              <div className="admin-group-heading">
-                <span>{group.icon}</span>
-                <div>
-                  <p className="eyebrow">{group.eyebrow}</p>
-                  <h2>{group.title}</h2>
-                  <p className="meta">{group.description}</p>
-                </div>
-                <a href="#top">Subir</a>
-              </div>
-              <div className="admin-module-grid">{group.modules.map((module) => <ModuleCardView module={module} key={module.href} />)}</div>
-            </article>
-          ))}
-        </section>
-
-        <section className="admin-bottom-grid">
-          <article className="card admin-activity-card">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Actividad reciente</p>
-                <h2>Últimos movimientos</h2>
-              </div>
-              <a className="admin-section-top-link" href="/admin/eventos">Ver todas</a>
-            </div>
-            <ul>
-              <li><span>▦</span><strong>Nueva estructura territorial actualizada</strong><small>Registro administrativo reciente</small></li>
-              <li><span>▣</span><strong>Regla de nombramientos protegida</strong><small>Historial de cargos sin duplicados actuales</small></li>
-              <li><span>◎</span><strong>Catálogo de países habilitado</strong><small>Países públicos solo con datos registrados</small></li>
-            </ul>
-          </article>
-
-          <article className="card admin-system-card">
-            <p className="eyebrow">Estado del sistema</p>
-            <h2>Servicios principales</h2>
-            <div><span>Base de datos</span><strong>Operativo</strong></div>
-            <div><span>Catálogos</span><strong>Activo</strong></div>
-            <div><span>Validación histórica</span><strong>Activo</strong></div>
-            <a href="/admin/configuracion">Ver estado completo →</a>
-          </article>
-        </section>
+        </div>
+        <div className="admin-welcome-illustration" aria-hidden="true">♰</div>
       </section>
-    </main>
+
+      <section className="admin-action-panel card">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Acciones rápidas</p>
+            <h2>Trabajo frecuente</h2>
+          </div>
+          <a className="admin-section-top-link" href="/admin/nuevo">Ver todos</a>
+        </div>
+        <div className="admin-quick-grid">{quickActions.map((module) => <QuickActionCard module={module} key={module.href} />)}</div>
+      </section>
+
+      {summary && (
+        <section className="admin-stat-strip" aria-label="Resumen administrativo">
+          <a href="/admin/jurisdicciones"><span>▥</span><strong>{summary.active_dioceses}</strong><small>Jurisdicciones registradas</small></a>
+          <a href="/admin/estructura?kind=territorial"><span>▦</span><strong>{summary.active_entities}</strong><small>Entidades eclesiales</small></a>
+          <a href="/admin/personas"><span>◉</span><strong>{summary.active_pastoral_areas}</strong><small>Áreas pastorales</small></a>
+          <a href="/admin/asignaciones"><span>▣</span><strong>{activeAssignments ?? '—'}</strong><small>Nombramientos activos</small></a>
+          <a href="/admin/eventos/pendientes"><span>!</span><strong>{summary.pending_change_requests}</strong><small>Pendientes de validación</small></a>
+        </section>
+      )}
+
+      <section className="admin-main-modules">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Módulos principales</p>
+            <h2>Centro de administración</h2>
+          </div>
+        </div>
+
+        {moduleGroups.map((group) => (
+          <article className="admin-module-group" id={group.id} key={group.id}>
+            <div className="admin-group-heading">
+              <span>{group.icon}</span>
+              <div>
+                <p className="eyebrow">{group.eyebrow}</p>
+                <h2>{group.title}</h2>
+                <p className="meta">{group.description}</p>
+              </div>
+              <a href="#top">Subir</a>
+            </div>
+            <div className="admin-module-grid">{group.modules.map((module) => <ModuleCardView module={module} key={`${module.href}-${module.title}`} />)}</div>
+          </article>
+        ))}
+      </section>
+
+      <section className="admin-bottom-grid">
+        <article className="card admin-activity-card">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Actividad reciente</p>
+              <h2>Últimos movimientos</h2>
+            </div>
+            <a className="admin-section-top-link" href="/admin/eventos">Ver todas</a>
+          </div>
+          <ul>
+            <li><span>▦</span><strong>Nueva estructura territorial actualizada</strong><small>Registro administrativo reciente</small></li>
+            <li><span>▣</span><strong>Regla de nombramientos protegida</strong><small>Historial de cargos sin duplicados actuales</small></li>
+            <li><span>◎</span><strong>Catálogo de países habilitado</strong><small>Países públicos solo con datos registrados</small></li>
+          </ul>
+        </article>
+
+        <article className="card admin-system-card">
+          <p className="eyebrow">Estado del sistema</p>
+          <h2>Servicios principales</h2>
+          <div><span>Base de datos</span><strong>Operativo</strong></div>
+          <div><span>Catálogos</span><strong>Activo</strong></div>
+          <div><span>Validación histórica</span><strong>Activo</strong></div>
+          <a href="/admin/configuracion">Ver estado completo →</a>
+        </article>
+      </section>
+    </div>
   )
 }
