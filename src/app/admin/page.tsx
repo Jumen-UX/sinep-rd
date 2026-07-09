@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -12,7 +11,7 @@ type RoleInfo = { key: string; name: string }
 type RoleRow = { scope_type: string | null; status: string; roles: RoleInfo[] | RoleInfo | null }
 type Summary = { active_entities: number; active_dioceses: number; active_pastoral_areas: number; pending_change_requests: number }
 type ModuleCard = { href: string; type: string; title: string; description: string; status?: 'active' | 'planned' }
-type ModuleGroup = { eyebrow: string; title: string; description: string; modules: ModuleCard[] }
+type ModuleGroup = { id: string; eyebrow: string; title: string; description: string; modules: ModuleCard[] }
 
 function getRoleInfo(role: RoleRow): RoleInfo | null {
   if (!role.roles) return null
@@ -21,14 +20,15 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
 }
 
 const quickActions: ModuleCard[] = [
+  { href: '/admin/nuevo', type: 'Registro', title: 'Agregar nueva ficha', description: 'Registrar personas, jurisdicciones, parroquias o capillas desde asistentes guiados.' },
   { href: '/admin/eventos/pendientes', type: 'Pendiente', title: 'Revisar eventos', description: 'Atender eventos pendientes antes de aprobar, planificar o contratar.' },
-  { href: '/admin/eventos/nuevo', type: 'Carga', title: 'Registrar hecho histórico', description: 'Crear carga histórica, evento nuevo o foto inicial vigente.' },
-  { href: '/admin/estructura/eventos', type: 'Cambio', title: 'Registrar evolución estructural', description: 'Preparar cambios de vicarías, zonas, parroquias, sectores o niveles.' },
-  { href: '/admin/personas', type: 'Personas', title: 'Buscar persona', description: 'Abrir fichas de obispos, presbíteros, religiosos, diáconos o laicos responsables.' },
+  { href: '/admin/asignaciones', type: 'Nombramientos', title: 'Cargos y nombramientos', description: 'Registrar nombramientos, traslados, renuncias, vacantes y responsables.' },
+  { href: '/admin/paises', type: 'Catálogo', title: 'Países ISO', description: 'Habilitar países desde catálogo ISO, gestionar banderas y controlar visibilidad pública.' },
 ]
 
 const moduleGroups: ModuleGroup[] = [
   {
+    id: 'historia',
     eyebrow: 'Registro histórico',
     title: 'Hechos, fuentes y trazabilidad',
     description: 'Todo cambio entra al sistema como hecho verificable, con fecha, fuente, participantes, impacto y estado de revisión.',
@@ -41,41 +41,46 @@ const moduleGroups: ModuleGroup[] = [
     ],
   },
   {
+    id: 'gobierno',
     eyebrow: 'Gobierno eclesial',
     title: 'Jurisdicciones y relaciones canónicas',
     description: 'Gobierno territorial-canónico: Iglesia, provincias, arquidiócesis, diócesis, ordinariatos y relaciones vigentes o históricas.',
     modules: [
       { href: '/admin/jurisdicciones', type: 'Jurisdicciones', title: 'Iglesia y jurisdicciones', description: 'Ver Iglesia sui iuris, provincias eclesiásticas, sedes metropolitanas y sufragáneas.' },
+      { href: '/admin/nuevo/jurisdiccion', type: 'Asistente', title: 'Nueva jurisdicción', description: 'Crear provincia eclesiástica, arquidiócesis, diócesis u ordinariato desde países habilitados.' },
       { href: '/admin/jurisdicciones?tipo=provincia', type: 'Provincia', title: 'Provincias eclesiásticas', description: 'Organizar sede metropolitana, diócesis sufragáneas y pertenencia provincial.', status: 'planned' },
       { href: '/admin/jurisdicciones?tipo=diocesis', type: 'Diócesis', title: 'Arquidiócesis y diócesis', description: 'Administrar jurisdicciones diocesanas, categoría, sede, estado y dependencia.', status: 'planned' },
-      { href: '/admin/jurisdicciones?tipo=ordinariato', type: 'Personal', title: 'Ordinariatos y jurisdicciones personales', description: 'Gestionar jurisdicciones personales, militares o inmediatamente sujetas.', status: 'planned' },
       { href: '/admin/jurisdicciones?vista=relaciones', type: 'Relaciones', title: 'Relaciones canónicas', description: 'Ver y auditar relaciones de pertenencia, sufraganeidad, sede metropolitana y dependencia.', status: 'planned' },
     ],
   },
   {
+    id: 'estructura',
     eyebrow: 'Estructura pastoral y territorial',
     title: 'Organización interna flexible de cada diócesis',
     description: 'Vicarías, zonas, parroquias, sectores, capillas y comunidades según el esquema propio de cada jurisdicción.',
     modules: [
       { href: '/admin/estructura?kind=territorial', type: 'Estructura', title: 'Estructura interna', description: 'Configurar niveles y jerarquías internas: vicarías, zonas, parroquias, sectores y capillas.' },
+      { href: '/admin/nuevo/parroquia', type: 'Asistente', title: 'Nueva parroquia', description: 'Crear parroquia desde país habilitado y estructura territorial flexible.' },
+      { href: '/admin/nuevo/capilla', type: 'Asistente', title: 'Nueva capilla', description: 'Crear capilla y vincularla a su parroquia, zona o diócesis.' },
       { href: '/admin/estructura/eventos', type: 'Evolución', title: 'Evolución estructural', description: 'Registrar creación, división, supresión, cambio de límite, dependencia o nivel.' },
-      { href: '/admin/estructura?level=parish', type: 'Parroquias', title: 'Parroquias y comunidades', description: 'Gestionar parroquias, cuasiparroquias, capillas, comunidades y centros especiales.', status: 'planned' },
       { href: '/admin/estructura/eventos/verificacion', type: 'Verificación', title: 'Verificación estructural', description: 'Revisar impacto, plan, editor, conflictos y contrato de evolución estructural.' },
     ],
   },
   {
+    id: 'personas',
     eyebrow: 'Personas y ministerios',
     title: 'Personas, cargos y nombramientos',
     description: 'Obispos, presbíteros, diáconos, religiosos, laicos con responsabilidad y oficios eclesiásticos.',
     modules: [
       { href: '/admin/personas', type: 'Personas', title: 'Personas', description: 'Buscar y administrar personas registradas en el sistema.' },
-      { href: '/admin/personas?tipo=clero', type: 'Clero', title: 'Clero', description: 'Presbíteros, diáconos, incardinación, estado ministerial y pertenencia.', status: 'planned' },
-      { href: '/admin/personas?tipo=religiosos', type: 'Vida consagrada', title: 'Religiosos y religiosas', description: 'Institutos, casas religiosas, superiores y miembros con oficio registrado.', status: 'planned' },
+      { href: '/admin/nuevo/sacerdote', type: 'Clero', title: 'Registrar sacerdote', description: 'Crear sacerdote nuevo o completar desde diácono existente.' },
+      { href: '/admin/nuevo/obispo', type: 'Clero', title: 'Registrar obispo', description: 'Completar desde sacerdote existente o registrar obispo externo.' },
       { href: '/admin/asignaciones', type: 'Nombramientos', title: 'Cargos y nombramientos', description: 'Registrar nombramientos, traslados, renuncias, vacantes y responsables.' },
       { href: '/admin/asignaciones?vista=vacantes', type: 'Vacantes', title: 'Vacantes', description: 'Ver cargos vacantes por jurisdicción, parroquia, curia u organismo.', status: 'planned' },
     ],
   },
   {
+    id: 'usuarios',
     eyebrow: 'Usuarios y acceso',
     title: 'Cuentas, roles, permisos y sesiones',
     description: 'Administración de usuarios del sistema. Una persona eclesial puede tener usuario, pero persona y usuario no son lo mismo.',
@@ -88,6 +93,7 @@ const moduleGroups: ModuleGroup[] = [
     ],
   },
   {
+    id: 'territorio',
     eyebrow: 'Territorio y mapas',
     title: 'Límites civiles, pastorales y canónicos',
     description: 'Separar división civil, delimitación pastoral y territorio eclesiástico sin forzar que coincidan.',
@@ -99,6 +105,7 @@ const moduleGroups: ModuleGroup[] = [
     ],
   },
   {
+    id: 'organismos',
     eyebrow: 'Organismos y administración',
     title: 'Curia, oficinas, consejos y servicios pastorales',
     description: 'Estructuras no territoriales que pueden ser administrativas, pastorales u orgánicas.',
@@ -109,6 +116,7 @@ const moduleGroups: ModuleGroup[] = [
     ],
   },
   {
+    id: 'configuracion',
     eyebrow: 'Configuración',
     title: 'Catálogos, reglas y validaciones',
     description: 'Listas controladas, estándares oficiales, tipos canónicos, cargos, estados y comprobaciones del sistema.',
@@ -121,25 +129,28 @@ const moduleGroups: ModuleGroup[] = [
   },
 ]
 
-function openModule(href: string) {
-  if (typeof window !== 'undefined') {
-    window.location.assign(href)
-  }
-}
-
-function ModuleCardView({ module }: { module: ModuleCard }) {
+function ModuleCardView({ module, compact = false }: { module: ModuleCard; compact?: boolean }) {
   const isPlanned = module.status === 'planned'
+  const className = `entity-card admin-module ${compact ? 'admin-module-compact' : ''}`
+
+  if (isPlanned) {
+    return (
+      <article className={`${className} admin-module-disabled`} key={`${module.href}-${module.title}`}>
+        <p className="entity-type">{module.type} · Próximo</p>
+        <h2>{module.title}</h2>
+        <p className="meta">{module.description}</p>
+        <span className="button button-secondary">Pendiente</span>
+      </article>
+    )
+  }
+
   return (
-    <article className="entity-card admin-module" key={`${module.href}-${module.title}`}>
-      <p className="entity-type">{module.type}{isPlanned ? ' · Próximo' : ''}</p>
+    <a className={`${className} admin-module-link`} href={module.href} key={`${module.href}-${module.title}`}>
+      <p className="entity-type">{module.type}</p>
       <h2>{module.title}</h2>
       <p className="meta">{module.description}</p>
-      {isPlanned ? (
-        <span className="button button-secondary">Pendiente</span>
-      ) : (
-        <button className="button button-primary" onClick={() => openModule(module.href)} type="button">Abrir</button>
-      )}
-    </article>
+      <span className="button button-primary">Abrir</span>
+    </a>
   )
 }
 
@@ -204,15 +215,63 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="container admin-dashboard">
-      <div className="admin-topbar">
-        <div><p className="eyebrow">Inicio</p><h1>Bienvenido, {profile?.full_name ?? profile?.email}</h1><p className="lead">Administra SINEP por áreas eclesiales: historia, gobierno, estructura, personas, usuarios, territorio y configuración.</p></div>
-        <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
-      </div>
-      <section className="card admin-section"><h2>Roles activos</h2><div className="role-list">{roles.map((role) => { const roleInfo = getRoleInfo(role); return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span> })}</div></section>
-      {summary && <section className="dashboard-grid"><div className="metric-card"><strong>{summary.active_dioceses}</strong><span>Diócesis y jurisdicciones</span></div><div className="metric-card"><strong>{summary.active_entities}</strong><span>Entidades activas</span></div><div className="metric-card"><strong>{summary.active_pastoral_areas}</strong><span>Áreas pastorales</span></div><div className="metric-card"><strong>{summary.pending_change_requests}</strong><span>Solicitudes pendientes</span></div></section>}
-      <section className="card admin-section"><div className="section-heading"><div><p className="eyebrow">Acceso rápido</p><h2>Trabajo frecuente</h2><p className="meta">Acciones que normalmente se revisan o registran primero.</p></div></div><div className="grid admin-modules">{quickActions.map((module) => <ModuleCardView module={module} key={`${module.href}-${module.title}`} />)}</div></section>
-      {moduleGroups.map((group) => <section className="card admin-section" key={group.title}><div className="section-heading"><div><p className="eyebrow">{group.eyebrow}</p><h2>{group.title}</h2><p className="meta">{group.description}</p></div></div><div className="grid admin-modules">{group.modules.map((module) => <ModuleCardView module={module} key={`${module.href}-${module.title}`} />)}</div></section>)}
+    <main className="container admin-dashboard admin-portal">
+      <section className="admin-hero">
+        <div>
+          <p className="eyebrow">Portal administrativo</p>
+          <h1>SINEP RD</h1>
+          <p className="lead">Panel operativo para registrar, validar y publicar información eclesial con trazabilidad histórica.</p>
+          <div className="role-list admin-role-list">
+            {roles.map((role) => {
+              const roleInfo = getRoleInfo(role)
+              return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span>
+            })}
+          </div>
+        </div>
+        <div className="admin-hero-actions">
+          <a className="button button-primary" href="/admin/nuevo">Agregar nueva ficha</a>
+          <a className="button button-secondary" href="/">Ver portal público</a>
+          <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
+        </div>
+      </section>
+
+      {summary && (
+        <section className="dashboard-grid admin-summary-grid" aria-label="Resumen administrativo">
+          <div className="metric-card"><strong>{summary.active_dioceses}</strong><span>Jurisdicciones</span></div>
+          <div className="metric-card"><strong>{summary.active_entities}</strong><span>Entidades activas</span></div>
+          <div className="metric-card"><strong>{summary.active_pastoral_areas}</strong><span>Áreas pastorales</span></div>
+          <div className="metric-card"><strong>{summary.pending_change_requests}</strong><span>Pendientes</span></div>
+        </section>
+      )}
+
+      <nav className="admin-area-nav" aria-label="Áreas administrativas">
+        {moduleGroups.map((group) => <a href={`#${group.id}`} key={group.id}>{group.title}</a>)}
+      </nav>
+
+      <section className="card admin-section admin-priority-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Acceso rápido</p>
+            <h2>Trabajo frecuente</h2>
+            <p className="meta">Rutas principales con navegación HTML directa para evitar bloqueos de botones.</p>
+          </div>
+        </div>
+        <div className="grid admin-modules admin-priority-grid">{quickActions.map((module) => <ModuleCardView compact module={module} key={`${module.href}-${module.title}`} />)}</div>
+      </section>
+
+      {moduleGroups.map((group) => (
+        <section className="card admin-section" id={group.id} key={group.id}>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">{group.eyebrow}</p>
+              <h2>{group.title}</h2>
+              <p className="meta">{group.description}</p>
+            </div>
+            <a className="admin-section-top-link" href="#top">Subir</a>
+          </div>
+          <div className="grid admin-modules">{group.modules.map((module) => <ModuleCardView module={module} key={`${module.href}-${module.title}`} />)}</div>
+        </section>
+      ))}
     </main>
   )
 }
