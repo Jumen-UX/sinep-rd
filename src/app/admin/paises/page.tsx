@@ -43,7 +43,6 @@ type PublicCountry = {
 
 type CatalogResponse = { countries: CatalogCountry[] }
 type AdminCountriesResponse = { enabled_countries: EnabledCountry[]; public_countries: PublicCountry[]; error?: string }
-
 type EnableCountryResponse = { country_id?: string | null; iso2?: string; error?: string }
 
 function normalize(value: string) {
@@ -172,32 +171,47 @@ export default function AdminPaisesPage() {
     }
   }
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando países...</div></main>
+  if (loading) return <div className="empty-state">Cargando países...</div>
 
   return (
-    <main className="container dashboard-page admin-config-page">
-      <section className="dashboard-hero card">
-        <div>
-          <p className="eyebrow">Catálogo territorial</p>
-          <h1>Países</h1>
-          <p className="lead">Habilita países desde el catálogo ISO. Un país habilitado no se muestra en la página pública hasta que tenga jurisdicciones eclesiásticas públicas registradas.</p>
+    <main className="admin-countries-page" id="top">
+      <header className="admin-top-header">
+        <div className="admin-top-title">
+          <span className="admin-mini-mark">ISO</span>
+          <strong>Países</strong>
         </div>
-        <div className="quick-link-grid compact">
-          <Link className="button button-secondary" href="/admin">Volver al admin</Link>
+        <div className="admin-top-actions">
+          <Link className="button button-secondary" href="/admin">Volver al panel</Link>
           <Link className="button button-primary" href="/admin/nuevo/jurisdiccion">Crear jurisdicción</Link>
         </div>
+      </header>
+
+      <section className="admin-welcome-panel">
+        <div>
+          <p className="eyebrow">Catálogo territorial</p>
+          <h1>Países ISO</h1>
+          <p className="lead">Habilita países desde listas oficiales. Un país habilitado no aparece en la página pública hasta que tenga jurisdicciones eclesiásticas públicas registradas.</p>
+          <div className="role-list admin-role-list">
+            <span className="role-pill">Selección desde catálogo</span>
+            <span className="role-pill">Bandera automática</span>
+            <span className="role-pill">Publicación condicionada</span>
+          </div>
+        </div>
+        <div className="admin-welcome-illustration" aria-hidden="true">◎</div>
       </section>
 
       {error && <div className="error-box">{error}</div>}
       {message && <div className="success-box">{message}</div>}
 
-      <section className="dashboard-grid dashboard-summary">
-        <article className="metric-card"><strong>{enabledCountries.length}</strong><span>Países habilitados</span></article>
-        <article className="metric-card"><strong>{publicCountries.length}</strong><span>Países visibles públicamente</span></article>
-        <article className="metric-card"><strong>{catalog.length}</strong><span>Países en catálogo ISO</span></article>
+      <section className="admin-stat-strip" aria-label="Resumen de países">
+        <a href="#enabled-countries"><span>◎</span><strong>{enabledCountries.length}</strong><small>Países habilitados</small></a>
+        <a href="#enabled-countries"><span>◉</span><strong>{publicCountries.length}</strong><small>Visibles públicamente</small></a>
+        <a href="#country-catalog"><span>▤</span><strong>{catalog.length}</strong><small>Países en catálogo ISO</small></a>
+        <a href="/admin/nuevo/jurisdiccion"><span>▥</span><strong>+</strong><small>Nueva jurisdicción</small></a>
+        <a href="/admin/estructura"><span>▦</span><strong>↗</strong><small>Estructura territorial</small></a>
       </section>
 
-      <section className="grid two-columns">
+      <section className="grid two-columns" id="country-catalog">
         <form className="admin-form admin-config-form card dashboard-section" onSubmit={handleEnableCountry}>
           <div className="section-heading">
             <div>
@@ -260,7 +274,7 @@ export default function AdminPaisesPage() {
         </section>
       </section>
 
-      <section className="card dashboard-section">
+      <section className="card dashboard-section" id="enabled-countries">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Países activos</p>
