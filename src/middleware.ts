@@ -12,21 +12,42 @@ type SupabaseCookieToSet = {
   options: CookieOptions
 }
 
+function decorateAdminResponse(response: NextResponse, request: NextRequest) {
+  const { pathname, search } = request.nextUrl
+
+  if (pathname.startsWith(ADMIN_PREFIX)) {
+    response.headers.set('cache-control', 'no-store, max-age=0')
+    response.headers.set('x-sinep-admin-pathname', pathname)
+    response.headers.set('x-sinep-admin-search', search || '')
+  }
+
+  return response
+}
+
 function redirectToLogin(request: NextRequest) {
   const url = request.nextUrl.clone()
   url.pathname = ADMIN_LOGIN_PATH
   url.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`)
-  return NextResponse.redirect(url)
+  const response = NextResponse.redirect(url)
+  return decorateAdminResponse(response, request)
 }
 
 function redirectToAdmin(request: NextRequest) {
   const url = request.nextUrl.clone()
   url.pathname = ADMIN_PREFIX
   url.search = ''
-  return NextResponse.redirect(url)
+  const response = NextResponse.redirect(url)
+  return decorateAdminResponse(response, request)
 }
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  const search = request.nextUrl.search
+
+  if (pathname.startsWith(ADMIN_PREFIX)) {
+    console.warn(`[sinep-admin-route] pathname=${pathname} search=${search || ''}`)
+  }
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
@@ -44,10 +65,9 @@ export async function middleware(request: NextRequest) {
 
   const { data, error } = await supabase.auth.getUser()
   const user = error ? null : data.user
-  const pathname = request.nextUrl.pathname
 
   if (pathname === ADMIN_LOGIN_PATH) {
-    return user ? redirectToAdmin(request) : response
+    return user ? redirectToAdmin(request) : decorateAdminResponse(response, request)
   }
 
   if (!pathname.startsWith(ADMIN_PREFIX)) {
@@ -58,13 +78,21 @@ export async function middleware(request: NextRequest) {
     return redirectToLogin(request)
   }
 
-  const { data: hasAdminRole, error: roleError } = await supabase.rpc('current_user_has_admin_role')
+  const { count: activeRoleCount, error: roleError } = await supabase
+    .from('user_role_assignments')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('status', 'active')
 
-  if (roleError || hasAdminRole !== true) {
-    return pathname === ADMIN_PREFIX ? response : redirectToAdmin(request)
+  if (roleError) {
+    console.warn(`[sinep-admin-role-check] user=${user.id} error=${roleError.message}`)
   }
 
-  return response
+  if (roleError || (activeRoleCount ?? 0) < 1) {
+    return pathname === ADMIN_PREFIX ? decorateAdminResponse(response, request) : redirectToAdmin(request)
+  }
+
+  return decorateAdminResponse(response, request)
 }
 
 export const config = {
