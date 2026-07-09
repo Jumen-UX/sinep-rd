@@ -6,12 +6,15 @@ import { createClient } from '@/lib/supabase/client'
 type SupabaseClient = ReturnType<typeof createClient>
 export type StructureKindKey = 'territorial' | 'pastoral' | 'administrative' | 'organic'
 
+type EntityTypeRelation = { key: string; name: string }
+
 type EcclesiasticalEntity = {
   id: string
   name: string
   official_name: string | null
   slug: string
   country_iso2: string | null
+  entity_types: EntityTypeRelation[] | EntityTypeRelation | null
 }
 
 type StructureTemplate = {
@@ -75,6 +78,7 @@ type StructureHierarchySelectorProps = {
 }
 
 const fixedJurisdictionKeys = ['country', 'ecclesiastical_province', 'archdiocese', 'diocese', 'military_ordinariate']
+const dioceseEntityTypeKeys = ['archdiocese', 'diocese', 'military_ordinariate', 'ordinariate', 'apostolic_vicariate', 'vicariate']
 
 const componentStyles = `
   .structure-selector {
@@ -161,6 +165,19 @@ const componentStyles = `
   }
 `
 
+function toEntityTypes(entity: Pick<EcclesiasticalEntity, 'entity_types'>) {
+  if (!entity.entity_types) return []
+  return Array.isArray(entity.entity_types) ? entity.entity_types : [entity.entity_types]
+}
+
+function hasEntityType(entity: Pick<EcclesiasticalEntity, 'entity_types'>, keys: string[]) {
+  return toEntityTypes(entity).some((type) => keys.includes(type.key))
+}
+
+function isDioceseEntity(entity: EcclesiasticalEntity) {
+  return hasEntityType(entity, dioceseEntityTypeKeys) || /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato/i.test(entity.name)
+}
+
 function isFixedJurisdictionNode(node: Pick<StructureTreeNode, 'level_key' | 'level_name'>) {
   return fixedJurisdictionKeys.includes(node.level_key) || /pa[ií]s|provincia eclesi[aá]stica|arquidi[oó]cesis|di[oó]cesis|ordinariato/i.test(node.level_name)
 }
@@ -176,9 +193,8 @@ function pathLabel(node: StructureTreeNode) {
 
 function filterDioceses(entities: EcclesiasticalEntity[], countryIso2?: string | null) {
   return entities.filter((entity) => {
-    const matchesType = /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato/i.test(entity.name)
     const matchesCountry = !countryIso2 || !entity.country_iso2 || entity.country_iso2 === countryIso2
-    return matchesType && matchesCountry
+    return isDioceseEntity(entity) && matchesCountry
   })
 }
 
@@ -231,7 +247,7 @@ export default function StructureHierarchySelector({
 
       const { data, error: entityError } = await supabase
         .from('ecclesiastical_entities')
-        .select('id,name,official_name,slug,country_iso2')
+        .select('id,name,official_name,slug,country_iso2,entity_types(key,name)')
         .eq('status', 'active')
         .order('name')
 
@@ -242,7 +258,7 @@ export default function StructureHierarchySelector({
         return
       }
 
-      const loadedDioceses = filterDioceses((data ?? []) as EcclesiasticalEntity[], countryIso2)
+      const loadedDioceses = filterDioceses((data ?? []) as unknown as EcclesiasticalEntity[], countryIso2)
       setDioceses(loadedDioceses)
       setSelectedDioceseId((current) => {
         if (current && loadedDioceses.some((diocese) => diocese.id === current)) return current
