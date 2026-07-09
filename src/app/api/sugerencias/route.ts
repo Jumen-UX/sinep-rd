@@ -1,42 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildSupabaseRestUrl } from '@/lib/supabase/rest'
 import { getSupabaseRestHeaders } from '@/lib/supabase/config'
+import {
+  optionalEmail,
+  optionalText,
+  optionalUrl,
+  optionalUuid,
+  oneOf,
+  parseJsonObjectBody,
+  requiredText,
+  ValidationError,
+} from '@/lib/admin/validation'
 
-function clean(value: unknown) {
-  const text = String(value ?? '').trim()
-  return text.length > 0 ? text : null
+const allowedSuggestionTargetTables = ['persons', 'ecclesiastical_entities'] as const
+const allowedSuggestionTypes = ['correction', 'addition', 'source', 'country_data'] as const
+
+function nullable(value: string) {
+  return value.length > 0 ? value : null
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const targetTable = clean(body.target_table)
-    const title = clean(body.title)
-    const description = clean(body.description)
+    const body = await parseJsonObjectBody(request, 'Solicitud invalida.')
+    const targetTable = oneOf(body.target_table, allowedSuggestionTargetTables, 'tabla objetivo')
+    const targetId = optionalUuid(body.target_id)
+    const targetSlug = optionalText(body.target_slug, 180)
+    const suggestionType = oneOf(optionalText(body.suggestion_type, 40) || 'correction', allowedSuggestionTypes, 'tipo de sugerencia')
+    const title = requiredText(body.title, 'titulo', 160)
+    const description = requiredText(body.description, 'descripcion', 3000)
 
-    if (!targetTable || !title || !description) {
-      return NextResponse.json({ error: 'Faltan datos obligatorios.' }, { status: 400 })
+    if (!targetId && !targetSlug) {
+      throw new ValidationError('Falta la ficha.')
     }
 
     const payload = {
       target_table: targetTable,
-      target_id: clean(body.target_id),
-      target_slug: clean(body.target_slug),
-      target_title: clean(body.target_title),
-      page_url: clean(body.page_url),
-      suggestion_type: clean(body.suggestion_type) ?? 'correction',
+      target_id: nullable(targetId),
+      target_slug: nullable(targetSlug),
+      target_title: nullable(optionalText(body.target_title, 220)),
+      page_url: nullable(optionalText(body.page_url, 500)),
+      suggestion_type: suggestionType,
       title,
       description,
       proposed_data: {
-        field_name: clean(body.field_name),
-        current_value: clean(body.current_value),
-        proposed_value: clean(body.proposed_value),
+        field_name: nullable(optionalText(body.field_name, 120)),
+        current_value: nullable(optionalText(body.current_value, 2000)),
+        proposed_value: nullable(optionalText(body.proposed_value, 2000)),
       },
-      source_name: clean(body.source_name),
-      source_url: clean(body.source_url),
-      submitter_name: clean(body.submitter_name),
-      submitter_email: clean(body.submitter_email),
-      submitter_country: clean(body.submitter_country),
+      source_name: nullable(optionalText(body.source_name, 220)),
+      source_url: nullable(optionalUrl(body.source_url, 'URL de fuente')),
+      submitter_name: nullable(optionalText(body.submitter_name, 180)),
+      submitter_email: nullable(optionalEmail(body.submitter_email)),
+      submitter_country: nullable(optionalText(body.submitter_country, 120)),
       status: 'pending_review',
       priority: 'normal',
     }
@@ -64,6 +79,10 @@ export async function POST(request: NextRequest) {
     const result = await response.json()
     return NextResponse.json({ ok: true, suggestion: result[0] ?? null })
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
     console.error('Unexpected public suggestion API error', error)
     return NextResponse.json({ error: 'No se pudo procesar la sugerencia.' }, { status: 500 })
   }

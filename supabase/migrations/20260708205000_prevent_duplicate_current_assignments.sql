@@ -1,6 +1,8 @@
 -- Prevent duplicate active/current assignments for the same office and scope.
 -- This protects quick wizard assignments and the general assignment RPC.
 
+create schema if not exists internal;
+
 with ranked as (
   select
     pa.id,

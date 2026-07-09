@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         entity_type_key: entityTypeKey,
         name,
         slug,
+        country_iso2: 'DO',
         country: 'Republica Dominicana',
         parent_entity_id: parentEntityId || null,
         status: 'active',

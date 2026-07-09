@@ -36,3 +36,9 @@ test('requiredUuid accepts canonical UUID and rejects malformed IDs', () => {
   assert.equal(validation.requiredUuid(id), id)
   assert.throws(() => validation.requiredUuid('not-a-uuid'), validation.ValidationError)
 })
+
+test('optionalUrl accepts http URLs and rejects unsafe protocols', () => {
+  assert.equal(validation.optionalUrl('https://example.org/fuente'), 'https://example.org/fuente')
+  assert.equal(validation.optionalUrl(''), '')
+  assert.throws(() => validation.optionalUrl('javascript:alert(1)'), validation.ValidationError)
+})

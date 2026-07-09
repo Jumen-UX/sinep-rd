@@ -57,6 +57,26 @@ export function optionalEmail(value: unknown) {
   return email
 }
 
+export function optionalUrl(value: unknown, fieldName = 'URL') {
+  const text = optionalText(value, 2048)
+
+  if (!text) return ''
+
+  let url: URL
+
+  try {
+    url = new URL(text)
+  } catch {
+    throw new ValidationError(`${fieldName} invalida.`)
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new ValidationError(`${fieldName} invalida.`)
+  }
+
+  return url.toString()
+}
+
 export function requiredEmail(value: unknown) {
   const email = optionalEmail(value)
 
