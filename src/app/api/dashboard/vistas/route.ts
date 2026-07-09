@@ -23,6 +23,8 @@ type DioceseRow = {
   population_total: number | null
   catholics_total: number | null
   parishes_count: number | null
+  country_iso2: string | null
+  country_name: string | null
 }
 
 type ParishRow = {
@@ -112,7 +114,7 @@ export async function GET() {
         order: 'name.asc',
       }),
       fetchSupabaseJson<DioceseRow[]>('public_dioceses', {
-        select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count',
+        select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count,country_iso2,country_name',
         order: 'name.asc',
       }),
       safeFetch<ParishRow>('public_parishes', {
