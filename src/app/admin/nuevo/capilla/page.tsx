@@ -5,12 +5,34 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type EntityPath = {
-  direct_entity_id: string
-  direct_entity_name: string
-  direct_entity_slug: string
-  direct_entity_type_name: string | null
-  hierarchy_path: string | null
+type EntityTypeRelation = { key: string; name: string }
+
+type ParentOption = {
+  id: string
+  name: string
+  slug: string
+  country: string | null
+  country_iso2: string | null
+  entity_types: EntityTypeRelation[] | EntityTypeRelation | null
+}
+
+type EnabledCountry = {
+  id: string
+  iso2: string
+  iso3: string | null
+  name: string
+  official_name: string | null
+  flag_emoji: string | null
+  flag_image_url: string | null
+  flag_alt: string | null
+  status: string
+  visibility: string
+}
+
+type AdminCountriesResponse = {
+  enabled_countries: EnabledCountry[]
+  public_countries: unknown[]
+  error?: string
 }
 
 type MissingField = { key: string; label: string }
@@ -31,20 +53,30 @@ function emptyToNull(value: FormDataEntryValue | null) {
   return text.length > 0 ? text : null
 }
 
-function slugify(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+function getEntityType(parent: ParentOption) {
+  if (!parent.entity_types) return null
+  return Array.isArray(parent.entity_types) ? parent.entity_types[0] ?? null : parent.entity_types
+}
+
+function countryLabel(country: EnabledCountry) {
+  return `${country.flag_emoji ?? '▦'} ${country.name} · ${country.iso2}${country.iso3 ? `/${country.iso3}` : ''}`
+}
+
+function parentAllowed(parent: ParentOption, countryIso2?: string | null) {
+  const parentType = getEntityType(parent)
+  const allowedTypes = ['archdiocese', 'diocese', 'military_ordinariate', 'vicariate', 'deanery', 'pastoral_region', 'pastoral_zone', 'parish', 'quasi_parish']
+  const matchesType = !!parentType && allowedTypes.includes(parentType.key)
+  const matchesCountry = !countryIso2 || !parent.country_iso2 || parent.country_iso2 === countryIso2
+  return matchesType && matchesCountry
 }
 
 export default function NuevaCapillaPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [step, setStep] = useState(0)
-  const [parents, setParents] = useState<EntityPath[]>([])
+  const [parents, setParents] = useState<ParentOption[]>([])
+  const [countries, setCountries] = useState<EnabledCountry[]>([])
+  const [selectedCountryIso2, setSelectedCountryIso2] = useState('DO')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -52,7 +84,9 @@ export default function NuevaCapillaPage() {
   const [selectedParentId, setSelectedParentId] = useState('')
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
 
-  const selectedParent = parents.find((item) => item.direct_entity_id === selectedParentId)
+  const selectedCountry = countries.find((country) => country.iso2 === selectedCountryIso2) ?? countries[0] ?? null
+  const filteredParents = parents.filter((parent) => parentAllowed(parent, selectedCountry?.iso2))
+  const selectedParent = filteredParents.find((item) => item.id === selectedParentId)
 
   async function loadData() {
     setError(null)
@@ -62,22 +96,45 @@ export default function NuevaCapillaPage() {
       return
     }
 
-    const parentRes = await supabase
-      .from('public_entity_hierarchy_paths')
-      .select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,hierarchy_path')
-      .order('direct_entity_name')
+    const [parentRes, countriesRes] = await Promise.all([
+      supabase
+        .from('ecclesiastical_entities')
+        .select('id,name,slug,country,country_iso2,entity_types(key,name)')
+        .eq('status', 'active')
+        .order('name'),
+      fetch('/api/admin/paises'),
+    ])
 
     if (parentRes.error) {
       setError(parentRes.error.message ?? 'No se pudieron cargar los catálogos.')
     } else {
-      setParents((parentRes.data ?? []) as EntityPath[])
+      setParents((parentRes.data ?? []) as unknown as ParentOption[])
     }
+
+    if (!countriesRes.ok) {
+      const data = await countriesRes.json().catch(() => null) as { error?: string } | null
+      setError(data?.error ?? 'No se pudieron cargar los países habilitados.')
+    } else {
+      const data = await countriesRes.json() as AdminCountriesResponse
+      const loaded = data.enabled_countries ?? []
+      setCountries(loaded)
+      if (loaded.length > 0 && !loaded.some((country) => country.iso2 === selectedCountryIso2)) {
+        setSelectedCountryIso2(loaded[0].iso2)
+      }
+    }
+
     setLoading(false)
   }
 
   useEffect(() => {
     loadData()
   }, [])
+
+  useEffect(() => {
+    if (selectedParentId && !filteredParents.some((parent) => parent.id === selectedParentId)) {
+      setSelectedParentId('')
+    }
+  }, [filteredParents, selectedParentId])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -88,10 +145,15 @@ export default function NuevaCapillaPage() {
 
     const form = new FormData(event.currentTarget)
     const name = String(form.get('name') ?? '').trim()
-    const slugInput = String(form.get('slug') ?? '').trim()
 
     if (!name) {
       setError('El nombre de la capilla es obligatorio.')
+      setSaving(false)
+      return
+    }
+
+    if (!selectedCountry) {
+      setError('Debes seleccionar un país habilitado. Si no aparece, habilítalo primero en Admin → Países ISO.')
       setSaving(false)
       return
     }
@@ -100,9 +162,9 @@ export default function NuevaCapillaPage() {
       entity_type_key: 'chapel',
       name,
       official_name: emptyToNull(form.get('official_name')),
-      slug: slugInput || slugify(name),
       description: emptyToNull(form.get('description')),
-      country: 'República Dominicana',
+      country_iso2: selectedCountry.iso2,
+      country: selectedCountry.name,
       province: emptyToNull(form.get('province')),
       municipality: emptyToNull(form.get('municipality')),
       sector: emptyToNull(form.get('sector')),
@@ -115,7 +177,7 @@ export default function NuevaCapillaPage() {
       source_name: emptyToNull(form.get('source_name')),
       source_url: emptyToNull(form.get('source_url')),
       source_checked_at: emptyToNull(form.get('source_checked_at')),
-      parent_entity_id: emptyToNull(form.get('parent_entity_id')),
+      parent_entity_id: selectedParentId || null,
       not_identified_fields: form.getAll('not_identified_fields').map(String),
     }
 
@@ -131,8 +193,8 @@ export default function NuevaCapillaPage() {
         throw new Error(data.error ?? 'No se pudo guardar la capilla.')
       }
 
-      setSavedSlug(data.slug ?? payload.slug)
-      setMessage('Capilla creada correctamente.')
+      setSavedSlug(data.slug ?? null)
+      setMessage('Capilla creada correctamente. El sistema asignó la URL automáticamente.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar la capilla.')
     } finally {
@@ -150,7 +212,7 @@ export default function NuevaCapillaPage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nueva capilla</h1>
-          <p className="lead">Crea una capilla y vincúlala a su parroquia, zona o diócesis. El guardado es transaccional para evitar entidades sin dependencia.</p>
+          <p className="lead">Crea una capilla y vincúlala a su parroquia, zona o diócesis. El país y la URL se gestionan desde catálogos del sistema.</p>
         </div>
       </section>
 
@@ -170,9 +232,18 @@ export default function NuevaCapillaPage() {
           <section>
             <p className="eyebrow">Paso 1</p>
             <h2>Identidad básica</h2>
+            <label>
+              País habilitado
+              <select value={selectedCountryIso2} onChange={(event) => setSelectedCountryIso2(event.target.value)} required>
+                {countries.length === 0 && <option value="">No hay países habilitados</option>}
+                {countries.map((country) => <option key={country.iso2} value={country.iso2}>{countryLabel(country)}</option>)}
+              </select>
+            </label>
+            {countries.length === 0 && <p className="meta">Primero habilita un país en <Link href="/admin/paises">Admin → Países ISO</Link>.</p>}
+            {selectedCountry && <div className="empty-state"><strong>{countryLabel(selectedCountry)}</strong><span>La capilla quedará vinculada a {selectedCountry.name} mediante ISO2.</span></div>}
             <input name="name" placeholder="Nombre: Capilla San Miguel" required />
             <input name="official_name" placeholder="Nombre oficial completo" />
-            <input name="slug" placeholder="Slug opcional: capilla-san-miguel" />
+            <div className="empty-state"><strong>URL automática</strong><span>El sistema generará internamente la dirección pública a partir del nombre y evitará duplicados.</span></div>
             <textarea name="description" placeholder="Descripción pública breve" />
           </section>
         )}
@@ -183,11 +254,14 @@ export default function NuevaCapillaPage() {
             <h2>Dependencia territorial</h2>
             <select name="parent_entity_id" value={selectedParentId} onChange={(event) => setSelectedParentId(event.target.value)}>
               <option value="">Sin dependencia por ahora</option>
-              {parents.map((parent) => <option key={parent.direct_entity_id} value={parent.direct_entity_id}>{parent.direct_entity_name} · {parent.direct_entity_type_name ?? 'Entidad'}</option>)}
+              {filteredParents.map((parent) => {
+                const parentType = getEntityType(parent)
+                return <option key={parent.id} value={parent.id}>{parent.name} · {parentType?.name ?? 'Entidad'}</option>
+              })}
             </select>
             <div className="empty-state">
               <strong>Ruta seleccionada</strong>
-              <span>{selectedParent?.hierarchy_path ?? selectedParent?.direct_entity_name ?? 'Selecciona la parroquia madre o entidad superior si aplica.'}</span>
+              <span>{selectedParent ? `${selectedParent.name} · ${getEntityType(selectedParent)?.name ?? 'Entidad'}` : 'Selecciona la parroquia madre o entidad superior si aplica.'}</span>
             </div>
             <textarea name="territory_summary" placeholder="Comunidad, sector o paraje que atiende" />
           </section>
@@ -197,6 +271,7 @@ export default function NuevaCapillaPage() {
           <section>
             <p className="eyebrow">Paso 3</p>
             <h2>Ubicación y contacto</h2>
+            <div className="empty-state"><strong>País</strong><span>{selectedCountry?.name ?? 'Sin país seleccionado'}</span></div>
             <input name="province" placeholder="Provincia civil" />
             <input name="municipality" placeholder="Municipio" />
             <input name="sector" placeholder="Sector, comunidad o paraje" />
@@ -240,7 +315,7 @@ export default function NuevaCapillaPage() {
           {step < steps.length - 1 ? (
             <button className="button button-secondary" type="button" onClick={() => setStep(Math.min(steps.length - 1, step + 1))}>Siguiente</button>
           ) : (
-            <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Crear capilla'}</button>
+            <button className="button button-primary" disabled={saving || !selectedCountry}>{saving ? 'Guardando...' : 'Crear capilla'}</button>
           )}
         </div>
       </form>
