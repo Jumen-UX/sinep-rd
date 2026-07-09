@@ -11,6 +11,7 @@ type EcclesiasticalEntity = {
   name: string
   official_name: string | null
   slug: string
+  country_iso2: string | null
 }
 
 type StructureTemplate = {
@@ -68,6 +69,7 @@ type StructureHierarchySelectorProps = {
   namePrefix?: string
   defaultDioceseId?: string
   defaultParentNodeId?: string
+  countryIso2?: string | null
   required?: boolean
   onChange?: (selection: StructureSelection | null) => void
 }
@@ -172,8 +174,12 @@ function pathLabel(node: StructureTreeNode) {
   return node.path_names.length > 0 ? node.path_names.join(' → ') : node.name
 }
 
-function filterDioceses(entities: EcclesiasticalEntity[]) {
-  return entities.filter((entity) => /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato/i.test(entity.name))
+function filterDioceses(entities: EcclesiasticalEntity[], countryIso2?: string | null) {
+  return entities.filter((entity) => {
+    const matchesType = /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato/i.test(entity.name)
+    const matchesCountry = !countryIso2 || !entity.country_iso2 || entity.country_iso2 === countryIso2
+    return matchesType && matchesCountry
+  })
 }
 
 export default function StructureHierarchySelector({
@@ -183,6 +189,7 @@ export default function StructureHierarchySelector({
   namePrefix = 'structure',
   defaultDioceseId,
   defaultParentNodeId,
+  countryIso2 = null,
   required = false,
   onChange,
 }: StructureHierarchySelectorProps) {
@@ -224,7 +231,7 @@ export default function StructureHierarchySelector({
 
       const { data, error: entityError } = await supabase
         .from('ecclesiastical_entities')
-        .select('id,name,official_name,slug')
+        .select('id,name,official_name,slug,country_iso2')
         .eq('status', 'active')
         .order('name')
 
@@ -235,14 +242,17 @@ export default function StructureHierarchySelector({
         return
       }
 
-      const loadedDioceses = filterDioceses((data ?? []) as EcclesiasticalEntity[])
+      const loadedDioceses = filterDioceses((data ?? []) as EcclesiasticalEntity[], countryIso2)
       setDioceses(loadedDioceses)
-      setSelectedDioceseId((current) => current || loadedDioceses[0]?.id || '')
+      setSelectedDioceseId((current) => {
+        if (current && loadedDioceses.some((diocese) => diocese.id === current)) return current
+        return loadedDioceses[0]?.id || ''
+      })
       setLoadingBase(false)
     }
 
     loadDioceses()
-  }, [supabase])
+  }, [countryIso2, supabase])
 
   useEffect(() => {
     async function loadTemplates() {
