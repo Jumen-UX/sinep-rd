@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server'
 import { fetchSupabaseJson } from '@/lib/supabase/rest'
 
+type CountryRow = {
+  key: string
+  iso2: string
+  iso3: string | null
+  name: string
+  official_name: string | null
+  flag_emoji: string | null
+  flag_image_url: string | null
+  flag_alt: string | null
+}
+
 type DioceseRow = {
   id: string
   slug: string
@@ -95,7 +106,11 @@ async function safeFetch<T>(table: string, params: Record<string, string>) {
 
 export async function GET() {
   try {
-    const [dioceses, parishes, people, assignments, pastoralEntities, organizationCharts, organizationUnits] = await Promise.all([
+    const [countries, dioceses, parishes, people, assignments, pastoralEntities, organizationCharts, organizationUnits] = await Promise.all([
+      safeFetch<CountryRow>('public_countries', {
+        select: 'key,iso2,iso3,name,official_name,flag_emoji,flag_image_url,flag_alt',
+        order: 'name.asc',
+      }),
       fetchSupabaseJson<DioceseRow[]>('public_dioceses', {
         select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count',
         order: 'name.asc',
@@ -138,7 +153,7 @@ export async function GET() {
     ])
 
     return NextResponse.json({
-      countries: [{ key: 'DO', name: 'República Dominicana' }],
+      countries: countries.length > 0 ? countries : [{ key: 'DO', iso2: 'DO', iso3: 'DOM', name: 'República Dominicana', official_name: 'República Dominicana', flag_emoji: '🇩🇴', flag_image_url: null, flag_alt: 'Bandera de República Dominicana' }],
       dioceses,
       parishes,
       people,
