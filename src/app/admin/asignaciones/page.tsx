@@ -346,30 +346,47 @@ export default function AdminAsignacionesPage() {
     }
   })
 
-  if (loading) {
-    return <main className="container"><div className="empty-state">Cargando asignaciones...</div></main>
-  }
+  if (loading) return <div className="empty-state">Cargando asignaciones...</div>
 
   return (
-    <main className="container dashboard-page admin-config-page">
-      <div className="detail-backlink">
-        <Link href="/admin">← Volver al panel administrativo</Link>
-      </div>
-
-      <section className="dashboard-hero card">
-        <div>
-          <p className="eyebrow">Administración</p>
-          <h1>Asignaciones de cargos</h1>
-          <p className="lead">
-            Asigna personas a cargos configurados dentro de un organigrama, entidad o unidad. Controla si la asignación es pública, interna o confidencial y desde cuándo puede mostrarse.
-          </p>
+    <main className="admin-assignments-page" id="top">
+      <header className="admin-top-header">
+        <div className="admin-top-title">
+          <span className="admin-mini-mark">CARGOS</span>
+          <strong>Asignaciones de cargos</strong>
         </div>
+        <div className="admin-top-actions">
+          <Link className="button button-secondary" href="/admin">Volver al panel</Link>
+          <Link className="button button-secondary" href="/admin/configuracion">Configurar cargos</Link>
+        </div>
+      </header>
+
+      <section className="admin-welcome-panel">
+        <div>
+          <p className="eyebrow">Nombramientos</p>
+          <h1>Cargos, períodos y sucesión</h1>
+          <p className="lead">Asigna personas a cargos configurados dentro de un organigrama, entidad o unidad. Controla visibilidad, vigencia, fuente y sucesión histórica.</p>
+          <div className="role-list admin-role-list">
+            <span className="role-pill">Historial limpio</span>
+            <span className="role-pill">Cierre de cargo previo</span>
+            <span className="role-pill">Fuente verificable</span>
+          </div>
+        </div>
+        <div className="admin-welcome-illustration" aria-hidden="true">▣</div>
+      </section>
+
+      <section className="admin-stat-strip" aria-label="Resumen de asignaciones">
+        <a href="#assignment-form"><span>◉</span><strong>{people.length}</strong><small>Personas disponibles</small></a>
+        <a href="#assignment-form"><span>▣</span><strong>{configs.length}</strong><small>Cargos configurados</small></a>
+        <a href="#assignment-form"><span>▥</span><strong>{charts.length}</strong><small>Organigramas activos</small></a>
+        <a href="#assignment-list"><span>◷</span><strong>{assignments.length}</strong><small>Asignaciones recientes</small></a>
+        <a href="#assignment-form"><span>＋</span><strong>Nuevo</strong><small>Registrar asignación</small></a>
       </section>
 
       {error && <div className="error-box">{error}</div>}
-      {message && <div className="empty-state">{message}</div>}
+      {message && <div className="success-box">{message}</div>}
 
-      <section className="card dashboard-section">
+      <section className="card dashboard-section" id="assignment-form">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Nueva asignación</p>
@@ -501,7 +518,7 @@ export default function AdminAsignacionesPage() {
         </form>
       </section>
 
-      <section className="card dashboard-section">
+      <section className="card dashboard-section" id="assignment-list">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Listado</p>
