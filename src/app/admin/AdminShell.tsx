@@ -21,6 +21,7 @@ const adminNavSections: AdminNavSection[] = [
     items: [
       { href: '/admin', icon: '⌂', label: 'Inicio', sublabel: 'Panel general' },
       { href: '/admin/nuevo', icon: '＋', label: 'Agregar ficha', sublabel: 'Asistentes de registro' },
+      { href: '/admin/importar', icon: '⇪', label: 'Carga por lotes', sublabel: 'CSV y Excel' },
     ],
   },
   {
