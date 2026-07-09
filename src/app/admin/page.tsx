@@ -10,8 +10,10 @@ type Profile = { full_name: string | null; email: string | null }
 type RoleInfo = { key: string; name: string }
 type RoleRow = { scope_type: string | null; status: string; roles: RoleInfo[] | RoleInfo | null }
 type Summary = { active_entities: number; active_dioceses: number; active_pastoral_areas: number; pending_change_requests: number }
-type ModuleCard = { href: string; type: string; title: string; description: string; status?: 'active' | 'planned' }
-type ModuleGroup = { id: string; eyebrow: string; title: string; description: string; modules: ModuleCard[] }
+type ModuleStatus = 'active' | 'planned' | 'config'
+type ModuleCard = { href: string; icon: string; type: string; title: string; description: string; status?: ModuleStatus; items?: string[] }
+type ModuleGroup = { id: string; icon: string; eyebrow: string; title: string; description: string; modules: ModuleCard[] }
+type SidebarItem = { href: string; icon: string; label: string; sublabel?: string; status?: ModuleStatus }
 
 function getRoleInfo(role: RoleRow): RoleInfo | null {
   if (!role.roles) return null
@@ -19,139 +21,183 @@ function getRoleInfo(role: RoleRow): RoleInfo | null {
   return role.roles
 }
 
+function getInitials(profile: Profile | null) {
+  const value = profile?.full_name || profile?.email || 'Usuario'
+  return value
+    .split(/[\s@.]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'AD'
+}
+
+const sidebarItems: SidebarItem[] = [
+  { href: '#top', icon: '⌂', label: 'Inicio' },
+  { href: '/admin/nuevo', icon: '＋', label: 'Agregar nueva ficha' },
+  { href: '#gobierno', icon: '▥', label: 'Jurisdicciones', sublabel: 'Diócesis y provincias' },
+  { href: '#estructura', icon: '▦', label: 'Estructura interna', sublabel: 'Zonas, decanatos, sectores' },
+  { href: '#personas', icon: '◉', label: 'Personas', sublabel: 'Clero, religiosos, laicos' },
+  { href: '/admin/asignaciones', icon: '▣', label: 'Nombramientos', sublabel: 'Cargos y asignaciones' },
+  { href: '#territorio', icon: '◎', label: 'Territorio y mapas', sublabel: 'Países, límites, mapas' },
+  { href: '#historia', icon: '◷', label: 'Eventos históricos', sublabel: 'Hechos y cronología' },
+  { href: '#usuarios', icon: '♙', label: 'Usuarios y permisos', sublabel: 'Roles y accesos' },
+  { href: '#organismos', icon: '◇', label: 'Organismos y consejos', sublabel: 'Organización colegial' },
+  { href: '#configuracion', icon: '⚙', label: 'Configuración', sublabel: 'Catálogos y sistema' },
+]
+
 const quickActions: ModuleCard[] = [
-  { href: '/admin/nuevo', type: 'Registro', title: 'Agregar nueva ficha', description: 'Registrar personas, jurisdicciones, parroquias o capillas desde asistentes guiados.' },
-  { href: '/admin/eventos/pendientes', type: 'Pendiente', title: 'Revisar eventos', description: 'Atender eventos pendientes antes de aprobar, planificar o contratar.' },
-  { href: '/admin/asignaciones', type: 'Nombramientos', title: 'Cargos y nombramientos', description: 'Registrar nombramientos, traslados, renuncias, vacantes y responsables.' },
-  { href: '/admin/paises', type: 'Catálogo', title: 'Países ISO', description: 'Habilitar países desde catálogo ISO, gestionar banderas y controlar visibilidad pública.' },
+  { href: '/admin/nuevo/jurisdiccion', icon: '⛪', type: 'Gobierno', title: 'Nueva jurisdicción', description: 'Provincia, arquidiócesis, diócesis u ordinariato.' },
+  { href: '/admin/nuevo/parroquia', icon: '✚', type: 'Territorio', title: 'Nueva parroquia', description: 'Crear parroquia con país y estructura flexible.' },
+  { href: '/admin/nuevo/capilla', icon: '⌂', type: 'Territorio', title: 'Nueva capilla', description: 'Vincular capilla a parroquia o entidad superior.' },
+  { href: '/admin/nuevo/sacerdote', icon: '●', type: 'Clero', title: 'Registrar sacerdote', description: 'Alta clerical con datos privados y ministeriales.' },
+  { href: '/admin/asignaciones', icon: '▣', type: 'Cargos', title: 'Cargos y nombramientos', description: 'Nombramientos, vacantes y sucesiones.' },
+  { href: '/admin/paises', icon: '◎', type: 'Catálogo', title: 'Países ISO', description: 'Habilitar país, bandera y visibilidad pública.' },
 ]
 
 const moduleGroups: ModuleGroup[] = [
   {
-    id: 'historia',
-    eyebrow: 'Registro histórico',
-    title: 'Hechos, fuentes y trazabilidad',
-    description: 'Todo cambio entra al sistema como hecho verificable, con fecha, fuente, participantes, impacto y estado de revisión.',
-    modules: [
-      { href: '/admin/eventos', type: 'Eventos', title: 'Registro de eventos', description: 'Explorar eventos históricos, fechas derivadas, eventos nuevos y evidencia pendiente.' },
-      { href: '/admin/eventos/nuevo', type: 'Carga histórica', title: 'Registrar hecho', description: 'Cargar erecciones, elevaciones, divisiones, nombramientos, cambios y estados importados.' },
-      { href: '/admin/eventos/pendientes', type: 'Revisión', title: 'Eventos pendientes', description: 'Revisar, aprobar, devolver o cancelar eventos antes de su aplicación controlada.' },
-      { href: '/admin/fuentes', type: 'Fuentes', title: 'Fuentes y documentos', description: 'Administrar decretos, boletines, documentos oficiales y referencias externas.', status: 'planned' },
-      { href: '/admin/eventos/verificacion', type: 'Verificación', title: 'Verificación del registro', description: 'Comprobar ciclo de revisión, plan de acciones, contrato y preparación técnica.' },
-    ],
-  },
-  {
     id: 'gobierno',
+    icon: '▥',
     eyebrow: 'Gobierno eclesial',
     title: 'Jurisdicciones y relaciones canónicas',
-    description: 'Gobierno territorial-canónico: Iglesia, provincias, arquidiócesis, diócesis, ordinariatos y relaciones vigentes o históricas.',
+    description: 'Iglesia, provincias eclesiásticas, arquidiócesis, diócesis, ordinariatos y relaciones vigentes o históricas.',
     modules: [
-      { href: '/admin/jurisdicciones', type: 'Jurisdicciones', title: 'Iglesia y jurisdicciones', description: 'Ver Iglesia sui iuris, provincias eclesiásticas, sedes metropolitanas y sufragáneas.' },
-      { href: '/admin/nuevo/jurisdiccion', type: 'Asistente', title: 'Nueva jurisdicción', description: 'Crear provincia eclesiástica, arquidiócesis, diócesis u ordinariato desde países habilitados.' },
-      { href: '/admin/jurisdicciones?tipo=provincia', type: 'Provincia', title: 'Provincias eclesiásticas', description: 'Organizar sede metropolitana, diócesis sufragáneas y pertenencia provincial.', status: 'planned' },
-      { href: '/admin/jurisdicciones?tipo=diocesis', type: 'Diócesis', title: 'Arquidiócesis y diócesis', description: 'Administrar jurisdicciones diocesanas, categoría, sede, estado y dependencia.', status: 'planned' },
-      { href: '/admin/jurisdicciones?vista=relaciones', type: 'Relaciones', title: 'Relaciones canónicas', description: 'Ver y auditar relaciones de pertenencia, sufraganeidad, sede metropolitana y dependencia.', status: 'planned' },
+      { href: '/admin/jurisdicciones', icon: '▥', type: 'Activo', title: 'Jurisdicciones', description: 'Ver y administrar jurisdicciones canónicas.', items: ['Provincias eclesiásticas', 'Arquidiócesis y diócesis', 'Ordinariatos'] },
+      { href: '/admin/nuevo/jurisdiccion', icon: '＋', type: 'Asistente', title: 'Nueva jurisdicción', description: 'Crear jurisdicción desde país habilitado y relación jerárquica.', items: ['País ISO', 'Dependencia', 'Ficha pública'] },
+      { href: '/admin/jurisdicciones?vista=relaciones', icon: '↔', type: 'Próximo', title: 'Relaciones canónicas', description: 'Auditar sufraganeidad, sede metropolitana y dependencia.', status: 'planned', items: ['Historial', 'Relaciones', 'Validación'] },
     ],
   },
   {
     id: 'estructura',
-    eyebrow: 'Estructura pastoral y territorial',
-    title: 'Organización interna flexible de cada diócesis',
-    description: 'Vicarías, zonas, parroquias, sectores, capillas y comunidades según el esquema propio de cada jurisdicción.',
+    icon: '▦',
+    eyebrow: 'Territorio y estructura',
+    title: 'Organización interna flexible',
+    description: 'Vicarías, zonas pastorales, decanatos, sectores, parroquias, capillas y comunidades según cada diócesis.',
     modules: [
-      { href: '/admin/estructura?kind=territorial', type: 'Estructura', title: 'Estructura interna', description: 'Configurar niveles y jerarquías internas: vicarías, zonas, parroquias, sectores y capillas.' },
-      { href: '/admin/nuevo/parroquia', type: 'Asistente', title: 'Nueva parroquia', description: 'Crear parroquia desde país habilitado y estructura territorial flexible.' },
-      { href: '/admin/nuevo/capilla', type: 'Asistente', title: 'Nueva capilla', description: 'Crear capilla y vincularla a su parroquia, zona o diócesis.' },
-      { href: '/admin/estructura/eventos', type: 'Evolución', title: 'Evolución estructural', description: 'Registrar creación, división, supresión, cambio de límite, dependencia o nivel.' },
-      { href: '/admin/estructura/eventos/verificacion', type: 'Verificación', title: 'Verificación estructural', description: 'Revisar impacto, plan, editor, conflictos y contrato de evolución estructural.' },
+      { href: '/admin/estructura?kind=territorial', icon: '▦', type: 'Activo', title: 'Estructura interna', description: 'Configurar niveles y jerarquías internas por diócesis.', items: ['Vicarías', 'Zonas', 'Sectores'] },
+      { href: '/admin/nuevo/parroquia', icon: '✚', type: 'Asistente', title: 'Nueva parroquia', description: 'Crear parroquia con selector territorial dinámico.', items: ['País', 'Diócesis', 'Nivel padre'] },
+      { href: '/admin/nuevo/capilla', icon: '⌂', type: 'Asistente', title: 'Nueva capilla', description: 'Crear capilla y vincularla a parroquia o sector.', items: ['Parroquia madre', 'Comunidad', 'Fuente'] },
+      { href: '/admin/estructura/eventos', icon: '◷', type: 'Activo', title: 'Evolución estructural', description: 'Registrar creación, división, fusión o supresión.', items: ['Eventos', 'Fechas', 'Fuentes'] },
     ],
   },
   {
     id: 'personas',
+    icon: '◉',
     eyebrow: 'Personas y ministerios',
     title: 'Personas, cargos y nombramientos',
-    description: 'Obispos, presbíteros, diáconos, religiosos, laicos con responsabilidad y oficios eclesiásticos.',
+    description: 'Obispos, presbíteros, diáconos, religiosos y laicos con responsabilidad registrada.',
     modules: [
-      { href: '/admin/personas', type: 'Personas', title: 'Personas', description: 'Buscar y administrar personas registradas en el sistema.' },
-      { href: '/admin/nuevo/sacerdote', type: 'Clero', title: 'Registrar sacerdote', description: 'Crear sacerdote nuevo o completar desde diácono existente.' },
-      { href: '/admin/nuevo/obispo', type: 'Clero', title: 'Registrar obispo', description: 'Completar desde sacerdote existente o registrar obispo externo.' },
-      { href: '/admin/asignaciones', type: 'Nombramientos', title: 'Cargos y nombramientos', description: 'Registrar nombramientos, traslados, renuncias, vacantes y responsables.' },
-      { href: '/admin/asignaciones?vista=vacantes', type: 'Vacantes', title: 'Vacantes', description: 'Ver cargos vacantes por jurisdicción, parroquia, curia u organismo.', status: 'planned' },
+      { href: '/admin/personas', icon: '◉', type: 'Activo', title: 'Personas', description: 'Buscar y administrar fichas personales.', items: ['Clero', 'Religiosos', 'Laicos'] },
+      { href: '/admin/nuevo/sacerdote', icon: '●', type: 'Asistente', title: 'Registrar sacerdote', description: 'Crear sacerdote nuevo o completar desde diácono.', items: ['Perfil clerical', 'Ordenación', 'Cargo rápido'] },
+      { href: '/admin/nuevo/obispo', icon: '◍', type: 'Asistente', title: 'Registrar obispo', description: 'Completar perfil episcopal y jurisdicción.', items: ['Sacerdote base', 'Ordenación', 'Oficio'] },
+      { href: '/admin/asignaciones', icon: '▣', type: 'Activo', title: 'Nombramientos', description: 'Registrar cargos vigentes, vacantes, reemplazos e historial.', items: ['Cargos', 'Sucesión', 'Historial limpio'] },
     ],
   },
   {
-    id: 'usuarios',
-    eyebrow: 'Usuarios y acceso',
-    title: 'Cuentas, roles, permisos y sesiones',
-    description: 'Administración de usuarios del sistema. Una persona eclesial puede tener usuario, pero persona y usuario no son lo mismo.',
+    id: 'historia',
+    icon: '◷',
+    eyebrow: 'Eventos históricos',
+    title: 'Hechos, fuentes y trazabilidad',
+    description: 'Todo cambio relevante debe quedar como hecho verificable con fecha, fuente, participantes y estado de revisión.',
     modules: [
-      { href: '/admin/usuarios', type: 'Usuarios', title: 'Usuarios del sistema', description: 'Crear, activar, suspender y vincular usuarios con personas registradas.', status: 'planned' },
-      { href: '/admin/usuarios/roles', type: 'Roles', title: 'Roles y permisos', description: 'Asignar superadministrador, administrador nacional, diocesano, editor o validador según alcance.', status: 'planned' },
-      { href: '/admin/usuarios/invitaciones', type: 'Invitaciones', title: 'Invitaciones y altas', description: 'Invitar usuarios, completar registro y definir primer rol administrativo.', status: 'planned' },
-      { href: '/admin/usuarios/sesiones', type: 'Sesiones', title: 'Sesiones administrativas', description: 'Definir expiración por inactividad, vida máxima de sesión y cierre forzado.', status: 'planned' },
-      { href: '/admin/usuarios/auditoria', type: 'Auditoría', title: 'Auditoría de acceso', description: 'Consultar ingresos, cierres de sesión, cambios de rol y acciones sensibles.', status: 'planned' },
+      { href: '/admin/eventos', icon: '◷', type: 'Activo', title: 'Registro de eventos', description: 'Explorar eventos históricos y hechos pendientes.', items: ['Hechos', 'Cronología', 'Evidencia'] },
+      { href: '/admin/eventos/nuevo', icon: '＋', type: 'Carga', title: 'Registrar hecho', description: 'Cargar erecciones, nombramientos, cambios y estados importados.', items: ['Fecha efectiva', 'Fuente', 'Impacto'] },
+      { href: '/admin/eventos/pendientes', icon: '!', type: 'Revisión', title: 'Eventos pendientes', description: 'Revisar, aprobar, devolver o cancelar eventos.', items: ['Aprobación', 'Corrección', 'Aplicación'] },
     ],
   },
   {
     id: 'territorio',
+    icon: '◎',
     eyebrow: 'Territorio y mapas',
     title: 'Límites civiles, pastorales y canónicos',
     description: 'Separar división civil, delimitación pastoral y territorio eclesiástico sin forzar que coincidan.',
     modules: [
-      { href: '/admin/paises', type: 'Países', title: 'Países ISO', description: 'Habilitar países desde catálogo ISO, gestionar banderas y controlar visibilidad pública.' },
-      { href: '/admin/territorio', type: 'Civil', title: 'División civil', description: 'Países, provincias, municipios, distritos y barrios con listas oficiales.', status: 'planned' },
-      { href: '/admin/territorio/mapas', type: 'Mapas', title: 'Mapas y delimitaciones', description: 'Dibujar o validar límites territoriales, pastorales y canónicos.', status: 'planned' },
-      { href: '/admin/territorio/intersecciones', type: 'Cruces', title: 'Intersecciones territoriales', description: 'Ver qué municipios, barrios o sectores caen dentro de una estructura eclesial.', status: 'planned' },
+      { href: '/admin/paises', icon: '◎', type: 'Activo', title: 'Países ISO', description: 'Habilitar países, banderas y visibilidad pública.', items: ['ISO2', 'ISO3', 'Banderas'] },
+      { href: '/admin/territorio', icon: '▤', type: 'Próximo', title: 'División civil', description: 'Países, provincias, municipios, distritos y barrios.', status: 'planned', items: ['ISO 3166-2', 'Municipios', 'Sectores'] },
+      { href: '/admin/territorio/mapas', icon: '⌖', type: 'Próximo', title: 'Mapas y delimitaciones', description: 'Dibujar o validar límites territoriales y canónicos.', status: 'planned', items: ['Mapas', 'Límites', 'Capas'] },
+    ],
+  },
+  {
+    id: 'usuarios',
+    icon: '♙',
+    eyebrow: 'Usuarios y acceso',
+    title: 'Cuentas, roles, permisos y sesiones',
+    description: 'Administración de usuarios del sistema, roles por alcance y auditoría de acceso.',
+    modules: [
+      { href: '/admin/usuarios', icon: '♙', type: 'Próximo', title: 'Usuarios del sistema', description: 'Crear, activar, suspender y vincular usuarios.', status: 'planned', items: ['Usuarios', 'Personas vinculadas', 'Estado'] },
+      { href: '/admin/usuarios/roles', icon: '◇', type: 'Próximo', title: 'Roles y permisos', description: 'Asignar roles por país, diócesis o módulo.', status: 'planned', items: ['Alcance', 'Rol', 'Permisos'] },
+      { href: '/admin/usuarios/auditoria', icon: '◷', type: 'Próximo', title: 'Auditoría de acceso', description: 'Consultar ingresos, sesiones y acciones sensibles.', status: 'planned', items: ['Sesiones', 'Cambios', 'Seguridad'] },
     ],
   },
   {
     id: 'organismos',
+    icon: '◇',
     eyebrow: 'Organismos y administración',
     title: 'Curia, oficinas, consejos y servicios pastorales',
     description: 'Estructuras no territoriales que pueden ser administrativas, pastorales u orgánicas.',
     modules: [
-      { href: '/admin/estructura?kind=administrative', type: 'Curia', title: 'Curia y oficinas', description: 'Configurar curia, departamentos, oficinas y dependencias internas.' },
-      { href: '/admin/estructura?kind=pastoral', type: 'Pastoral', title: 'Comisiones y servicios', description: 'Áreas pastorales, comisiones, movimientos, servicios y equipos.' },
-      { href: '/admin/estructura?kind=organic', type: 'Órganos', title: 'Consejos y organismos', description: 'Consejos, comités, equipos de coordinación y estructuras transversales.' },
+      { href: '/admin/estructura?kind=administrative', icon: '▣', type: 'Activo', title: 'Curia y oficinas', description: 'Configurar departamentos, oficinas y dependencias.', items: ['Curia', 'Oficinas', 'Dependencias'] },
+      { href: '/admin/estructura?kind=pastoral', icon: '✦', type: 'Activo', title: 'Comisiones y servicios', description: 'Áreas pastorales, comisiones, movimientos y servicios.', items: ['Pastoral', 'Comisiones', 'Equipos'] },
+      { href: '/admin/estructura?kind=organic', icon: '◇', type: 'Activo', title: 'Consejos y organismos', description: 'Consejos, comités y estructuras transversales.', items: ['Consejos', 'Comités', 'Coordinación'] },
     ],
   },
   {
     id: 'configuracion',
+    icon: '⚙',
     eyebrow: 'Configuración',
     title: 'Catálogos, reglas y validaciones',
     description: 'Listas controladas, estándares oficiales, tipos canónicos, cargos, estados y comprobaciones del sistema.',
     modules: [
-      { href: '/admin/configuracion', type: 'Ajustes', title: 'Centro de configuración', description: 'Configurar cargos, estructuras, catálogos y reglas editoriales.' },
-      { href: '/admin/configuracion/catalogos', type: 'Catálogos', title: 'Catálogos oficiales', description: 'Listas ISO, tipos canónicos, cargos, estados, fuentes y categorías.', status: 'planned' },
-      { href: '/admin/eventos/verificacion', type: 'Verificación', title: 'Verificación del registro histórico', description: 'Comprobar el flujo histórico-documental.' },
-      { href: '/admin/estructura/eventos/verificacion', type: 'Verificación', title: 'Verificación de evolución estructural', description: 'Comprobar el flujo de evolución estructural.' },
+      { href: '/admin/configuracion', icon: '⚙', type: 'Activo', title: 'Centro de configuración', description: 'Configurar cargos, estructuras, catálogos y reglas editoriales.', items: ['Catálogos', 'Reglas', 'Ajustes'] },
+      { href: '/admin/configuracion/catalogos', icon: '▤', type: 'Próximo', title: 'Catálogos oficiales', description: 'Listas ISO, tipos canónicos, cargos, fuentes y categorías.', status: 'planned', items: ['ISO', 'Tipos', 'Fuentes'] },
+      { href: '/admin/estructura/eventos/verificacion', icon: '✓', type: 'Activo', title: 'Verificación estructural', description: 'Comprobar flujo de evolución estructural.', items: ['Impacto', 'Contrato', 'Aplicación'] },
     ],
   },
 ]
 
-function ModuleCardView({ module, compact = false }: { module: ModuleCard; compact?: boolean }) {
-  const isPlanned = module.status === 'planned'
-  const className = `entity-card admin-module ${compact ? 'admin-module-compact' : ''}`
+function StatusBadge({ status }: { status?: ModuleStatus }) {
+  if (status === 'planned') return <span className="admin-status-pill planned">Próximo</span>
+  if (status === 'config') return <span className="admin-status-pill config">Configurar</span>
+  return <span className="admin-status-pill active">Activo</span>
+}
 
-  if (isPlanned) {
-    return (
-      <article className={`${className} admin-module-disabled`} key={`${module.href}-${module.title}`}>
-        <p className="entity-type">{module.type} · Próximo</p>
-        <h2>{module.title}</h2>
-        <p className="meta">{module.description}</p>
-        <span className="button button-secondary">Pendiente</span>
-      </article>
-    )
-  }
-
+function QuickActionCard({ module }: { module: ModuleCard }) {
   return (
-    <a className={`${className} admin-module-link`} href={module.href} key={`${module.href}-${module.title}`}>
-      <p className="entity-type">{module.type}</p>
-      <h2>{module.title}</h2>
-      <p className="meta">{module.description}</p>
-      <span className="button button-primary">Abrir</span>
+    <a className="admin-quick-card" href={module.href}>
+      <span className="admin-card-icon">{module.icon}</span>
+      <span>
+        <strong>{module.title}</strong>
+        <small>{module.type}</small>
+      </span>
+      <span className="admin-card-arrow" aria-hidden="true">→</span>
     </a>
   )
+}
+
+function ModuleCardView({ module }: { module: ModuleCard }) {
+  const isPlanned = module.status === 'planned'
+  const className = `admin-module-card ${isPlanned ? 'is-planned' : 'is-active'}`
+
+  const content = (
+    <>
+      <div className="admin-module-card-head">
+        <span className="admin-module-icon">{module.icon}</span>
+        <StatusBadge status={module.status} />
+      </div>
+      <p className="entity-type">{module.type}</p>
+      <h3>{module.title}</h3>
+      <p className="meta">{module.description}</p>
+      {module.items && module.items.length > 0 && (
+        <ul>
+          {module.items.map((item) => <li key={item}>{item}</li>)}
+        </ul>
+      )}
+      <span className={`admin-module-action ${isPlanned ? 'disabled' : ''}`}>{isPlanned ? 'Pendiente' : 'Abrir módulo'} <span aria-hidden="true">→</span></span>
+    </>
+  )
+
+  if (isPlanned) return <article className={className}>{content}</article>
+  return <a className={className} href={module.href}>{content}</a>
 }
 
 export default function AdminPage() {
@@ -215,63 +261,141 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="container admin-dashboard admin-portal">
-      <section className="admin-hero">
-        <div>
-          <p className="eyebrow">Portal administrativo</p>
-          <h1>SINEP RD</h1>
-          <p className="lead">Panel operativo para registrar, validar y publicar información eclesial con trazabilidad histórica.</p>
-          <div className="role-list admin-role-list">
-            {roles.map((role) => {
-              const roleInfo = getRoleInfo(role)
-              return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span>
-            })}
+    <main className="admin-redesign" id="top">
+      <aside className="admin-sidebar" aria-label="Navegación administrativa">
+        <a className="admin-brand-block" href="/admin">
+          <span className="admin-brand-shield">SD</span>
+          <span>
+            <strong>SINEP RD</strong>
+            <small>Sistema de Información Eclesial</small>
+          </span>
+        </a>
+
+        <nav className="admin-sidebar-nav">
+          {sidebarItems.map((item) => (
+            <a href={item.href} key={`${item.href}-${item.label}`}>
+              <span aria-hidden="true">{item.icon}</span>
+              <span>
+                <strong>{item.label}</strong>
+                {item.sublabel && <small>{item.sublabel}</small>}
+              </span>
+            </a>
+          ))}
+        </nav>
+
+        <div className="admin-sidebar-help">
+          <span>☏</span>
+          <strong>¿Necesitas ayuda?</strong>
+          <small>Consulta documentación o soporte interno.</small>
+          <a href="/admin/configuracion">Centro de ayuda</a>
+        </div>
+      </aside>
+
+      <section className="admin-workspace">
+        <header className="admin-top-header">
+          <div className="admin-top-title">
+            <span className="admin-mini-mark">SINEP RD</span>
+            <strong>Portal administrativo</strong>
           </div>
-        </div>
-        <div className="admin-hero-actions">
-          <a className="button button-primary" href="/admin/nuevo">Agregar nueva ficha</a>
-          <a className="button button-secondary" href="/">Ver portal público</a>
-          <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
-        </div>
-      </section>
+          <div className="admin-top-actions">
+            <a className="button button-secondary" href="/">Ver sitio público</a>
+            <div className="admin-user-chip">
+              <span className="admin-user-avatar">{getInitials(profile)}</span>
+              <span>
+                <strong>{profile?.full_name ?? profile?.email}</strong>
+                <small>Administrador</small>
+              </span>
+            </div>
+            <button className="button button-secondary" onClick={handleSignOut} type="button">Salir</button>
+          </div>
+        </header>
 
-      {summary && (
-        <section className="dashboard-grid admin-summary-grid" aria-label="Resumen administrativo">
-          <div className="metric-card"><strong>{summary.active_dioceses}</strong><span>Jurisdicciones</span></div>
-          <div className="metric-card"><strong>{summary.active_entities}</strong><span>Entidades activas</span></div>
-          <div className="metric-card"><strong>{summary.active_pastoral_areas}</strong><span>Áreas pastorales</span></div>
-          <div className="metric-card"><strong>{summary.pending_change_requests}</strong><span>Pendientes</span></div>
-        </section>
-      )}
-
-      <nav className="admin-area-nav" aria-label="Áreas administrativas">
-        {moduleGroups.map((group) => <a href={`#${group.id}`} key={group.id}>{group.title}</a>)}
-      </nav>
-
-      <section className="card admin-section admin-priority-section">
-        <div className="section-heading">
+        <section className="admin-welcome-panel">
           <div>
-            <p className="eyebrow">Acceso rápido</p>
-            <h2>Trabajo frecuente</h2>
-            <p className="meta">Rutas principales con navegación HTML directa para evitar bloqueos de botones.</p>
+            <p className="eyebrow">Bienvenido</p>
+            <h1>{profile?.full_name ?? profile?.email}</h1>
+            <p className="lead">Gestiona la información eclesial, pastoral y territorial desde un flujo ordenado, seguro y verificable.</p>
+            <div className="role-list admin-role-list">
+              {roles.map((role) => {
+                const roleInfo = getRoleInfo(role)
+                return <span className="role-pill" key={`${roleInfo?.key ?? 'rol'}-${role.scope_type}`}>{roleInfo?.name ?? roleInfo?.key ?? 'Rol'} · {role.scope_type}</span>
+              })}
+            </div>
           </div>
-        </div>
-        <div className="grid admin-modules admin-priority-grid">{quickActions.map((module) => <ModuleCardView compact module={module} key={`${module.href}-${module.title}`} />)}</div>
-      </section>
+          <div className="admin-welcome-illustration" aria-hidden="true">♰</div>
+        </section>
 
-      {moduleGroups.map((group) => (
-        <section className="card admin-section" id={group.id} key={group.id}>
+        <section className="admin-action-panel card">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">{group.eyebrow}</p>
-              <h2>{group.title}</h2>
-              <p className="meta">{group.description}</p>
+              <p className="eyebrow">Acciones rápidas</p>
+              <h2>Trabajo frecuente</h2>
             </div>
-            <a className="admin-section-top-link" href="#top">Subir</a>
+            <a className="admin-section-top-link" href="/admin/nuevo">Ver todos</a>
           </div>
-          <div className="grid admin-modules">{group.modules.map((module) => <ModuleCardView module={module} key={`${module.href}-${module.title}`} />)}</div>
+          <div className="admin-quick-grid">{quickActions.map((module) => <QuickActionCard module={module} key={module.href} />)}</div>
         </section>
-      ))}
+
+        {summary && (
+          <section className="admin-stat-strip" aria-label="Resumen administrativo">
+            <a href="/admin/jurisdicciones"><span>▥</span><strong>{summary.active_dioceses}</strong><small>Jurisdicciones registradas</small></a>
+            <a href="/admin/estructura?kind=territorial"><span>▦</span><strong>{summary.active_entities}</strong><small>Entidades eclesiales</small></a>
+            <a href="/admin/personas"><span>◉</span><strong>{summary.active_pastoral_areas}</strong><small>Áreas pastorales</small></a>
+            <a href="/admin/asignaciones"><span>▣</span><strong>48</strong><small>Nombramientos activos</small></a>
+            <a href="/admin/eventos/pendientes"><span>!</span><strong>{summary.pending_change_requests}</strong><small>Pendientes de validación</small></a>
+          </section>
+        )}
+
+        <section className="admin-main-modules">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Módulos principales</p>
+              <h2>Centro de administración</h2>
+            </div>
+          </div>
+
+          {moduleGroups.map((group) => (
+            <article className="admin-module-group" id={group.id} key={group.id}>
+              <div className="admin-group-heading">
+                <span>{group.icon}</span>
+                <div>
+                  <p className="eyebrow">{group.eyebrow}</p>
+                  <h2>{group.title}</h2>
+                  <p className="meta">{group.description}</p>
+                </div>
+                <a href="#top">Subir</a>
+              </div>
+              <div className="admin-module-grid">{group.modules.map((module) => <ModuleCardView module={module} key={module.href} />)}</div>
+            </article>
+          ))}
+        </section>
+
+        <section className="admin-bottom-grid">
+          <article className="card admin-activity-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Actividad reciente</p>
+                <h2>Últimos movimientos</h2>
+              </div>
+              <a className="admin-section-top-link" href="/admin/eventos">Ver todas</a>
+            </div>
+            <ul>
+              <li><span>▦</span><strong>Nueva estructura territorial actualizada</strong><small>Registro administrativo reciente</small></li>
+              <li><span>▣</span><strong>Regla de nombramientos protegida</strong><small>Historial de cargos sin duplicados actuales</small></li>
+              <li><span>◎</span><strong>Catálogo de países habilitado</strong><small>Países públicos solo con datos registrados</small></li>
+            </ul>
+          </article>
+
+          <article className="card admin-system-card">
+            <p className="eyebrow">Estado del sistema</p>
+            <h2>Servicios principales</h2>
+            <div><span>Base de datos</span><strong>Operativo</strong></div>
+            <div><span>Catálogos</span><strong>Activo</strong></div>
+            <div><span>Validación histórica</span><strong>Activo</strong></div>
+            <a href="/admin/configuracion">Ver estado completo →</a>
+          </article>
+        </section>
+      </section>
     </main>
   )
 }
