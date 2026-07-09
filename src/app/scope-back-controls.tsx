@@ -63,7 +63,24 @@ function buildButton(label: string, action: () => void) {
   return button
 }
 
-function buildCrumb(label: string, active = false) {
+function buildSeparator() {
+  const span = document.createElement('span')
+  span.className = 'public-scope-crumb public-scope-crumb-separator'
+  span.textContent = '›'
+  span.setAttribute('aria-hidden', 'true')
+  return span
+}
+
+function buildCrumb(label: string, active = false, action?: () => void) {
+  if (action) {
+    const button = document.createElement('button')
+    button.className = `public-scope-crumb public-scope-crumb-button ${active ? 'active' : ''}`
+    button.type = 'button'
+    button.textContent = label
+    button.addEventListener('click', action)
+    return button
+  }
+
   const span = document.createElement('span')
   span.className = `public-scope-crumb ${active ? 'active' : ''}`
   span.textContent = label
@@ -89,7 +106,7 @@ function updateBackbar() {
   const hasProvince = !isDefaultValue(province, ['Todas las provincias'])
   const hasJurisdiction = !isDefaultValue(jurisdiction, ['Todas las jurisdicciones'])
   const hasTerritorialLevel = !!Array.from(document.querySelectorAll<HTMLButtonElement>('button.public-clear-button')).find((item) => normalize(item.textContent ?? '').includes('Limpiar filtro territorial'))
-  const signature = [country, hasProvince ? province : '', hasJurisdiction ? jurisdiction : '', hasTerritorialLevel ? 'territorial-level' : ''].join('|')
+  const signature = [country, hasProvince ? province : '', hasJurisdiction ? jurisdiction : '', hasTerritorialLevel ? 'territorial-level' : '', 'clickable-crumbs'].join('|')
 
   if (!hasProvince && !hasJurisdiction && !hasTerritorialLevel) {
     if (bar.dataset.signature === 'hidden') return
@@ -105,21 +122,21 @@ function updateBackbar() {
 
   const route = document.createElement('div')
   route.className = 'public-scope-route'
-  route.append(buildCrumb(country, !hasProvince && !hasJurisdiction))
+  route.append(buildCrumb(country, !hasProvince && !hasJurisdiction && !hasTerritorialLevel, backToCountry))
 
   if (hasProvince) {
-    route.append(buildCrumb('›'))
-    route.append(buildCrumb(province, !hasJurisdiction && !hasTerritorialLevel))
+    route.append(buildSeparator())
+    route.append(buildCrumb(province, !hasJurisdiction && !hasTerritorialLevel, backToProvince))
   }
 
   if (hasJurisdiction) {
-    route.append(buildCrumb('›'))
-    route.append(buildCrumb(jurisdiction, !hasTerritorialLevel))
+    route.append(buildSeparator())
+    route.append(buildCrumb(jurisdiction, !hasTerritorialLevel, clearTerritorialLevel))
   }
 
   if (hasTerritorialLevel) {
-    route.append(buildCrumb('›'))
-    route.append(buildCrumb('Filtro territorial', true))
+    route.append(buildSeparator())
+    route.append(buildCrumb('Filtro territorial', true, clearTerritorialLevel))
   }
 
   const actions = document.createElement('div')
