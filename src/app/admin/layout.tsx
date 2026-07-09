@@ -28,6 +28,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .admin-sidebar-help strong{font-size:13px}
         .admin-sidebar-help small{font-size:11px;line-height:1.3}
         .admin-sidebar-help a{font-size:12px;min-height:34px}
+        .admin-sidebar-nav a,
+        .admin-quick-card,
+        .admin-module-card.is-active,
+        .admin-stat-strip a,
+        .admin-section-top-link,
+        .admin-system-card a{cursor:pointer;pointer-events:auto;position:relative;z-index:1}
+        .admin-module-card.is-planned{cursor:not-allowed;pointer-events:none}
         .admin-workspace > #top{display:grid;gap:22px}
         .admin-workspace > main.container{display:grid;gap:22px;margin:0;max-width:none;padding:0;width:100%}
         .admin-workspace > main.container .dashboard-hero{border-radius:28px;box-shadow:0 20px 58px rgba(31,41,51,.06)}
