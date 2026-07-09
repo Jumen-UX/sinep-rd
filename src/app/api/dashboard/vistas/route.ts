@@ -155,7 +155,7 @@ export async function GET() {
     ])
 
     return NextResponse.json({
-      countries: countries.length > 0 ? countries : [{ key: 'DO', iso2: 'DO', iso3: 'DOM', name: 'República Dominicana', official_name: 'República Dominicana', flag_emoji: '🇩🇴', flag_image_url: null, flag_alt: 'Bandera de República Dominicana' }],
+      countries,
       dioceses,
       parishes,
       people,
