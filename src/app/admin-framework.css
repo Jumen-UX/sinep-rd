@@ -1,0 +1,43 @@
+.admin-priest-wizard{gap:18px}
+.admin-wizard-header{align-items:flex-start;display:flex;gap:24px;justify-content:space-between;padding:24px}
+.admin-wizard-header h1{font-size:clamp(34px,4vw,56px);margin:3px 0 8px}
+.admin-wizard-header .lead{font-size:16px;max-width:850px}
+.admin-wizard-success{align-items:center;display:flex;gap:18px;justify-content:space-between}
+.admin-wizard-success>div:first-child{display:grid;gap:4px}
+.admin-wizard-layout{align-items:start;display:grid;gap:18px;grid-template-columns:220px minmax(0,1fr) 280px}
+.admin-wizard-layout>.admin-wizard-progress,.admin-wizard-layout>.admin-smart-context-panel{position:sticky;top:18px}
+.admin-wizard-form{min-height:640px}
+.admin-wizard-form>section:not([hidden]){display:grid;gap:18px;max-width:none}
+.admin-wizard-form>section>h2{font-size:clamp(26px,3vw,38px);margin:0}
+.admin-choice-grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.admin-wizard-form .admin-choice-grid label.role-pill{align-items:start;max-width:none;min-height:104px;padding:16px}
+.admin-wizard-form .admin-choice-grid label.role-pill span{display:grid;gap:5px}
+.admin-wizard-form .admin-choice-grid label.role-pill strong{color:var(--foreground);font-size:15px}
+.admin-wizard-form .admin-choice-grid label.role-pill small{color:var(--muted);font-size:12px;font-weight:600}
+.admin-form-fields-grid{display:grid;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.admin-review-grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.admin-review-grid .compact-section{align-content:start;min-height:150px}
+.admin-review-grid .compact-section>span{color:var(--muted);font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.admin-review-grid .compact-section>strong{font-size:18px}
+.admin-review-grid .compact-section>small{color:var(--muted);line-height:1.4}
+.admin-review-grid .compact-section>button{align-self:end;background:transparent;border:0;color:var(--primary);cursor:pointer;font-weight:900;padding:4px 0;text-align:left}
+.admin-wizard-actions{align-items:center}
+.admin-wizard-actions>span{color:var(--muted);font-size:12px;font-weight:900;margin-left:auto}
+.admin-wizard-actions>.button:first-child{margin-right:0!important}
+.admin-wizard-progress{background:#fff;border:1px solid var(--border);border-radius:20px;display:grid;gap:14px;padding:16px}
+.admin-wizard-progress-summary{align-items:center;display:flex;font-size:12px;justify-content:space-between}
+.admin-wizard-progress-summary span{color:var(--muted);font-weight:900}
+.admin-wizard-progress-bar{background:#f0ece3;border-radius:999px;height:7px;overflow:hidden}
+.admin-wizard-progress-bar span{background:linear-gradient(90deg,var(--primary),#ffc003);display:block;height:100%}
+.admin-wizard-progress ol{display:grid;gap:6px;list-style:none;margin:0;padding:0}
+.admin-wizard-progress li button,.admin-wizard-progress li>div{align-items:center;background:transparent;border:0;border-radius:13px;color:inherit;display:grid;font:inherit;gap:10px;grid-template-columns:34px minmax(0,1fr);padding:9px;text-align:left;width:100%}
+.admin-wizard-progress li.active button,.admin-wizard-progress li.active>div{background:#fff8ea}
+.admin-wizard-progress li.complete button{cursor:pointer}
+.admin-wizard-step-number{align-items:center;background:#f5f1e8;border-radius:10px;display:flex;font-size:12px;font-weight:950;height:32px;justify-content:center;width:32px}
+.admin-wizard-progress li.active .admin-wizard-step-number{background:var(--primary);color:#fff}
+.admin-wizard-progress li.complete .admin-wizard-step-number{background:#e6f4ea;color:#24753d}
+.admin-wizard-progress li strong{font-size:12px}
+.admin-wizard-progress li small{color:var(--muted);display:block;font-size:10px;margin-top:2px}
+.admin-wizard-form details summary{cursor:pointer;font-weight:900}
+@media(max-width:1450px){.admin-wizard-layout{grid-template-columns:200px minmax(0,1fr)}.admin-wizard-layout>.admin-smart-context-panel{grid-column:1/-1;position:static}}
+@media(max-width:1180px){.admin-wizard-header{flex-direction:column}.admin-wizard-layout{grid-template-columns:1fr}.admin-wizard-layout>.admin-wizard-progress{position:static}.admin-wizard-progress ol{display:flex;overflow-x:auto}.admin-wizard-progress li{flex:0 0 180px}.admin-form-fields-grid,.admin-review-grid,.admin-choice-grid{grid-template-columns:1fr}.admin-wizard-success{align-items:flex-start;flex-direction:column}}
