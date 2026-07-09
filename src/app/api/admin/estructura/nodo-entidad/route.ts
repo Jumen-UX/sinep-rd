@@ -26,6 +26,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
+    const { count: activeRoleCount, error: roleError } = await supabase
+      .from('user_role_assignments')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userData.user.id)
+      .eq('status', 'active')
+
+    if (roleError) {
+      console.error('Failed to validate admin role for structure node entity API', roleError)
+      return NextResponse.json({ error: 'No se pudo validar el rol administrativo.' }, { status: 403 })
+    }
+
+    if (!activeRoleCount) {
+      return NextResponse.json({ error: 'No tienes un rol administrativo activo.' }, { status: 403 })
+    }
+
     const payload = await request.json()
     const templateId = toText(payload.template_id)
     const levelId = toText(payload.level_id)
