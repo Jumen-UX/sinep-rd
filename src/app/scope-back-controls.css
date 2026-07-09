@@ -53,6 +53,24 @@
   color: var(--public-gold, #9f7417);
 }
 
+.public-scope-crumb-button {
+  cursor: pointer;
+  font: inherit;
+}
+
+.public-scope-crumb-button:hover {
+  background: #eef4ff;
+  border-color: rgba(27, 79, 156, 0.28);
+  color: #10233f;
+}
+
+.public-scope-crumb-separator {
+  background: #eef3fa;
+  color: #10233f;
+  max-width: none;
+  padding-inline: 9px;
+}
+
 .public-scope-back-button {
   background: #10233f;
   border: 0;
