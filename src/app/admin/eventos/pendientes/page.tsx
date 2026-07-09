@@ -21,7 +21,42 @@ type PendingEvent = {
 }
 
 const pageStyles = `
-  .pending-events-layout,.pending-events-list{display:grid;gap:14px}.pending-event-card{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:16px}.pending-event-card.highlight{background:#fbf8f1;border-style:dashed}.badge-row,.button-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}
+  .pending-events-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .pending-event-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+  }
+
+  .badge-row,
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .mini-badge {
+    background: #fbf8f1;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--primary);
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 6px 9px;
+  }
+
+  .mini-badge.warning {
+    background: #fff7ed;
+    color: #9a3412;
+  }
 `
 
 function formatDate(value?: string | null) {
@@ -81,45 +116,88 @@ export default function PendingEventsPage() {
     loadEvents()
   }, [router, supabase])
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando cola de revisión...</div></main>
+  const counts = useMemo(() => {
+    return {
+      total: events.length,
+      draft: events.filter((event) => event.workflow_status === 'draft').length,
+      pendingReview: events.filter((event) => event.workflow_status === 'pending_review').length,
+      approved: events.filter((event) => event.workflow_status === 'approved').length,
+      withSource: events.filter((event) => !!event.source_name).length,
+    }
+  }, [events])
+
+  if (loading) return <div className="empty-state">Cargando cola de revisión...</div>
 
   return (
-    <main className="container dashboard-page pending-events-page">
+    <main className="pending-events-page" id="top">
       <style>{pageStyles}</style>
-      <div className="detail-backlink"><Link href="/admin/eventos">← Volver a eventos</Link></div>
+      <header className="admin-top-header">
+        <div className="admin-top-title">
+          <span className="admin-mini-mark">EVENTOS</span>
+          <strong>Cola de revisión</strong>
+        </div>
+        <div className="admin-top-actions">
+          <Link className="button button-secondary" href="/admin/eventos">Volver a eventos</Link>
+          <Link className="button button-primary" href="/admin/eventos/nuevo">Preparar evento</Link>
+        </div>
+      </header>
 
-      <section className="dashboard-hero card">
+      <section className="admin-welcome-panel">
         <div>
           <p className="eyebrow">Eventos · revisión</p>
-          <h1>Cola de revisión</h1>
-          <p className="lead">Eventos creados por el asistente que todavía no se han aplicado. La aprobación valida el evento, pero no altera el estado vigente.</p>
+          <h1>Eventos pendientes</h1>
+          <p className="lead">Eventos creados por el asistente que todavía no se han aplicado. La aprobación valida el evento, pero no altera el estado vigente hasta completar su contrato de aplicación.</p>
+          <div className="role-list admin-role-list">
+            <span className="role-pill">Borrador</span>
+            <span className="role-pill">Revisión</span>
+            <span className="role-pill">Contrato de aplicación</span>
+          </div>
         </div>
+        <div className="admin-welcome-illustration" aria-hidden="true">◷</div>
       </section>
 
       {error && <div className="error-box">{error}</div>}
 
-      <section className="pending-events-list">
-        {events.length === 0 && <div className="empty-state">No hay eventos pendientes de revisión.</div>}
-        {events.map((event) => (
-          <article className="pending-event-card" key={event.event_id}>
-            <div>
-              <p className="eyebrow">{formatDate(event.event_date)}</p>
-              <h2>{event.title}</h2>
-              <p className="meta">{event.event_type_name ?? 'Tipo no definido'} · {event.related_entity_name ?? 'Sin entidad principal'}</p>
-            </div>
-            <div className="badge-row">
-              <span className="mini-badge warning">{event.workflow_status}</span>
-              <span className="mini-badge">{modeLabel(event.load_mode)}</span>
-              <span className="mini-badge">{evidenceLabel(event.evidence_status)}</span>
-              {event.source_name && <span className="mini-badge">Fuente: {event.source_name}</span>}
-            </div>
-            <div className="button-row">
-              <Link className="button button-primary" href={`/admin/eventos/${event.event_id}`}>Revisar</Link>
-              <Link className="button button-secondary" href={`/admin/eventos/${event.event_id}/plan`}>Plan de acciones</Link>
-              <Link className="button button-secondary" href={`/admin/eventos/${event.event_id}/contrato`}>Contrato de aplicación</Link>
-            </div>
-          </article>
-        ))}
+      <section className="admin-stat-strip" aria-label="Resumen de cola de eventos">
+        <a href="#pending-events"><span>!</span><strong>{counts.total}</strong><small>Total en cola</small></a>
+        <a href="#pending-events"><span>✎</span><strong>{counts.draft}</strong><small>Borradores</small></a>
+        <a href="#pending-events"><span>◷</span><strong>{counts.pendingReview}</strong><small>En revisión</small></a>
+        <a href="#pending-events"><span>✓</span><strong>{counts.approved}</strong><small>Aprobados</small></a>
+        <a href="#pending-events"><span>§</span><strong>{counts.withSource}</strong><small>Con fuente</small></a>
+      </section>
+
+      <section className="card dashboard-section" id="pending-events">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Resultado</p>
+            <h2>{events.length} eventos pendientes de aplicación</h2>
+            <p className="meta">Revisa el evento, prepara su plan de acciones y confirma el contrato antes de aplicarlo al estado vigente.</p>
+          </div>
+        </div>
+
+        <div className="pending-events-list">
+          {events.length === 0 && <div className="empty-state">No hay eventos pendientes de revisión.</div>}
+          {events.map((event) => (
+            <article className="pending-event-card" key={event.event_id}>
+              <div>
+                <p className="eyebrow">{formatDate(event.event_date)}</p>
+                <h2>{event.title}</h2>
+                <p className="meta">{event.event_type_name ?? 'Tipo no definido'} · {event.related_entity_name ?? 'Sin entidad principal'}</p>
+              </div>
+              <div className="badge-row">
+                <span className="mini-badge warning">{event.workflow_status}</span>
+                <span className="mini-badge">{modeLabel(event.load_mode)}</span>
+                <span className="mini-badge">{evidenceLabel(event.evidence_status)}</span>
+                {event.source_name && <span className="mini-badge">Fuente: {event.source_name}</span>}
+              </div>
+              <div className="button-row">
+                <Link className="button button-primary" href={`/admin/eventos/${event.event_id}`}>Revisar</Link>
+                <Link className="button button-secondary" href={`/admin/eventos/${event.event_id}/plan`}>Plan de acciones</Link>
+                <Link className="button button-secondary" href={`/admin/eventos/${event.event_id}/contrato`}>Contrato de aplicación</Link>
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
     </main>
   )
