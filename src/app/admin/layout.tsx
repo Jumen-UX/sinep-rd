@@ -51,8 +51,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .admin-stat-strip button:focus-visible,
         .admin-stat-strip button.active-filter{background:#fff8ea;outline:none}
         .admin-stat-strip button:nth-child(2n) span{background:#fff1c7;color:var(--gold,#b38b2d)}
+        .admin-stat-strip > div{align-items:center;border-right:1px solid var(--border);display:grid;gap:7px;min-height:128px;padding:20px}
+        .admin-stat-strip > div:last-child{border-right:0}
+        .admin-stat-strip > div:nth-child(2n) span{background:#fff1c7;color:var(--gold,#b38b2d)}
         .role-list button.role-pill{border:0;cursor:pointer;font:inherit}
         .role-list button.role-pill.active-filter{background:#fff8ea;color:var(--primary)}
+        button.admin-module-card{font:inherit;text-align:left}
+        button.admin-module-card.active-filter{background:#fff8ea;border-color:rgba(255,192,3,.85);box-shadow:0 12px 28px rgba(179,139,45,.12)}
         .admin-module-card::before{pointer-events:none}
         .admin-module-card.is-planned{cursor:not-allowed;pointer-events:none}
         .admin-workspace{position:relative;z-index:1}
