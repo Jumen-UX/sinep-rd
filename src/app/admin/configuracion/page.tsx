@@ -10,88 +10,173 @@ type ConfigCard = {
   label: string
   title: string
   description: string
+  icon: string
+  status?: 'active' | 'planned'
+  items: string[]
 }
 
-const configSections: { title: string; description: string; items: ConfigCard[] }[] = [
+type ConfigSection = {
+  title: string
+  eyebrow: string
+  description: string
+  icon: string
+  items: ConfigCard[]
+}
+
+const configSections: ConfigSection[] = [
   {
-    title: 'Usuarios y seguridad',
-    description: 'Controla accesos administrativos, roles, permisos efectivos y estados de cuenta.',
+    eyebrow: 'Usuarios y seguridad',
+    title: 'Acceso administrativo',
+    description: 'Controla accesos administrativos, roles, permisos efectivos, estados de cuenta y auditoría.',
+    icon: '♙',
     items: [
       {
         href: '/admin/usuarios',
-        label: 'Acceso',
+        label: 'Activo',
         title: 'Usuarios, roles y permisos',
         description: 'Ver usuarios, activar o suspender cuentas, asignar niveles de acceso y cerrar roles activos.',
+        icon: '♙',
+        items: ['Usuarios', 'Roles', 'Alcances'],
       },
       {
-        href: '/admin/usuarios/invitar',
-        label: 'Invitación',
-        title: 'Invitar usuario',
-        description: 'Crear invitaciones seguras, completar perfil inicial y asignar un primer rol con alcance definido.',
+        href: '/admin/usuarios',
+        label: 'Activo',
+        title: 'Asignación de roles',
+        description: 'Asignar roles por alcance nacional, diócesis, parroquia, entidad pastoral o nodo estructural.',
+        icon: '◇',
+        items: ['Rol', 'Entidad', 'Permisos'],
       },
       {
-        href: '/admin/actividad',
-        label: 'Actividad',
-        title: 'Actividad administrativa',
-        description: 'Consultar movimientos recientes sobre usuarios, roles y cambios sensibles del sistema.',
+        href: '/admin/revision',
+        label: 'Activo',
+        title: 'Revisión administrativa',
+        description: 'Consultar pendientes de validación, fichas incompletas y cambios que requieren decisión.',
+        icon: '!',
+        items: ['Pendientes', 'Corrección', 'Validación'],
       },
     ],
   },
   {
-    title: 'Cargos, oficios y nombramientos',
-    description: 'Define cómo se llaman los cargos, quién puede ejercerlos y en qué ámbito se usan.',
+    eyebrow: 'Cargos y nombramientos',
+    title: 'Oficios, cargos y sucesión',
+    description: 'Define cómo se usan los cargos y registra asignaciones vigentes, vacantes, reemplazos e historial.',
+    icon: '▣',
     items: [
       {
-        href: '/admin/cargos',
-        label: 'Cargos',
-        title: 'Cargos y oficios',
-        description: 'Administrar cargos como párroco, administrador parroquial, vicario general, obispo auxiliar o director de pastoral.',
+        href: '/admin/asignaciones',
+        label: 'Activo',
+        title: 'Cargos y nombramientos',
+        description: 'Registrar cargos vigentes, vacantes, reemplazos, predecesores y sucesores.',
+        icon: '▣',
+        items: ['Cargo', 'Persona', 'Historial'],
       },
       {
-        href: '/admin/referencias-canonicas/cargos',
-        label: 'Ayuda',
+        href: '/admin/configuracion',
+        label: 'Próximo',
+        title: 'Catálogo de oficios',
+        description: 'Administrar definiciones de cargos como párroco, vicario general, obispo auxiliar o director pastoral.',
+        icon: '▤',
+        status: 'planned',
+        items: ['Cargos', 'Niveles', 'Reglas'],
+      },
+      {
+        href: '/admin/configuracion',
+        label: 'Próximo',
         title: 'Referencias canónicas',
         description: 'Consultar referencias y definiciones para orientar el uso correcto de los cargos.',
+        icon: '§',
+        status: 'planned',
+        items: ['Canon', 'Referencia', 'Criterio'],
       },
     ],
   },
   {
-    title: 'Estructura institucional',
+    eyebrow: 'Estructura institucional',
+    title: 'Territorio, pastoral y administración',
     description: 'Organiza diócesis, parroquias, zonas, vicarías, pastorales y unidades administrativas.',
+    icon: '▦',
     items: [
       {
         href: '/admin/estructura',
-        label: 'Estructura',
-        title: 'Estructura territorial, pastoral y administrativa',
-        description: 'Administrar cómo se ordenan las entidades y divisiones de cada jurisdicción.',
+        label: 'Activo',
+        title: 'Estructura flexible',
+        description: 'Administrar cómo se ordenan las entidades y divisiones internas de cada jurisdicción.',
+        icon: '▦',
+        items: ['Niveles', 'Nodos', 'Modelos'],
       },
       {
-        href: '/admin/organigramas',
-        label: 'Organigrama',
-        title: 'Organigramas visuales',
-        description: 'Ver unidades, responsables actuales y áreas sin responsable asignado.',
+        href: '/admin/paises',
+        label: 'Activo',
+        title: 'Países ISO',
+        description: 'Habilitar países, banderas y visibilidad pública condicionada por datos registrados.',
+        icon: '◎',
+        items: ['ISO2', 'ISO3', 'Banderas'],
+      },
+      {
+        href: '/admin/estructura/eventos',
+        label: 'Activo',
+        title: 'Evolución estructural',
+        description: 'Registrar creación, división, fusión o supresión de estructuras y entidades.',
+        icon: '◷',
+        items: ['Eventos', 'Fechas', 'Fuentes'],
       },
     ],
   },
   {
-    title: 'Control editorial',
+    eyebrow: 'Control editorial',
+    title: 'Calidad, fuentes y publicación',
     description: 'Revisa cambios, datos incompletos y solicitudes antes de publicarlos.',
+    icon: '✓',
     items: [
       {
-        href: '/admin/solicitudes',
-        label: 'Revisión',
-        title: 'Solicitudes de cambio',
-        description: 'Aprobar o rechazar cambios sugeridos por editores o usuarios autorizados.',
+        href: '/admin/eventos/pendientes',
+        label: 'Activo',
+        title: 'Eventos pendientes',
+        description: 'Revisar, aprobar, devolver o cancelar eventos pendientes de aplicación.',
+        icon: '!',
+        items: ['Aprobación', 'Corrección', 'Aplicación'],
       },
       {
-        href: '/admin/estado-fichas',
-        label: 'Calidad',
+        href: '/admin/eventos',
+        label: 'Activo',
+        title: 'Registro histórico',
+        description: 'Explorar eventos históricos y trazabilidad de hechos registrados.',
+        icon: '◷',
+        items: ['Hechos', 'Cronología', 'Evidencia'],
+      },
+      {
+        href: '/admin/configuracion',
+        label: 'Próximo',
         title: 'Estado de fichas',
-        description: 'Revisar campos faltantes, datos no identificados y fichas incompletas.',
+        description: 'Revisar campos faltantes, datos no identificados y fichas incompletas desde un panel dedicado.',
+        icon: '✓',
+        status: 'planned',
+        items: ['Calidad', 'Completitud', 'Publicación'],
       },
     ],
   },
 ]
+
+function ConfigModuleCard({ item }: { item: ConfigCard }) {
+  const content = (
+    <>
+      <div className="admin-module-card-head">
+        <span className="admin-module-icon">{item.icon}</span>
+        <span className={`admin-status-pill ${item.status === 'planned' ? 'planned' : 'active'}`}>{item.label}</span>
+      </div>
+      <p className="entity-type">Configuración</p>
+      <h3>{item.title}</h3>
+      <p className="meta">{item.description}</p>
+      <ul>
+        {item.items.map((detail) => <li key={detail}>{detail}</li>)}
+      </ul>
+      <span className={`admin-module-action ${item.status === 'planned' ? 'disabled' : ''}`}>{item.status === 'planned' ? 'Pendiente' : 'Abrir módulo'} <span aria-hidden="true">→</span></span>
+    </>
+  )
+
+  if (item.status === 'planned') return <article className="admin-module-card is-planned">{content}</article>
+  return <Link className="admin-module-card is-active" href={item.href}>{content}</Link>
+}
 
 export default function AdminConfiguracionPage() {
   const router = useRouter()
@@ -111,43 +196,49 @@ export default function AdminConfiguracionPage() {
     checkSession()
   }, [router, supabase])
 
-  if (loading) {
-    return <main className="container"><div className="empty-state">Cargando configuración...</div></main>
-  }
+  if (loading) return <div className="empty-state">Cargando configuración...</div>
 
   return (
-    <main className="container dashboard-page admin-config-page">
-      <div className="detail-backlink">
-        <Link href="/admin">← Volver al panel administrativo</Link>
-      </div>
-
-      <section className="dashboard-hero card">
-        <div>
-          <p className="eyebrow">Configuración</p>
-          <h1>Ajustes del sistema</h1>
-          <p className="lead">
-            Aquí se agrupan los ajustes que definen cómo funciona SINEP RD. Son cambios de estructura, cargos y reglas de uso, no registros diarios.
-          </p>
+    <main className="admin-config-page" id="top">
+      <header className="admin-top-header">
+        <div className="admin-top-title">
+          <span className="admin-mini-mark">AJUSTES</span>
+          <strong>Configuración</strong>
         </div>
+        <div className="admin-top-actions">
+          <Link className="button button-secondary" href="/admin">Volver al panel</Link>
+          <Link className="button button-secondary" href="/admin/revision">Pendientes</Link>
+        </div>
+      </header>
+
+      <section className="admin-welcome-panel">
+        <div>
+          <p className="eyebrow">Centro de configuración</p>
+          <h1>Ajustes del sistema</h1>
+          <p className="lead">Agrupa los ajustes que definen cómo funciona SINEP RD: accesos, cargos, estructura, catálogos, reglas editoriales y validación.</p>
+          <div className="role-list admin-role-list">
+            <span className="role-pill">Módulos activos</span>
+            <span className="role-pill">Próximas fases</span>
+            <span className="role-pill">Sin enlaces muertos</span>
+          </div>
+        </div>
+        <div className="admin-welcome-illustration" aria-hidden="true">⚙</div>
       </section>
 
       {configSections.map((section) => (
-        <section className="card admin-section" key={section.title}>
-          <div className="section-heading">
+        <section className="admin-module-group" key={section.title}>
+          <div className="admin-group-heading">
+            <span>{section.icon}</span>
             <div>
-              <p className="eyebrow">{section.title}</p>
-              <h2>{section.description}</h2>
+              <p className="eyebrow">{section.eyebrow}</p>
+              <h2>{section.title}</h2>
+              <p className="meta">{section.description}</p>
             </div>
+            <Link href="#top">Subir</Link>
           </div>
 
-          <div className="grid admin-modules">
-            {section.items.map((item) => (
-              <Link className="entity-card admin-module" href={item.href} key={item.href}>
-                <p className="entity-type">{item.label}</p>
-                <h2>{item.title}</h2>
-                <p className="meta">{item.description}</p>
-              </Link>
-            ))}
+          <div className="admin-module-grid">
+            {section.items.map((item) => <ConfigModuleCard item={item} key={`${item.title}-${item.label}`} />)}
           </div>
         </section>
       ))}
