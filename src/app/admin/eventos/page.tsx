@@ -55,14 +55,164 @@ const workModes: Array<{ key: WorkMode; title: string; description: string }> = 
 ]
 
 const pageStyles = `
-  .events-page select,.events-page input{border:1px solid var(--border);border-radius:14px;font:inherit;padding:12px 14px;width:100%}
-  .events-hero{align-items:stretch;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr)}
-  .events-summary-card{background:#fbf8f1;border:1px solid var(--border);border-radius:18px;display:grid;gap:10px;padding:20px}.events-summary-card strong{font-size:34px;letter-spacing:-.04em;line-height:1}
-  .events-toolbar,.events-tabs,.events-layout,.events-metrics,.events-timeline,.facets-grid,.derived-list,.impact-list,.event-detail-grid,.action-link-grid{display:grid;gap:14px}
-  .events-toolbar{align-items:end;grid-template-columns:minmax(180px,.6fr) minmax(180px,.6fr) minmax(220px,1fr) minmax(200px,.8fr)}.events-toolbar label{color:var(--muted);display:grid;font-size:14px;font-weight:800;gap:7px}
-  .events-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}.events-tab,.event-card-button{appearance:none;background:#fff;border:1px solid var(--border);cursor:pointer;font:inherit;text-align:left}.events-tab{border-radius:18px;display:grid;gap:6px;padding:16px}.events-tab.active,.event-card-button.active{border-color:rgba(122,31,31,.55);box-shadow:0 16px 38px rgba(122,31,31,.12)}
-  .events-layout{align-items:start;grid-template-columns:minmax(0,1fr) minmax(320px,.42fr)}.events-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.events-metric,.event-card-button,.facet-card,.derived-card,.impact-card,.detail-tile{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:7px;padding:14px}.events-metric strong{font-size:28px;letter-spacing:-.04em}.event-card-button{border-left:5px solid rgba(122,31,31,.25);width:100%}
-  .event-card-main{align-items:start;display:flex;gap:12px;justify-content:space-between}.event-date-box{align-items:center;background:#fbf8f1;border:1px solid var(--border);border-radius:14px;display:grid;flex:0 0 76px;justify-items:center;padding:10px}.event-date-box strong{font-size:22px;line-height:1}.event-date-box span{color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase}.event-info{display:grid;gap:6px;min-width:0}.event-info h3{margin:0}.badge-row,.button-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}.facet-card.highlight,.derived-card.highlight,.impact-card.highlight{background:#fbf8f1;border-style:dashed}.event-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.action-link-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:1080px){.events-hero,.events-toolbar,.events-tabs,.events-layout,.events-metrics,.event-detail-grid,.action-link-grid{grid-template-columns:1fr}}
+  .events-page select,
+  .events-page input {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font: inherit;
+    padding: 12px 14px;
+    width: 100%;
+  }
+
+  .events-toolbar,
+  .events-tabs,
+  .events-layout,
+  .events-timeline,
+  .facets-grid,
+  .derived-list,
+  .impact-list,
+  .event-detail-grid,
+  .action-link-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .events-toolbar {
+    align-items: end;
+    grid-template-columns: minmax(180px,.6fr) minmax(180px,.6fr) minmax(220px,1fr) minmax(200px,.8fr);
+  }
+
+  .events-toolbar label {
+    color: var(--muted);
+    display: grid;
+    font-size: 14px;
+    font-weight: 800;
+    gap: 7px;
+  }
+
+  .events-tabs {
+    grid-template-columns: repeat(5,minmax(0,1fr));
+  }
+
+  .events-tab,
+  .event-card-button {
+    appearance: none;
+    background: #fff;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+  }
+
+  .events-tab {
+    border-radius: 18px;
+    display: grid;
+    gap: 6px;
+    padding: 16px;
+  }
+
+  .events-tab.active,
+  .event-card-button.active {
+    border-color: rgba(122,31,31,.55);
+    box-shadow: 0 16px 38px rgba(122,31,31,.12);
+  }
+
+  .events-layout {
+    align-items: start;
+    grid-template-columns: minmax(0,1fr) minmax(320px,.42fr);
+  }
+
+  .event-card-button,
+  .facet-card,
+  .derived-card,
+  .impact-card,
+  .detail-tile {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    display: grid;
+    gap: 7px;
+    padding: 14px;
+  }
+
+  .event-card-button {
+    border-left: 5px solid rgba(122,31,31,.25);
+    width: 100%;
+  }
+
+  .event-card-main {
+    align-items: start;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  .event-date-box {
+    align-items: center;
+    background: #fbf8f1;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: grid;
+    flex: 0 0 76px;
+    justify-items: center;
+    padding: 10px;
+  }
+
+  .event-date-box strong {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .event-date-box span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .event-info {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .event-info h3 {
+    margin: 0;
+  }
+
+  .badge-row,
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .mini-badge {
+    background: #fbf8f1;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--primary);
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 6px 9px;
+  }
+
+  .mini-badge.warning { background: #fff7ed; color: #9a3412; }
+  .mini-badge.success { background: #f0fdf4; color: #166534; }
+  .facet-card.highlight,
+  .derived-card.highlight,
+  .impact-card.highlight { background: #fbf8f1; border-style: dashed; }
+  .event-detail-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .action-link-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+  @media(max-width:1080px){
+    .events-toolbar,
+    .events-tabs,
+    .events-layout,
+    .event-detail-grid,
+    .action-link-grid { grid-template-columns: 1fr; }
+  }
 `
 
 function eventKey(event: EventRegistryRow) { return `${event.source_kind}:${event.event_id}` }
@@ -178,21 +328,96 @@ export default function AdminEventosPage() {
   const selectedEvent = filteredEvents.find((event) => eventKey(event) === selectedEventKey) ?? filteredEvents[0] ?? null
   const years = useMemo(() => { const min = summary?.min_year ?? 1500; const max = summary?.max_year ?? new Date().getFullYear(); return Array.from({ length: max - min + 1 }, (_, index) => max - index) }, [summary?.min_year, summary?.max_year])
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando registro de eventos...</div></main>
+  if (loading) return <div className="empty-state">Cargando registro de eventos...</div>
 
   return (
-    <main className="container dashboard-page events-page">
+    <main className="events-page" id="top">
       <style>{pageStyles}</style>
-      <div className="detail-backlink"><Link href="/admin">← Volver al panel administrativo</Link></div>
-      <section className="dashboard-hero card events-hero">
-        <div><p className="eyebrow">SINEP Core · motor histórico-documental</p><h1>Eventos</h1><p className="lead">Centro para reconstruir la historia inicial y luego alimentar el sistema con eventos nuevos. El evento es la unidad de verdad; la página es una vista derivada.</p><div className="button-row"><Link className="button button-primary" href="/admin/eventos/nuevo">Preparar evento</Link><Link className="button button-secondary" href="/admin/eventos/pendientes">Cola de revisión</Link></div></div>
-        <div className="events-summary-card"><span className="mini-badge">Registro navegable</span><strong>{summary?.total_events ?? 0}</strong><span className="meta">eventos y fechas en el índice · {summary?.verified_or_documented ?? 0} documentados/verificados</span></div>
+      <header className="admin-top-header">
+        <div className="admin-top-title">
+          <span className="admin-mini-mark">HISTORIA</span>
+          <strong>Eventos</strong>
+        </div>
+        <div className="admin-top-actions">
+          <Link className="button button-secondary" href="/admin">Volver al panel</Link>
+          <Link className="button button-primary" href="/admin/eventos/nuevo">Preparar evento</Link>
+          <Link className="button button-secondary" href="/admin/eventos/pendientes">Cola de revisión</Link>
+        </div>
+      </header>
+
+      <section className="admin-welcome-panel">
+        <div>
+          <p className="eyebrow">SINEP Core · motor histórico-documental</p>
+          <h1>Registro de eventos</h1>
+          <p className="lead">Centro para reconstruir la historia inicial y alimentar el sistema con eventos nuevos. El evento es la unidad de verdad; la página es una vista derivada.</p>
+          <div className="role-list admin-role-list">
+            <span className="role-pill">{summary?.total_events ?? 0} eventos y fechas</span>
+            <span className="role-pill">{summary?.verified_or_documented ?? 0} documentados/verificados</span>
+            <span className="role-pill">Impacto trazable</span>
+          </div>
+        </div>
+        <div className="admin-welcome-illustration" aria-hidden="true">◷</div>
       </section>
+
       {error && <div className="error-box">{error}</div>}
-      <section className="events-metrics"><div className="events-metric"><strong>{summary?.historical_events ?? 0}</strong><span>Carga histórica</span></div><div className="events-metric"><strong>{summary?.new_events ?? 0}</strong><span>Eventos nuevos</span></div><div className="events-metric"><strong>{summary?.calendar_occurrences ?? 0}</strong><span>Fechas derivadas</span></div><div className="events-metric"><strong>{summary?.pending_evidence ?? 0}</strong><span>Evidencia pendiente</span></div></section>
-      <section className="card dashboard-section"><div className="events-toolbar"><label>Año<select value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}><option value="">Todos los años</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</select></label><label>Mes<select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)}><option value="">Todos los meses</option>{monthNames.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}</select></label><label>Tipo de evento<select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="">Todos los tipos</option>{(summary?.event_types ?? []).map((facet) => <option key={facet.key} value={facet.key}>{facet.name ?? facet.key} · {facet.count}</option>)}</select></label><label>Buscar<input value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Diócesis, febrero, fuente..." /></label></div></section>
-      <section className="events-tabs">{workModes.map((mode) => <button className={`events-tab ${workMode === mode.key ? 'active' : ''}`} key={mode.key} onClick={() => setWorkMode(mode.key)} type="button"><strong>{mode.title}</strong><span>{mode.description}</span></button>)}</section>
-      <section className="events-layout"><div className="card dashboard-section"><div className="section-heading"><div><p className="eyebrow">Línea de eventos</p><h2>{filteredEvents.length} resultados</h2><p className="meta">Selecciona un evento para ver qué páginas alimenta y abrir su flujo operativo cuando aplique.</p></div></div><div className="events-timeline">{filteredEvents.length === 0 && <div className="empty-state">No hay eventos con esos filtros.</div>}{filteredEvents.map((event) => <button className={`event-card-button ${selectedEvent && eventKey(event) === eventKey(selectedEvent) ? 'active' : ''}`} key={eventKey(event)} onClick={() => setSelectedEventKey(eventKey(event))} type="button"><div className="event-card-main"><div className="event-date-box"><strong>{dayValue(event.event_date)}</strong><span>{monthLabel(event.event_month).slice(0, 3)}</span><span>{event.event_year ?? '—'}</span></div><div className="event-info"><h3>{event.title}</h3><p className="meta">{formatDate(event.event_date)} · {event.event_type_name ?? event.event_type_key ?? 'Tipo no definido'}</p><div className="badge-row"><span className="mini-badge">{loadModeLabel(event.load_mode)}</span><span className={`mini-badge ${isEvidencePending(event) ? 'warning' : 'success'}`}>{evidenceLabel(event.evidence_status)}</span>{event.workflow_status === 'pending_review' && <span className="mini-badge warning">Pendiente de revisión</span>}{event.related_entity_name && <span className="mini-badge">{event.related_entity_name}</span>}{event.source_name && <span className="mini-badge">Fuente: {event.source_name}</span>}</div></div></div></button>)}</div></div><aside className="facets-grid"><EventDetailPanel event={selectedEvent} /><div className="facet-card highlight"><strong>Asistentes</strong><div className="action-link-grid"><Link className="button button-primary" href="/admin/eventos/nuevo">Preparar evento</Link><Link className="button button-secondary" href="/admin/eventos/pendientes">Cola de revisión</Link></div></div></aside></section>
+
+      <section className="admin-stat-strip" aria-label="Resumen de eventos">
+        <a href="#event-stream"><span>◷</span><strong>{summary?.historical_events ?? 0}</strong><small>Carga histórica</small></a>
+        <a href="#event-stream"><span>＋</span><strong>{summary?.new_events ?? 0}</strong><small>Eventos nuevos</small></a>
+        <a href="#event-stream"><span>◎</span><strong>{summary?.calendar_occurrences ?? 0}</strong><small>Fechas derivadas</small></a>
+        <a href="#event-stream"><span>!</span><strong>{summary?.pending_evidence ?? 0}</strong><small>Evidencia pendiente</small></a>
+        <a href="#event-stream"><span>⌕</span><strong>{filteredEvents.length}</strong><small>Resultados visibles</small></a>
+      </section>
+
+      <section className="card dashboard-section" id="event-filters">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Filtros</p>
+            <h2>Buscar en el registro histórico</h2>
+          </div>
+        </div>
+        <div className="events-toolbar">
+          <label>Año<select value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}><option value="">Todos los años</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</select></label>
+          <label>Mes<select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)}><option value="">Todos los meses</option>{monthNames.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}</select></label>
+          <label>Tipo de evento<select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="">Todos los tipos</option>{(summary?.event_types ?? []).map((facet) => <option key={facet.key} value={facet.key}>{facet.name ?? facet.key} · {facet.count}</option>)}</select></label>
+          <label>Buscar<input value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Diócesis, febrero, fuente..." /></label>
+        </div>
+      </section>
+
+      <section className="events-tabs" aria-label="Modos de trabajo">
+        {workModes.map((mode) => <button className={`events-tab ${workMode === mode.key ? 'active' : ''}`} key={mode.key} onClick={() => setWorkMode(mode.key)} type="button"><strong>{mode.title}</strong><span>{mode.description}</span></button>)}
+      </section>
+
+      <section className="events-layout" id="event-stream">
+        <div className="card dashboard-section">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Línea de eventos</p>
+              <h2>{filteredEvents.length} resultados</h2>
+              <p className="meta">Selecciona un evento para ver qué páginas alimenta y abrir su flujo operativo cuando aplique.</p>
+            </div>
+          </div>
+          <div className="events-timeline">
+            {filteredEvents.length === 0 && <div className="empty-state">No hay eventos con esos filtros.</div>}
+            {filteredEvents.map((event) => (
+              <button className={`event-card-button ${selectedEvent && eventKey(event) === eventKey(selectedEvent) ? 'active' : ''}`} key={eventKey(event)} onClick={() => setSelectedEventKey(eventKey(event))} type="button">
+                <div className="event-card-main">
+                  <div className="event-date-box"><strong>{dayValue(event.event_date)}</strong><span>{monthLabel(event.event_month).slice(0, 3)}</span><span>{event.event_year ?? '—'}</span></div>
+                  <div className="event-info">
+                    <h3>{event.title}</h3>
+                    <p className="meta">{formatDate(event.event_date)} · {event.event_type_name ?? event.event_type_key ?? 'Tipo no definido'}</p>
+                    <div className="badge-row"><span className="mini-badge">{loadModeLabel(event.load_mode)}</span><span className={`mini-badge ${isEvidencePending(event) ? 'warning' : 'success'}`}>{evidenceLabel(event.evidence_status)}</span>{event.workflow_status === 'pending_review' && <span className="mini-badge warning">Pendiente de revisión</span>}{event.related_entity_name && <span className="mini-badge">{event.related_entity_name}</span>}{event.source_name && <span className="mini-badge">Fuente: {event.source_name}</span>}</div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+        <aside className="facets-grid">
+          <EventDetailPanel event={selectedEvent} />
+          <div className="facet-card highlight"><strong>Asistentes</strong><div className="action-link-grid"><Link className="button button-primary" href="/admin/eventos/nuevo">Preparar evento</Link><Link className="button button-secondary" href="/admin/eventos/pendientes">Cola de revisión</Link></div></div>
+        </aside>
+      </section>
     </main>
   )
 }
