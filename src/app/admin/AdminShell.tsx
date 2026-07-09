@@ -1,7 +1,6 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 type AdminNavItem = {
@@ -66,13 +65,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     <div className="admin-area">
       <div className="admin-redesign">
         <aside className="admin-sidebar" aria-label="Navegación administrativa">
-          <Link className="admin-brand-block" href="/admin">
+          <a className="admin-brand-block" href="/admin">
             <span className="admin-brand-shield">SD</span>
             <span>
               <strong>SINEP RD</strong>
               <small>Sistema de Información Eclesial</small>
             </span>
-          </Link>
+          </a>
 
           <nav className="admin-sidebar-nav">
             {adminNavSections.map((section) => (
@@ -80,13 +79,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 <p>{section.title}</p>
                 <div>
                   {section.items.map((item) => (
-                    <Link aria-current={isActiveNavItem(pathname, item.href) ? 'page' : undefined} href={item.href} key={`${item.href}-${item.label}`}>
+                    <a aria-current={isActiveNavItem(pathname, item.href) ? 'page' : undefined} href={item.href} key={`${item.href}-${item.label}`}>
                       <span aria-hidden="true">{item.icon}</span>
                       <span>
                         <strong>{item.label}</strong>
                         {item.sublabel && <small>{item.sublabel}</small>}
                       </span>
-                    </Link>
+                    </a>
                   ))}
                 </div>
               </section>
@@ -97,7 +96,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             <span>?</span>
             <strong>Ayuda</strong>
             <small>Configuración, catálogos y validaciones.</small>
-            <Link href="/admin/configuracion">Centro de ayuda</Link>
+            <a href="/admin/configuracion">Centro de ayuda</a>
           </div>
         </aside>
 
