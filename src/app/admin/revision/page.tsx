@@ -144,32 +144,49 @@ export default function AdminRevisionPage() {
   }, [items])
 
   return (
-    <main className="container dashboard-page admin-config-page">
-      <div className="detail-backlink"><Link href="/admin">← Volver al panel administrativo</Link></div>
+    <main className="admin-review-page" id="top">
+      <header className="admin-top-header">
+        <div className="admin-top-title">
+          <span className="admin-mini-mark">REVISIÓN</span>
+          <strong>Pendientes de revisión</strong>
+        </div>
+        <div className="admin-top-actions">
+          <Link className="button button-secondary" href="/admin">Volver al panel</Link>
+          <Link className="button button-secondary" href="/admin/eventos/pendientes">Eventos pendientes</Link>
+        </div>
+      </header>
 
-      <section className="dashboard-hero card">
+      <section className="admin-welcome-panel">
         <div>
           <p className="eyebrow">Auditoría y trazabilidad</p>
-          <h1>Pendientes de revisión</h1>
+          <h1>Cola de revisión</h1>
           <p className="lead">Centraliza datos marcados como no identificados, incompletos o pendientes de verificación para que no se acumulen silenciosamente.</p>
+          <div className="role-list admin-role-list">
+            <span className="role-pill">Validación editorial</span>
+            <span className="role-pill">Publicación controlada</span>
+            <span className="role-pill">Corrección documentada</span>
+          </div>
         </div>
+        <div className="admin-welcome-illustration" aria-hidden="true">!</div>
       </section>
 
       {error && <div className="error-box">{error}</div>}
       {actionMessage && <div className="success-box">{actionMessage}</div>}
 
-      <div className="dashboard-grid dashboard-summary">
-        <article className="metric-card"><span>Total pendiente</span><strong>{counts.total}</strong></article>
-        <article className="metric-card"><span>Datos faltantes</span><strong>{counts.missingFields}</strong></article>
-        <article className="metric-card"><span>Cargos por verificar</span><strong>{counts.assignments}</strong></article>
-        <article className="metric-card"><span>Personas por revisar</span><strong>{counts.personCandidates}</strong></article>
-      </div>
+      <section className="admin-stat-strip" aria-label="Resumen de revisión">
+        <a href="#review-results"><span>!</span><strong>{counts.total}</strong><small>Total pendiente</small></a>
+        <a href="#review-results"><span>▤</span><strong>{counts.missingFields}</strong><small>Datos faltantes</small></a>
+        <a href="#review-results"><span>▣</span><strong>{counts.assignments}</strong><small>Cargos por verificar</small></a>
+        <a href="#review-results"><span>◉</span><strong>{counts.personCandidates}</strong><small>Personas por revisar</small></a>
+        <a href="#review-filters"><span>⌕</span><strong>{filteredItems.length}</strong><small>Con filtros activos</small></a>
+      </section>
 
-      <section className="card dashboard-section">
-        <div className="section-heading-row">
+      <section className="card dashboard-section" id="review-filters">
+        <div className="section-heading">
           <div>
             <p className="eyebrow">Filtros</p>
             <h2>Cola operativa</h2>
+            <p className="meta">Filtra por tipo de pendiente y estado de verificación para trabajar por prioridad.</p>
           </div>
         </div>
         <div className="admin-form-grid">
@@ -184,12 +201,13 @@ export default function AdminRevisionPage() {
         </div>
       </section>
 
-      <section className="card dashboard-section">
-        <div className="section-heading-row">
+      <section className="card dashboard-section" id="review-results">
+        <div className="section-heading">
           <div>
             <p className="eyebrow">Resultado</p>
             <h2>{filteredItems.length} registros encontrados</h2>
           </div>
+          <button className="button button-secondary" disabled={loading} onClick={loadReviewQueue} type="button">Actualizar</button>
         </div>
 
         {loading ? (
