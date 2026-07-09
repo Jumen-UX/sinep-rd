@@ -5,12 +5,34 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type EntityPath = {
-  direct_entity_id: string
-  direct_entity_name: string
-  direct_entity_slug: string
-  direct_entity_type_name: string | null
-  hierarchy_path: string | null
+type EntityTypeRelation = { key: string; name: string }
+
+type ParentOption = {
+  id: string
+  name: string
+  slug: string
+  country: string | null
+  country_iso2: string | null
+  entity_types: EntityTypeRelation[] | EntityTypeRelation | null
+}
+
+type EnabledCountry = {
+  id: string
+  iso2: string
+  iso3: string | null
+  name: string
+  official_name: string | null
+  flag_emoji: string | null
+  flag_image_url: string | null
+  flag_alt: string | null
+  status: string
+  visibility: string
+}
+
+type AdminCountriesResponse = {
+  enabled_countries: EnabledCountry[]
+  public_countries: unknown[]
+  error?: string
 }
 
 type MissingField = { key: string; label: string }
@@ -64,18 +86,35 @@ function slugify(value: string) {
 }
 
 function parentHelp(typeKey: string) {
-  if (typeKey === 'ecclesiastical_province') return 'Selecciona el país al que pertenece.'
-  if (typeKey === 'archdiocese') return 'Selecciona la provincia eclesiástica; se creará relación metropolitan_see.'
-  if (typeKey === 'diocese') return 'Selecciona la provincia eclesiástica; se creará relación suffragan_see.'
-  if (typeKey === 'military_ordinariate') return 'Selecciona el país; se creará relación national_jurisdiction.'
-  return 'Selecciona la diócesis, arquidiócesis o división superior correspondiente.'
+  if (typeKey === 'ecclesiastical_province') return 'No requiere entidad superior. El país se selecciona desde el catálogo habilitado.'
+  if (typeKey === 'archdiocese') return 'Selecciona la provincia eclesiástica del mismo país; se creará relación metropolitan_see.'
+  if (typeKey === 'diocese') return 'Selecciona la provincia eclesiástica del mismo país; se creará relación suffragan_see.'
+  if (typeKey === 'military_ordinariate') return 'Normalmente no requiere provincia; queda vinculado al país seleccionado como jurisdicción especial.'
+  return 'Selecciona la diócesis, arquidiócesis o división superior correspondiente dentro del mismo país.'
+}
+
+function getEntityType(parent: ParentOption) {
+  if (!parent.entity_types) return null
+  return Array.isArray(parent.entity_types) ? parent.entity_types[0] ?? null : parent.entity_types
+}
+
+function allowedParentTypeKeys(typeKey: string) {
+  if (typeKey === 'ecclesiastical_province' || typeKey === 'military_ordinariate') return []
+  if (typeKey === 'archdiocese' || typeKey === 'diocese') return ['ecclesiastical_province']
+  return ['archdiocese', 'diocese', 'military_ordinariate', 'vicariate', 'deanery', 'pastoral_region', 'pastoral_zone']
+}
+
+function countryLabel(country: EnabledCountry) {
+  return `${country.flag_emoji ?? '▦'} ${country.name} · ${country.iso2}${country.iso3 ? `/${country.iso3}` : ''}`
 }
 
 export default function NuevaJurisdiccionPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [step, setStep] = useState(0)
-  const [parents, setParents] = useState<EntityPath[]>([])
+  const [parents, setParents] = useState<ParentOption[]>([])
+  const [countries, setCountries] = useState<EnabledCountry[]>([])
+  const [selectedCountryIso2, setSelectedCountryIso2] = useState('DO')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -84,8 +123,16 @@ export default function NuevaJurisdiccionPage() {
   const [selectedParentId, setSelectedParentId] = useState('')
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
 
-  const selectedParent = parents.find((item) => item.direct_entity_id === selectedParentId)
   const selectedType = jurisdictionTypes.find((item) => item.key === typeKey)
+  const selectedCountry = countries.find((country) => country.iso2 === selectedCountryIso2) ?? countries[0] ?? null
+  const parentTypeKeys = allowedParentTypeKeys(typeKey)
+  const filteredParents = parents.filter((parent) => {
+    const parentType = getEntityType(parent)
+    if (!parentType || !parentTypeKeys.includes(parentType.key)) return false
+    if (!selectedCountry?.iso2) return true
+    return !parent.country_iso2 || parent.country_iso2 === selectedCountry.iso2
+  })
+  const selectedParent = filteredParents.find((item) => item.id === selectedParentId)
 
   async function loadData() {
     setError(null)
@@ -95,22 +142,45 @@ export default function NuevaJurisdiccionPage() {
       return
     }
 
-    const parentRes = await supabase
-      .from('public_entity_hierarchy_paths')
-      .select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,hierarchy_path')
-      .order('direct_entity_name')
+    const [parentRes, countriesRes] = await Promise.all([
+      supabase
+        .from('ecclesiastical_entities')
+        .select('id,name,slug,country,country_iso2,entity_types(key,name)')
+        .eq('status', 'active')
+        .order('name'),
+      fetch('/api/admin/paises'),
+    ])
 
     if (parentRes.error) {
       setError(parentRes.error.message ?? 'No se pudieron cargar las entidades superiores.')
     } else {
-      setParents((parentRes.data ?? []) as EntityPath[])
+      setParents((parentRes.data ?? []) as unknown as ParentOption[])
     }
+
+    if (!countriesRes.ok) {
+      const data = await countriesRes.json().catch(() => null) as { error?: string } | null
+      setError(data?.error ?? 'No se pudieron cargar los países habilitados.')
+    } else {
+      const data = await countriesRes.json() as AdminCountriesResponse
+      const loaded = data.enabled_countries ?? []
+      setCountries(loaded)
+      if (loaded.length > 0 && !loaded.some((country) => country.iso2 === selectedCountryIso2)) {
+        setSelectedCountryIso2(loaded[0].iso2)
+      }
+    }
+
     setLoading(false)
   }
 
   useEffect(() => {
     loadData()
   }, [])
+
+  useEffect(() => {
+    if (selectedParentId && !filteredParents.some((parent) => parent.id === selectedParentId)) {
+      setSelectedParentId('')
+    }
+  }, [filteredParents, selectedParentId])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -129,13 +199,20 @@ export default function NuevaJurisdiccionPage() {
       return
     }
 
+    if (!selectedCountry) {
+      setError('Debes seleccionar un país habilitado. Si no aparece, habilítalo primero en Admin → Países ISO.')
+      setSaving(false)
+      return
+    }
+
     const payload = {
       entity_type_key: typeKey,
       name,
       official_name: emptyToNull(form.get('official_name')),
       slug: slugInput || slugify(name),
       description: emptyToNull(form.get('description')),
-      country: emptyToNull(form.get('country')) ?? 'República Dominicana',
+      country_iso2: selectedCountry.iso2,
+      country: selectedCountry.name,
       province: emptyToNull(form.get('province')),
       municipality: emptyToNull(form.get('municipality')),
       sector: emptyToNull(form.get('sector')),
@@ -158,7 +235,7 @@ export default function NuevaJurisdiccionPage() {
       source_url: emptyToNull(form.get('source_url')),
       source_checked_at: emptyToNull(form.get('source_checked_at')),
       erected_at: emptyToNull(form.get('erected_at')),
-      parent_entity_id: emptyToNull(form.get('parent_entity_id')),
+      parent_entity_id: selectedParentId || null,
       not_identified_fields: form.getAll('not_identified_fields').map(String),
     }
 
@@ -193,7 +270,7 @@ export default function NuevaJurisdiccionPage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nueva jurisdicción</h1>
-          <p className="lead">Crea una provincia eclesiástica, arquidiócesis, diócesis, ordinariato o división territorial interna con relación jerárquica y estadísticas iniciales.</p>
+          <p className="lead">Crea una provincia eclesiástica, arquidiócesis, diócesis, ordinariato o división territorial interna usando países habilitados desde el catálogo ISO.</p>
         </div>
       </section>
 
@@ -212,10 +289,22 @@ export default function NuevaJurisdiccionPage() {
         {step === 0 && (
           <section>
             <p className="eyebrow">Paso 1</p>
-            <h2>Tipo e identidad</h2>
-            <select name="entity_type_key" value={typeKey} onChange={(event) => setTypeKey(event.target.value)}>
-              {jurisdictionTypes.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
-            </select>
+            <h2>Tipo, país e identidad</h2>
+            <label>
+              País habilitado
+              <select value={selectedCountryIso2} onChange={(event) => setSelectedCountryIso2(event.target.value)} required>
+                {countries.length === 0 && <option value="">No hay países habilitados</option>}
+                {countries.map((country) => <option key={country.iso2} value={country.iso2}>{countryLabel(country)}</option>)}
+              </select>
+            </label>
+            {countries.length === 0 && <p className="meta">Primero habilita un país en <Link href="/admin/paises">Admin → Países ISO</Link>.</p>}
+            {selectedCountry && <div className="empty-state"><strong>{countryLabel(selectedCountry)}</strong><span>La jurisdicción quedará vinculada a {selectedCountry.name} mediante ISO2.</span></div>}
+            <label>
+              Tipo de jurisdicción
+              <select name="entity_type_key" value={typeKey} onChange={(event) => setTypeKey(event.target.value)}>
+                {jurisdictionTypes.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
+              </select>
+            </label>
             <div className="empty-state"><strong>{selectedType?.label}</strong><span>{selectedType?.description}</span></div>
             <input name="name" placeholder="Nombre: Diócesis de..." required />
             <input name="official_name" placeholder="Nombre oficial completo" />
@@ -229,9 +318,12 @@ export default function NuevaJurisdiccionPage() {
           <section>
             <p className="eyebrow">Paso 2</p>
             <h2>Dependencia jerárquica</h2>
-            <select name="parent_entity_id" value={selectedParentId} onChange={(event) => setSelectedParentId(event.target.value)}>
+            <select name="parent_entity_id" value={selectedParentId} onChange={(event) => setSelectedParentId(event.target.value)} disabled={parentTypeKeys.length === 0}>
               <option value="">Sin dependencia por ahora</option>
-              {parents.map((parent) => <option key={parent.direct_entity_id} value={parent.direct_entity_id}>{parent.direct_entity_name} · {parent.direct_entity_type_name ?? 'Entidad'}</option>)}
+              {filteredParents.map((parent) => {
+                const parentType = getEntityType(parent)
+                return <option key={parent.id} value={parent.id}>{parent.name} · {parentType?.name ?? 'Entidad'}</option>
+              })}
             </select>
             <div className="empty-state">
               <strong>Regla sugerida</strong>
@@ -239,7 +331,7 @@ export default function NuevaJurisdiccionPage() {
             </div>
             <div className="empty-state">
               <strong>Ruta seleccionada</strong>
-              <span>{selectedParent?.hierarchy_path ?? selectedParent?.direct_entity_name ?? 'Selecciona una entidad superior si corresponde.'}</span>
+              <span>{selectedParent ? `${selectedParent.name} · ${getEntityType(selectedParent)?.name ?? 'Entidad'}` : 'Selecciona una entidad superior si corresponde.'}</span>
             </div>
             <textarea name="territory_summary" placeholder="Territorio, límites o zona pastoral que cubre" />
           </section>
@@ -253,7 +345,7 @@ export default function NuevaJurisdiccionPage() {
             <input name="current_ordinary_title" placeholder="Título: Obispo, Arzobispo, Ordinario militar" />
             <input name="cathedral_name" placeholder="Catedral, sede o iglesia principal" />
             <label>Fecha de erección o creación<input name="erected_at" type="date" /></label>
-            <input name="country" placeholder="País" defaultValue="República Dominicana" />
+            <div className="empty-state"><strong>País</strong><span>{selectedCountry?.name ?? 'Sin país seleccionado'}</span></div>
             <input name="province" placeholder="Provincia civil" />
             <input name="municipality" placeholder="Municipio" />
             <input name="sector" placeholder="Sector o ciudad sede" />
@@ -300,7 +392,7 @@ export default function NuevaJurisdiccionPage() {
           <section>
             <p className="eyebrow">Paso 6</p>
             <h2>Revisión y guardado</h2>
-            <p className="lead">Guarda la jurisdicción. El sistema creará la ficha pública y, si seleccionaste una dependencia, registrará la relación jerárquica correspondiente.</p>
+            <p className="lead">Guarda la jurisdicción. El sistema creará la ficha pública, la vinculará al país habilitado y, si seleccionaste una dependencia, registrará la relación jerárquica correspondiente.</p>
           </section>
         )}
 
@@ -309,7 +401,7 @@ export default function NuevaJurisdiccionPage() {
           {step < steps.length - 1 ? (
             <button className="button button-secondary" type="button" onClick={() => setStep(Math.min(steps.length - 1, step + 1))}>Siguiente</button>
           ) : (
-            <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Crear jurisdicción'}</button>
+            <button className="button button-primary" disabled={saving || !selectedCountry}>{saving ? 'Guardando...' : 'Crear jurisdicción'}</button>
           )}
         </div>
       </form>
