@@ -6,12 +6,34 @@ import { useRouter } from 'next/navigation'
 import StructureHierarchySelector from '@/components/StructureHierarchySelector'
 import { createClient } from '@/lib/supabase/client'
 
-type EntityPath = {
-  direct_entity_id: string
-  direct_entity_name: string
-  direct_entity_slug: string
-  direct_entity_type_name: string | null
-  hierarchy_path: string | null
+type EntityTypeRelation = { key: string; name: string }
+
+type ParentOption = {
+  id: string
+  name: string
+  slug: string
+  country: string | null
+  country_iso2: string | null
+  entity_types: EntityTypeRelation[] | EntityTypeRelation | null
+}
+
+type EnabledCountry = {
+  id: string
+  iso2: string
+  iso3: string | null
+  name: string
+  official_name: string | null
+  flag_emoji: string | null
+  flag_image_url: string | null
+  flag_alt: string | null
+  status: string
+  visibility: string
+}
+
+type AdminCountriesResponse = {
+  enabled_countries: EnabledCountry[]
+  public_countries: unknown[]
+  error?: string
 }
 
 type MissingField = {
@@ -35,20 +57,30 @@ function emptyToNull(value: FormDataEntryValue | null) {
   return text.length > 0 ? text : null
 }
 
-function slugify(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+function getEntityType(parent: ParentOption) {
+  if (!parent.entity_types) return null
+  return Array.isArray(parent.entity_types) ? parent.entity_types[0] ?? null : parent.entity_types
+}
+
+function countryLabel(country: EnabledCountry) {
+  return `${country.flag_emoji ?? '▦'} ${country.name} · ${country.iso2}${country.iso3 ? `/${country.iso3}` : ''}`
+}
+
+function parentAllowed(parent: ParentOption, countryIso2?: string | null) {
+  const parentType = getEntityType(parent)
+  const allowedTypes = ['archdiocese', 'diocese', 'military_ordinariate', 'vicariate', 'deanery', 'pastoral_region', 'pastoral_zone']
+  const matchesType = !!parentType && allowedTypes.includes(parentType.key)
+  const matchesCountry = !countryIso2 || !parent.country_iso2 || parent.country_iso2 === countryIso2
+  return matchesType && matchesCountry
 }
 
 export default function NuevaParroquiaPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [step, setStep] = useState(0)
-  const [parents, setParents] = useState<EntityPath[]>([])
+  const [parents, setParents] = useState<ParentOption[]>([])
+  const [countries, setCountries] = useState<EnabledCountry[]>([])
+  const [selectedCountryIso2, setSelectedCountryIso2] = useState('DO')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -56,7 +88,9 @@ export default function NuevaParroquiaPage() {
   const [selectedParentId, setSelectedParentId] = useState('')
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
 
-  const selectedParent = parents.find((item) => item.direct_entity_id === selectedParentId)
+  const selectedCountry = countries.find((country) => country.iso2 === selectedCountryIso2) ?? countries[0] ?? null
+  const filteredParents = parents.filter((parent) => parentAllowed(parent, selectedCountry?.iso2))
+  const selectedParent = filteredParents.find((item) => item.id === selectedParentId)
 
   async function loadData() {
     setError(null)
@@ -66,22 +100,45 @@ export default function NuevaParroquiaPage() {
       return
     }
 
-    const parentRes = await supabase
-      .from('public_entity_hierarchy_paths')
-      .select('direct_entity_id,direct_entity_name,direct_entity_slug,direct_entity_type_name,hierarchy_path')
-      .order('direct_entity_name')
+    const [parentRes, countriesRes] = await Promise.all([
+      supabase
+        .from('ecclesiastical_entities')
+        .select('id,name,slug,country,country_iso2,entity_types(key,name)')
+        .eq('status', 'active')
+        .order('name'),
+      fetch('/api/admin/paises'),
+    ])
 
     if (parentRes.error) {
       setError(parentRes.error.message ?? 'No se pudieron cargar los catálogos.')
     } else {
-      setParents((parentRes.data ?? []) as EntityPath[])
+      setParents((parentRes.data ?? []) as unknown as ParentOption[])
     }
+
+    if (!countriesRes.ok) {
+      const data = await countriesRes.json().catch(() => null) as { error?: string } | null
+      setError(data?.error ?? 'No se pudieron cargar los países habilitados.')
+    } else {
+      const data = await countriesRes.json() as AdminCountriesResponse
+      const loaded = data.enabled_countries ?? []
+      setCountries(loaded)
+      if (loaded.length > 0 && !loaded.some((country) => country.iso2 === selectedCountryIso2)) {
+        setSelectedCountryIso2(loaded[0].iso2)
+      }
+    }
+
     setLoading(false)
   }
 
   useEffect(() => {
     loadData()
   }, [])
+
+  useEffect(() => {
+    if (selectedParentId && !filteredParents.some((parent) => parent.id === selectedParentId)) {
+      setSelectedParentId('')
+    }
+  }, [filteredParents, selectedParentId])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -92,7 +149,6 @@ export default function NuevaParroquiaPage() {
 
     const form = new FormData(event.currentTarget)
     const name = String(form.get('name') ?? '').trim()
-    const slugInput = String(form.get('slug') ?? '').trim()
     const fallbackParentId = emptyToNull(form.get('parent_entity_id'))
     const structureLinkedEntityId = emptyToNull(form.get('structure_linked_entity_id'))
 
@@ -102,13 +158,19 @@ export default function NuevaParroquiaPage() {
       return
     }
 
+    if (!selectedCountry) {
+      setError('Debes seleccionar un país habilitado. Si no aparece, habilítalo primero en Admin → Países ISO.')
+      setSaving(false)
+      return
+    }
+
     const payload = {
       entity_type_key: 'parish',
       name,
       official_name: emptyToNull(form.get('official_name')),
-      slug: slugInput || slugify(name),
       description: emptyToNull(form.get('description')),
-      country: 'República Dominicana',
+      country_iso2: selectedCountry.iso2,
+      country: selectedCountry.name,
       province: emptyToNull(form.get('province')),
       municipality: emptyToNull(form.get('municipality')),
       sector: emptyToNull(form.get('sector')),
@@ -143,8 +205,8 @@ export default function NuevaParroquiaPage() {
         throw new Error(data.error ?? 'No se pudo guardar la parroquia.')
       }
 
-      setSavedSlug(data.slug ?? payload.slug)
-      setMessage('Parroquia creada correctamente.')
+      setSavedSlug(data.slug ?? null)
+      setMessage('Parroquia creada correctamente. El sistema asignó la URL automáticamente.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar la parroquia.')
     } finally {
@@ -162,7 +224,7 @@ export default function NuevaParroquiaPage() {
         <div>
           <p className="eyebrow">Asistente paso a paso</p>
           <h1>Nueva parroquia</h1>
-          <p className="lead">Crea una parroquia, enlázala a su dependencia territorial y marca desde el inicio los datos no identificados. El guardado es transaccional para evitar entidades sin relación.</p>
+          <p className="lead">Crea una parroquia, enlázala a su dependencia territorial y marca desde el inicio los datos no identificados. El país y la URL se gestionan desde catálogos del sistema.</p>
         </div>
       </section>
 
@@ -182,9 +244,18 @@ export default function NuevaParroquiaPage() {
           <section>
             <p className="eyebrow">Paso 1</p>
             <h2>Identidad básica</h2>
+            <label>
+              País habilitado
+              <select value={selectedCountryIso2} onChange={(event) => setSelectedCountryIso2(event.target.value)} required>
+                {countries.length === 0 && <option value="">No hay países habilitados</option>}
+                {countries.map((country) => <option key={country.iso2} value={country.iso2}>{countryLabel(country)}</option>)}
+              </select>
+            </label>
+            {countries.length === 0 && <p className="meta">Primero habilita un país en <Link href="/admin/paises">Admin → Países ISO</Link>.</p>}
+            {selectedCountry && <div className="empty-state"><strong>{countryLabel(selectedCountry)}</strong><span>La parroquia quedará vinculada a {selectedCountry.name} mediante ISO2.</span></div>}
             <input name="name" placeholder="Nombre: Parroquia San José" required />
             <input name="official_name" placeholder="Nombre oficial completo" />
-            <input name="slug" placeholder="Slug opcional: parroquia-san-jose" />
+            <div className="empty-state"><strong>URL automática</strong><span>El sistema generará internamente la dirección pública a partir del nombre y evitará duplicados.</span></div>
             <textarea name="description" placeholder="Descripción pública breve" />
           </section>
         )}
@@ -194,6 +265,7 @@ export default function NuevaParroquiaPage() {
             <p className="eyebrow">Paso 2</p>
             <h2>Dependencia territorial</h2>
             <StructureHierarchySelector
+              countryIso2={selectedCountry?.iso2 ?? null}
               helperText="Selecciona primero la diócesis y luego la vicaría, zona pastoral o unidad donde quedará ubicada la parroquia. Si el árbol todavía no está configurado, usa el selector de respaldo."
               kind="territorial"
               label="Ubicación en la estructura de la diócesis"
@@ -203,12 +275,15 @@ export default function NuevaParroquiaPage() {
               <label>Selector de respaldo por ficha pública
                 <select name="parent_entity_id" value={selectedParentId} onChange={(event) => setSelectedParentId(event.target.value)}>
                   <option value="">Sin dependencia pública directa</option>
-                  {parents.map((parent) => <option key={parent.direct_entity_id} value={parent.direct_entity_id}>{parent.direct_entity_name} · {parent.direct_entity_type_name ?? 'Entidad'}</option>)}
+                  {filteredParents.map((parent) => {
+                    const parentType = getEntityType(parent)
+                    return <option key={parent.id} value={parent.id}>{parent.name} · {parentType?.name ?? 'Entidad'}</option>
+                  })}
                 </select>
               </label>
               <div className="empty-state">
                 <strong>Ruta pública seleccionada</strong>
-                <span>{selectedParent?.hierarchy_path ?? selectedParent?.direct_entity_name ?? 'Selecciona una entidad pública solo si necesitas un padre directo adicional.'}</span>
+                <span>{selectedParent ? `${selectedParent.name} · ${getEntityType(selectedParent)?.name ?? 'Entidad'}` : 'Selecciona una entidad pública solo si necesitas un padre directo adicional.'}</span>
               </div>
             </div>
             <textarea name="territory_summary" placeholder="Territorio, sectores o comunidades que atiende" />
@@ -219,6 +294,7 @@ export default function NuevaParroquiaPage() {
           <section>
             <p className="eyebrow">Paso 3</p>
             <h2>Contacto y ubicación</h2>
+            <div className="empty-state"><strong>País</strong><span>{selectedCountry?.name ?? 'Sin país seleccionado'}</span></div>
             <input name="province" placeholder="Provincia civil" />
             <input name="municipality" placeholder="Municipio" />
             <input name="sector" placeholder="Sector o comunidad" />
@@ -262,7 +338,7 @@ export default function NuevaParroquiaPage() {
           {step < steps.length - 1 ? (
             <button className="button button-secondary" type="button" onClick={() => setStep(Math.min(steps.length - 1, step + 1))}>Siguiente</button>
           ) : (
-            <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Crear parroquia'}</button>
+            <button className="button button-primary" disabled={saving || !selectedCountry}>{saving ? 'Guardando...' : 'Crear parroquia'}</button>
           )}
         </div>
       </form>
