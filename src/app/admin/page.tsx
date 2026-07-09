@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { type MouseEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -28,6 +28,12 @@ function getInitials(profile: Profile | null) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('') || 'AD'
+}
+
+function forceNavigation(event: MouseEvent<HTMLAnchorElement>, href: string) {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  event.preventDefault()
+  window.location.assign(href)
 }
 
 const quickActions: ModuleCard[] = [
@@ -148,7 +154,7 @@ function StatusBadge({ status }: { status?: ModuleStatus }) {
 
 function QuickActionCard({ module }: { module: ModuleCard }) {
   return (
-    <a className="admin-quick-card" href={module.href}>
+    <a className="admin-quick-card" href={module.href} onClick={(event) => forceNavigation(event, module.href)}>
       <span className="admin-card-icon">{module.icon}</span>
       <span>
         <strong>{module.title}</strong>
@@ -182,7 +188,7 @@ function ModuleCardView({ module }: { module: ModuleCard }) {
   )
 
   if (isPlanned) return <article className={className}>{content}</article>
-  return <a className={className} href={module.href}>{content}</a>
+  return <a className={className} href={module.href} onClick={(event) => forceNavigation(event, module.href)}>{content}</a>
 }
 
 export default function AdminPage() {
@@ -257,7 +263,7 @@ export default function AdminPage() {
           <strong>Portal administrativo</strong>
         </div>
         <div className="admin-top-actions">
-          <a className="button button-secondary" href="/">Ver sitio público</a>
+          <a className="button button-secondary" href="/" onClick={(event) => forceNavigation(event, '/')}>Ver sitio público</a>
           <div className="admin-user-chip">
             <span className="admin-user-avatar">{getInitials(profile)}</span>
             <span>
@@ -290,18 +296,18 @@ export default function AdminPage() {
             <p className="eyebrow">Acciones rápidas</p>
             <h2>Trabajo frecuente</h2>
           </div>
-          <a className="admin-section-top-link" href="/admin/nuevo">Ver todos</a>
+          <a className="admin-section-top-link" href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>Ver todos</a>
         </div>
         <div className="admin-quick-grid">{quickActions.map((module) => <QuickActionCard module={module} key={module.href} />)}</div>
       </section>
 
       {summary && (
         <section className="admin-stat-strip" aria-label="Resumen administrativo">
-          <a href="/admin/jurisdicciones"><span>▥</span><strong>{summary.active_dioceses}</strong><small>Jurisdicciones registradas</small></a>
-          <a href="/admin/estructura?kind=territorial"><span>▦</span><strong>{summary.active_entities}</strong><small>Entidades eclesiales</small></a>
-          <a href="/admin/personas"><span>◉</span><strong>{summary.active_pastoral_areas}</strong><small>Áreas pastorales</small></a>
-          <a href="/admin/asignaciones"><span>▣</span><strong>{activeAssignments ?? '—'}</strong><small>Nombramientos activos</small></a>
-          <a href="/admin/eventos/pendientes"><span>!</span><strong>{summary.pending_change_requests}</strong><small>Pendientes de validación</small></a>
+          <a href="/admin/jurisdicciones" onClick={(event) => forceNavigation(event, '/admin/jurisdicciones')}><span>▥</span><strong>{summary.active_dioceses}</strong><small>Jurisdicciones registradas</small></a>
+          <a href="/admin/estructura?kind=territorial" onClick={(event) => forceNavigation(event, '/admin/estructura?kind=territorial')}><span>▦</span><strong>{summary.active_entities}</strong><small>Entidades eclesiales</small></a>
+          <a href="/admin/personas" onClick={(event) => forceNavigation(event, '/admin/personas')}><span>◉</span><strong>{summary.active_pastoral_areas}</strong><small>Áreas pastorales</small></a>
+          <a href="/admin/asignaciones" onClick={(event) => forceNavigation(event, '/admin/asignaciones')}><span>▣</span><strong>{activeAssignments ?? '—'}</strong><small>Nombramientos activos</small></a>
+          <a href="/admin/eventos/pendientes" onClick={(event) => forceNavigation(event, '/admin/eventos/pendientes')}><span>!</span><strong>{summary.pending_change_requests}</strong><small>Pendientes de validación</small></a>
         </section>
       )}
 
@@ -336,7 +342,7 @@ export default function AdminPage() {
               <p className="eyebrow">Actividad reciente</p>
               <h2>Últimos movimientos</h2>
             </div>
-            <a className="admin-section-top-link" href="/admin/eventos">Ver todas</a>
+            <a className="admin-section-top-link" href="/admin/eventos" onClick={(event) => forceNavigation(event, '/admin/eventos')}>Ver todas</a>
           </div>
           <ul>
             <li><span>▦</span><strong>Nueva estructura territorial actualizada</strong><small>Registro administrativo reciente</small></li>
@@ -351,7 +357,7 @@ export default function AdminPage() {
           <div><span>Base de datos</span><strong>Operativo</strong></div>
           <div><span>Catálogos</span><strong>Activo</strong></div>
           <div><span>Validación histórica</span><strong>Activo</strong></div>
-          <a href="/admin/configuracion">Ver estado completo →</a>
+          <a href="/admin/configuracion" onClick={(event) => forceNavigation(event, '/admin/configuracion')}>Ver estado completo →</a>
         </article>
       </section>
     </div>
