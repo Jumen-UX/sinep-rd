@@ -18,7 +18,6 @@ import './public-combobox.css'
 import './scope-back-controls.css'
 import './brand.css'
 import './admin-brand.css'
-import '../styles/admin-framework.css'
 
 export const metadata: Metadata = {
   title: 'SINEP RD',
