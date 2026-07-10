@@ -36,6 +36,40 @@ test('deacon wizard delegates persistence and catalog reads to typed services', 
   assert.match(page, /Este nivel no tiene cargos configurados/)
 })
 
+test('deacon flow reuses an existing unordained person identity', async () => {
+  const page = await readRepoFile('src/features/clero/deacon/admin/DeaconWizardPage.tsx')
+  const service = await readRepoFile('src/features/clero/deacon/services/deacon-admin-service.ts')
+  const api = await readRepoFile('src/app/api/admin/diacono/route.ts')
+
+  assert.match(service, /from\('person_ecclesial_state'\)/)
+  assert.match(service, /eq\('is_lay', true\)/)
+  assert.doesNotMatch(service, /person_type/)
+
+  assert.match(page, /mode, setMode.*'existing'/)
+  assert.match(page, /selected_person_id/)
+  assert.match(page, /Añadir el diaconado a una persona existente/)
+  assert.match(page, /sin duplicar su identidad/)
+  assert.match(page, /const formElement = event\.currentTarget/)
+
+  assert.match(api, /person\.deacon\.ordination/)
+  assert.match(api, /person\.deacon\.create/)
+  assert.match(api, /selected_person_id/)
+})
+
+test('deacon transaction preserves the person and records canonical diaconate', async () => {
+  const migration = await readRepoFile('supabase/migrations/20260710203140_reuse_existing_person_for_diaconate.sql')
+
+  assert.match(migration, /v_mode text := coalesce/)
+  assert.match(migration, /v_selected_person_id/)
+  assert.match(migration, /not exists \(/)
+  assert.match(migration, /from public\.ordination_events oe/)
+  assert.match(migration, /on conflict \(person_id\) do update/)
+  assert.match(migration, /insert into public\.ordination_events/)
+  assert.match(migration, /'diaconate'/)
+  assert.match(migration, /'existing_person_ordination'/)
+  assert.match(migration, /'layperson'/)
+})
+
 test('person placement service centralizes entity, office, level and photo infrastructure', async () => {
   const shared = await readRepoFile('src/features/personas/shared/services/person-placement-service.ts')
   const clergyBridge = await readRepoFile('src/features/clero/shared/services/clergy-admin-service.ts')
