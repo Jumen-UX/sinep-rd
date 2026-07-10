@@ -1,5 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
+  loadCanonicalRegistrationCandidates,
+  saveCanonicalPersonRegistration,
+  type CanonicalRegistrationCandidate,
+  type CanonicalRegistrationResponse,
+} from '../../shared/services/canonical-person-registration-service'
+import {
   loadAllowedOfficeIds,
   loadPersonPlacementCatalogs,
   removePersonPhoto,
@@ -9,22 +15,26 @@ import {
   type UploadedPersonPhoto,
 } from '../../shared/services/person-placement-service'
 
-export type LayPersonCatalogs = PersonPlacementCatalogs
-export type UploadedLayPersonPhoto = UploadedPersonPhoto
-
-export type SaveLayPersonResponse = {
-  person_id?: string
-  assignment_id?: string | null
-  slug?: string
-  internal_reference_code?: string
-  error?: string
+export type LayPersonCandidate = CanonicalRegistrationCandidate
+export type LayPersonCatalogs = PersonPlacementCatalogs & {
+  candidates: LayPersonCandidate[]
 }
+export type UploadedLayPersonPhoto = UploadedPersonPhoto
+export type SaveLayPersonResponse = CanonicalRegistrationResponse
 
 export type { OfficeConfig }
 export { loadAllowedOfficeIds }
 
 export async function loadLayPersonCatalogs(supabase: SupabaseClient): Promise<LayPersonCatalogs> {
-  return loadPersonPlacementCatalogs(supabase)
+  const [placementCatalogs, candidates] = await Promise.all([
+    loadPersonPlacementCatalogs(supabase),
+    loadCanonicalRegistrationCandidates(supabase, 'layperson'),
+  ])
+
+  return {
+    ...placementCatalogs,
+    candidates,
+  }
 }
 
 export async function uploadLayPersonPhoto(
@@ -35,18 +45,21 @@ export async function uploadLayPersonPhoto(
   return uploadPersonPhoto(supabase, file, 'laicos', slug)
 }
 
-export async function removeLayPersonPhoto(supabase: SupabaseClient, photoPath: string | null | undefined) {
+export async function removeLayPersonPhoto(
+  supabase: SupabaseClient,
+  photoPath: string | null | undefined,
+) {
   await removePersonPhoto(supabase, photoPath)
 }
 
 export async function saveLayPerson(payload: Record<string, unknown>): Promise<SaveLayPersonResponse> {
-  const response = await fetch('/api/admin/laico', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
+  const selectedPersonId = typeof payload.selected_person_id === 'string'
+    ? payload.selected_person_id
+    : null
 
-  const data = await response.json() as SaveLayPersonResponse
-  if (!response.ok) throw new Error(data.error ?? 'No se pudo guardar la persona laica.')
-  return data
+  return saveCanonicalPersonRegistration('layperson', {
+    ...payload,
+    mode: selectedPersonId ? 'existing' : 'new',
+    selected_person_id: selectedPersonId,
+  })
 }
