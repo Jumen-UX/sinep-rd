@@ -7,7 +7,9 @@
  * 3. Validate that selected entities are within scope
  */
 
-import type { SupabaseServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 
 export interface UserScope {
   userId: string
@@ -159,16 +161,20 @@ export async function filterEntitiesByScope(
   userId: string,
   options?: {
     entityTypeKey?: string
+    includeChildren?: boolean
     limit?: number
   }
 ) {
   const scope = await getUserScope(supabase, userId)
+  const selectColumns = options?.entityTypeKey
+    ? 'id, name, official_name, slug, entity_type_id, entity_types!inner(key)'
+    : 'id, name, official_name, slug, entity_type_id'
 
   // If unrestricted, return all entities (or filtered by type)
   if (scope.isUnrestricted) {
     let query = supabase
       .from('ecclesiastical_entities')
-      .select('id, name, official_name, slug, entity_type_id')
+      .select(selectColumns)
       .eq('status', 'active')
 
     if (options?.entityTypeKey) {
@@ -185,14 +191,22 @@ export async function filterEntitiesByScope(
   // If restricted by entity, get entity + descendants
   if (scope.scopeEntityId) {
     // Get the scope entity
-    const { data: scopeEntity } = await supabase
+    let scopeQuery = supabase
       .from('ecclesiastical_entities')
-      .select('id, name, official_name, slug, entity_type_id')
+      .select(selectColumns)
       .eq('id', scope.scopeEntityId)
       .eq('status', 'active')
+
+    if (options?.entityTypeKey) {
+      scopeQuery = scopeQuery.eq('entity_types.key', options.entityTypeKey)
+    }
+
+    const { data: scopeEntity } = await scopeQuery
       .single()
 
-    if (!scopeEntity) return []
+    if (!options?.includeChildren) {
+      return scopeEntity ? [scopeEntity] : []
+    }
 
     // Get all descendants (children)
     const { data: descendants } = await supabase
@@ -202,7 +216,7 @@ export async function filterEntitiesByScope(
       })
 
     if (!descendants || descendants.length === 0) {
-      return [scopeEntity]
+      return scopeEntity ? [scopeEntity] : []
     }
 
     // Combine scope entity with descendants
@@ -211,11 +225,17 @@ export async function filterEntitiesByScope(
       ...descendants.map((d: { id: string }) => d.id),
     ]
 
-    const { data: allEntities } = await supabase
+    let allEntitiesQuery = supabase
       .from('ecclesiastical_entities')
-      .select('id, name, official_name, slug, entity_type_id')
+      .select(selectColumns)
       .in('id', allEntityIds)
       .eq('status', 'active')
+
+    if (options?.entityTypeKey) {
+      allEntitiesQuery = allEntitiesQuery.eq('entity_types.key', options.entityTypeKey)
+    }
+
+    const { data: allEntities } = await allEntitiesQuery
       .order('name')
 
     return allEntities || []

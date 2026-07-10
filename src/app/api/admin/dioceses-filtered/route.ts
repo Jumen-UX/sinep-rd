@@ -28,6 +28,8 @@ export async function GET(request: Request) {
 
     // Get dioceses filtered by user's scope
     const dioceses = await filterEntitiesByScope(auth.supabase, auth.user!.id, {
+      entityTypeKey: 'diocese',
+      includeChildren,
       limit,
     })
 

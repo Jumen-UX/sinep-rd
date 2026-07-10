@@ -414,6 +414,85 @@ comment on function public.admin_save_religious(jsonb) is
   'Save religious person with P1 scope validation for current_service_entity_id.';
 
 -- ================================================================
+-- 5. RESTORE FULL INTERNAL IMPLEMENTATIONS BEHIND PUBLIC WRAPPERS
+-- ================================================================
+
+-- Keep the stable public RPCs, but avoid replacing the complete internal
+-- implementations for assignments and priests.
+create or replace function public.admin_save_position_assignment(payload jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  v_ecclesiastical_entity_id uuid := nullif(payload->>'ecclesiastical_entity_id', '')::uuid;
+  v_pastoral_entity_id uuid := nullif(payload->>'pastoral_entity_id', '')::uuid;
+  v_is_service_role boolean := current_setting('request.jwt.claim.role', true) = 'service_role';
+begin
+  if not v_is_service_role and (auth.uid() is null or not public.current_user_has_admin_role()) then
+    raise exception 'No autorizado para guardar asignaciones de cargos' using errcode = '42501';
+  end if;
+
+  if v_ecclesiastical_entity_id is not null then
+    perform public.assert_user_has_scope_for_entity(v_ecclesiastical_entity_id, 'asignacion de cargo');
+  end if;
+
+  if v_pastoral_entity_id is not null then
+    perform public.assert_user_has_scope_for_entity(v_pastoral_entity_id, 'asignacion de cargo');
+  end if;
+
+  return internal.admin_save_position_assignment(payload);
+end;
+$$;
+
+revoke execute on function public.admin_save_position_assignment(jsonb) from public;
+revoke execute on function public.admin_save_position_assignment(jsonb) from anon;
+grant execute on function public.admin_save_position_assignment(jsonb) to authenticated, service_role;
+
+comment on function public.admin_save_position_assignment(jsonb) is
+  'Public wrapper that validates jurisdiction scope before delegating to internal.admin_save_position_assignment.';
+
+create or replace function public.admin_save_priest(payload jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  v_quick_entity_id uuid := nullif(payload->>'quick_entity_id', '')::uuid;
+  v_current_service_entity_id uuid := nullif(payload->>'current_service_entity_id', '')::uuid;
+  v_incardination_entity_id uuid := nullif(payload->>'incardination_entity_id', '')::uuid;
+  v_is_service_role boolean := current_setting('request.jwt.claim.role', true) = 'service_role';
+begin
+  if not v_is_service_role and (auth.uid() is null or not public.current_user_has_admin_role()) then
+    raise exception 'No autorizado para guardar sacerdotes' using errcode = '42501';
+  end if;
+
+  if v_quick_entity_id is not null then
+    perform public.assert_user_has_scope_for_entity(v_quick_entity_id, 'creacion de sacerdote - cargo rapido');
+  end if;
+
+  if v_current_service_entity_id is not null then
+    perform public.assert_user_has_scope_for_entity(v_current_service_entity_id, 'creacion de sacerdote - entidad de servicio actual');
+  end if;
+
+  if v_incardination_entity_id is not null then
+    perform public.assert_user_has_scope_for_entity(v_incardination_entity_id, 'creacion de sacerdote - entidad de incardinacion');
+  end if;
+
+  return internal.admin_save_priest(payload);
+end;
+$$;
+
+revoke execute on function public.admin_save_priest(jsonb) from public;
+revoke execute on function public.admin_save_priest(jsonb) from anon;
+grant execute on function public.admin_save_priest(jsonb) to authenticated, service_role;
+
+comment on function public.admin_save_priest(jsonb) is
+  'Public wrapper that validates jurisdiction scope before delegating to internal.admin_save_priest.';
+
+-- ================================================================
 -- 5. DOCUMENT P1 SCOPE VALIDATION COVERAGE
 -- ================================================================
 

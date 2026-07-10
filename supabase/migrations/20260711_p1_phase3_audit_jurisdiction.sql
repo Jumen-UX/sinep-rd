@@ -72,6 +72,8 @@ begin
 end;
 $$;
 
+revoke execute on function public.admin_audit_get_jurisdiction_for_entity(text, uuid) from public;
+revoke execute on function public.admin_audit_get_jurisdiction_for_entity(text, uuid) from anon;
 grant execute on function public.admin_audit_get_jurisdiction_for_entity(text, uuid) to authenticated, service_role;
 
 comment on function public.admin_audit_get_jurisdiction_for_entity(text, uuid) is
@@ -106,7 +108,8 @@ create index idx_admin_audit_log_action_jurisdiction
 -- 5. VIEW: Audit log with jurisdiction details
 -- ================================================================
 
-create or replace view public.admin_audit_log_with_jurisdiction as
+create or replace view public.admin_audit_log_with_jurisdiction
+with (security_invoker = true) as
 select
   aal.id,
   aal.actor_user_id,
@@ -170,12 +173,23 @@ begin
     ee.name as jurisdiction_name
   from public.admin_audit_log aal
   left join public.ecclesiastical_entities ee on ee.id = aal.jurisdiction_id
-  where (p_jurisdiction_id is null or aal.jurisdiction_id = p_jurisdiction_id)
+  where (
+    case
+      when public.current_user_is_super_or_national() then
+        p_jurisdiction_id is null or aal.jurisdiction_id = p_jurisdiction_id
+      else
+        aal.jurisdiction_id is not null
+        and public.current_user_has_scope_for_entity(aal.jurisdiction_id)
+        and (p_jurisdiction_id is null or aal.jurisdiction_id = p_jurisdiction_id)
+    end
+  )
   order by aal.created_at desc
   limit p_limit_rows;
 end;
 $$;
 
+revoke execute on function public.admin_audit_log_by_jurisdiction(uuid, int) from public;
+revoke execute on function public.admin_audit_log_by_jurisdiction(uuid, int) from anon;
 grant execute on function public.admin_audit_log_by_jurisdiction(uuid, int) to authenticated;
 
 comment on function public.admin_audit_log_by_jurisdiction(uuid, int) is
@@ -185,13 +199,20 @@ comment on function public.admin_audit_log_by_jurisdiction(uuid, int) is
 -- 7. POLICY: Users can only view audit logs for their jurisdiction
 -- ================================================================
 
+drop policy if exists admin_audit_log_select_admin on public.admin_audit_log;
+drop policy if exists admin_audit_log_jurisdiction_check on public.admin_audit_log;
+
 create policy admin_audit_log_jurisdiction_check
   on public.admin_audit_log
   for select
+  to authenticated
   using (
     current_user_has_admin_role()
     and (
-      jurisdiction_id is null
-      or current_user_has_scope_for_entity(jurisdiction_id)
+      current_user_is_super_or_national()
+      or (
+        jurisdiction_id is not null
+        and current_user_has_scope_for_entity(jurisdiction_id)
+      )
     )
   );

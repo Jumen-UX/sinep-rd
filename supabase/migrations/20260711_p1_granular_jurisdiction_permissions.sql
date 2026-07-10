@@ -22,8 +22,10 @@ security definer
 set search_path = public
 stable
 as $$
-  select coalesce(false, true) = true  -- Always check auth first
-    and (
+  select current_setting('request.jwt.claim.role', true) = 'service_role'
+    or (
+      (select auth.uid()) is not null
+      and (
       -- Super or national admins have unrestricted access
       exists (
         select 1 from public.user_role_assignments ura
@@ -63,12 +65,62 @@ as $$
           )
       )
     )
+  )
 $$;
 
 comment on function public.current_user_has_scope_for_entity(uuid) is
   'Returns true if current user has access to the specified ecclesiastical entity, either directly or through hierarchical access (parent-child relationships).';
 
+revoke execute on function public.current_user_has_scope_for_entity(uuid) from public;
+revoke execute on function public.current_user_has_scope_for_entity(uuid) from anon;
 grant execute on function public.current_user_has_scope_for_entity(uuid) to authenticated, service_role;
+
+-- ================================================================
+
+-- List active descendants for a given ecclesiastical entity.
+create or replace function public.get_entity_descendants(
+  p_entity_id uuid,
+  p_max_depth int default 10
+)
+returns table (
+  id uuid,
+  depth int
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  with recursive entity_tree as (
+    select
+      er.child_entity_id as id,
+      1 as depth
+    from public.entity_relationships er
+    where er.parent_entity_id = p_entity_id
+      and er.is_current = true
+      and er.status = 'active'
+
+    union all
+
+    select
+      er.child_entity_id as id,
+      et.depth + 1 as depth
+    from entity_tree et
+    join public.entity_relationships er on er.parent_entity_id = et.id
+    where et.depth < greatest(1, least(coalesce(p_max_depth, 10), 25))
+      and er.is_current = true
+      and er.status = 'active'
+  )
+  select distinct entity_tree.id, entity_tree.depth
+  from entity_tree
+$$;
+
+revoke execute on function public.get_entity_descendants(uuid, int) from public;
+revoke execute on function public.get_entity_descendants(uuid, int) from anon;
+grant execute on function public.get_entity_descendants(uuid, int) to authenticated, service_role;
+
+comment on function public.get_entity_descendants(uuid, int) is
+  'Returns active descendant ecclesiastical entities for server-side admin scope filters.';
 
 -- ================================================================
 
@@ -96,6 +148,8 @@ $$;
 comment on function public.current_user_root_jurisdiction_id() is
   'Returns the root jurisdiction (scope_entity_id) for the current user. Returns NULL for unrestricted admins (super_admin, national_admin).';
 
+revoke execute on function public.current_user_root_jurisdiction_id() from public;
+revoke execute on function public.current_user_root_jurisdiction_id() from anon;
 grant execute on function public.current_user_root_jurisdiction_id() to authenticated, service_role;
 
 -- ================================================================
@@ -118,6 +172,8 @@ $$;
 comment on function public.assert_user_has_scope_for_entity(uuid, text) is
   'Raises an exception if the current user does not have scope access to the specified entity.';
 
+revoke execute on function public.assert_user_has_scope_for_entity(uuid, text) from public;
+revoke execute on function public.assert_user_has_scope_for_entity(uuid, text) from anon;
 grant execute on function public.assert_user_has_scope_for_entity(uuid, text) to authenticated, service_role;
 
 -- ================================================================
