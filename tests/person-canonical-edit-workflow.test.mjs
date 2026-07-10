@@ -39,6 +39,23 @@ test('empty auxiliary values are removed before the canonical workflow', async (
   assert.match(migration, /revoke all .* from public, anon/is)
 })
 
+test('canonical editor preserves visibility of existing ordinations', async () => {
+  const viewMigration = await readRepoFile(
+    'supabase/migrations/20260710214101_preserve_ordination_visibility_in_canonical_editor.sql',
+  )
+  const normalizationMigration = await readRepoFile(
+    'supabase/migrations/20260710214224_normalize_canonical_proposal_visibility.sql',
+  )
+  const service = await readRepoFile('src/features/personas/services/person-admin-service.ts')
+
+  assert.match(viewMigration, /oe\.visibility/)
+  assert.match(viewMigration, /security_invoker = true/)
+  assert.match(normalizationMigration, /existing\.visibility/)
+  assert.match(normalizationMigration, /existing\.record_status = 'active'/)
+  assert.match(service, /verification_status,visibility/)
+  assert.match(service, /visibility: string \| null/)
+})
+
 test('canonical edit form does not expose person type as an ordination control', async () => {
   const page = await readRepoFile('src/features/personas/admin/EditPersonProposalPage.tsx')
 
