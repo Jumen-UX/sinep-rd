@@ -8,6 +8,11 @@ type Person = {
   display_name: string
   slug: string
   person_type: string | null
+  highest_ordination_degree: 'diaconate' | 'presbyterate' | 'episcopate' | null
+  is_cleric: boolean
+  is_lay: boolean
+  is_religious: boolean
+  religious_life_type: string | null
   photo_url: string | null
   biography_public: string | null
   status: string | null
@@ -29,7 +34,7 @@ type DashboardSummary = {
   }
 }
 
-function personTypeLabel(value: string | null) {
+function personTypeLabel(value: string | null, isReligious: boolean) {
   const labels: Record<string, string> = {
     bishop: 'Obispo',
     priest: 'Sacerdote',
@@ -38,8 +43,9 @@ function personTypeLabel(value: string | null) {
     layperson: 'Laico/a',
   }
 
-  if (!value) return 'Persona'
-  return labels[value] ?? value
+  const baseLabel = value ? labels[value] ?? value : 'Persona'
+  if (!isReligious || baseLabel === 'Religioso/a') return baseLabel
+  return `${baseLabel} · Vida consagrada`
 }
 
 function filterLabel(value: PersonFilter) {
@@ -48,7 +54,7 @@ function filterLabel(value: PersonFilter) {
     bishop: 'Obispos',
     priest: 'Sacerdotes',
     deacon: 'Diáconos',
-    religious: 'Religiosos/as',
+    religious: 'Vida consagrada',
     layperson: 'Laicos/as',
     active: 'Activos',
   }
@@ -142,7 +148,7 @@ export default function PersonasPage() {
           <p className="eyebrow">Dashboard pastoral</p>
           <h1>Personas</h1>
           <p className="lead">
-            Directorio filtrable de obispos, sacerdotes, diáconos, religiosos y laicos responsables. La lista muestra información esencial y cada fila abre su ficha personal.
+            Directorio filtrable por grado del Orden, condición laical y vida consagrada. Una misma persona puede pertenecer a más de una categoría transversal, sin duplicar su identidad.
           </p>
         </div>
       </div>
@@ -159,15 +165,15 @@ export default function PersonasPage() {
             </button>
             <button className={`metric-card metric-button ${filter === 'bishop' ? 'active-filter' : ''}`} type="button" onClick={() => updateFilter('bishop')}>
               <strong>{peopleSummary?.bishops ?? '—'}</strong>
-              <span>Obispos</span>
+              <span>Con episcopado</span>
             </button>
             <button className={`metric-card metric-button ${filter === 'priest' ? 'active-filter' : ''}`} type="button" onClick={() => updateFilter('priest')}>
               <strong>{peopleSummary?.priests ?? '—'}</strong>
-              <span>Sacerdotes</span>
+              <span>Con presbiterado</span>
             </button>
             <button className={`metric-card metric-button ${filter === 'deacon' ? 'active-filter' : ''}`} type="button" onClick={() => updateFilter('deacon')}>
               <strong>{peopleSummary?.deacons ?? '—'}</strong>
-              <span>Diáconos</span>
+              <span>Con diaconado</span>
             </button>
           </section>
 
@@ -184,9 +190,10 @@ export default function PersonasPage() {
               <FilterCard value="priest" count={peopleSummary?.priests ?? 0} title="Sacerdotes" subtitle="registrados" />
               <FilterCard value="deacon" count={peopleSummary?.deacons ?? 0} title="Diáconos" subtitle="registrados" />
               <FilterCard value="active" count={peopleSummary?.active ?? 0} title="Activos" subtitle="vigentes" />
-              <FilterCard value="religious" count={peopleSummary?.religious ?? 0} title="Religiosos/as" subtitle="registrados" />
-              <FilterCard value="layperson" count={peopleSummary?.laypeople ?? 0} title="Laicos/as" subtitle="registrados" />
+              <FilterCard value="religious" count={peopleSummary?.religious ?? 0} title="Vida consagrada" subtitle="registrados" />
+              <FilterCard value="layperson" count={peopleSummary?.laypeople ?? 0} title="Laicos/as" subtitle="sin ordenación" />
             </div>
+            <p className="meta">Las categorías no necesariamente suman el total: una persona de vida consagrada también puede ser diácono, sacerdote u obispo.</p>
           </section>
 
           <section className="card dashboard-section">
@@ -195,7 +202,7 @@ export default function PersonasPage() {
                 <p className="eyebrow">Listado</p>
                 <h2>{filterLabel(filter)}</h2>
               </div>
-              <span className="meta">{items.length} resultados · clic en una fila para ver nombramientos e historial</span>
+              <span className="meta">{items.length} resultados · clic en una fila para ver su historia canónica y ministerial</span>
             </div>
 
             {!loading && items.length === 0 ? (
@@ -206,7 +213,7 @@ export default function PersonasPage() {
                   <thead>
                     <tr>
                       <th>Nombre</th>
-                      <th>Tipo</th>
+                      <th>Condición</th>
                       <th>Edad ref.</th>
                       <th>Estado</th>
                       <th>Resumen</th>
@@ -221,7 +228,7 @@ export default function PersonasPage() {
                             <small>Ver ficha completa →</small>
                           </Link>
                         </td>
-                        <td>{personTypeLabel(item.person_type)}</td>
+                        <td>{personTypeLabel(item.person_type, item.is_religious)}</td>
                         <td>{item.age_text ? `${item.age_text} años` : '—'}</td>
                         <td>{item.status === 'active' && !item.death_date ? 'Activo' : 'No activo'}</td>
                         <td>{item.biography_public ?? 'Sin resumen público'}</td>
