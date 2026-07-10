@@ -8,18 +8,23 @@ async function readRepoFile(path) {
   return readFile(new URL(path, repoRoot), 'utf8')
 }
 
-test('the admin configurator writes through canonical structure RPCs', async () => {
-  const page = await readRepoFile('src/app/(admin)/admin/estructura/page.tsx')
+test('the admin configurator route is minimal and writes through canonical structure RPCs', async () => {
+  const route = await readRepoFile('src/app/(admin)/admin/estructura/page.tsx')
+  const page = await readRepoFile('src/features/structures/admin/StructureConfiguratorPage.tsx')
+  const service = await readRepoFile('src/features/structures/services/structure-admin-service.ts')
 
-  assert.match(page, /rpc\('admin_save_structure_template'/)
-  assert.match(page, /rpc\('admin_save_structure_level'/)
-  assert.match(page, /rpc\('admin_save_structure_node'/)
-  assert.match(page, /rpc\('get_structure_templates'/)
-  assert.match(page, /rpc\('get_structure_tree'/)
+  assert.equal(route.trim(), "export { default } from '@/features/structures/admin/StructureConfiguratorPage'")
+  assert.match(page, /export default function AdminEstructuraPage/)
 
-  assert.doesNotMatch(page, /from\('structure_templates'\)[\s\S]{0,160}\.(insert|update|delete)\(/)
-  assert.doesNotMatch(page, /from\('structure_levels'\)[\s\S]{0,160}\.(insert|update|delete)\(/)
-  assert.doesNotMatch(page, /from\('structure_nodes'\)[\s\S]{0,160}\.(insert|update|delete)\(/)
+  assert.match(service, /rpc\('admin_save_structure_template'/)
+  assert.match(service, /rpc\('admin_save_structure_level'/)
+  assert.match(service, /rpc\('admin_save_structure_node'/)
+  assert.match(service, /rpc\('get_structure_templates'/)
+  assert.match(service, /rpc\('get_structure_tree'/)
+
+  assert.doesNotMatch(service, /from\('structure_templates'\)[\s\S]{0,160}\.(insert|update|delete)\(/)
+  assert.doesNotMatch(service, /from\('structure_levels'\)[\s\S]{0,160}\.(insert|update|delete)\(/)
+  assert.doesNotMatch(service, /from\('structure_nodes'\)[\s\S]{0,160}\.(insert|update|delete)\(/)
 })
 
 test('legacy hierarchy catalogs are traceable and read-only', async () => {
