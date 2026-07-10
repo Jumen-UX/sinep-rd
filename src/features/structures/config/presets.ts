@@ -15,6 +15,8 @@ export const allowedStructureKindKeys: StructureKindKey[] = [
   'organic',
 ]
 
+export const allowedKindKeys: StructureKindKey[] = allowedStructureKindKeys
+
 export const fallbackStructureKinds: StructureKind[] = [
   {
     key: 'territorial',
@@ -37,6 +39,15 @@ export const fallbackStructureKinds: StructureKind[] = [
     description: 'Organigramas, unidades y líneas de responsabilidad.',
   },
 ]
+
+export const fallbackKinds: StructureKind[] = fallbackStructureKinds
+
+export const defaultCatalogNames: Record<StructureKindKey, string> = {
+  territorial: 'Catálogo territorial principal',
+  pastoral: 'Catálogo pastoral principal',
+  administrative: 'Catálogo administrativo principal',
+  organic: 'Catálogo orgánico principal',
+}
 
 export const structurePresets: StructurePreset[] = [
   {
@@ -104,8 +115,5 @@ export function isStructureKindKey(value: string | null): value is StructureKind
 }
 
 export function defaultStructureModelName(kind: StructureKindKey) {
-  if (kind === 'territorial') return 'Catálogo territorial principal'
-  if (kind === 'pastoral') return 'Catálogo pastoral principal'
-  if (kind === 'administrative') return 'Catálogo administrativo principal'
-  return 'Catálogo orgánico principal'
+  return defaultCatalogNames[kind]
 }
