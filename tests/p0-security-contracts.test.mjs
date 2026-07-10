@@ -171,6 +171,38 @@ test('administrative audit uses the authenticated audit RPC and an RLS-aware vie
   assert.match(sql, /with \(security_invoker = true\)/)
 })
 
+test('the generic review center is scope-aware and supports every queue item type', async () => {
+  const api = await readRepoFile('src/app/api/admin/revision/route.ts')
+  const page = await readRepoFile('src/app/(admin)/admin/revision/page.tsx')
+  const sql = await readRepoFile('supabase/migrations/20260710162911_complete_admin_review_center.sql')
+
+  assert.match(api, /admin_review_queue/)
+  assert.match(api, /admin_review_item/)
+  assert.match(api, /parseJsonObjectBody\(/)
+  assert.match(api, /position_assignment/)
+  assert.match(api, /person_candidate/)
+  assert.match(api, /missing_field/)
+  assert.match(api, /change_request/)
+
+  assert.match(page, /allowed_actions/)
+  assert.match(page, /Solicitud de cambio/)
+  assert.match(page, /Dato faltante/)
+  assert.match(page, /reviewItem\(/)
+
+  const queueBody = extractFunction(sql, 'app_private.admin_review_queue')
+  const reviewBody = extractFunction(sql, 'app_private.admin_review_item')
+  assert.match(queueBody, /current_user_can_review_record/)
+  assert.match(queueBody, /allowed_actions/)
+  assert.match(queueBody, /data_field_statuses/)
+  assert.match(queueBody, /change_requests/)
+  assert.match(reviewBody, /appointments\.approve/)
+  assert.match(reviewBody, /appointments\.publish/)
+  assert.match(reviewBody, /people\.approve/)
+  assert.match(reviewBody, /insert into public\.audit_logs/)
+  assert.match(sql, /revoke all on function public\.admin_review_item\(jsonb\) from public, anon;/)
+  assert.match(sql, /grant execute on function public\.admin_review_item\(jsonb\) to authenticated;/)
+})
+
 test('the standard test command executes every test file', async () => {
   const packageJson = JSON.parse(await readRepoFile('package.json'))
   assert.equal(packageJson.scripts.test, 'node --test tests/*.test.mjs')
