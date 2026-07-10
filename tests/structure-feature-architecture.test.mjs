@@ -44,7 +44,7 @@ test('structure admin service centralizes canonical reads and writes', async () 
     'admin_save_structure_level',
     'admin_save_structure_node',
   ]) {
-    assert.match(service, new RegExp(`rpc\('${rpc}'`), `El servicio debe centralizar ${rpc}`)
+    assert.ok(service.includes(`rpc('${rpc}'`), `El servicio debe centralizar ${rpc}`)
   }
 
   assert.match(service, /from\('structure_levels'\)/)

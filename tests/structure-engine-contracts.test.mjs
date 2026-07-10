@@ -14,7 +14,7 @@ test('the admin configurator route is minimal and writes through canonical struc
   const service = await readRepoFile('src/features/structures/services/structure-admin-service.ts')
 
   assert.equal(route.trim(), "export { default } from '@/features/structures/admin/StructureConfiguratorPage'")
-  assert.match(page, /export default function AdminEstructuraPage/)
+  assert.match(page, /export default function StructureConfiguratorPage/)
 
   assert.match(service, /rpc\('admin_save_structure_template'/)
   assert.match(service, /rpc\('admin_save_structure_level'/)

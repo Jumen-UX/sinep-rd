@@ -8,8 +8,9 @@
     "build": "next build",
     "start": "next start",
     "check": "pnpm typecheck && pnpm test && pnpm build",
-    "test": "node --test tests/*.test.mjs",
-    "test:integration": "node --test tests/*.test.mjs",
+    "test": "node scripts/run-tests.mjs unit",
+    "test:integration": "node scripts/run-tests.mjs integration",
+    "test:all": "node scripts/run-tests.mjs all",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
