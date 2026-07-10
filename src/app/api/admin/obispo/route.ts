@@ -1,21 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
+import { isJsonObject, oneOf, parseJsonObjectBody, ValidationError } from '@/lib/admin/validation'
+import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
+
+const allowedModes = ['existing', 'new'] as const
+
+type SaveBishopResult = {
+  person_id?: string
+  assignment_id?: string
+  slug?: string
+}
+
+function getSaveResult(value: unknown): SaveBishopResult {
+  return isJsonObject(value) ? value as SaveBishopResult : {}
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireAdminAccess()
+    const auth = await requireAdminAccess({
+      permissionKey: 'people.create_proposal',
+      forbiddenMessage: 'No autorizado para crear obispos.',
+    })
     if (!auth.ok) return auth.response
 
-    const payload = await request.json()
-    const { data, error } = await auth.supabase.rpc('admin_save_bishop', { payload })
+    const payload = await parseJsonObjectBody(request, 'Solicitud invalida.')
+    const normalizedPayload = {
+      ...payload,
+      mode: oneOf(payload.mode ?? 'existing', allowedModes, 'modo de registro'),
+    }
+
+    const { data, error } = await auth.supabase.rpc('admin_save_bishop', { payload: normalizedPayload })
 
     if (error) {
       console.error('Failed to save bishop transactionally', error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json({ error: toSpanishAdminError(error, 'No se pudo guardar el obispo.') }, { status: 400 })
     }
+
+    const result = getSaveResult(data)
+    await recordAdminAudit(auth.supabase, {
+      action: 'person.bishop.create',
+      targetTable: 'persons',
+      targetId: result.person_id ?? null,
+      metadata: {
+        mode: normalizedPayload.mode,
+        assignment_id: result.assignment_id ?? null,
+        assignment_entity_id: typeof payload.assignment_entity_id === 'string' ? payload.assignment_entity_id : null,
+      },
+    })
 
     return NextResponse.json(data)
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
     console.error('Unexpected bishop admin API error', error)
     return NextResponse.json({ error: 'No se pudo guardar el obispo' }, { status: 500 })
   }
