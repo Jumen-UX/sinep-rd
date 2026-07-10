@@ -44,7 +44,7 @@ test('higher ordinations create prerequisites and enforce chronological order', 
 })
 
 test('diaconate can be added to an existing person without creating a duplicate identity', async () => {
-  const migration = await readRepoFile('supabase/migrations/20260710203140_reuse_existing_person_for_diaconate.sql')
+  const migration = await readRepoFile('supabase/migrations/20260710201853_reuse_existing_person_for_diaconate.sql')
 
   assert.match(migration, /v_mode text := coalesce/)
   assert.match(migration, /v_selected_person_id/)
