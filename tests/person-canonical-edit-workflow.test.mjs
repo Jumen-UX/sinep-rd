@@ -27,6 +27,18 @@ test('person change proposals use the versioned canonical payload', async () => 
   assert.doesNotMatch(migration, /'person_type'\s*,\s*nullif\(p_proposed_data/i)
 })
 
+test('empty auxiliary values are removed before the canonical workflow', async () => {
+  const migration = await readRepoFile(
+    'supabase/migrations/20260710213850_normalize_empty_legacy_person_proposal_fields.sql',
+  )
+
+  assert.match(migration, /jsonb_strip_nulls\(jsonb_build_object/)
+  assert.match(migration, /nullif\(p_proposed_data #>> '\{legacy_profile,priest_type\}', ''\)/)
+  assert.match(migration, /nullif\(p_proposed_data #>> '\{legacy_profile,deacon_type\}', ''\)/)
+  assert.match(migration, /grant execute .* to authenticated/is)
+  assert.match(migration, /revoke all .* from public, anon/is)
+})
+
 test('canonical edit form does not expose person type as an ordination control', async () => {
   const page = await readRepoFile('src/features/personas/admin/EditPersonProposalPage.tsx')
 
