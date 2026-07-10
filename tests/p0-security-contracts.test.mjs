@@ -203,7 +203,11 @@ test('the generic review center is scope-aware and supports every queue item typ
   assert.match(sql, /grant execute on function public\.admin_review_item\(jsonb\) to authenticated;/)
 })
 
-test('the standard test command executes every test file', async () => {
+test('the standard test command executes the unit and contract suite', async () => {
   const packageJson = JSON.parse(await readRepoFile('package.json'))
-  assert.equal(packageJson.scripts.test, 'node --test tests/*.test.mjs')
+  const runner = await readRepoFile('scripts/run-tests.mjs')
+
+  assert.equal(packageJson.scripts.test, 'node scripts/run-tests.mjs unit')
+  assert.match(runner, /file\.endsWith\('\.test\.mjs'\)/)
+  assert.match(runner, /return !integrationFiles\.has\(file\)/)
 })
