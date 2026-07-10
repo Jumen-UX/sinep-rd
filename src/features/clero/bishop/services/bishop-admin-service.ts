@@ -68,11 +68,24 @@ export async function loadBishopCatalogs(supabase: SupabaseClient): Promise<Bish
 
   if (ordainerResult.error) throw ordainerResult.error
 
-  const ordainers = (ordainerResult.data ?? []).map((person) => ({
-    ...person,
+  const ordainers: ClergyRecord[] = (ordainerResult.data ?? []).map((person) => ({
+    id: String(person.id),
+    first_name: person.first_name ?? null,
+    middle_name: person.middle_name ?? null,
+    last_name: person.last_name ?? null,
+    second_last_name: person.second_last_name ?? null,
+    display_name: person.display_name ?? 'Obispo sin nombre',
+    slug: person.slug ?? '',
+    gender: person.gender ?? null,
+    birth_date: person.birth_date ?? null,
+    birth_place: person.birth_place ?? null,
+    photo_url: person.photo_url ?? null,
+    biography_public: person.biography_public ?? null,
+    highest_ordination_degree: 'episcopate',
+    effective_person_type: person.effective_person_type ?? 'bishop',
     is_religious: false,
     religious_life_type: null,
-  })) as ClergyRecord[]
+  }))
   const clergyById = new Map<string, ClergyRecord>()
   for (const record of [...candidates, ...ordainers]) clergyById.set(record.id, record)
 
