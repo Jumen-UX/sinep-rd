@@ -41,8 +41,7 @@ test('deacon flow reuses an existing unordained person identity', async () => {
   const service = await readRepoFile('src/features/clero/deacon/services/deacon-admin-service.ts')
   const api = await readRepoFile('src/app/api/admin/diacono/route.ts')
 
-  assert.match(service, /from\('person_ecclesial_state'\)/)
-  assert.match(service, /eq\('is_lay', true\)/)
+  assert.match(service, /rpc\('admin_list_unordained_people'/)
   assert.doesNotMatch(service, /person_type/)
 
   assert.match(page, /mode, setMode.*'existing'/)
@@ -68,6 +67,19 @@ test('deacon transaction preserves the person and records canonical diaconate', 
   assert.match(migration, /'diaconate'/)
   assert.match(migration, /'existing_person_ordination'/)
   assert.match(migration, /'layperson'/)
+})
+
+test('unordained person candidates and writes are constrained by user scope', async () => {
+  const migration = await readRepoFile('supabase/migrations/20260710202421_scope_unordained_person_candidates.sql')
+
+  assert.match(migration, /current_user_can_manage_person/)
+  assert.match(migration, /public\.position_assignments/)
+  assert.match(migration, /public\.clergy_profiles/)
+  assert.match(migration, /public\.religious_profiles/)
+  assert.match(migration, /admin_list_unordained_people/)
+  assert.match(migration, /not exists \(/)
+  assert.match(migration, /public\.ordination_events/)
+  assert.match(migration, /La persona seleccionada está fuera de tu alcance/)
 })
 
 test('person placement service centralizes entity, office, level and photo infrastructure', async () => {
