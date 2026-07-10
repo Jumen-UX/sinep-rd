@@ -80,9 +80,9 @@ export default function PriestWizardPage() {
   const incardination = entities.find((item) => item.direct_entity_id === incardinationId)
   const service = entities.find((item) => item.direct_entity_id === serviceId)
   const quickEntity = entities.find((item) => item.direct_entity_id === quickEntityId)
-  const filteredOfficeConfigs = quickEntityId && allowedOfficeIds.length > 0
+  const filteredOfficeConfigs = quickEntityId
     ? officeConfigs.filter((office) => allowedOfficeIds.includes(office.id))
-    : officeConfigs
+    : []
   const notIdentifiedFields = Array.isArray(draftValues.not_identified_fields) ? draftValues.not_identified_fields : []
 
   function fieldValue(name: string, fallback = '') {
@@ -173,7 +173,11 @@ export default function PriestWizardPage() {
       try {
         const ids = await loadAllowedOfficeIds(supabase, quickEntityId)
         setAllowedOfficeIds(ids)
-        setLevelFilterMessage(ids.length > 0 ? 'Cargos filtrados por el nivel estructural seleccionado.' : 'Este nivel no tiene cargos configurados; se muestran todos.')
+        setLevelFilterMessage(
+          ids.length > 0
+            ? 'Cargos filtrados por el nivel estructural seleccionado.'
+            : 'Este nivel no tiene cargos configurados. Configúralos en Administración → Estructura antes de asignar uno.',
+        )
       } catch (officeError) {
         setAllowedOfficeIds([])
         setLevelFilterMessage(officeError instanceof Error ? officeError.message : 'No se pudieron filtrar los cargos.')
@@ -359,7 +363,7 @@ export default function PriestWizardPage() {
             <p className="eyebrow">Etapa 4</p><h2>Servicio y cargo actual</h2><p className="meta">La entidad se selecciona desde la estructura configurada; el cargo es opcional.</p>
             <StructureEntityPicker allowCreate createEntityTypeKey="parish" help="Selecciona la diócesis y avanza por sus niveles." label="Entidad donde sirve actualmente" name="current_service_entity_id" value={serviceId} onChange={(value) => { setServiceId(value); setQuickEntityId(value); setDraftField('current_service_entity_id', value); setDraftField('quick_entity_id', value) }} />
             <div className="empty-state"><strong>Servicio seleccionado</strong><span>{service?.hierarchy_path ?? service?.direct_entity_name ?? 'Sin entidad seleccionada.'}</span></div>
-            <label>Cargo actual<select name="quick_office_configuration_id" value={quickOfficeConfigId} onChange={(event) => { setQuickOfficeConfigId(event.target.value); setDraftField('quick_office_configuration_id', event.target.value) }}><option value="">Sin cargo actual por ahora</option>{filteredOfficeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}</select></label><p className="meta">{levelFilterMessage}</p>
+            <label>Cargo actual<select name="quick_office_configuration_id" value={quickOfficeConfigId} onChange={(event) => { setQuickOfficeConfigId(event.target.value); setDraftField('quick_office_configuration_id', event.target.value) }} disabled={!quickEntityId || filteredOfficeConfigs.length === 0}><option value="">Sin cargo actual por ahora</option>{filteredOfficeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}</select></label><p className="meta">{levelFilterMessage}</p>
             {quickOfficeConfigId && <div className="card compact-section"><StructureEntityPicker allowCreate createEntityTypeKey="parish" label="Entidad del cargo" name="quick_entity_id" value={quickEntityId} onChange={(value) => { setQuickEntityId(value); setDraftField('quick_entity_id', value) }} /><div className="admin-form-fields-grid"><label>Título para mostrar<input name="quick_title_override" defaultValue={fieldValue('quick_title_override')} /></label><label>Fecha de inicio<input name="quick_start_date" type="date" defaultValue={fieldValue('quick_start_date')} /></label></div><label>Notas públicas del cargo<textarea name="quick_notes_public" defaultValue={fieldValue('quick_notes_public')} /></label></div>}
             <div className="card compact-section"><label className="role-pill"><input name="not_identified_fields" type="checkbox" value="current_service_entity_id" defaultChecked={notIdentifiedFields.includes('current_service_entity_id')} />Entidad de servicio no identificada</label><label>Notas internas<textarea name="notes_internal" defaultValue={fieldValue('notes_internal')} /></label></div>
           </section>
