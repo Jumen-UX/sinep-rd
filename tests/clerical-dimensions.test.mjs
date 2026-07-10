@@ -44,9 +44,9 @@ test('terminal clerical states close current appointments in both assignment mod
   const guard = await readRepoFile('supabase/migrations/20260710204731_enforce_terminal_clerical_status_assignments.sql')
 
   for (const migration of [sync, guard]) {
-    assert.match(migration, /'deceased','lost_clerical_state'/)
-    assert.match(migration, /assignment_status='ended'|assignment_status = 'ended'/)
-    assert.match(migration, /status='ended'|status = 'ended'/)
+    assert.match(migration, /'deceased'\s*,\s*'lost_clerical_state'/)
+    assert.match(migration, /assignment_status\s*=\s*'ended'/)
+    assert.match(migration, /status\s*=\s*'ended'/)
   }
 
   assert.match(guard, /position_assignments_terminal_clerical_status/)
