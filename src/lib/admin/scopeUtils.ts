@@ -76,7 +76,7 @@ export async function getUserScope(
 
     // Check if user is unrestricted (super_admin or national_admin)
     const roleKey = assignments.role_id
-      ? (assignments.roles as { key: string } | null)?.key
+      ? assignments.roles?.[0]?.key ?? null
       : null
     const isUnrestricted =
       roleKey === 'super_admin' || roleKey === 'national_admin'
