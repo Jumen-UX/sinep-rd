@@ -1,13 +1,42 @@
 import { NextResponse } from 'next/server'
 import { requireAdminAccess } from '@/lib/admin/authorization'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
+import {
+  oneOf,
+  optionalText,
+  optionalUuid,
+  parseJsonObjectBody,
+  requiredText,
+  ValidationError,
+} from '@/lib/admin/validation'
+
+const allowedItemTypes = [
+  'position_assignment',
+  'person_candidate',
+  'missing_field',
+  'change_request',
+] as const
+
+const allowedDecisions = [
+  'approve_internal',
+  'publish',
+  'needs_correction',
+  'dispute',
+  'keep_internal',
+  'reject',
+  'resolve',
+  'not_applicable',
+  'approved',
+  'needs_changes',
+  'rejected',
+] as const
 
 export async function GET() {
   try {
     const auth = await requireAdminAccess()
     if (!auth.ok) return auth.response
 
-    const { data, error } = await auth.supabase.rpc('admin_review_queue', { payload: { limit: 200 } })
+    const { data, error } = await auth.supabase.rpc('admin_review_queue', { payload: { limit: 500 } })
 
     if (error) {
       console.error('Failed to load admin review queue', error)
@@ -26,34 +55,39 @@ export async function POST(request: Request) {
     const auth = await requireAdminAccess()
     if (!auth.ok) return auth.response
 
-    const body = await request.json().catch(() => null) as {
-      assignment_id?: string
-      decision?: 'approve_internal' | 'publish' | 'needs_correction' | 'dispute' | 'keep_internal'
-      notes?: string
-      publish_person?: boolean
-    } | null
+    const payload = await parseJsonObjectBody(request, 'Solicitud de revisión inválida.')
+    const itemType = oneOf(payload.item_type, allowedItemTypes, 'tipo de pendiente')
+    const decision = oneOf(payload.decision, allowedDecisions, 'decisión')
+    const recordId = optionalUuid(payload.record_id)
+    const sourceId = optionalText(payload.source_id, 120)
 
-    if (!body?.assignment_id || !body?.decision) {
-      return NextResponse.json({ error: 'Faltan assignment_id o decision.' }, { status: 400 })
+    if (!recordId && !sourceId) {
+      throw new ValidationError('Falta el identificador del registro a revisar.')
     }
 
-    const { data, error } = await auth.supabase.rpc('admin_review_imported_appointment', {
-      payload: {
-        assignment_id: body.assignment_id,
-        decision: body.decision,
-        notes: body.notes ?? null,
-        publish_person: body.publish_person ?? false,
-      },
-    })
+    const normalizedPayload = {
+      item_type: itemType,
+      record_id: recordId || null,
+      source_id: sourceId || null,
+      decision,
+      notes: optionalText(payload.notes, 2000) || null,
+      publish_person: payload.publish_person === true,
+    }
+
+    const { data, error } = await auth.supabase.rpc('admin_review_item', { payload: normalizedPayload })
 
     if (error) {
-      console.error('Failed to review imported appointment', error)
-      return NextResponse.json({ error: toSpanishAdminError(error, 'No se pudo actualizar el nombramiento importado.') }, { status: 400 })
+      console.error('Failed to review admin queue item', error)
+      return NextResponse.json({ error: toSpanishAdminError(error, 'No se pudo completar la revisión.') }, { status: 400 })
     }
 
     return NextResponse.json({ result: data })
   } catch (error) {
-    console.error('Unexpected imported appointment review API error', error)
-    return NextResponse.json({ error: 'No se pudo actualizar el nombramiento importado.' }, { status: 500 })
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
+    console.error('Unexpected admin review decision API error', error)
+    return NextResponse.json({ error: 'No se pudo completar la revisión.' }, { status: 500 })
   }
 }
