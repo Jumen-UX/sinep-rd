@@ -28,12 +28,24 @@ export type PriestCatalogs = {
   deacons: DeaconOption[]
 }
 
+export type AllowedOfficeResult = {
+  ids: string[]
+  message: string
+}
+
 export type SavePriestResponse = {
   person_id?: string
   slug?: string
   internal_reference_code?: string
   error?: string
 }
+
+export type UploadedPriestPhoto = {
+  photo_url: string | null
+  photo_path: string | null
+}
+
+const PHOTO_BUCKET = 'person-photos'
 
 export async function loadPriestCatalogs(supabase: SupabaseClient): Promise<PriestCatalogs> {
   const [entityResult, officeResult, deaconResult] = await Promise.all([
@@ -64,8 +76,13 @@ export async function loadPriestCatalogs(supabase: SupabaseClient): Promise<Prie
   }
 }
 
-export async function loadAllowedOfficeIds(supabase: SupabaseClient, entityId: string): Promise<string[]> {
-  if (!entityId) return []
+export async function loadAllowedOfficeIds(supabase: SupabaseClient, entityId: string): Promise<AllowedOfficeResult> {
+  if (!entityId) {
+    return {
+      ids: [],
+      message: 'Selecciona una entidad del cargo para filtrar cargos por nivel estructural.',
+    }
+  }
 
   const { data: nodes, error: nodeError } = await supabase
     .from('structure_nodes')
@@ -76,7 +93,12 @@ export async function loadAllowedOfficeIds(supabase: SupabaseClient, entityId: s
 
   if (nodeError) throw nodeError
   const levelId = (nodes?.[0] as { level_id?: string | null } | undefined)?.level_id
-  if (!levelId) return []
+  if (!levelId) {
+    return {
+      ids: [],
+      message: 'La entidad seleccionada no tiene nodo estructural activo. Se muestran todos los cargos.',
+    }
+  }
 
   const { data, error } = await supabase
     .from('structure_level_office_configurations')
@@ -86,21 +108,33 @@ export async function loadAllowedOfficeIds(supabase: SupabaseClient, entityId: s
     .order('sort_order')
 
   if (error) throw error
-  return (data ?? []).map((row) => String(row.office_configuration_id))
+  const ids = (data ?? []).map((row) => String(row.office_configuration_id))
+  return {
+    ids,
+    message: ids.length > 0
+      ? 'Cargos filtrados por el nivel estructural seleccionado.'
+      : 'Este nivel no tiene cargos configurados. Se muestran todos los cargos activos.',
+  }
 }
 
-export async function uploadPriestPhoto(supabase: SupabaseClient, file: File, slug: string) {
+export async function uploadPriestPhoto(supabase: SupabaseClient, file: File, slug: string): Promise<UploadedPriestPhoto> {
   if (!file || file.size === 0) return { photo_url: null, photo_path: null }
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('La foto debe estar en formato JPG, PNG o WEBP.')
   if (file.size > 5 * 1024 * 1024) throw new Error('La foto no debe superar 5 MB.')
 
   const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
   const path = `sacerdotes/${slug || 'sacerdote'}-${Date.now()}.${extension}`
-  const { error } = await supabase.storage.from('person-photos').upload(path, file, { cacheControl: '3600', upsert: false })
+  const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, { cacheControl: '3600', upsert: false })
   if (error) throw new Error(`No se pudo subir la foto: ${error.message}`)
 
-  const { data } = supabase.storage.from('person-photos').getPublicUrl(path)
+  const { data } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
   return { photo_url: data.publicUrl, photo_path: path }
+}
+
+export async function removePriestPhoto(supabase: SupabaseClient, photoPath: string | null | undefined) {
+  if (!photoPath) return
+  const { error } = await supabase.storage.from(PHOTO_BUCKET).remove([photoPath])
+  if (error) console.error('No se pudo limpiar la fotografía huérfana del sacerdote.', error)
 }
 
 export async function savePriest(payload: Record<string, unknown>): Promise<SavePriestResponse> {
