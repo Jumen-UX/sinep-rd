@@ -28,11 +28,6 @@ export type PriestCatalogs = {
   deacons: DeaconOption[]
 }
 
-export type AllowedOfficeResult = {
-  ids: string[]
-  message: string
-}
-
 export type SavePriestResponse = {
   person_id?: string
   slug?: string
@@ -76,13 +71,8 @@ export async function loadPriestCatalogs(supabase: SupabaseClient): Promise<Prie
   }
 }
 
-export async function loadAllowedOfficeIds(supabase: SupabaseClient, entityId: string): Promise<AllowedOfficeResult> {
-  if (!entityId) {
-    return {
-      ids: [],
-      message: 'Selecciona una entidad del cargo para filtrar cargos por nivel estructural.',
-    }
-  }
+export async function loadAllowedOfficeIds(supabase: SupabaseClient, entityId: string): Promise<string[]> {
+  if (!entityId) return []
 
   const { data: nodes, error: nodeError } = await supabase
     .from('structure_nodes')
@@ -93,12 +83,7 @@ export async function loadAllowedOfficeIds(supabase: SupabaseClient, entityId: s
 
   if (nodeError) throw nodeError
   const levelId = (nodes?.[0] as { level_id?: string | null } | undefined)?.level_id
-  if (!levelId) {
-    return {
-      ids: [],
-      message: 'La entidad seleccionada no tiene nodo estructural activo. Se muestran todos los cargos.',
-    }
-  }
+  if (!levelId) return []
 
   const { data, error } = await supabase
     .from('structure_level_office_configurations')
@@ -108,13 +93,7 @@ export async function loadAllowedOfficeIds(supabase: SupabaseClient, entityId: s
     .order('sort_order')
 
   if (error) throw error
-  const ids = (data ?? []).map((row) => String(row.office_configuration_id))
-  return {
-    ids,
-    message: ids.length > 0
-      ? 'Cargos filtrados por el nivel estructural seleccionado.'
-      : 'Este nivel no tiene cargos configurados. Se muestran todos los cargos activos.',
-  }
+  return (data ?? []).map((row) => String(row.office_configuration_id))
 }
 
 export async function uploadPriestPhoto(supabase: SupabaseClient, file: File, slug: string): Promise<UploadedPriestPhoto> {
