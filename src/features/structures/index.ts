@@ -1,3 +1,5 @@
+export * from './components'
 export * from './config/presets'
+export * from './hooks'
 export * from './services/structure-admin-service'
 export * from './types'
