@@ -32,7 +32,7 @@ test('religious wizard delegates catalogs, photos and persistence to typed servi
 
   assert.doesNotMatch(page, /\.from\(/)
   assert.doesNotMatch(page, /\.storage\./)
-  assert.doesNotMatch(page, /fetch\('\/api\/admin\/religioso'/)
+  assert.doesNotMatch(page, /fetch\('/)
   assert.match(page, /Este nivel no tiene cargos configurados/)
   assert.match(page, /officeConfigs\.filter\(\(office\) => allowedOfficeIds\.includes\(office\.id\)\)/)
 })
@@ -45,12 +45,17 @@ test('religious flow keeps priests in the canonical priest history', async () =>
   assert.match(page, /Sacerdote religioso/)
 })
 
-test('religious service reuses neutral person infrastructure', async () => {
+test('religious service uses neutral infrastructure and canonical registration', async () => {
   const service = await readRepoFile('src/features/vida-consagrada/religious/services/religious-admin-service.ts')
+  const page = await readRepoFile('src/features/vida-consagrada/religious/admin/ReligiousWizardPage.tsx')
 
   assert.match(service, /person-placement-service/)
   assert.match(service, /loadPersonPlacementCatalogs/)
+  assert.match(service, /loadCanonicalRegistrationCandidates\(supabase, 'religious'\)/)
+  assert.match(service, /saveCanonicalPersonRegistration\('religious'/)
   assert.match(service, /uploadPersonPhoto/)
   assert.match(service, /removePersonPhoto/)
-  assert.match(service, /fetch\('\/api\/admin\/religioso'/)
+  assert.match(page, /¿La persona ya está registrada\?/)
+  assert.match(page, /selected_person_id/)
+  assert.match(page, /sin duplicar su identidad/)
 })
