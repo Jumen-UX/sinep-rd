@@ -15,6 +15,31 @@ type AdminAccessResult =
   | { ok: true; supabase: SupabaseServerClient; user: User }
   | { ok: false; response: NextResponse }
 
+async function userHasActiveAdminRole(supabase: SupabaseServerClient, userId: string) {
+  const rpcResult = await supabase.rpc('current_user_has_admin_role')
+  if (!rpcResult.error && rpcResult.data === true) return true
+
+  const today = new Date().toISOString().slice(0, 10)
+  const { count, error } = await supabase
+    .from('user_role_assignments')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .or(`starts_at.is.null,starts_at.lte.${today}`)
+    .or(`ends_at.is.null,ends_at.gte.${today}`)
+
+  if (error) {
+    console.error('Failed to validate active admin assignment', {
+      userId,
+      rpcError: rpcResult.error?.message ?? null,
+      assignmentError: error.message,
+    })
+    return false
+  }
+
+  return (count ?? 0) > 0
+}
+
 export async function requireAdminAccess(options: RequireAdminAccessOptions = {}): Promise<AdminAccessResult> {
   const supabase = await createClient()
   const { data: userData, error: userError } = await supabase.auth.getUser()
@@ -29,17 +54,9 @@ export async function requireAdminAccess(options: RequireAdminAccessOptions = {}
     }
   }
 
-  const { data: hasAdminRole, error: roleError } = await supabase.rpc('current_user_has_admin_role')
+  const hasAdminRole = await userHasActiveAdminRole(supabase, userData.user.id)
 
-  if (roleError) {
-    console.error('Failed to validate admin role', roleError)
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'No se pudo validar el rol administrativo.' }, { status: 403 }),
-    }
-  }
-
-  if (hasAdminRole !== true) {
+  if (!hasAdminRole) {
     return {
       ok: false,
       response: NextResponse.json(
