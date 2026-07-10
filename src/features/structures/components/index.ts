@@ -1,4 +1,5 @@
 export * from './StructureLevelEditor'
+export * from './StructureNodeDetailPanel'
 export * from './StructureNodeEditor'
 export * from './StructurePresetGrid'
 export * from './StructureSummary'
