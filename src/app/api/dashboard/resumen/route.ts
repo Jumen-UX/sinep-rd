@@ -18,6 +18,7 @@ type ParishRow = {
 type PersonSummaryRow = {
   id: string
   person_type: string | null
+  is_religious: boolean
   status: string | null
   death_date: string | null
 }
@@ -53,10 +54,8 @@ export async function GET() {
         status: 'eq.active',
         visibility: 'eq.public',
       }),
-      fetchSupabaseJson<PersonSummaryRow[]>('persons', {
-        select: 'id,person_type,status,death_date',
-        status: 'eq.active',
-        visibility: 'eq.public',
+      fetchSupabaseJson<PersonSummaryRow[]>('person_public_directory', {
+        select: 'id,person_type,is_religious,status,death_date',
       }),
     ])
 
@@ -66,7 +65,7 @@ export async function GET() {
         if (!name) return map
         map.set(name, (map.get(name) ?? 0) + 1)
         return map
-      }, new Map<string, number>())
+      }, new Map<string, number>()),
     )
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name, 'es'))
@@ -92,7 +91,7 @@ export async function GET() {
         bishops: countPeople('bishop'),
         priests: countPeople('priest'),
         deacons: countPeople('deacon'),
-        religious: countPeople('religious'),
+        religious: people.filter((item) => item.is_religious).length,
         laypeople: countPeople('layperson'),
         active: people.filter((item) => item.status === 'active' && !item.death_date).length,
       },
