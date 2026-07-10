@@ -8,8 +8,10 @@ type SavePriestResult = {
   person_id?: string
   clergy_profile_id?: string
   assignment_id?: string
+  closed_previous_current_count?: number
   slug?: string
   internal_reference_code?: string
+  priest_type?: 'diocesan' | 'religious'
 }
 
 const allowedPriestTypes = ['diocesan', 'religious'] as const
@@ -21,7 +23,7 @@ function cleanText(value: unknown) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireAdminAccess()
+    const auth = await requireAdminAccess({ permissionKey: 'people.create_proposal' })
     if (!auth.ok) return auth.response
     const supabase = auth.supabase
 
@@ -57,42 +59,6 @@ export async function POST(request: NextRequest) {
     }
 
     const result = data as SavePriestResult
-    const religiousInstituteName = cleanText(payload.religious_institute_name) ?? cleanText(payload.religious_order)
-    const religiousProvinceName = cleanText(payload.religious_province_name)
-    const religiousHouseEntityId = cleanText(payload.religious_house_entity_id)
-
-    if (result.clergy_profile_id || result.person_id) {
-      let query = supabase
-        .from('clergy_profiles')
-        .update({
-          priest_type: priestType,
-          religious_institute_name: religiousInstituteName,
-          religious_province_name: religiousProvinceName,
-          religious_house_entity_id: religiousHouseEntityId,
-        })
-
-      query = result.clergy_profile_id
-        ? query.eq('id', result.clergy_profile_id)
-        : query.eq('person_id', result.person_id as string)
-
-      const { error: profileError } = await query
-      if (profileError) {
-        console.error('Failed to update priest type fields', profileError)
-        await recordAdminAudit(supabase, {
-          action: 'person.priest.create',
-          targetTable: 'persons',
-          targetId: result.person_id ?? null,
-          metadata: {
-            clergy_profile_id: result.clergy_profile_id ?? null,
-            assignment_id: result.assignment_id ?? null,
-            existing_deacon: Boolean(existingDeaconId),
-            priest_type: priestType,
-            warning: 'profile_update_failed',
-          },
-        })
-        return NextResponse.json({ error: toSpanishAdminError(profileError, 'El sacerdote fue creado, pero no se pudieron actualizar los datos religiosos.') }, { status: 400 })
-      }
-    }
 
     await recordAdminAudit(supabase, {
       action: 'person.priest.create',
@@ -101,8 +67,9 @@ export async function POST(request: NextRequest) {
       metadata: {
         clergy_profile_id: result.clergy_profile_id ?? null,
         assignment_id: result.assignment_id ?? null,
+        closed_previous_current_count: result.closed_previous_current_count ?? 0,
         existing_deacon: Boolean(existingDeaconId),
-        priest_type: priestType,
+        priest_type: result.priest_type ?? priestType,
       },
     })
 
