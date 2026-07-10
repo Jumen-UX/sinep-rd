@@ -50,6 +50,13 @@ const adminNavSections: AdminNavSection[] = [
   },
 ]
 
+const mobileNavItems: AdminNavItem[] = [
+  { href: '/admin', icon: 'I', label: 'Inicio' },
+  { href: '/admin/personas', icon: 'P', label: 'Personas' },
+  { href: '/admin/estructura', icon: 'E', label: 'Estructura' },
+  { href: '/admin/configuracion', icon: 'M', label: 'Más' },
+]
+
 function isActiveNavItem(pathname: string, href: string) {
   if (href === '/admin') return pathname === '/admin'
   return pathname === href || pathname.startsWith(`${href}/`)
@@ -111,6 +118,15 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           {children}
         </div>
       </div>
+
+      <nav className="admin-mobile-nav" aria-label="Navegación administrativa móvil">
+        {mobileNavItems.map((item) => (
+          <a aria-current={isActiveNavItem(pathname, item.href) ? 'page' : undefined} href={item.href} key={item.href} onClick={(event) => forceNavigation(event, item.href)}>
+            <span aria-hidden="true">{item.icon}</span>
+            <span>{item.label}</span>
+          </a>
+        ))}
+      </nav>
     </div>
   )
 }
