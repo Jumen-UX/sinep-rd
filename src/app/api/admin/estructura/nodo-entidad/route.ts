@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
-import { parseJsonObjectBody, ValidationError } from '@/lib/admin/validation'
+import { isJsonObject, parseJsonObjectBody, ValidationError } from '@/lib/admin/validation'
+import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
 
-type SaveEntityResponse = {
-  entity_id?: string
-  id?: string
-  error?: string
-}
-
-type SaveNodeResponse = {
-  id?: string
-  node_id?: string
-  error?: string
+type SaveNodeEntityResult = {
+  entityId: string | null
+  nodeId: string | null
 }
 
 function toText(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function getSaveResult(value: unknown): SaveNodeEntityResult {
+  if (!isJsonObject(value)) return { entityId: null, nodeId: null }
+
+  return {
+    entityId: typeof value.entity_id === 'string' ? value.entity_id : null,
+    nodeId: typeof value.node_id === 'string' ? value.node_id : null,
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -31,79 +34,62 @@ export async function POST(request: NextRequest) {
     const templateId = toText(payload.template_id)
     const levelId = toText(payload.level_id)
     const parentNodeId = toText(payload.parent_node_id)
-    const parentEntityId = toText(payload.parent_entity_id)
-    const entityTypeKey = toText(payload.entity_type_key) || 'parish'
     const name = toText(payload.name)
     const slug = toText(payload.slug)
-    const startDate = toText(payload.start_date)
 
     if (!templateId || !levelId || !parentNodeId || !name || !slug) {
       return NextResponse.json({ error: 'Faltan datos para crear la unidad estructural.' }, { status: 400 })
     }
 
-    const { data: entityData, error: entityError } = await auth.supabase.rpc('admin_save_ecclesiastical_entity', {
-      payload: {
-        entity_type_key: entityTypeKey,
-        name,
-        slug,
-        country_iso2: 'DO',
-        country: 'Republica Dominicana',
-        parent_entity_id: parentEntityId || null,
-        status: 'active',
-        visibility: 'public',
-      },
+    const normalizedPayload = {
+      ...payload,
+      template_id: templateId,
+      level_id: levelId,
+      parent_node_id: parentNodeId,
+      parent_entity_id: toText(payload.parent_entity_id) || null,
+      entity_type_key: toText(payload.entity_type_key) || 'parish',
+      name,
+      official_name: toText(payload.official_name) || name,
+      slug,
+      start_date: toText(payload.start_date) || new Date().toISOString().slice(0, 10),
+      country_iso2: toText(payload.country_iso2) || 'DO',
+      country: toText(payload.country) || 'Republica Dominicana',
+      status: 'active',
+      visibility: 'public',
+    }
+
+    const { data, error } = await auth.supabase.rpc('admin_create_structure_node_entity', {
+      payload: normalizedPayload,
     })
 
-    if (entityError) {
-      console.error('Failed to create ecclesiastical entity for structure node', entityError)
-      return NextResponse.json({ error: entityError.message }, { status: 400 })
+    if (error) {
+      console.error('Failed to create structure node and entity transactionally', error)
+      return NextResponse.json(
+        { error: toSpanishAdminError(error, 'No se pudo crear la unidad estructural.') },
+        { status: 400 },
+      )
     }
 
-    const savedEntity = entityData as SaveEntityResponse | null
-    const entityId = savedEntity?.entity_id ?? savedEntity?.id
-
-    if (!entityId) {
-      return NextResponse.json({ error: 'La entidad fue creada sin identificador retornado.' }, { status: 400 })
+    const result = getSaveResult(data)
+    if (!result.entityId || !result.nodeId) {
+      return NextResponse.json({ error: 'La operación terminó sin identificadores válidos.' }, { status: 400 })
     }
-
-    const { data: nodeData, error: nodeError } = await auth.supabase.rpc('admin_save_structure_node', {
-      payload: {
-        template_id: templateId,
-        level_id: levelId,
-        parent_node_id: parentNodeId,
-        name,
-        official_name: name,
-        slug,
-        linked_ecclesiastical_entity_id: entityId,
-        start_date: startDate || new Date().toISOString().slice(0, 10),
-        status: 'active',
-        visibility: 'public',
-      },
-    })
-
-    if (nodeError) {
-      console.error('Failed to create structure node for entity', nodeError)
-      return NextResponse.json({ error: nodeError.message, entity_id: entityId }, { status: 400 })
-    }
-
-    const savedNode = nodeData as SaveNodeResponse | null
-    const nodeId = savedNode?.id ?? savedNode?.node_id ?? null
 
     await recordAdminAudit(auth.supabase, {
       action: 'structure.node_entity.create',
       targetTable: 'structure_nodes',
-      targetId: nodeId,
+      targetId: result.nodeId,
       metadata: {
-        entity_id: entityId,
+        entity_id: result.entityId,
         template_id: templateId,
         level_id: levelId,
-        entity_type_key: entityTypeKey,
+        entity_type_key: normalizedPayload.entity_type_key,
       },
     })
 
     return NextResponse.json({
-      entity_id: entityId,
-      node_id: nodeId,
+      entity_id: result.entityId,
+      node_id: result.nodeId,
     })
   } catch (error) {
     if (error instanceof ValidationError) {
