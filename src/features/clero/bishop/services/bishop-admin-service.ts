@@ -55,14 +55,30 @@ export type { OfficeConfig }
 export { loadAllowedOfficeIds }
 
 export async function loadBishopCatalogs(supabase: SupabaseClient): Promise<BishopCatalogs> {
-  const [placementCatalogs, clergyRecords] = await Promise.all([
+  const [placementCatalogs, candidates, ordainerResult] = await Promise.all([
     loadClergyPlacementCatalogs(supabase),
     loadCanonicalRegistrationCandidates(supabase, 'bishop'),
+    supabase
+      .from('person_ecclesial_state')
+      .select('id,first_name,middle_name,last_name,second_last_name,display_name,slug,gender,birth_date,birth_place,photo_url,biography_public,highest_ordination_degree,effective_person_type')
+      .eq('has_episcopate', true)
+      .eq('status', 'active')
+      .order('display_name'),
   ])
+
+  if (ordainerResult.error) throw ordainerResult.error
+
+  const ordainers = (ordainerResult.data ?? []).map((person) => ({
+    ...person,
+    is_religious: false,
+    religious_life_type: null,
+  })) as ClergyRecord[]
+  const clergyById = new Map<string, ClergyRecord>()
+  for (const record of [...candidates, ...ordainers]) clergyById.set(record.id, record)
 
   return {
     ...placementCatalogs,
-    clergyRecords,
+    clergyRecords: [...clergyById.values()],
   }
 }
 
