@@ -32,6 +32,17 @@ test('legacy clergy writes synchronize into canonical ordination events', async 
   assert.match(migration, /when 'diaconate' then 'deacon'/)
 })
 
+test('higher ordinations create prerequisites and enforce chronological order', async () => {
+  const migration = await readRepoFile('supabase/migrations/20260710201325_enforce_cumulative_ordination_sequence.sql')
+
+  assert.match(migration, /new\.degree in \('presbyterate', 'episcopate'\)/)
+  assert.match(migration, /new\.degree = 'episcopate'/)
+  assert.match(migration, /'derived_prerequisite'/)
+  assert.match(migration, /La ordenación presbiteral no puede ser anterior a la ordenación diaconal/)
+  assert.match(migration, /La ordenación episcopal no puede ser anterior a la ordenación presbiteral/)
+  assert.match(migration, /ordination_events_enforce_cumulative_sequence/)
+})
+
 test('clerical transition selectors use ordination degree instead of person type', async () => {
   const priestService = await readRepoFile('src/features/clero/priest/services/priest-admin-service.ts')
   const bishopService = await readRepoFile('src/features/clero/bishop/services/bishop-admin-service.ts')
