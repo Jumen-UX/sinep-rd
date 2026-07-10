@@ -12,6 +12,7 @@ import {
   saveReligious,
   uploadReligiousPhoto,
   type OfficeConfig,
+  type ReligiousCandidate,
   type ReligiousLifeType,
   type UploadedReligiousPhoto,
 } from '../services/religious-admin-service'
@@ -54,6 +55,9 @@ export default function ReligiousWizardPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
   const [savedInternalCode, setSavedInternalCode] = useState<string | null>(null)
+  const [mode, setMode] = useState<'existing' | 'new'>('existing')
+  const [selectedPersonId, setSelectedPersonId] = useState('')
+  const [candidates, setCandidates] = useState<ReligiousCandidate[]>([])
   const [lifeType, setLifeType] = useState<ReligiousLifeType>('sister')
   const [entities, setEntities] = useState<EntityHierarchyEntity[]>([])
   const [officeConfigs, setOfficeConfigs] = useState<OfficeConfig[]>([])
@@ -64,6 +68,7 @@ export default function ReligiousWizardPage() {
   const [quickOfficeConfigId, setQuickOfficeConfigId] = useState('')
   const [assignmentVisibility, setAssignmentVisibility] = useState<'internal' | 'public' | 'private'>('internal')
 
+  const selectedPerson = candidates.find((item) => item.id === selectedPersonId)
   const service = entities.find((item) => item.direct_entity_id === serviceId)
   const quickEntity = entities.find((item) => item.direct_entity_id === quickEntityId)
   const filteredOfficeConfigs = quickEntityId
@@ -82,6 +87,8 @@ export default function ReligiousWizardPage() {
         const catalogs = await loadReligiousCatalogs(supabase)
         setEntities(catalogs.entities)
         setOfficeConfigs(catalogs.offices)
+        setCandidates(catalogs.candidates)
+        if (catalogs.candidates.length === 0) setMode('new')
       } catch (loadError) {
         setError(loadError instanceof Error ? loadError.message : 'No se pudieron cargar los catálogos.')
       } finally {
@@ -130,44 +137,63 @@ export default function ReligiousWizardPage() {
       return
     }
 
+    if (mode === 'existing' && !selectedPersonId) {
+      setError('Selecciona la persona a la que se añadirá la vida consagrada.')
+      return
+    }
+
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
+    const firstName = mode === 'existing'
+      ? selectedPerson?.first_name ?? ''
+      : String(form.get('first_name') ?? '').trim()
+    const lastName = mode === 'existing'
+      ? selectedPerson?.last_name ?? ''
+      : String(form.get('last_name') ?? '').trim()
+    const displayName = mode === 'existing'
+      ? selectedPerson?.display_name ?? ''
+      : buildDisplayName(form)
+    const slug = mode === 'existing'
+      ? selectedPerson?.slug ?? ''
+      : slugify(displayName)
+
+    if (mode === 'new' && (!firstName || !lastName || !displayName || !slug)) {
+      setError('Primer nombre y primer apellido son obligatorios.')
+      return
+    }
+
     setSaving(true)
     setError(null)
     setMessage(null)
     setSavedSlug(null)
     setSavedInternalCode(null)
 
-    const form = new FormData(event.currentTarget)
-    const firstName = String(form.get('first_name') ?? '').trim()
-    const lastName = String(form.get('last_name') ?? '').trim()
-    const displayName = buildDisplayName(form)
-    const slug = slugify(displayName)
-
-    if (!firstName || !lastName || !displayName || !slug) {
-      setError('Primer nombre y primer apellido son obligatorios.')
-      setSaving(false)
-      return
-    }
-
     let uploadedPhoto: UploadedReligiousPhoto | null = null
 
     try {
-      const photoFile = form.get('photo_file') instanceof File ? form.get('photo_file') as File : null
-      uploadedPhoto = photoFile ? await uploadReligiousPhoto(supabase, photoFile, slug) : { photo_url: null, photo_path: null }
+      const photoFile = mode === 'new' && form.get('photo_file') instanceof File
+        ? form.get('photo_file') as File
+        : null
+      uploadedPhoto = photoFile
+        ? await uploadReligiousPhoto(supabase, photoFile, slug)
+        : { photo_url: null, photo_path: null }
 
       const payload = {
+        mode,
+        selected_person_id: mode === 'existing' ? selectedPersonId : null,
         religious_life_type: lifeType,
         first_name: firstName,
-        middle_name: emptyToNull(form.get('middle_name')),
+        middle_name: mode === 'existing' ? selectedPerson?.middle_name ?? null : emptyToNull(form.get('middle_name')),
         last_name: lastName,
-        second_last_name: emptyToNull(form.get('second_last_name')),
+        second_last_name: mode === 'existing' ? selectedPerson?.second_last_name ?? null : emptyToNull(form.get('second_last_name')),
         display_name: displayName,
         slug,
-        gender: emptyToNull(form.get('gender')),
-        birth_date: emptyToNull(form.get('birth_date')),
-        birth_place: emptyToNull(form.get('birth_place')),
+        gender: mode === 'existing' ? null : emptyToNull(form.get('gender')),
+        birth_date: mode === 'existing' ? null : emptyToNull(form.get('birth_date')),
+        birth_place: mode === 'existing' ? null : emptyToNull(form.get('birth_place')),
         photo_url: uploadedPhoto.photo_url,
         photo_path: uploadedPhoto.photo_path,
-        biography_public: emptyToNull(form.get('biography_public')),
+        biography_public: mode === 'existing' ? null : emptyToNull(form.get('biography_public')),
         notes_internal: emptyToNull(form.get('notes_internal')),
         validation_type: emptyToNull(form.get('validation_type')),
         validation_value: emptyToNull(form.get('validation_value')),
@@ -195,17 +221,22 @@ export default function ReligiousWizardPage() {
       }
 
       const data = await saveReligious(payload)
-      setSavedSlug(data.slug ?? payload.slug)
+      setSavedSlug(data.slug ?? slug)
       setSavedInternalCode(data.internal_reference_code ?? null)
-      setMessage(`${religiousTypeLabel(lifeType)} creado correctamente.`)
-      event.currentTarget.reset()
+      setMessage(
+        mode === 'existing'
+          ? `Vida consagrada añadida a la ficha de ${selectedPerson?.display_name ?? 'la persona'} sin duplicar su identidad.`
+          : `${religiousTypeLabel(lifeType)} creado correctamente.`,
+      )
+      formElement.reset()
+      setSelectedPersonId('')
       setServiceId('')
       setQuickEntityId('')
       setQuickOfficeConfigId('')
       setAssignmentVisibility('internal')
     } catch (saveError) {
       await removeReligiousPhoto(supabase, uploadedPhoto?.photo_path)
-      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el religioso.')
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la vida consagrada.')
     } finally {
       setSaving(false)
     }
@@ -220,8 +251,8 @@ export default function ReligiousWizardPage() {
       <section className="dashboard-hero card">
         <div>
           <p className="eyebrow">Vida consagrada</p>
-          <h1>Registrar religioso/a</h1>
-          <p className="lead">Este flujo es para religiosas, religiosos no ordenados y consagrados laicos. Si es sacerdote religioso, usa el flujo de sacerdote para conservar correctamente su historial clerical.</p>
+          <h1>Registrar vida consagrada</h1>
+          <p className="lead">Busca primero a la persona. La pertenencia religiosa se añade a su identidad y puede coexistir con cualquier grado del Orden.</p>
         </div>
       </section>
 
@@ -244,112 +275,87 @@ export default function ReligiousWizardPage() {
             <button className={`metric-card metric-button ${lifeType === 'consecrated_lay' ? 'active-filter' : ''}`} type="button" onClick={() => setLifeType('consecrated_lay')}><strong>Consagrado/a</strong><span>Persona consagrada laica.</span></button>
             <button className={`metric-card metric-button ${lifeType === 'priest' ? 'active-filter' : ''}`} type="button" onClick={() => setLifeType('priest')}><strong>Sacerdote religioso</strong><span>Se registra desde sacerdote.</span></button>
           </div>
-          {lifeType === 'priest' && <div className="empty-state"><strong>Usar flujo de sacerdote</strong><span>Al guardar, te llevaré al asistente de sacerdote para registrar la ordenación y la congregación sin perder historial clerical.</span></div>}
+          {lifeType === 'priest' && <div className="empty-state"><strong>Usar flujo de sacerdote</strong><span>Ese asistente registra el presbiterado y la vida consagrada sobre la misma persona.</span></div>}
         </section>
 
         {lifeType !== 'priest' && (
           <>
             <section>
-              <p className="eyebrow">Datos obligatorios</p>
-              <h2>Identificación básica</h2>
-              <input name="first_name" placeholder="Primer nombre" required />
-              <input name="middle_name" placeholder="Segundo nombre, si aplica" />
-              <input name="last_name" placeholder="Primer apellido" required />
-              <input name="second_last_name" placeholder="Segundo apellido, si aplica" />
-              <select key={lifeType} name="gender" defaultValue={lifeType === 'sister' ? 'female' : lifeType === 'brother' ? 'male' : ''}>
-                <option value="">Género no indicado</option>
-                <option value="male">Masculino</option>
-                <option value="female">Femenino</option>
-                <option value="unknown">No identificado</option>
-              </select>
+              <p className="eyebrow">Origen de la ficha</p>
+              <h2>¿La persona ya está registrada?</h2>
+              <div className="dashboard-grid dashboard-summary">
+                <button className={`metric-card metric-button ${mode === 'existing' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('existing')}><strong>Sí</strong><span>Añadir vida consagrada a una identidad existente.</span></button>
+                <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => { setMode('new'); setSelectedPersonId('') }}><strong>No</strong><span>Crear una sola identidad y su perfil religioso.</span></button>
+              </div>
+              {mode === 'existing' && (
+                <>
+                  <select value={selectedPersonId} onChange={(event) => setSelectedPersonId(event.target.value)}>
+                    <option value="">Selecciona una persona sin perfil de vida consagrada</option>
+                    {candidates.map((person) => <option key={person.id} value={person.id}>{person.display_name} · {person.effective_person_type ?? 'persona'}</option>)}
+                  </select>
+                  <div className="empty-state"><strong>{selectedPerson?.display_name ?? 'Sin persona seleccionada'}</strong><span>Se conservarán su identidad, ordenaciones, cargos y código interno.</span></div>
+                </>
+              )}
             </section>
 
+            {mode === 'new' && (
+              <section>
+                <p className="eyebrow">Datos obligatorios</p>
+                <h2>Identificación básica</h2>
+                <input name="first_name" placeholder="Primer nombre" required />
+                <input name="middle_name" placeholder="Segundo nombre, si aplica" />
+                <input name="last_name" placeholder="Primer apellido" required />
+                <input name="second_last_name" placeholder="Segundo apellido, si aplica" />
+                <select key={lifeType} name="gender" defaultValue={lifeType === 'sister' ? 'female' : lifeType === 'brother' ? 'male' : ''}>
+                  <option value="">Género no indicado</option><option value="male">Masculino</option><option value="female">Femenino</option><option value="unknown">No identificado</option>
+                </select>
+              </section>
+            )}
+
             <section>
-              <p className="eyebrow">Comunidad</p>
-              <h2>Datos de vida religiosa</h2>
+              <p className="eyebrow">Comunidad</p><h2>Datos de vida religiosa</h2>
               <input name="community_name" placeholder="Congregación, orden, instituto o comunidad" />
               <input name="province_name" placeholder="Provincia religiosa, si aplica" />
               <label>Profesión religiosa<input name="profession_date" type="date" /></label>
-              <select name="canonical_status" defaultValue="active">
-                <option value="active">Activo/a</option>
-                <option value="retired">Retirado/a</option>
-                <option value="transferred">Trasladado/a</option>
-                <option value="deceased">Fallecido/a</option>
-                <option value="unknown">No identificado</option>
-              </select>
+              <select name="canonical_status" defaultValue="active"><option value="active">Activo/a</option><option value="retired">Retirado/a</option><option value="transferred">Trasladado/a</option><option value="deceased">Fallecido/a</option><option value="unknown">No identificado</option></select>
               <textarea name="religious_notes" placeholder="Notas internas de vida religiosa" />
             </section>
 
             <section>
-              <p className="eyebrow">Validación privada</p>
-              <h2>Documentos y contactos internos</h2>
-              <select name="validation_type" defaultValue="">
-                <option value="">Sin documento por ahora</option>
-                <option value="cedula">Cédula</option>
-                <option value="passport">Pasaporte</option>
-                <option value="other">Otro documento</option>
-              </select>
+              <p className="eyebrow">Validación privada</p><h2>Documentos y contactos internos</h2>
+              <select name="validation_type" defaultValue=""><option value="">Sin documento por ahora</option><option value="cedula">Cédula</option><option value="passport">Pasaporte</option><option value="other">Otro documento</option></select>
               <input name="validation_value" placeholder="Número del documento para validación interna" />
               <input name="validation_country" placeholder="País del documento" defaultValue="República Dominicana" />
-              <input name="primary_phone" placeholder="Teléfono principal" />
-              <input name="secondary_phone" placeholder="Teléfono alterno" />
-              <input name="contact_email" type="email" placeholder="Correo de contacto" />
+              <input name="primary_phone" placeholder="Teléfono principal" /><input name="secondary_phone" placeholder="Teléfono alterno" /><input name="contact_email" type="email" placeholder="Correo de contacto" />
             </section>
 
-            <section>
-              <p className="eyebrow">Datos personales</p>
-              <h2>Nacimiento, familia y foto</h2>
-              <label>Fecha de nacimiento<input name="birth_date" type="date" /></label>
-              <input name="birth_place" placeholder="Lugar de nacimiento" />
-              <input name="father_name" placeholder="Nombre del padre" />
-              <input name="mother_name" placeholder="Nombre de la madre" />
-              <textarea name="family_notes" placeholder="Notas familiares relevantes para la biografía" />
-              <textarea name="biography_notes" placeholder="Apuntes internos para preparar la biografía" />
-              <textarea name="biography_public" placeholder="Biografía breve para mostrar en la ficha pública" />
-              <input name="photo_file" type="file" accept="image/jpeg,image/png,image/webp" />
-            </section>
+            {mode === 'new' && (
+              <section>
+                <p className="eyebrow">Datos personales</p><h2>Nacimiento, familia y foto</h2>
+                <label>Fecha de nacimiento<input name="birth_date" type="date" /></label><input name="birth_place" placeholder="Lugar de nacimiento" />
+                <input name="father_name" placeholder="Nombre del padre" /><input name="mother_name" placeholder="Nombre de la madre" />
+                <textarea name="family_notes" placeholder="Notas familiares relevantes para la biografía" /><textarea name="biography_notes" placeholder="Apuntes internos para preparar la biografía" />
+                <textarea name="biography_public" placeholder="Biografía breve para mostrar en la ficha pública" /><input name="photo_file" type="file" accept="image/jpeg,image/png,image/webp" />
+              </section>
+            )}
 
             <section>
-              <p className="eyebrow">Servicio</p>
-              <h2>Servicio actual o responsabilidad</h2>
-              <select name="current_service_entity_id" value={serviceId} onChange={(event) => { const value = event.target.value; setServiceId(value); setQuickEntityId(value) }}>
-                <option value="">Sin servicio actual por ahora</option>
-                {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-              </select>
-              <div className="empty-state"><strong>Servicio actual</strong><span>{service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona parroquia, capilla, colegio, casa religiosa u otra entidad.'}</span></div>
-
-              <select name="quick_entity_id" value={quickEntityId} onChange={(event) => setQuickEntityId(event.target.value)}>
-                <option value="">Usar entidad del servicio actual o dejar sin entidad</option>
-                {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-              </select>
+              <p className="eyebrow">Servicio</p><h2>Servicio actual o responsabilidad</h2>
+              <select name="current_service_entity_id" value={serviceId} onChange={(event) => { const value = event.target.value; setServiceId(value); setQuickEntityId(value) }}><option value="">Sin servicio actual por ahora</option>{entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}</select>
+              <div className="empty-state"><strong>Servicio actual</strong><span>{service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona la entidad donde sirve.'}</span></div>
+              <select name="quick_entity_id" value={quickEntityId} onChange={(event) => setQuickEntityId(event.target.value)}><option value="">Usar entidad del servicio actual o dejar sin entidad</option>{entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}</select>
               <div className="empty-state"><strong>Entidad del cargo</strong><span>{quickEntity?.hierarchy_path ?? quickEntity?.direct_entity_name ?? service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona la entidad del cargo.'}</span></div>
-
-              <select name="quick_office_configuration_id" value={quickOfficeConfigId} onChange={(event) => setQuickOfficeConfigId(event.target.value)} disabled={!quickEntityId || filteredOfficeConfigs.length === 0}>
-                <option value="">Sin cargo actual por ahora</option>
-                {filteredOfficeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
-              </select>
-              <p className="meta">{officeFilterMessage}</p>
-              <input name="quick_title_override" placeholder="Título para mostrar" />
-              <label>Fecha de inicio<input name="quick_start_date" type="date" /></label>
-              <select value={assignmentVisibility} onChange={(event) => setAssignmentVisibility(event.target.value as 'internal' | 'public' | 'private')}>
-                <option value="internal">Interno: visible solo en administración</option>
-                <option value="public">Público: visible en directorios</option>
-                <option value="private">Privado: visible solo para control interno</option>
-              </select>
+              <select name="quick_office_configuration_id" value={quickOfficeConfigId} onChange={(event) => setQuickOfficeConfigId(event.target.value)} disabled={!quickEntityId || filteredOfficeConfigs.length === 0}><option value="">Sin cargo actual por ahora</option>{filteredOfficeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}</select>
+              <p className="meta">{officeFilterMessage}</p><input name="quick_title_override" placeholder="Título para mostrar" /><label>Fecha de inicio<input name="quick_start_date" type="date" /></label>
+              <select value={assignmentVisibility} onChange={(event) => setAssignmentVisibility(event.target.value as 'internal' | 'public' | 'private')}><option value="internal">Interno: visible solo en administración</option><option value="public">Público: visible en directorios</option><option value="private">Privado: visible solo para control interno</option></select>
               <textarea name="quick_notes_public" placeholder="Notas visibles del cargo si se publica" />
             </section>
 
             <section>
-              <p className="eyebrow">Completitud</p>
-              <h2>Datos buscados y no encontrados</h2>
+              <p className="eyebrow">Completitud</p><h2>Datos buscados y no encontrados</h2>
               <div className="card compact-section">
-                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="gender" /> Género</label>
-                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="birth_date" /> Fecha de nacimiento</label>
-                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="birth_place" /> Lugar de nacimiento</label>
-                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="biography_public" /> Biografía pública</label>
-                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="community_name" /> Comunidad religiosa</label>
-                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="profession_date" /> Profesión religiosa</label>
-                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="current_service_entity_id" /> Servicio actual</label>
+                {mode === 'new' && <><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="gender" /> Género</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="birth_date" /> Fecha de nacimiento</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="birth_place" /> Lugar de nacimiento</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="biography_public" /> Biografía pública</label></>}
+                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="community_name" /> Comunidad religiosa</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="profession_date" /> Profesión religiosa</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="current_service_entity_id" /> Servicio actual</label>
               </div>
               <textarea name="notes_internal" placeholder="Notas internas de carga o verificación" />
             </section>
