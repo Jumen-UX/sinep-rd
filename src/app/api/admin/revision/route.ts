@@ -6,7 +6,6 @@ import {
   optionalText,
   optionalUuid,
   parseJsonObjectBody,
-  requiredText,
   ValidationError,
 } from '@/lib/admin/validation'
 
