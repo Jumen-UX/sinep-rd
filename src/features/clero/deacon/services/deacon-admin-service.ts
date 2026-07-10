@@ -7,6 +7,7 @@ import {
   type UploadedClergyPhoto,
 } from '../../shared/services/clergy-admin-service'
 
+export type { OfficeConfig } from '../../shared/services/clergy-admin-service'
 export type DeaconType = 'permanent' | 'transitional' | 'external'
 export type DeaconCatalogs = ClergyPlacementCatalogs
 export type UploadedDeaconPhoto = UploadedClergyPhoto
