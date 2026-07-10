@@ -39,11 +39,17 @@ test('bishop wizard keeps every step mounted so final FormData contains prior fi
   assert.match(page, /new FormData\(event\.currentTarget\)/)
 })
 
-test('bishop service reuses shared clergy infrastructure and centralizes API access', async () => {
+test('bishop candidates are derived from sacramental ordination state', async () => {
+  const page = await readRepoFile('src/features/clero/bishop/admin/BishopWizardPage.tsx')
   const service = await readRepoFile('src/features/clero/bishop/services/bishop-admin-service.ts')
 
   assert.match(service, /loadClergyPlacementCatalogs/)
   assert.match(service, /loadAllowedOfficeIds/)
-  assert.match(service, /from\('persons'\)/)
+  assert.match(service, /from\('person_ecclesial_state'\)/)
+  assert.match(service, /highest_ordination_degree/)
+  assert.doesNotMatch(service, /person_type/)
+  assert.match(page, /highest_ordination_degree === 'presbyterate'/)
+  assert.match(page, /highest_ordination_degree === 'episcopate'/)
+  assert.doesNotMatch(page, /record\.person_type/)
   assert.match(service, /fetch\('\/api\/admin\/obispo'/)
 })
