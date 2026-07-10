@@ -92,13 +92,27 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         .admin-config-form.dashboard-section .compact-section{border-radius:18px;display:grid;gap:12px;padding:16px}
         .admin-config-form.dashboard-section > .admin-form-grid{align-items:center;background:linear-gradient(180deg,rgba(255,255,255,.86),#fff);border-top:1px solid var(--border);bottom:0;display:flex;gap:12px;justify-content:flex-end;margin:8px -8px -8px;padding:16px 8px 0;position:sticky;z-index:7}
         .admin-config-form.dashboard-section > .admin-form-grid .button:first-child{margin-right:auto}
+        main.admin-config-page:has(> form.admin-config-form){align-items:start;grid-template-columns:230px minmax(0,1fr);grid-template-areas:'back back' 'hero hero' 'steps form';column-gap:22px;row-gap:18px}
+        main.admin-config-page:has(> form.admin-config-form) > .detail-backlink{grid-area:back}
+        main.admin-config-page:has(> form.admin-config-form) > .dashboard-hero{grid-area:hero;padding:24px 28px}
+        main.admin-config-page:has(> form.admin-config-form) > .dashboard-hero h1{font-size:clamp(38px,4vw,62px);margin-bottom:8px}
+        main.admin-config-page:has(> form.admin-config-form) > .dashboard-hero .lead{font-size:16px;max-width:860px}
+        main.admin-config-page:has(> form.admin-config-form) > .dashboard-summary{align-self:start;display:grid;gap:8px;grid-area:steps;grid-template-columns:1fr;position:sticky;top:20px}
+        main.admin-config-page:has(> form.admin-config-form) > .dashboard-summary .metric-button{align-items:center;border-radius:14px;grid-template-columns:38px minmax(0,1fr);min-height:58px;padding:10px 12px}
+        main.admin-config-page:has(> form.admin-config-form) > .dashboard-summary .metric-button strong{align-items:center;background:#fff3cf;border-radius:10px;color:var(--primary);display:flex;font-size:18px;height:34px;justify-content:center;width:34px}
+        main.admin-config-page:has(> form.admin-config-form) > .dashboard-summary .metric-button span{font-size:13px}
+        main.admin-config-page:has(> form.admin-config-form) > .dashboard-summary .metric-button.active-filter{border-left:4px solid var(--primary)}
+        main.admin-config-page:has(> form.admin-config-form) > form.admin-config-form{grid-area:form;min-height:520px}
+        main.admin-config-page:has(> form.admin-config-form) > .error-box,
+        main.admin-config-page:has(> form.admin-config-form) > .success-box,
+        main.admin-config-page:has(> form.admin-config-form) > .empty-state{grid-column:1/-1}
         @media (max-width:1380px){.admin-config-page > .dashboard-summary{grid-template-columns:repeat(4,minmax(120px,1fr))}}
         @media (min-width:1181px){
           .admin-sidebar{align-self:start;height:calc(100vh - 24px);overflow:hidden;position:sticky;top:12px}
           .admin-sidebar-nav{max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding-bottom:12px}
         }
         @media (max-width:1180px){
-          .admin-redesign{align-items:stretch}.admin-sidebar{height:auto;overflow:visible;padding:16px;position:static;top:auto}.admin-sidebar-nav{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden}.admin-sidebar-section{flex:0 0 auto;min-width:210px}.admin-sidebar-section > div{display:flex}.admin-sidebar-nav a{flex:0 0 210px}.admin-sidebar-section > p{padding:0 2px 4px}.admin-config-page > .dashboard-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-config-form.dashboard-section > .admin-form-grid{position:static}
+          .admin-redesign{align-items:stretch}.admin-sidebar{height:auto;overflow:visible;padding:16px;position:static;top:auto}.admin-sidebar-nav{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden}.admin-sidebar-section{flex:0 0 auto;min-width:210px}.admin-sidebar-section > div{display:flex}.admin-sidebar-nav a{flex:0 0 210px}.admin-sidebar-section > p{padding:0 2px 4px}.admin-config-page > .dashboard-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-config-form.dashboard-section > .admin-form-grid{position:static}main.admin-config-page:has(> form.admin-config-form){display:grid;grid-template-columns:1fr;grid-template-areas:'back' 'hero' 'steps' 'form'}main.admin-config-page:has(> form.admin-config-form) > .dashboard-summary{display:flex;overflow-x:auto;position:static}main.admin-config-page:has(> form.admin-config-form) > .dashboard-summary .metric-button{flex:0 0 150px}
         }
       `}</style>
       <AdminShell>{children}</AdminShell>
