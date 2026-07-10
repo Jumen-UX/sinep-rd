@@ -32,19 +32,23 @@ test('lay wizard delegates catalogs, storage and persistence to typed services',
 
   assert.doesNotMatch(page, /\.from\(/)
   assert.doesNotMatch(page, /\.storage\./)
-  assert.doesNotMatch(page, /fetch\('\/api\/admin\/laico'/)
+  assert.doesNotMatch(page, /fetch\('/)
   assert.match(page, /Este nivel no tiene cargos configurados/)
   assert.match(page, /officeConfigs\.filter\(\(office\) => allowedOfficeIds\.includes\(office\.id\)\)/)
 })
 
-test('lay condition is presented as derived from absence of ordinations', async () => {
+test('lay condition is derived and an existing identity can be reused', async () => {
   const page = await readRepoFile('src/features/personas/lay/admin/LayPersonWizardPage.tsx')
   const service = await readRepoFile('src/features/personas/lay/services/lay-person-admin-service.ts')
 
-  assert.match(page, /La condición laical se deriva de que la persona no tiene ninguna ordenación registrada/)
-  assert.match(page, /se conservará esta misma ficha y se añadirá el evento sacramental/)
+  assert.match(page, /La condición laical se deriva de que no tiene ordenaciones/)
+  assert.match(page, /¿La persona ya está registrada\?/)
+  assert.match(page, /selected_person_id/)
+  assert.match(page, /sin crear una identidad duplicada/)
   assert.doesNotMatch(page, /person_type/)
   assert.doesNotMatch(service, /clero/)
   assert.match(service, /loadPersonPlacementCatalogs/)
+  assert.match(service, /loadCanonicalRegistrationCandidates\(supabase, 'layperson'\)/)
+  assert.match(service, /saveCanonicalPersonRegistration\('layperson'/)
   assert.match(service, /uploadPersonPhoto/)
 })
