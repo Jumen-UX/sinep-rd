@@ -37,12 +37,7 @@ export { loadAllowedOfficeIds } from '../../shared/services/clergy-admin-service
 export async function loadDeaconCatalogs(supabase: SupabaseClient): Promise<DeaconCatalogs> {
   const [placementCatalogs, personResult] = await Promise.all([
     loadClergyPlacementCatalogs(supabase),
-    supabase
-      .from('person_ecclesial_state')
-      .select('id,display_name,slug')
-      .eq('is_lay', true)
-      .eq('status', 'active')
-      .order('display_name'),
+    supabase.rpc('admin_list_unordained_people', { p_limit: 500 }),
   ])
 
   if (personResult.error) throw personResult.error
