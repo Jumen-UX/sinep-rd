@@ -94,6 +94,59 @@ export type StructureBaseData = {
   entityTypes: EntityType[]
 }
 
+export type StructureRpcResult = {
+  success?: boolean
+  id?: string
+  message?: string
+}
+
+export type SaveStructureTemplatePayload = {
+  id?: string | null
+  diocese_id: string
+  kind_key: StructureKindKey
+  key: string
+  name: string
+  description?: string | null
+  is_primary?: boolean
+  is_active?: boolean
+  status?: string
+}
+
+export type SaveStructureLevelPayload = {
+  id?: string | null
+  template_id: string
+  parent_level_id: string | null
+  linked_entity_type_id?: string | null
+  level_key: string
+  name: string
+  plural_name?: string | null
+  description?: string | null
+  level_order: number
+  scope?: string
+  is_entry_point?: boolean
+  is_required?: boolean
+  allows_multiple_entities?: boolean
+  allows_new_nodes?: boolean
+}
+
+export type SaveStructureNodePayload = {
+  id?: string | null
+  template_id: string
+  level_id: string
+  parent_node_id: string | null
+  name: string
+  official_name?: string | null
+  slug: string
+  code?: string | null
+  description?: string | null
+  linked_ecclesiastical_entity_id?: string | null
+  linked_pastoral_entity_id?: string | null
+  start_date?: string | null
+  end_date?: string | null
+  status?: string
+  visibility?: string
+}
+
 const dioceseEntityTypeKeys = new Set([
   'archdiocese',
   'diocese',
@@ -105,6 +158,12 @@ const dioceseEntityTypeKeys = new Set([
 function relationArray(entity: EcclesiasticalEntity) {
   if (!entity.entity_types) return []
   return Array.isArray(entity.entity_types) ? entity.entity_types : [entity.entity_types]
+}
+
+function requireRpcId(data: unknown, operation: string) {
+  const result = data as StructureRpcResult | null
+  if (!result?.id) throw new Error(`La operación ${operation} no devolvió un identificador.`)
+  return result.id
 }
 
 export async function loadStructureBaseData(supabase: SupabaseClient): Promise<StructureBaseData> {
@@ -197,4 +256,54 @@ export async function loadStructureChildLevels(
 
   if (error) throw error
   return (data ?? []) as ChildLevelOption[]
+}
+
+export async function saveStructureTemplate(
+  supabase: SupabaseClient,
+  payload: SaveStructureTemplatePayload,
+) {
+  const { data, error } = await supabase.rpc('admin_save_structure_template', { payload })
+  if (error) throw error
+  return requireRpcId(data, 'guardar catálogo de estructura')
+}
+
+export async function saveStructureLevel(
+  supabase: SupabaseClient,
+  payload: SaveStructureLevelPayload,
+) {
+  const { data, error } = await supabase.rpc('admin_save_structure_level', { payload })
+  if (error) throw error
+  return requireRpcId(data, 'guardar nivel de estructura')
+}
+
+export async function saveStructureNode(
+  supabase: SupabaseClient,
+  payload: SaveStructureNodePayload,
+) {
+  const { data, error } = await supabase.rpc('admin_save_structure_node', { payload })
+  if (error) throw error
+  return requireRpcId(data, 'guardar unidad de estructura')
+}
+
+export async function createStructureRootNode(
+  supabase: SupabaseClient,
+  input: {
+    templateId: string
+    rootLevelId: string
+    diocese: EcclesiasticalEntity
+    startDate?: string
+  },
+) {
+  return saveStructureNode(supabase, {
+    template_id: input.templateId,
+    level_id: input.rootLevelId,
+    parent_node_id: null,
+    name: input.diocese.name,
+    official_name: input.diocese.official_name,
+    slug: input.diocese.slug,
+    linked_ecclesiastical_entity_id: input.diocese.id,
+    start_date: input.startDate ?? new Date().toISOString().slice(0, 10),
+    status: 'active',
+    visibility: 'public',
+  })
 }
