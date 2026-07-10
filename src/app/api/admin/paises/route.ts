@@ -19,7 +19,11 @@ export async function GET() {
     const auth = await requireAdminAccess()
     if (!auth.ok) return auth.response
 
-    const [enabledCountries, publicCountries] = await Promise.all([
+    const [catalogCountries, enabledCountries, publicCountries] = await Promise.all([
+      auth.supabase
+        .from('public_country_catalog')
+        .select('key,iso2,iso3,name,name_en,official_name_en,common_name_en,flag_emoji,flag_alt')
+        .order('name'),
       auth.supabase
         .from('countries')
         .select('id,iso2,iso3,name,official_name,flag_emoji,flag_image_url,flag_alt,status,visibility,created_at,updated_at')
@@ -30,21 +34,42 @@ export async function GET() {
         .order('name'),
     ])
 
+    if (catalogCountries.error) {
+      console.error('Admin country catalog query failed', catalogCountries.error)
+      return NextResponse.json({
+        error: 'No se pudo consultar el catálogo ISO de países.',
+        code: 'COUNTRY_CATALOG_UNAVAILABLE',
+        detail: catalogCountries.error.message,
+      }, { status: 503 })
+    }
+
     if (enabledCountries.error) {
-      return NextResponse.json({ error: enabledCountries.error.message }, { status: 400 })
+      return NextResponse.json({
+        error: 'No se pudieron consultar los países habilitados.',
+        code: 'ENABLED_COUNTRIES_UNAVAILABLE',
+        detail: enabledCountries.error.message,
+      }, { status: 503 })
     }
 
     if (publicCountries.error) {
-      return NextResponse.json({ error: publicCountries.error.message }, { status: 400 })
+      return NextResponse.json({
+        error: 'No se pudo determinar qué países están publicados.',
+        code: 'PUBLIC_COUNTRIES_UNAVAILABLE',
+        detail: publicCountries.error.message,
+      }, { status: 503 })
     }
 
     return NextResponse.json({
+      catalog_countries: catalogCountries.data ?? [],
       enabled_countries: enabledCountries.data ?? [],
       public_countries: publicCountries.data ?? [],
     })
   } catch (error) {
     console.error('Unexpected admin countries API error', error)
-    return NextResponse.json({ error: 'No se pudieron cargar los paises.' }, { status: 500 })
+    return NextResponse.json({
+      error: 'No se pudo cargar el módulo de países.',
+      code: 'COUNTRIES_MODULE_ERROR',
+    }, { status: 500 })
   }
 }
 
@@ -53,12 +78,12 @@ export async function POST(request: NextRequest) {
     const auth = await requireAdminAccess()
     if (!auth.ok) return auth.response
 
-    const payload = await parseJsonObjectBody(request, 'Solicitud invalida.')
+    const payload = await parseJsonObjectBody(request, 'Solicitud inválida.')
     const iso2 = normalizeIso2(payload.iso2)
     const flagImageUrl = optionalText(payload.flag_image_url)
 
     if (!/^[A-Z]{2}$/.test(iso2)) {
-      return NextResponse.json({ error: 'Selecciona un pais valido del catalogo ISO.' }, { status: 400 })
+      return NextResponse.json({ error: 'Selecciona un país válido del catálogo ISO.' }, { status: 400 })
     }
 
     const { data, error } = await auth.supabase.rpc('enable_country_from_catalog', {
@@ -88,6 +113,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Unexpected enable country API error', error)
-    return NextResponse.json({ error: 'No se pudo habilitar el pais.' }, { status: 500 })
+    return NextResponse.json({ error: 'No se pudo habilitar el país.' }, { status: 500 })
   }
 }
