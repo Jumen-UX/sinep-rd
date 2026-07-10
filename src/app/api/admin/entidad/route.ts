@@ -23,7 +23,10 @@ function getCountryIso2(value: unknown) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireAdminAccess()
+    const auth = await requireAdminAccess({
+      permissionKey: 'entities.create_proposal',
+      forbiddenMessage: 'No autorizado para crear entidades.',
+    })
     if (!auth.ok) return auth.response
 
     const payload = await parseJsonObjectBody(request, 'Solicitud invalida.')
