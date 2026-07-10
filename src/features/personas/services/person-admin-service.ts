@@ -17,6 +17,7 @@ export type AdminOrdinationRecord = {
   source_url: string | null
   source_checked_at: string | null
   verification_status: string | null
+  visibility: string | null
 }
 
 export type AdminClericalHistoryRecord = {
@@ -232,7 +233,7 @@ export async function getAdminPersonDetail(supabase: SupabaseClient, personId: s
       .maybeSingle(),
     supabase
       .from('person_public_ordination_history')
-      .select('degree,ordination_date,ordination_place,principal_ordainer_person_id,principal_ordainer_name,assistant_ordainer_1_person_id,assistant_ordainer_1_name,assistant_ordainer_2_person_id,assistant_ordainer_2_name,source_name,source_url,source_checked_at,verification_status')
+      .select('degree,ordination_date,ordination_place,principal_ordainer_person_id,principal_ordainer_name,assistant_ordainer_1_person_id,assistant_ordainer_1_name,assistant_ordainer_2_person_id,assistant_ordainer_2_name,source_name,source_url,source_checked_at,verification_status,visibility')
       .eq('person_id', personId)
       .order('ordination_date', { ascending: true, nullsFirst: false }),
     supabase
