@@ -51,8 +51,8 @@ export default function BishopWizardPage() {
   const [error, setError] = useState<string | null>(null)
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
 
-  const priestRecords = clergyRecords.filter((record) => record.person_type === 'priest')
-  const bishopRecords = clergyRecords.filter((record) => record.person_type === 'bishop')
+  const priestRecords = clergyRecords.filter((record) => record.highest_ordination_degree === 'presbyterate')
+  const bishopRecords = clergyRecords.filter((record) => record.highest_ordination_degree === 'episcopate')
   const selectedClergy = priestRecords.find((record) => record.id === selectedClergyId)
   const selectedEntity = entities.find((entity) => entity.direct_entity_id === assignmentEntityId)
   const filteredOffices = assignmentEntityId
