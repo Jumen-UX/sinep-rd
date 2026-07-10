@@ -28,26 +28,18 @@ function redirectToLogin(request: NextRequest) {
   const url = request.nextUrl.clone()
   url.pathname = ADMIN_LOGIN_PATH
   url.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`)
-  const response = NextResponse.redirect(url)
-  return decorateAdminResponse(response, request)
+  return decorateAdminResponse(NextResponse.redirect(url), request)
 }
 
 function redirectToAdmin(request: NextRequest) {
   const url = request.nextUrl.clone()
   url.pathname = ADMIN_PREFIX
   url.search = ''
-  const response = NextResponse.redirect(url)
-  return decorateAdminResponse(response, request)
+  return decorateAdminResponse(NextResponse.redirect(url), request)
 }
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
-  const search = request.nextUrl.search
-
-  if (pathname.startsWith(ADMIN_PREFIX)) {
-    console.warn(`[sinep-admin-route] pathname=${pathname} search=${search || ''}`)
-  }
-
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
@@ -70,21 +62,33 @@ export async function middleware(request: NextRequest) {
     return user ? redirectToAdmin(request) : decorateAdminResponse(response, request)
   }
 
-  if (!pathname.startsWith(ADMIN_PREFIX)) {
-    return response
+  if (!pathname.startsWith(ADMIN_PREFIX)) return response
+  if (!user) return redirectToLogin(request)
+
+  const rpcResult = await supabase.rpc('current_user_has_admin_role')
+  let hasAdminRole = rpcResult.data === true
+
+  if (rpcResult.error || !hasAdminRole) {
+    const { count, error: assignmentError } = await supabase
+      .from('user_role_assignments')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .or(`starts_at.is.null,starts_at.lte.${new Date().toISOString().slice(0, 10)}`)
+      .or(`ends_at.is.null,ends_at.gte.${new Date().toISOString().slice(0, 10)}`)
+
+    if (assignmentError) {
+      console.warn('[sinep-admin-role-check]', {
+        userId: user.id,
+        rpcError: rpcResult.error?.message ?? null,
+        assignmentError: assignmentError.message,
+      })
+    } else {
+      hasAdminRole = (count ?? 0) > 0
+    }
   }
 
-  if (!user) {
-    return redirectToLogin(request)
-  }
-
-  const { data: hasAdminRole, error: roleError } = await supabase.rpc('current_user_has_admin_role')
-
-  if (roleError) {
-    console.warn(`[sinep-admin-role-check] user=${user.id} error=${roleError.message}`)
-  }
-
-  if (roleError || hasAdminRole !== true) {
+  if (!hasAdminRole) {
     return pathname === ADMIN_PREFIX ? decorateAdminResponse(response, request) : redirectToAdmin(request)
   }
 
