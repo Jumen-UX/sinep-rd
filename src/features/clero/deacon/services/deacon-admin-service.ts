@@ -9,7 +9,17 @@ import {
 
 export type { OfficeConfig } from '../../shared/services/clergy-admin-service'
 export type DeaconType = 'permanent' | 'transitional' | 'external'
-export type DeaconCatalogs = ClergyPlacementCatalogs
+
+export type UnordainedPersonOption = {
+  id: string
+  display_name: string
+  slug: string
+}
+
+export type DeaconCatalogs = ClergyPlacementCatalogs & {
+  unordainedPeople: UnordainedPersonOption[]
+}
+
 export type UploadedDeaconPhoto = UploadedClergyPhoto
 
 export type SaveDeaconResponse = {
@@ -18,13 +28,29 @@ export type SaveDeaconResponse = {
   assignment_id?: string | null
   slug?: string
   internal_reference_code?: string
+  mode?: 'existing' | 'new'
   error?: string
 }
 
 export { loadAllowedOfficeIds } from '../../shared/services/clergy-admin-service'
 
 export async function loadDeaconCatalogs(supabase: SupabaseClient): Promise<DeaconCatalogs> {
-  return loadClergyPlacementCatalogs(supabase)
+  const [placementCatalogs, personResult] = await Promise.all([
+    loadClergyPlacementCatalogs(supabase),
+    supabase
+      .from('person_ecclesial_state')
+      .select('id,display_name,slug')
+      .eq('is_lay', true)
+      .eq('status', 'active')
+      .order('display_name'),
+  ])
+
+  if (personResult.error) throw personResult.error
+
+  return {
+    ...placementCatalogs,
+    unordainedPeople: (personResult.data ?? []) as UnordainedPersonOption[],
+  }
 }
 
 export async function uploadDeaconPhoto(supabase: SupabaseClient, file: File, slug: string): Promise<UploadedDeaconPhoto> {
