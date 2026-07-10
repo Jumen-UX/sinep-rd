@@ -18,6 +18,7 @@ import './public-combobox.css'
 import './scope-back-controls.css'
 import './brand.css'
 import './admin-brand.css'
+import '../styles/admin-framework.css'
 
 export const metadata: Metadata = {
   title: 'SINEP RD',
@@ -34,33 +35,39 @@ export default function RootLayout({
       <body>
         <div className="site-shell">
           <header className="site-header">
-            <nav className="site-nav" aria-label="Navegación principal">
+            <div className="container site-header-inner">
               <Link className="brand" href="/">
-                <span className="brand-title">SINEP RD</span>
-                <span className="brand-subtitle">Información Eclesiástica y Pastoral</span>
+                <span className="brand-mark" aria-hidden="true">SD</span>
+                <span>
+                  <strong>SINEP RD</strong>
+                  <small>Sistema de Información Eclesial</small>
+                </span>
               </Link>
-
-              <div className="nav-links">
+              <nav aria-label="Navegación principal">
+                <Link href="/">Inicio</Link>
                 <Link href="/diocesis">Diócesis</Link>
-                <Link href="/personas">Clero y agentes</Link>
-                <Link href="/admin/login">Iniciar sesión</Link>
-              </div>
-            </nav>
+                <Link href="/personas">Personas</Link>
+                <Link href="/admin">Administración</Link>
+              </nav>
+            </div>
           </header>
 
           {children}
-          <ScopeBackControls />
-          <PublicCountryFlagEnhancements />
-          <PublicDashboardEntityCards />
-          <PublicJurisdictionStructureNavigation />
-          <PublicMultiCountryDashboard />
-          <PublicPastoralEnhancements />
-          <PublicTerritorialLevelEnhancements />
 
           <footer className="site-footer">
-            SINEP RD · Sistema Nacional de Información Eclesiástica y Pastoral
+            <div className="container">
+              <p>SINEP RD · Sistema Nacional de Información Eclesiástica y Pastoral</p>
+            </div>
           </footer>
         </div>
+
+        <PublicCountryFlagEnhancements />
+        <PublicDashboardEntityCards />
+        <PublicJurisdictionStructureNavigation />
+        <PublicMultiCountryDashboard />
+        <PublicPastoralEnhancements />
+        <PublicTerritorialLevelEnhancements />
+        <ScopeBackControls />
       </body>
     </html>
   )
