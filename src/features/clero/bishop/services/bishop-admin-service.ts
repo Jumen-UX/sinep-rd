@@ -10,7 +10,7 @@ export type ClergyRecord = {
   id: string
   display_name: string
   slug: string
-  person_type: 'priest' | 'bishop'
+  highest_ordination_degree: 'presbyterate' | 'episcopate'
 }
 
 export type BishopCatalogs = ClergyPlacementCatalogs & {
@@ -31,9 +31,9 @@ export async function loadBishopCatalogs(supabase: SupabaseClient): Promise<Bish
   const [placementCatalogs, clergyResult] = await Promise.all([
     loadClergyPlacementCatalogs(supabase),
     supabase
-      .from('persons')
-      .select('id,display_name,slug,person_type')
-      .in('person_type', ['priest', 'bishop'])
+      .from('person_ecclesial_state')
+      .select('id,display_name,slug,highest_ordination_degree')
+      .in('highest_ordination_degree', ['presbyterate', 'episcopate'])
       .eq('status', 'active')
       .order('display_name'),
   ])
