@@ -1,12 +1,7 @@
 name: CI
 
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches:
-      - main
-      - admin-*
+  workflow_dispatch:
 
 jobs:
   typecheck-and-build:
