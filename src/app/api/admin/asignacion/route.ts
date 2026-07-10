@@ -11,7 +11,10 @@ function getAssignmentId(value: unknown) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireAdminAccess()
+    const auth = await requireAdminAccess({
+      permissionKey: 'appointments.create_proposal',
+      forbiddenMessage: 'No autorizado para crear nombramientos.',
+    })
     if (!auth.ok) return auth.response
 
     const payload = await parseJsonObjectBody(request, 'Solicitud invalida.')
