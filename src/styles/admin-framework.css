@@ -39,5 +39,16 @@
 .admin-wizard-progress li strong{font-size:12px}
 .admin-wizard-progress li small{color:var(--muted);display:block;font-size:10px;margin-top:2px}
 .admin-wizard-form details summary{cursor:pointer;font-weight:900}
+
+.admin-warning-box,.admin-info-box{align-items:flex-start;border:1px solid var(--border);border-radius:18px;display:flex;gap:16px;justify-content:space-between;padding:16px 18px}
+.admin-warning-box>div:first-child,.admin-info-box>div:first-child,.error-box>div:first-child,.success-box>div:first-child{display:grid;gap:4px}
+.admin-warning-box span,.admin-info-box span,.error-box span,.success-box span{display:block;font-size:13px;line-height:1.45}
+.admin-warning-box{background:#fff8e8;border-color:#efd68a}
+.admin-info-box{background:#f5f8fb;border-color:#cfdce8}
+.admin-country-grid button.entity-card{appearance:none;background:#fff;color:inherit;cursor:pointer;font:inherit;text-align:left;width:100%}
+.admin-country-grid button.entity-card:hover{border-color:#e5b83d;transform:translateY(-1px)}
+.admin-country-grid .entity-card.is-selected{background:#fff8e8;border-color:var(--primary);box-shadow:0 0 0 2px rgba(255,184,0,.16)}
+.admin-country-grid .entity-card.is-selected::after{content:'Seleccionado';color:var(--primary);font-size:11px;font-weight:950;letter-spacing:.05em;text-transform:uppercase}
+
 @media(max-width:1450px){.admin-wizard-layout{grid-template-columns:200px minmax(0,1fr)}.admin-wizard-layout>.admin-smart-context-panel{grid-column:1/-1;position:static}}
-@media(max-width:1180px){.admin-wizard-header{flex-direction:column}.admin-wizard-layout{grid-template-columns:1fr}.admin-wizard-layout>.admin-wizard-progress{position:static}.admin-wizard-progress ol{display:flex;overflow-x:auto}.admin-wizard-progress li{flex:0 0 180px}.admin-form-fields-grid,.admin-review-grid,.admin-choice-grid{grid-template-columns:1fr}.admin-wizard-success{align-items:flex-start;flex-direction:column}}
+@media(max-width:1180px){.admin-wizard-header{flex-direction:column}.admin-wizard-layout{grid-template-columns:1fr}.admin-wizard-layout>.admin-wizard-progress{position:static}.admin-wizard-progress ol{display:flex;overflow-x:auto}.admin-wizard-progress li{flex:0 0 180px}.admin-form-fields-grid,.admin-review-grid,.admin-choice-grid{grid-template-columns:1fr}.admin-wizard-success{align-items:flex-start;flex-direction:column}.admin-warning-box,.admin-info-box{flex-direction:column}}
