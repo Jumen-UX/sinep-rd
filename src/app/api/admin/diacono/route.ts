@@ -26,24 +26,27 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await requireAdminAccess({
       permissionKey: 'people.create_proposal',
-      forbiddenMessage: 'No autorizado para crear diáconos.',
+      forbiddenMessage: 'No autorizado para registrar diáconos.',
     })
     if (!auth.ok) return auth.response
 
     const payload = await parseJsonObjectBody(request, 'Solicitud invalida.')
-    const { data, error } = await auth.supabase.rpc('admin_save_deacon', { payload })
+    const mode = payload.mode === 'existing' ? 'existing' : 'new'
+    const { data, error } = await auth.supabase.rpc('admin_save_deacon', { payload: { ...payload, mode } })
 
     if (error) {
       console.error('Failed to save deacon transactionally', error)
-      return NextResponse.json({ error: toSpanishAdminError(error, 'No se pudo guardar el diácono.') }, { status: 400 })
+      return NextResponse.json({ error: toSpanishAdminError(error, 'No se pudo registrar el diácono.') }, { status: 400 })
     }
 
     const result = getSaveResult(data)
     await recordAdminAudit(auth.supabase, {
-      action: 'person.deacon.create',
+      action: mode === 'existing' ? 'person.deacon.ordination' : 'person.deacon.create',
       targetTable: 'persons',
       targetId: result.personId,
       metadata: {
+        mode,
+        selected_person_id: typeof payload.selected_person_id === 'string' ? payload.selected_person_id : null,
         clergy_profile_id: result.profileId,
         assignment_id: result.assignmentId,
         deacon_type: typeof payload.deacon_type === 'string' ? payload.deacon_type : null,
@@ -57,6 +60,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Unexpected deacon admin API error', error)
-    return NextResponse.json({ error: 'No se pudo guardar el diácono' }, { status: 500 })
+    return NextResponse.json({ error: 'No se pudo registrar el diácono' }, { status: 500 })
   }
 }
