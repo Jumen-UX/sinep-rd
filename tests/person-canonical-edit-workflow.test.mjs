@@ -55,3 +55,15 @@ test('person admin service loads selectable canonical references', async () => {
   assert.match(service, /principal_ordainer_person_id/)
   assert.match(service, /incardination_entity_id/)
 })
+
+test('review page explains canonical operations instead of printing person type changes', async () => {
+  const reviewPage = await readRepoFile('src/app/(admin)/admin/solicitudes/[id]/page.tsx')
+
+  assert.match(reviewPage, /CanonicalProposalReview/)
+  assert.match(reviewPage, /Operaciones sobre los grados del Orden/)
+  assert.match(reviewPage, /Vigencias propuestas/)
+  assert.match(reviewPage, /proposal_kind === 'canonical_person'/)
+  assert.match(reviewPage, /\['pending_review', 'needs_changes'\]/)
+  assert.doesNotMatch(reviewPage, /person_type: 'Tipo de persona'/)
+  assert.doesNotMatch(reviewPage, /\['submitted', 'pending_review', 'in_review'\]/)
+})
