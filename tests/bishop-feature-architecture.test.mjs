@@ -25,7 +25,7 @@ test('bishop wizard delegates persistence and scoped catalogs to typed services'
   }
 
   assert.doesNotMatch(page, /\.from\(/)
-  assert.doesNotMatch(page, /fetch\('\/api\/admin\/obispo'/)
+  assert.doesNotMatch(page, /fetch\('/)
   assert.match(page, /Este nivel no tiene cargos configurados/)
   assert.match(page, /offices\.filter\(\(office\) => allowedOfficeIds\.includes\(office\.id\)\)/)
 })
@@ -45,13 +45,14 @@ test('bishop candidates are derived from sacramental ordination state', async ()
 
   assert.match(service, /loadClergyPlacementCatalogs/)
   assert.match(service, /loadAllowedOfficeIds/)
+  assert.match(service, /loadCanonicalRegistrationCandidates\(supabase, 'bishop'\)/)
   assert.match(service, /from\('person_ecclesial_state'\)/)
-  assert.match(service, /highest_ordination_degree/)
+  assert.match(service, /eq\('has_episcopate', true\)/)
   assert.doesNotMatch(service, /person_type/)
   assert.match(page, /highest_ordination_degree === 'presbyterate'/)
   assert.match(page, /highest_ordination_degree === 'episcopate'/)
   assert.doesNotMatch(page, /record\.person_type/)
-  assert.match(service, /fetch\('\/api\/admin\/obispo'/)
+  assert.match(service, /saveCanonicalPersonRegistration\('bishop'/)
 })
 
 test('bishop wizard separates sacrament role status dignity and appointment', async () => {
@@ -71,14 +72,15 @@ test('bishop wizard separates sacrament role status dignity and appointment', as
   assert.match(page, /Título público del nombramiento/)
 })
 
-test('bishop API validates canonical dimensions and audits them', async () => {
+test('canonical engine records bishop dimensions and keeps legacy API compatible', async () => {
+  const migration = await readRepoFile('supabase/migrations/20260710220313_unified_canonical_person_registration_engine.sql')
   const route = await readRepoFile('src/app/api/admin/obispo/route.ts')
 
+  assert.match(migration, /insert into public\.ordination_events/)
+  assert.match(migration, /insert into public\.episcopal_roles/)
+  assert.match(migration, /insert into public\.person_ecclesiastical_dignities/)
+  assert.match(migration, /create or replace function public\.admin_save_bishop/)
   assert.match(route, /allowedEpiscopalRoles/)
   assert.match(route, /allowedCanonicalStatuses/)
   assert.match(route, /allowedDignities/)
-  assert.match(route, /episcopal_role_type: normalizedRole/)
-  assert.match(route, /canonical_status:/)
-  assert.match(route, /dignities: \[\.\.\.new Set\(dignities\)\]/)
-  assert.match(route, /episcopal_role_id/)
 })
