@@ -45,6 +45,7 @@ test('higher ordinations create prerequisites and enforce chronological order', 
 
 test('diaconate can be added to an existing person without creating a duplicate identity', async () => {
   const migration = await readRepoFile('supabase/migrations/20260710201853_reuse_existing_person_for_diaconate.sql')
+  const scopeMigration = await readRepoFile('supabase/migrations/20260710202421_scope_unordained_person_candidates.sql')
 
   assert.match(migration, /v_mode text := coalesce/)
   assert.match(migration, /v_selected_person_id/)
@@ -53,21 +54,26 @@ test('diaconate can be added to an existing person without creating a duplicate 
   assert.match(migration, /insert into public\.ordination_events/)
   assert.match(migration, /case when v_mode = 'existing' then 'existing_person_ordination'/)
   assert.match(migration, /on conflict \(person_id\) do update/)
+
+  assert.match(scopeMigration, /current_user_can_manage_person/)
+  assert.match(scopeMigration, /admin_list_unordained_people/)
+  assert.match(scopeMigration, /La persona seleccionada está fuera de tu alcance/)
 })
 
-test('clerical transition selectors use ordination degree instead of person type', async () => {
+test('clerical transition selectors use sacramental state instead of person type', async () => {
   const deaconService = await readRepoFile('src/features/clero/deacon/services/deacon-admin-service.ts')
   const priestService = await readRepoFile('src/features/clero/priest/services/priest-admin-service.ts')
   const bishopService = await readRepoFile('src/features/clero/bishop/services/bishop-admin-service.ts')
 
-  for (const service of [deaconService, priestService, bishopService]) {
+  assert.match(deaconService, /rpc\('admin_list_unordained_people'/)
+  assert.doesNotMatch(deaconService, /person_type/)
+
+  for (const service of [priestService, bishopService]) {
     assert.match(service, /from\('person_ecclesial_state'\)/)
+    assert.match(service, /highest_ordination_degree/)
     assert.doesNotMatch(service, /person_type/)
   }
 
-  assert.match(deaconService, /eq\('is_lay', true\)/)
-  assert.match(priestService, /highest_ordination_degree/)
   assert.match(priestService, /eq\('highest_ordination_degree', 'diaconate'\)/)
-  assert.match(bishopService, /highest_ordination_degree/)
   assert.match(bishopService, /'presbyterate', 'episcopate'/)
 })
