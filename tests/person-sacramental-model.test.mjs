@@ -43,16 +43,31 @@ test('higher ordinations create prerequisites and enforce chronological order', 
   assert.match(migration, /ordination_events_enforce_cumulative_sequence/)
 })
 
+test('diaconate can be added to an existing person without creating a duplicate identity', async () => {
+  const migration = await readRepoFile('supabase/migrations/20260710203140_reuse_existing_person_for_diaconate.sql')
+
+  assert.match(migration, /v_mode text := coalesce/)
+  assert.match(migration, /v_selected_person_id/)
+  assert.match(migration, /where p\.id = v_selected_person_id/)
+  assert.match(migration, /not exists \(/)
+  assert.match(migration, /insert into public\.ordination_events/)
+  assert.match(migration, /case when v_mode = 'existing' then 'existing_person_ordination'/)
+  assert.match(migration, /on conflict \(person_id\) do update/)
+})
+
 test('clerical transition selectors use ordination degree instead of person type', async () => {
+  const deaconService = await readRepoFile('src/features/clero/deacon/services/deacon-admin-service.ts')
   const priestService = await readRepoFile('src/features/clero/priest/services/priest-admin-service.ts')
   const bishopService = await readRepoFile('src/features/clero/bishop/services/bishop-admin-service.ts')
 
-  for (const service of [priestService, bishopService]) {
+  for (const service of [deaconService, priestService, bishopService]) {
     assert.match(service, /from\('person_ecclesial_state'\)/)
-    assert.match(service, /highest_ordination_degree/)
     assert.doesNotMatch(service, /person_type/)
   }
 
+  assert.match(deaconService, /eq\('is_lay', true\)/)
+  assert.match(priestService, /highest_ordination_degree/)
   assert.match(priestService, /eq\('highest_ordination_degree', 'diaconate'\)/)
+  assert.match(bishopService, /highest_ordination_degree/)
   assert.match(bishopService, /'presbyterate', 'episcopate'/)
 })
