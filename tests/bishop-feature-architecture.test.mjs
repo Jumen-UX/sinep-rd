@@ -53,3 +53,32 @@ test('bishop candidates are derived from sacramental ordination state', async ()
   assert.doesNotMatch(page, /record\.person_type/)
   assert.match(service, /fetch\('\/api\/admin\/obispo'/)
 })
+
+test('bishop wizard separates sacrament role status dignity and appointment', async () => {
+  const page = await readRepoFile('src/features/clero/bishop/admin/BishopWizardPage.tsx')
+  const service = await readRepoFile('src/features/clero/bishop/services/bishop-admin-service.ts')
+
+  assert.match(service, /export type BishopRoleType/)
+  assert.match(service, /export type ClericalStatusType/)
+  assert.match(service, /export type EcclesiasticalDignity/)
+  assert.match(page, /episcopal_role_type: episcopalRoleType/)
+  assert.match(page, /canonical_status: canonicalStatus/)
+  assert.match(page, /dignities,/)
+  assert.match(page, /title_see_name:/)
+  assert.match(page, /Función, estado, dignidades y cargo/)
+  assert.match(page, /no son grados adicionales del Orden/)
+  assert.match(page, /Obispo coadjutor — con derecho de sucesión/)
+  assert.match(page, /Título público del nombramiento/)
+})
+
+test('bishop API validates canonical dimensions and audits them', async () => {
+  const route = await readRepoFile('src/app/api/admin/obispo/route.ts')
+
+  assert.match(route, /allowedEpiscopalRoles/)
+  assert.match(route, /allowedCanonicalStatuses/)
+  assert.match(route, /allowedDignities/)
+  assert.match(route, /episcopal_role_type: normalizedRole/)
+  assert.match(route, /canonical_status:/)
+  assert.match(route, /dignities: \[\.\.\.new Set\(dignities\)\]/)
+  assert.match(route, /episcopal_role_id/)
+})
