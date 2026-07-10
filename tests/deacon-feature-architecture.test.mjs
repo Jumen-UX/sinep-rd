@@ -36,8 +36,9 @@ test('deacon wizard delegates persistence and catalog reads to typed services', 
   assert.match(page, /Este nivel no tiene cargos configurados/)
 })
 
-test('clergy services share entity, office, level and photo infrastructure', async () => {
-  const shared = await readRepoFile('src/features/clero/shared/services/clergy-admin-service.ts')
+test('person placement service centralizes entity, office, level and photo infrastructure', async () => {
+  const shared = await readRepoFile('src/features/personas/shared/services/person-placement-service.ts')
+  const clergyBridge = await readRepoFile('src/features/clero/shared/services/clergy-admin-service.ts')
   const deacon = await readRepoFile('src/features/clero/deacon/services/deacon-admin-service.ts')
   const priest = await readRepoFile('src/features/clero/priest/services/priest-admin-service.ts')
 
@@ -45,6 +46,7 @@ test('clergy services share entity, office, level and photo infrastructure', asy
   assert.match(shared, /from\('office_configurations'\)/)
   assert.match(shared, /from\('structure_level_office_configurations'\)/)
   assert.match(shared, /const PHOTO_BUCKET = 'person-photos'/)
+  assert.match(clergyBridge, /loadPersonPlacementCatalogs as loadClergyPlacementCatalogs/)
 
   assert.match(deacon, /loadClergyPlacementCatalogs/)
   assert.match(deacon, /uploadClergyPhoto/)
