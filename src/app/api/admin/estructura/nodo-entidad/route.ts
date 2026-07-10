@@ -21,7 +21,10 @@ function toText(value: unknown) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireAdminAccess()
+    const auth = await requireAdminAccess({
+      permissionKey: 'structures.manage',
+      forbiddenMessage: 'No autorizado para modificar estructuras.',
+    })
     if (!auth.ok) return auth.response
 
     const payload = await parseJsonObjectBody(request, 'Solicitud invalida.')
