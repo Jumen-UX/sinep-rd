@@ -32,16 +32,16 @@ test('deacon wizard delegates persistence and catalog reads to typed services', 
 
   assert.doesNotMatch(page, /\.from\(/)
   assert.doesNotMatch(page, /\.storage\./)
-  assert.doesNotMatch(page, /fetch\('\/api\/admin\/diacono'/)
+  assert.doesNotMatch(page, /fetch\('/)
   assert.match(page, /Este nivel no tiene cargos configurados/)
 })
 
 test('deacon flow reuses an existing unordained person identity', async () => {
   const page = await readRepoFile('src/features/clero/deacon/admin/DeaconWizardPage.tsx')
   const service = await readRepoFile('src/features/clero/deacon/services/deacon-admin-service.ts')
-  const api = await readRepoFile('src/app/api/admin/diacono/route.ts')
 
-  assert.match(service, /rpc\('admin_list_unordained_people'/)
+  assert.match(service, /loadCanonicalRegistrationCandidates\(supabase, 'deacon'\)/)
+  assert.match(service, /saveCanonicalPersonRegistration\('deacon'/)
   assert.doesNotMatch(service, /person_type/)
 
   assert.match(page, /mode, setMode.*'existing'/)
@@ -49,42 +49,32 @@ test('deacon flow reuses an existing unordained person identity', async () => {
   assert.match(page, /Añadir el diaconado a una persona existente/)
   assert.match(page, /sin duplicar su identidad/)
   assert.match(page, /const formElement = event\.currentTarget/)
-
-  assert.match(api, /person\.deacon\.ordination/)
-  assert.match(api, /person\.deacon\.create/)
-  assert.match(api, /selected_person_id/)
 })
 
 test('deacon transaction preserves the person and records canonical diaconate', async () => {
-  const migration = await readRepoFile('supabase/migrations/20260710201853_reuse_existing_person_for_diaconate.sql')
+  const migration = await readRepoFile('supabase/migrations/20260710220313_unified_canonical_person_registration_engine.sql')
 
-  assert.match(migration, /v_mode text := coalesce/)
+  assert.match(migration, /v_mode text := lower\(coalesce/)
   assert.match(migration, /v_selected_person_id/)
-  assert.match(migration, /not exists \(/)
   assert.match(migration, /from public\.ordination_events oe/)
-  assert.match(migration, /on conflict \(person_id\) do update/)
   assert.match(migration, /insert into public\.ordination_events/)
   assert.match(migration, /'diaconate'/)
-  assert.match(migration, /'existing_person_ordination'/)
+  assert.match(migration, /canonical_registration_engine/)
   assert.match(migration, /'layperson'/)
+  assert.doesNotMatch(migration, /set\s+person_type\s*=/i)
 })
 
-test('unordained person candidates and writes are constrained by user scope', async () => {
-  const migration = await readRepoFile('supabase/migrations/20260710202421_scope_unordained_person_candidates.sql')
-  const grantMigration = await readRepoFile('supabase/migrations/20260710202717_grant_scoped_unordained_reader_chain.sql')
+test('canonical registration candidates and writes are constrained by user scope', async () => {
+  const candidateMigration = await readRepoFile('supabase/migrations/20260710220418_unified_canonical_registration_candidates.sql')
+  const engineMigration = await readRepoFile('supabase/migrations/20260710220313_unified_canonical_person_registration_engine.sql')
 
-  assert.match(migration, /current_user_can_manage_person/)
-  assert.match(migration, /public\.position_assignments/)
-  assert.match(migration, /public\.clergy_profiles/)
-  assert.match(migration, /public\.religious_profiles/)
-  assert.match(migration, /admin_list_unordained_people/)
-  assert.match(migration, /not exists \(/)
-  assert.match(migration, /public\.ordination_events/)
-  assert.match(migration, /La persona seleccionada está fuera de tu alcance/)
-
-  assert.match(grantMigration, /current_user_can_manage_person\(text, uuid\) to authenticated/)
-  assert.match(grantMigration, /admin_list_unordained_people\(integer\) to authenticated/)
-  assert.doesNotMatch(grantMigration, /to anon/)
+  assert.match(candidateMigration, /current_user_can_manage_person/)
+  assert.match(candidateMigration, /admin_list_canonical_registration_candidates/)
+  assert.match(candidateMigration, /not pes\.has_diaconate/)
+  assert.match(engineMigration, /current_user_can_manage_person/)
+  assert.match(engineMigration, /current_user_can_manage_entity/)
+  assert.match(engineMigration, /La persona seleccionada está fuera de tu alcance/)
+  assert.doesNotMatch(candidateMigration, /to anon/)
 })
 
 test('person placement service centralizes entity, office, level and photo infrastructure', async () => {
@@ -101,10 +91,11 @@ test('person placement service centralizes entity, office, level and photo infra
 
   assert.match(deacon, /loadClergyPlacementCatalogs/)
   assert.match(deacon, /uploadClergyPhoto/)
-  assert.match(deacon, /fetch\('\/api\/admin\/diacono'/)
+  assert.match(deacon, /saveCanonicalPersonRegistration/)
 
   assert.match(priest, /loadClergyPlacementCatalogs/)
   assert.match(priest, /uploadClergyPhoto/)
+  assert.match(priest, /saveCanonicalPersonRegistration/)
   assert.doesNotMatch(priest, /from\('admin_entity_hierarchy_selector'\)/)
   assert.doesNotMatch(priest, /storage\.from\(PHOTO_BUCKET\)/)
 })
