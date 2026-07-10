@@ -71,6 +71,7 @@ test('deacon transaction preserves the person and records canonical diaconate', 
 
 test('unordained person candidates and writes are constrained by user scope', async () => {
   const migration = await readRepoFile('supabase/migrations/20260710202421_scope_unordained_person_candidates.sql')
+  const grantMigration = await readRepoFile('supabase/migrations/20260710202717_grant_scoped_unordained_reader_chain.sql')
 
   assert.match(migration, /current_user_can_manage_person/)
   assert.match(migration, /public\.position_assignments/)
@@ -80,6 +81,10 @@ test('unordained person candidates and writes are constrained by user scope', as
   assert.match(migration, /not exists \(/)
   assert.match(migration, /public\.ordination_events/)
   assert.match(migration, /La persona seleccionada está fuera de tu alcance/)
+
+  assert.match(grantMigration, /current_user_can_manage_person\(text, uuid\) to authenticated/)
+  assert.match(grantMigration, /admin_list_unordained_people\(integer\) to authenticated/)
+  assert.doesNotMatch(grantMigration, /to anon/)
 })
 
 test('person placement service centralizes entity, office, level and photo infrastructure', async () => {
