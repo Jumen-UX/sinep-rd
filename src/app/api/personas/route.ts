@@ -6,6 +6,12 @@ const listColumns = [
   'display_name',
   'slug',
   'person_type',
+  'legacy_person_type',
+  'highest_ordination_degree',
+  'is_cleric',
+  'is_lay',
+  'is_religious',
+  'religious_life_type',
   'photo_url',
   'photo_path',
   'biography_public',
@@ -263,7 +269,9 @@ function buildListFilters(request: NextRequest) {
     order: 'display_name.asc',
   }
 
-  if (tipo && tipo !== 'all' && tipo !== 'active') {
+  if (tipo === 'religious') {
+    filters.is_religious = 'eq.true'
+  } else if (tipo && tipo !== 'all' && tipo !== 'active') {
     filters.person_type = `eq.${tipo}`
   }
 
@@ -325,7 +333,7 @@ export async function GET(request: NextRequest) {
 
   try {
     if (!slug) {
-      const people = await fetchSupabaseJson<Record<string, unknown>[]>('persons', buildListFilters(request))
+      const people = await fetchSupabaseJson<Record<string, unknown>[]>('person_public_directory', buildListFilters(request))
       return NextResponse.json(people)
     }
 
