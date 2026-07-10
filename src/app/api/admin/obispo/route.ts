@@ -13,7 +13,13 @@ type SaveBishopResult = {
 }
 
 function getSaveResult(value: unknown): SaveBishopResult {
-  return isJsonObject(value) ? value as SaveBishopResult : {}
+  if (!isJsonObject(value)) return {}
+
+  return {
+    person_id: typeof value.person_id === 'string' ? value.person_id : undefined,
+    assignment_id: typeof value.assignment_id === 'string' ? value.assignment_id : undefined,
+    slug: typeof value.slug === 'string' ? value.slug : undefined,
+  }
 }
 
 export async function POST(request: NextRequest) {
