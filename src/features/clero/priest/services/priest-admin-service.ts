@@ -45,9 +45,9 @@ export async function loadPriestCatalogs(supabase: SupabaseClient): Promise<Prie
   const [placementCatalogs, deaconResult] = await Promise.all([
     loadClergyPlacementCatalogs(supabase),
     supabase
-      .from('persons')
+      .from('person_ecclesial_state')
       .select('id,first_name,middle_name,last_name,second_last_name,display_name,slug,gender,birth_date,birth_place,photo_url,biography_public')
-      .eq('person_type', 'deacon')
+      .eq('highest_ordination_degree', 'diaconate')
       .eq('status', 'active')
       .order('display_name'),
   ])
