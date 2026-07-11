@@ -97,11 +97,21 @@ export default function OfficeConfigurationPage() {
   async function loadData() {
     const { data: userData } = await supabase.auth.getUser()
     if (!userData.user) return router.push('/admin/login')
+
     const [officeRes, requestRes] = await Promise.all([
-      supabase.from('office_configurations').select('id,key,display_name,description,requires_clergy,allowed_person_types,required_ordination_degree,allowed_clerical_statuses,allowed_episcopal_role_types,holder_cardinality,max_current_holders,office_scopes(name),office_categories(name)').eq('status','active').order('display_name'),
-      supabase.from('change_requests').select('id,title,description,proposed_data,status').eq('target_table','office_configurations').in('status',['pending_review','needs_changes']).order('submitted_at',{ ascending:false, nullsFirst:false }),
+      supabase.from('office_configurations')
+        .select('id,key,display_name,description,requires_clergy,allowed_person_types,required_ordination_degree,allowed_clerical_statuses,allowed_episcopal_role_types,holder_cardinality,max_current_holders,office_scopes(name),office_categories(name)')
+        .eq('status','active').order('display_name'),
+      supabase.from('change_requests')
+        .select('id,title,description,proposed_data,status')
+        .eq('target_table','office_configurations')
+        .in('status',['pending_review','needs_changes'])
+        .order('submitted_at',{ ascending:false, nullsFirst:false }),
     ])
-    if (officeRes.error || requestRes.error) setError(officeRes.error?.message ?? requestRes.error?.message ?? 'No se pudieron cargar los cargos.')
+
+    if (officeRes.error || requestRes.error) {
+      setError(officeRes.error?.message ?? requestRes.error?.message ?? 'No se pudieron cargar los cargos.')
+    }
     setOffices((officeRes.data ?? []) as unknown as OfficeRow[])
     setRequests((requestRes.data ?? []) as ChangeRequest[])
     setLoading(false)
@@ -113,7 +123,8 @@ export default function OfficeConfigurationPage() {
     event.preventDefault()
     const formElement = event.currentTarget
     const form = new FormData(formElement)
-    const intent = String(form.get('intent') ?? 'suggest')
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null
+    const intent = submitter?.value ?? 'suggest'
     const payload = {
       ...rulesPayload(form,degree,cardinality),
       key: String(form.get('key') ?? '').trim() || undefined,
@@ -129,6 +140,7 @@ export default function OfficeConfigurationPage() {
       priority: 'normal',
       scope_type: 'other',
     }
+
     if (!payload.display_name) return setError('Debes indicar el nombre visible del cargo.')
     setSaving(true); setError(null); setMessage(null)
     try {
@@ -138,27 +150,30 @@ export default function OfficeConfigurationPage() {
       if (!response.ok) throw new Error(data.error ?? 'No se pudo procesar el cargo.')
       setMessage(intent === 'admin_create' ? 'Cargo oficial guardado correctamente.' : 'Sugerencia enviada para revisión.')
       formElement.reset(); setDegree('none'); setCardinality('single'); await loadData()
-    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : 'No se pudo procesar el cargo.') }
-    finally { setSaving(false) }
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo procesar el cargo.')
+    } finally { setSaving(false) }
   }
 
   function beginEdit(office: OfficeRow) {
     setEditOffice(office)
     setEditDegree(office.required_ordination_degree)
     setEditCardinality(office.holder_cardinality)
-    setImpact(null)
-    setError(null)
-    setMessage(null)
+    setImpact(null); setError(null); setMessage(null)
   }
 
-  async function processEdit(event: FormEvent<HTMLFormElement>, action: 'preview' | 'update') {
+  async function processEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!editOffice) return
+
     const form = new FormData(event.currentTarget)
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null
+    const action: 'preview' | 'update' = submitter?.value === 'preview' ? 'preview' : 'update'
     const payload = {
       ...rulesPayload(form,editDegree,editCardinality),
       confirm_incompatible_assignments: form.get('confirm_incompatible_assignments') === 'on',
     }
+
     setSaving(true); setError(null); setMessage(null)
     try {
       const response = await fetch('/api/admin/cargos/editar',{
@@ -167,6 +182,7 @@ export default function OfficeConfigurationPage() {
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error ?? 'No se pudo evaluar el cambio.')
+
       if (action === 'preview') {
         setImpact(data as ImpactPreview)
         setMessage('Vista previa calculada. No se modificó ningún nombramiento.')
@@ -175,8 +191,9 @@ export default function OfficeConfigurationPage() {
         setMessage('Reglas del cargo actualizadas. Los nombramientos incompatibles permanecen abiertos para revisión.')
         await loadData()
       }
-    } catch (editError) { setError(editError instanceof Error ? editError.message : 'No se pudo procesar la edición.') }
-    finally { setSaving(false) }
+    } catch (editError) {
+      setError(editError instanceof Error ? editError.message : 'No se pudo procesar la edición.')
+    } finally { setSaving(false) }
   }
 
   async function review(id: string, decision: 'approved'|'rejected'|'needs_changes') {
@@ -186,8 +203,9 @@ export default function OfficeConfigurationPage() {
       const data = await response.json()
       if (!response.ok) throw new Error(data.error ?? 'No se pudo revisar la solicitud.')
       setMessage(decision === 'approved' ? 'Solicitud aprobada y aplicada.' : 'Solicitud actualizada.'); await loadData()
-    } catch (reviewError) { setError(reviewError instanceof Error ? reviewError.message : 'No se pudo revisar la solicitud.') }
-    finally { setSaving(false) }
+    } catch (reviewError) {
+      setError(reviewError instanceof Error ? reviewError.message : 'No se pudo revisar la solicitud.')
+    } finally { setSaving(false) }
   }
 
   if (loading) return <main className="container"><div className="empty-state">Cargando cargos...</div></main>
@@ -199,14 +217,14 @@ export default function OfficeConfigurationPage() {
 
     {editOffice && <section className="card dashboard-section">
       <div className="section-heading"><div><p className="eyebrow">Editar cargo existente</p><h2>{editOffice.display_name}</h2><span className="meta">{editOffice.key}</span></div><button className="button button-secondary" type="button" onClick={() => { setEditOffice(null); setImpact(null) }}>Cerrar edición</button></div>
-      <form key={editOffice.id} className="admin-form admin-config-form" onSubmit={(event) => processEdit(event,'update')}>
+      <form key={editOffice.id} className="admin-form admin-config-form" onSubmit={processEdit}>
         <input name="display_name" defaultValue={editOffice.display_name} required />
         <textarea name="description" defaultValue={editOffice.description ?? ''} placeholder="Descripción del cargo" />
         <section className="card compact-section"><p className="eyebrow">Elegibilidad sacramental</p><h3>Grado mínimo del Orden</h3><select value={editDegree} onChange={(event) => { setEditDegree(event.target.value); setImpact(null) }}>{degrees.map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select><div className="role-list">{personTypes.map(([v,l]) => <label className="role-pill" key={v}><input name={`person_type_${v}`} type="checkbox" defaultChecked={editOffice.allowed_person_types.includes(v)} onChange={() => setImpact(null)} /> {l}</label>)}</div><label className="role-pill"><input name="requires_clergy" type="checkbox" defaultChecked={editOffice.requires_clergy} onChange={() => setImpact(null)} /> Requiere clero</label></section>
         <section className="card compact-section"><p className="eyebrow">Situación canónica</p><h3>Estados admitidos</h3><div className="role-list">{statuses.map(([v,l]) => <label className="role-pill" key={v}><input name={`status_${v}`} type="checkbox" defaultChecked={editOffice.allowed_clerical_statuses.includes(v)} onChange={() => setImpact(null)} /> {l}</label>)}</div></section>
         <section className="card compact-section"><p className="eyebrow">Ministerio episcopal</p><h3>Funciones admitidas</h3><div className="role-list">{episcopalRoles.map(([v,l]) => <label className="role-pill" key={v}><input name={`episcopal_role_${v}`} type="checkbox" defaultChecked={editOffice.allowed_episcopal_role_types.includes(v)} onChange={() => setImpact(null)} /> {l}</label>)}</div></section>
         <section className="card compact-section"><p className="eyebrow">Cardinalidad</p><h3>Titulares vigentes</h3><select value={editCardinality} onChange={(event) => { setEditCardinality(event.target.value); setImpact(null) }}><option value="single">Titular único</option><option value="multiple">Varios titulares</option></select>{editCardinality === 'multiple' && <input name="max_current_holders" type="number" min="2" defaultValue={editOffice.max_current_holders ?? ''} placeholder="Máximo opcional" onChange={() => setImpact(null)} />}</section>
-        <div className="actions"><button className="button button-secondary" type="button" disabled={saving} onClick={(event) => processEdit({ ...event, currentTarget: event.currentTarget.form } as unknown as FormEvent<HTMLFormElement>,'preview')}>Previsualizar impacto</button><button className="button button-primary" disabled={saving}>Guardar cambios</button></div>
+        <div className="actions"><button className="button button-secondary" type="submit" name="edit_action" value="preview" disabled={saving}>Previsualizar impacto</button><button className="button button-primary" type="submit" name="edit_action" value="update" disabled={saving}>Guardar cambios</button></div>
         {impact && <div className={impact.incompatible_assignments > 0 ? 'error-box' : 'empty-state'}><strong>{impact.incompatible_assignments > 0 ? `${impact.incompatible_assignments} nombramientos incompatibles` : 'Sin incompatibilidades'}</strong><span>{impact.current_assignments} nombramientos vigentes evaluados.</span>{impact.items.map((item) => <div key={item.assignment_id}><strong>{item.person_name}</strong><span>{item.entity_name} · {item.message}</span></div>)}{impact.incompatible_assignments > 0 && <label className="role-pill"><input name="confirm_incompatible_assignments" type="checkbox" /> Confirmo que las reglas cambiarán aunque estos nombramientos queden pendientes de revisión.</label>}</div>}
       </form>
     </section>}
