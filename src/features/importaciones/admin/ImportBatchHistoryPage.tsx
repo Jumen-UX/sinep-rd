@@ -18,6 +18,12 @@ const statusLabels: Record<string, string> = {
   cancelled: 'Cancelado',
 }
 
+const reviewLabels: Record<string, string> = {
+  pending: 'Pendiente de aprobación',
+  approved: 'Aprobado',
+  rejected: 'Rechazado',
+}
+
 const typeLabels: Record<string, string> = {
   personas: 'Personas',
   parroquias: 'Estructuras',
@@ -83,11 +89,11 @@ export default function ImportBatchHistoryPage() {
         <div>
           <p className="eyebrow">Carga masiva controlada</p>
           <h1>Lotes preparados y validados</h1>
-          <p className="lead">Consulta archivos persistidos, abre sus filas, revisa incidencias y corrige datos sin modificar todavía los registros canónicos.</p>
+          <p className="lead">Consulta archivos persistidos, abre sus filas, revisa incidencias, corrige datos y registra la aprobación editorial sin modificar todavía los registros canónicos.</p>
           <div className="role-list admin-role-list">
             <span className="role-pill">RLS por alcance</span>
             <span className="role-pill">Corrección por fila</span>
-            <span className="role-pill">Revalidación</span>
+            <span className="role-pill">Aprobación explícita</span>
             <span className="role-pill">Aplicación deshabilitada</span>
           </div>
         </div>
@@ -137,7 +143,8 @@ export default function ImportBatchHistoryPage() {
                 <tr>
                   <th scope="col">Archivo</th>
                   <th scope="col">Tipo</th>
-                  <th scope="col">Estado</th>
+                  <th scope="col">Validación</th>
+                  <th scope="col">Revisión</th>
                   <th scope="col">Filas</th>
                   <th scope="col">Incidencias</th>
                   <th scope="col">Fecha</th>
@@ -155,6 +162,7 @@ export default function ImportBatchHistoryPage() {
                       </td>
                       <td>{typeLabels[batch.import_type] ?? batch.import_type}</td>
                       <td><span className="role-pill">{statusLabels[batch.status] ?? batch.status}</span></td>
+                      <td><span className="role-pill">{reviewLabels[batch.review_status] ?? batch.review_status}</span></td>
                       <td>{batch.row_count}</td>
                       <td>{incidentCount > 0 ? incidentCount : 'Sin bloqueos'}</td>
                       <td>{formatDate(batch.created_at)}</td>
