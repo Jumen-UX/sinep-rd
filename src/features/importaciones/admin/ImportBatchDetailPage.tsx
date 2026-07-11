@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   getImportBatchDetail,
   revalidateImportBatch,
+  reviewImportBatch,
   updateImportBatchRow,
   type ImportBatchDetail,
   type ImportBatchRowDetail,
@@ -31,6 +32,12 @@ const statusLabels: Record<string, string> = {
   unresolved: 'No resuelta',
   ready: 'Lista',
   skipped: 'Omitida',
+}
+
+const reviewLabels: Record<string, string> = {
+  pending: 'Pendiente de aprobación',
+  approved: 'Aprobado',
+  rejected: 'Rechazado',
 }
 
 const issueLabels: Record<string, string> = {
@@ -81,9 +88,11 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
   const [detail, setDetail] = useState<ImportBatchDetail | null>(null)
   const [editingRowId, setEditingRowId] = useState<string | null>(null)
   const [draftValues, setDraftValues] = useState<Record<string, string>>({})
+  const [reviewNotes, setReviewNotes] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isRevalidating, setIsRevalidating] = useState(false)
+  const [isReviewing, setIsReviewing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -92,7 +101,9 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
     setError(null)
 
     try {
-      setDetail(await getImportBatchDetail(batchId))
+      const nextDetail = await getImportBatchDetail(batchId)
+      setDetail(nextDetail)
+      setReviewNotes(nextDetail.batch.review_notes ?? '')
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'No se pudo consultar el lote.')
     } finally {
@@ -133,7 +144,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
       const summary = await updateImportBatchRow(rowId, draftValues)
       setMessage(
         summary.status === 'validated'
-          ? 'Fila corregida y lote validado sin bloqueos.'
+          ? 'Fila corregida y lote validado sin bloqueos. Cualquier aprobación anterior fue reiniciada.'
           : 'Fila corregida. El lote fue revalidado y todavía requiere revisión.',
       )
       cancelEditing()
@@ -154,7 +165,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
       const summary = await revalidateImportBatch(batchId)
       setMessage(
         summary.status === 'validated'
-          ? 'Lote revalidado sin bloqueos.'
+          ? 'Lote revalidado sin bloqueos. La aprobación editorial quedó nuevamente pendiente.'
           : 'Lote revalidado. Revisa las incidencias pendientes.',
       )
       await loadDetail()
@@ -162,6 +173,31 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
       setError(validationError instanceof Error ? validationError.message : 'No se pudo revalidar el lote.')
     } finally {
       setIsRevalidating(false)
+    }
+  }
+
+  async function submitReview(decision: 'approved' | 'rejected') {
+    if (decision === 'rejected' && !reviewNotes.trim()) {
+      setError('Debes indicar el motivo del rechazo.')
+      return
+    }
+
+    setIsReviewing(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      await reviewImportBatch(batchId, decision, reviewNotes)
+      setMessage(
+        decision === 'approved'
+          ? 'Lote aprobado editorialmente. La aplicación canónica continúa deshabilitada.'
+          : 'Lote rechazado y devuelto para corrección.',
+      )
+      await loadDetail()
+    } catch (reviewError) {
+      setError(reviewError instanceof Error ? reviewError.message : 'No se pudo registrar la revisión del lote.')
+    } finally {
+      setIsReviewing(false)
     }
   }
 
@@ -188,6 +224,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
 
   const { batch, rows } = detail
   const blockingIssues = batch.error_rows + batch.duplicate_rows + batch.unresolved_rows
+  const canDecide = detail.can_review && batch.status === 'validated' && blockingIssues === 0
 
   return (
     <div id="top">
@@ -199,7 +236,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
         <div className="admin-top-actions">
           <a className="button button-secondary" href="/admin/importar/lotes">Volver al historial</a>
           <a className="button button-secondary" href="/admin/importar">Preparar otro lote</a>
-          <button className="button button-primary" disabled={isRevalidating} onClick={() => void revalidate()} type="button">
+          <button className="button button-primary" disabled={isRevalidating || isReviewing} onClick={() => void revalidate()} type="button">
             {isRevalidating ? 'Revalidando…' : 'Revalidar lote'}
           </button>
         </div>
@@ -209,9 +246,10 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
         <div>
           <p className="eyebrow">{batch.import_type}</p>
           <h1>{batch.file_name}</h1>
-          <p className="lead">Lote persistido con hash {batch.file_sha256.slice(0, 16)}… Ninguna corrección de esta pantalla modifica registros canónicos.</p>
+          <p className="lead">Lote persistido con hash {batch.file_sha256.slice(0, 16)}… Las correcciones y la aprobación editorial no modifican registros canónicos.</p>
           <div className="role-list admin-role-list">
             <span className="role-pill">{statusLabels[batch.status] ?? batch.status}</span>
+            <span className="role-pill">{reviewLabels[batch.review_status] ?? batch.review_status}</span>
             <span className="role-pill">{formatBytes(batch.file_size_bytes)}</span>
             <span className="role-pill">{batch.row_count} filas</span>
             <span className="role-pill">Aplicación deshabilitada</span>
@@ -239,6 +277,43 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
           <div><span>≡</span><strong>{batch.duplicate_rows}</strong><small>Duplicadas</small></div>
           <div><span>?</span><strong>{batch.unresolved_rows}</strong><small>No resueltas</small></div>
         </div>
+      </section>
+
+      <section className="card dashboard-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Revisión editorial</p>
+            <h2>{reviewLabels[batch.review_status] ?? batch.review_status}</h2>
+            <p className="meta">Revisado {formatDate(batch.reviewed_at)}. Revalidar o corregir una fila reinicia esta decisión.</p>
+          </div>
+          <span className="role-pill">Permiso: imports.review</span>
+        </div>
+
+        {batch.review_notes && <div className="admin-info-box"><span>Nota registrada: {batch.review_notes}</span></div>}
+
+        {detail.can_review ? (
+          <div className="auth-form access-form">
+            <label>
+              Nota de revisión
+              <textarea
+                onChange={(event) => setReviewNotes(event.target.value)}
+                placeholder="Opcional al aprobar; obligatoria al rechazar."
+                value={reviewNotes}
+              />
+            </label>
+            <div className="admin-top-actions">
+              <button className="button button-primary" disabled={!canDecide || isReviewing} onClick={() => void submitReview('approved')} type="button">
+                {isReviewing ? 'Registrando…' : 'Aprobar lote'}
+              </button>
+              <button className="button button-secondary" disabled={!canDecide || isReviewing} onClick={() => void submitReview('rejected')} type="button">
+                Rechazar lote
+              </button>
+            </div>
+            {!canDecide && <p className="meta">La aprobación requiere un lote validado sin errores, duplicados ni relaciones no resueltas.</p>}
+          </div>
+        ) : (
+          <div className="admin-info-box"><span>Tu usuario puede consultar y corregir este lote, pero no registrar la decisión editorial.</span></div>
+        )}
       </section>
 
       <section className="admin-module-group">
