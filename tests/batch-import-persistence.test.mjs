@@ -10,6 +10,9 @@ const reviewCapabilityMigrationPath = 'supabase/migrations/20260711032920_align_
 const structureValidationMigrationPath = 'supabase/migrations/20260711040000_validate_structure_import_batches.sql'
 const structureApplicationMigrationPath = 'supabase/migrations/20260711040100_dispatch_structure_import_application.sql'
 const structureReviewMigrationPath = 'supabase/migrations/20260711040200_enable_structure_import_review_application.sql'
+const assignmentValidationMigrationPath = 'supabase/migrations/20260711135209_validate_assignment_import_batches.sql'
+const assignmentApplicationMigrationPath = 'supabase/migrations/20260711135337_apply_assignment_import_batches.sql'
+const assignmentReviewMigrationPath = 'supabase/migrations/20260711135601_enable_assignment_import_review_capability.sql'
 
 async function readRepoFile(path) {
   return readFile(new URL(path, repoRoot), 'utf8')
@@ -51,6 +54,7 @@ test('privileged batch implementations stay outside the exposed public schema', 
   const hardening = await readRepoFile('supabase/migrations/20260711025611_harden_import_batch_rpc_exposure.sql')
   const application = await readRepoFile(applicationMigrationPath)
   const structureApplication = await readRepoFile(structureApplicationMigrationPath)
+  const assignmentApplication = await readRepoFile(assignmentApplicationMigrationPath)
   assert.match(scopeHelper, /app_private\.current_user_root_jurisdiction_id/)
   assert.match(scopeHelper, /public\.current_user_root_jurisdiction_id/)
   assert.match(hardening, /alter function public\.admin_prepare_import_batch\(jsonb\) set schema app_private/)
@@ -60,12 +64,15 @@ test('privileged batch implementations stay outside the exposed public schema', 
   assert.match(application, /language sql[\s\S]*security invoker/)
   assert.match(structureApplication, /app_private\.admin_apply_structure_import_batch/)
   assert.match(structureApplication, /revoke all on function app_private\.admin_apply_structure_import_batch/)
+  assert.match(assignmentApplication, /app_private\.admin_apply_assignment_import_batch/)
+  assert.match(assignmentApplication, /revoke all on function app_private\.admin_apply_assignment_import_batch/)
 })
 
 test('validated batches require an explicit scoped editorial decision', async () => {
   const migration = await readRepoFile(reviewMigrationPath)
   const capability = await readRepoFile(reviewCapabilityMigrationPath)
   const structureReview = await readRepoFile(structureReviewMigrationPath)
+  const assignmentReview = await readRepoFile(assignmentReviewMigrationPath)
   assert.match(migration, /'imports\.review'/)
   assert.match(migration, /review_status text not null default 'pending'/)
   assert.match(migration, /review_status in \('pending', 'approved', 'rejected'\)/)
@@ -77,6 +84,7 @@ test('validated batches require an explicit scoped editorial decision', async ()
   assert.match(capability, /current_user_has_permission\('imports\.apply'\)/)
   assert.match(capability, /'can_apply', v_can_apply/)
   assert.match(structureReview, /v_batch\.import_type in \('personas','parroquias'\)/)
+  assert.match(assignmentReview, /v_batch\.import_type in \('personas','parroquias','asignaciones'\)/)
 })
 
 test('approved person batches apply transactionally and idempotently through the canonical engine', async () => {
@@ -110,6 +118,21 @@ test('approved structure batches resolve context and apply atomically through th
   assert.match(application, /'idempotent_replay',true/)
   assert.match(application, /exception when others/)
   assert.match(application, /v_type='parroquias'/)
+})
+
+test('approved assignment batches reuse eligibility and canonical cardinality rules', async () => {
+  const validation = await readRepoFile(assignmentValidationMigrationPath)
+  const application = await readRepoFile(assignmentApplicationMigrationPath)
+  assert.match(validation, /evaluate_position_assignment_eligibility/)
+  assert.match(validation, /assignment_ineligible/)
+  assert.match(validation, /existing_assignment/)
+  assert.match(validation, /target_table='position_assignments'/)
+  assert.match(application, /public\.admin_save_position_assignment/)
+  assert.match(application, /close_previous_current/)
+  assert.match(application, /'import\.assignment\.created'/)
+  assert.match(application, /insert into public\.import_batch_changes/)
+  assert.match(application, /'idempotent_replay',true/)
+  assert.match(application, /v_type='asignaciones'/)
 })
 
 test('admin import page sends complete CSV rows to the protected preparation API', async () => {
@@ -149,7 +172,7 @@ test('batch workspace supports review, correction and scoped canonical applicati
   assert.match(detailRoute, /can_review/)
   assert.match(detailRoute, /can_apply/)
   assert.match(detailRoute, /application_rpc_available/)
-  assert.match(detailRoute, /batch\.import_type === 'personas' \|\| batch\.import_type === 'parroquias'/)
+  assert.match(detailRoute, /\['personas', 'parroquias', 'asignaciones'\]\.includes/)
   assert.match(detailRoute, /current_user_can_manage_entity/)
   assert.match(detailRoute, /from\('import_batch_rows'\)/)
   assert.match(detailRoute, /from\('import_batch_row_issues'\)/)
