@@ -93,7 +93,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       )
     }
 
-    const applicationRpcAvailable = batch.import_type === 'personas'
+    const applicationRpcAvailable = batch.import_type === 'personas' || batch.import_type === 'parroquias'
     const blockingIssues = batch.error_rows + batch.duplicate_rows + batch.unresolved_rows
     const canApply = applicationRpcAvailable
       && hasApplyPermission
