@@ -8,13 +8,13 @@
 
 La base cuenta con registro canónico de personas, dimensiones clericales, estructura configurable, permisos por jurisdicción, auditoría, revisión de incompatibilidades, portal público y CI con typecheck, pruebas y build.
 
-La importación controlada ya persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y conserva auditoría de preparación. La aplicación a registros canónicos continúa intencionalmente deshabilitada hasta completar revisión, idempotencia y pruebas integrales.
+La importación controlada ya persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila, exige una decisión editorial explícita y conserva auditoría de preparación, corrección y revisión. La aplicación a registros canónicos continúa intencionalmente deshabilitada hasta completar idempotencia, contratos por dominio y pruebas integrales.
 
 ## Prioridad 0 — operación segura
 
 - [ ] Aplicar y verificar en cada entorno todas las migraciones pendientes. Las migraciones de importación están aplicadas y verificadas en el proyecto Supabase conectado.
 - [ ] Ejecutar pruebas de integración contra una instancia no productiva de Supabase.
-- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. La preparación, corrección y revalidación por RPC ya tienen smoke test autenticado.
+- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación y aprobación ya tienen smoke test autenticado por RPC.
 - [ ] Confirmar protección contra contraseñas filtradas y revisar asesores de seguridad de Supabase. Los asesores fueron revisados; la protección contra contraseñas filtradas continúa pendiente de activación.
 - [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal.
 
@@ -26,7 +26,9 @@ Disponible actualmente:
 - Persistencia de lotes, filas e incidencias con RLS por alcance.
 - Validación de campos, catálogos, fechas, duplicados y relaciones.
 - Historial de lotes, detalle por fila, corrección y revalidación.
-- Auditoría de preparación y correcciones.
+- Aprobación o rechazo mediante el permiso `imports.review`.
+- Reinicio automático de la aprobación cuando el lote vuelve a validarse.
+- Auditoría de preparación, correcciones y revisión editorial.
 - Aplicación canónica deshabilitada explícitamente.
 
 ### Completado
@@ -36,11 +38,12 @@ Disponible actualmente:
 - [x] Validar catálogos, relaciones, alcance y duplicados por fila.
 - [x] Permitir corrección y reintento del lote sin modificar registros canónicos.
 - [x] Añadir historial, detalle e incidencias accesibles según el alcance administrativo.
-- [x] Auditar preparación y corrección sin guardar datos privados innecesarios en el log.
+- [x] Añadir revisión editorial explícita, separada de la aplicación canónica.
+- [x] Invalidar automáticamente una aprobación anterior cuando cambian los datos validados.
+- [x] Auditar preparación, corrección y revisión sin guardar datos privados innecesarios en el log.
 
 ### Pendiente
 
-- [ ] Añadir revisión y aprobación explícita del lote antes de aplicarlo.
 - [ ] Implementar RPC de aplicación transaccional e idempotente por tipo de importación.
 - [ ] Registrar cada alta, modificación o no-op en `import_batch_changes`.
 - [ ] Impedir doble aplicación y definir compensación o reversión lógica.
