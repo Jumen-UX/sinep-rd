@@ -1,6 +1,7 @@
 export type CsvPreview = {
   headers: string[]
   rows: string[][]
+  records: Record<string, string>[]
   totalRows: number
   missingColumns: string[]
   extraColumns: string[]
@@ -55,6 +56,11 @@ export function buildCsvTemplate(columns: string[]) {
   return `\uFEFF${columns.join(',')}\r\n`
 }
 
+export async function sha256Hex(source: string) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(source))
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
 export function parseCsvPreview(source: string, expectedColumns: string[], limit = 25): CsvPreview {
   const rows = parseCsvRows(source.replace(/^\uFEFF/, ''))
   if (rows.length === 0) throw new Error('El archivo CSV está vacío.')
@@ -69,10 +75,13 @@ export function parseCsvPreview(source: string, expectedColumns: string[], limit
   const missingColumns = expectedColumns.filter((_, index) => !normalizedHeaders.includes(normalizedExpected[index]))
   const extraColumns = headers.filter((header) => !normalizedExpected.includes(header.toLocaleLowerCase('es')))
   const dataRows = rows.slice(1)
+  const normalizedRows = dataRows.map((dataRow) => headers.map((_, index) => dataRow[index] ?? ''))
+  const records = normalizedRows.map((dataRow) => Object.fromEntries(headers.map((header, index) => [header, dataRow[index]])))
 
   return {
     headers,
-    rows: dataRows.slice(0, limit).map((dataRow) => headers.map((_, index) => dataRow[index] ?? '')),
+    rows: normalizedRows.slice(0, limit),
+    records,
     totalRows: dataRows.length,
     missingColumns,
     extraColumns,
