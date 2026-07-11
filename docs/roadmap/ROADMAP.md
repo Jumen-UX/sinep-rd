@@ -8,13 +8,13 @@
 
 La base cuenta con registro canónico de personas, dimensiones clericales, estructura configurable, permisos por jurisdicción, auditoría, revisión de incompatibilidades, portal público y CI con typecheck, pruebas y build.
 
-La importación controlada persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y exige una decisión editorial explícita. Los lotes aprobados de personas, estructuras y nombramientos ya pueden aplicarse con transacción integral, auditoría por fila, registro en `import_batch_changes` y repetición idempotente. Los eventos históricos continúan bloqueados hasta tener su propio contrato seguro.
+La importación controlada persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y exige una decisión editorial explícita. Los lotes aprobados de personas, estructuras, nombramientos y eventos históricos cuentan con contratos transaccionales, auditoría por fila, registro en `import_batch_changes` y repetición idempotente. Los eventos importados se crean en `pending_review`, generan su plan de acciones y no modifican automáticamente el estado estructural vigente.
 
 ## Prioridad 0 — operación segura
 
 - [ ] Aplicar y verificar en cada entorno todas las migraciones pendientes. Las migraciones de importación están aplicadas y verificadas en el proyecto Supabase conectado.
 - [ ] Ejecutar pruebas de integración contra una instancia no productiva de Supabase.
-- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación, aprobación y aplicación de personas, estructuras y nombramientos ya tienen smoke test autenticado por RPC.
+- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación, aprobación y aplicación de los cuatro dominios tienen smoke test autenticado por RPC.
 - [ ] Confirmar protección contra contraseñas filtradas y revisar asesores de seguridad de Supabase. Los asesores fueron revisados; la protección contra contraseñas filtradas continúa pendiente de activación.
 - [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal.
 
@@ -28,9 +28,9 @@ Disponible actualmente:
 - Historial de lotes, detalle por fila, corrección y revalidación.
 - Aprobación o rechazo mediante el permiso `imports.review`.
 - Reinicio automático de la aprobación cuando el lote vuelve a validarse.
-- Aplicación de lotes de personas, estructuras y nombramientos mediante `imports.apply`.
-- Validación de elegibilidad, cardinalidad y vigencia de nombramientos.
-- Creación atómica mediante los motores canónicos de personas, estructuras y cargos.
+- Aplicación de lotes de personas, estructuras, nombramientos y eventos mediante `imports.apply`.
+- Creación atómica mediante los motores canónicos de personas, estructuras, cargos y eventos.
+- Eventos importados en `pending_review`, con plan de acciones y sin mutación estructural automática.
 - Reversión transaccional completa ante el fallo de cualquier fila.
 - Protección contra doble aplicación mediante respuesta idempotente.
 - Auditoría y trazabilidad entre fila, registro creado, cambio aplicado y auditoría.
@@ -47,17 +47,19 @@ Disponible actualmente:
 - [x] Implementar aplicación transaccional e idempotente para lotes de personas.
 - [x] Implementar aplicación transaccional e idempotente para parroquias y estructuras.
 - [x] Implementar aplicación transaccional e idempotente para cargos y nombramientos.
-- [x] Reutilizar elegibilidad, titular único, cardinalidad y cierre de nombramientos incompatibles.
+- [x] Implementar registro transaccional e idempotente de eventos históricos.
+- [x] Mantener los eventos importados en revisión y bloquear efectos estructurales automáticos.
 - [x] Registrar cada creación en `import_batch_changes` y enlazar su auditoría.
 - [x] Impedir doble aplicación y revertir todo el intento cuando falla una fila.
 
 ### Pendiente
 
-- [ ] Implementar contrato de aplicación para eventos históricos.
+- [ ] Sustituir la etiqueta fija del botón de aplicación por una etiqueta dinámica según el dominio.
 - [ ] Definir operaciones `update` y `noop` para archivos que enlacen registros canónicos existentes.
 - [ ] Añadir reporte final descargable del lote aplicado.
 - [ ] Añadir lectura XLSX después de evaluar dependencia, límites y seguridad.
 - [ ] Añadir pruebas E2E del recorrido preparar → corregir → aprobar → aplicar.
+- [ ] Ejecutar `pnpm check` para confirmar typecheck, pruebas y build de los últimos cambios.
 
 ## Prioridad 2 — calidad del producto
 
