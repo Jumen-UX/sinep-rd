@@ -19,7 +19,7 @@ export type PrepareImportBatchInput = {
 
 export type ImportBatchSummary = {
   batch_id: string
-  status: 'needs_review' | 'ready_to_apply' | 'failed' | string
+  status: 'needs_review' | 'validated' | 'failed' | string
   row_count: number
   valid_rows: number
   warning_rows: number

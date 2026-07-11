@@ -28,8 +28,18 @@ test('batch preparation validates and supports correction without applying canon
   assert.match(migration, /admin_update_import_batch_row/)
   assert.match(migration, /duplicate_row_in_batch/)
   assert.match(migration, /relation_not_found/)
+  assert.match(migration, /possible_existing_person/)
+  assert.match(migration, /possible_existing_entity/)
+  assert.match(migration, /current_user_can_manage_person\('imports\.prepare'/)
+  assert.match(migration, /is_valid_iso_date/)
+  assert.match(migration, /from public\.country_catalog/)
+  assert.match(migration, /invalid_person_type/)
+  assert.match(migration, /invalid_entity_type/)
+  assert.match(migration, /invalid_event_type/)
+  assert.match(migration, /else 'validated'/)
   assert.match(migration, /canonical_records_modified', false/)
   assert.doesNotMatch(migration, /create or replace function public\.admin_apply_import_batch/)
+  assert.doesNotMatch(migration, /set status = 'failed',[\s\S]*last_error = sqlerrm/)
 })
 
 test('admin import page sends complete CSV rows to the protected preparation API', async () => {

@@ -56,8 +56,8 @@ export function buildCsvTemplate(columns: string[]) {
   return `\uFEFF${columns.join(',')}\r\n`
 }
 
-export async function sha256Hex(source: string) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(source))
+export async function sha256Hex(source: ArrayBuffer) {
+  const digest = await crypto.subtle.digest('SHA-256', source)
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 

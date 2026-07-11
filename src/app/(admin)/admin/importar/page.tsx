@@ -146,10 +146,10 @@ export default function AdminBatchImportPage() {
     }
 
     try {
-      const source = await file.text()
+      const [source, fileBytes] = await Promise.all([file.text(), file.arrayBuffer()])
       const [result, fileSha256] = await Promise.all([
         Promise.resolve(parseCsvPreview(source, selectedOption.columns)),
-        sha256Hex(source),
+        sha256Hex(fileBytes),
       ])
 
       setSelectedFile((current) => current ? { ...current, sha256: fileSha256 } : current)
@@ -215,7 +215,7 @@ export default function AdminBatchImportPage() {
 
       setPreparedBatch(summary)
       setMessage(
-        summary.status === 'ready_to_apply'
+        summary.status === 'validated'
           ? 'Lote persistido y validado. No se aplicaron registros definitivos; la aplicación permanece deshabilitada.'
           : 'Lote persistido. Revisa errores, duplicados y relaciones no resueltas antes de cualquier aplicación futura.',
       )

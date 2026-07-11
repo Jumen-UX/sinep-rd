@@ -44,7 +44,7 @@ create table if not exists public.import_batches (
       'prepared',
       'validating',
       'needs_review',
-      'ready_to_apply',
+      'validated',
       'applying',
       'applied',
       'failed',
@@ -162,6 +162,14 @@ create table if not exists public.import_batch_changes (
 create index if not exists idx_import_batch_changes_batch
   on public.import_batch_changes (batch_id, recorded_at);
 
+create index if not exists idx_import_batch_changes_row
+  on public.import_batch_changes (row_id)
+  where row_id is not null;
+
+create index if not exists idx_import_batch_changes_audit_log
+  on public.import_batch_changes (audit_log_id)
+  where audit_log_id is not null;
+
 alter table public.import_batches enable row level security;
 alter table public.import_batch_rows enable row level security;
 alter table public.import_batch_row_issues enable row level security;
@@ -252,6 +260,27 @@ $$;
 
 revoke all on function app_private.normalize_import_row(jsonb) from public, anon, authenticated;
 
+create or replace function app_private.is_valid_iso_date(p_value text)
+returns boolean
+language plpgsql
+immutable
+set search_path = pg_catalog
+as $$
+begin
+  if p_value is null or p_value !~ '^\d{4}-\d{2}-\d{2}$' then
+    return false;
+  end if;
+
+  perform p_value::date;
+  return true;
+exception
+  when others then
+    return false;
+end;
+$$;
+
+revoke all on function app_private.is_valid_iso_date(text) from public, anon, authenticated;
+
 create or replace function app_private.import_entity_matches(p_value text)
 returns uuid[]
 language sql
@@ -292,6 +321,10 @@ as $$
       and (
         lower(btrim(person_state.display_name)) = lower(btrim(p_value))
         or lower(btrim(coalesce(person_state.slug, ''))) = lower(btrim(p_value))
+      )
+      and (
+        public.current_user_is_super_or_national()
+        or app_private.current_user_can_manage_person('imports.prepare', person_state.id)
       )
     limit 20
   ) candidate;
@@ -429,7 +462,14 @@ begin
 
     if v_batch.import_type = 'parroquias' then
       v_value := nullif(btrim(coalesce(v_row.normalized_data ->> 'pais_iso2', '')), '');
-      if v_value is not null and v_value !~ '^[A-Za-z]{2}$' then
+      if v_value is not null and (
+        v_value !~ '^[A-Za-z]{2}$'
+        or not exists (
+          select 1
+          from public.country_catalog country
+          where upper(country.iso2::text) = upper(v_value)
+        )
+      ) then
         insert into public.import_batch_row_issues (
           batch_id, row_id, issue_type, code, field_name, message, details
         ) values (
@@ -448,7 +488,7 @@ begin
       foreach v_field in array array['fecha_inicio', 'fecha_fin']
       loop
         v_value := nullif(btrim(coalesce(v_row.normalized_data ->> v_field, '')), '');
-        if v_value is not null and v_value !~ '^\d{4}-\d{2}-\d{2}$' then
+        if v_value is not null and not app_private.is_valid_iso_date(v_value) then
           insert into public.import_batch_row_issues (
             batch_id, row_id, issue_type, code, field_name, message, details
           ) values (
@@ -481,7 +521,7 @@ begin
 
     if v_batch.import_type = 'eventos' then
       v_value := nullif(btrim(coalesce(v_row.normalized_data ->> 'fecha_efectiva', '')), '');
-      if v_value is not null and v_value !~ '^\d{4}-\d{2}-\d{2}$' then
+      if v_value is not null and not app_private.is_valid_iso_date(v_value) then
         insert into public.import_batch_row_issues (
           batch_id, row_id, issue_type, code, field_name, message, details
         ) values (
@@ -491,6 +531,88 @@ begin
           'invalid_iso_date',
           'fecha_efectiva',
           'La fecha efectiva debe usar el formato ISO 8601 YYYY-MM-DD.',
+          jsonb_build_object('received', v_value)
+        );
+      end if;
+    end if;
+
+    if v_batch.import_type = 'personas' then
+      v_value := nullif(lower(btrim(coalesce(v_row.normalized_data ->> 'tipo_persona', ''))), '');
+      if v_value is not null and v_value not in ('bishop', 'priest', 'deacon', 'religious', 'layperson') then
+        insert into public.import_batch_row_issues (
+          batch_id, row_id, issue_type, code, field_name, message, details
+        ) values (
+          p_batch_id, v_row.id, 'validation_error', 'invalid_person_type', 'tipo_persona',
+          'El tipo de persona no pertenece al catálogo permitido.',
+          jsonb_build_object('received', v_value)
+        );
+      end if;
+
+      v_value := nullif(btrim(concat_ws(
+        ' ',
+        v_row.normalized_data ->> 'primer_nombre',
+        v_row.normalized_data ->> 'segundo_nombre',
+        v_row.normalized_data ->> 'primer_apellido',
+        v_row.normalized_data ->> 'segundo_apellido'
+      )), '');
+      if v_value is not null then
+        v_matches := app_private.import_person_matches(v_value);
+        if cardinality(v_matches) > 0 then
+          insert into public.import_batch_row_issues (
+            batch_id, row_id, issue_type, code, field_name, message, details
+          ) values (
+            p_batch_id, v_row.id, 'duplicate', 'possible_existing_person', 'primer_nombre',
+            'La persona coincide con una identidad canónica existente dentro del alcance autorizado.',
+            jsonb_build_object('received', v_value, 'candidate_ids', to_jsonb(v_matches))
+          );
+        end if;
+      end if;
+    end if;
+
+    if v_batch.import_type = 'parroquias' then
+      v_value := nullif(lower(btrim(coalesce(v_row.normalized_data ->> 'tipo_entidad', ''))), '');
+      if v_value is not null and not exists (
+        select 1
+        from public.entity_types entity_type
+        where lower(entity_type.key) = v_value
+          and entity_type.status = 'active'
+      ) then
+        insert into public.import_batch_row_issues (
+          batch_id, row_id, issue_type, code, field_name, message, details
+        ) values (
+          p_batch_id, v_row.id, 'validation_error', 'invalid_entity_type', 'tipo_entidad',
+          'El tipo de entidad no pertenece al catálogo activo.',
+          jsonb_build_object('received', v_value)
+        );
+      end if;
+
+      v_value := nullif(btrim(coalesce(v_row.normalized_data ->> 'nombre', '')), '');
+      if v_value is not null then
+        v_matches := app_private.import_entity_matches(v_value);
+        if cardinality(v_matches) > 0 then
+          insert into public.import_batch_row_issues (
+            batch_id, row_id, issue_type, code, field_name, message, details
+          ) values (
+            p_batch_id, v_row.id, 'duplicate', 'possible_existing_entity', 'nombre',
+            'La entidad coincide con un registro canónico existente dentro del alcance autorizado.',
+            jsonb_build_object('received', v_value, 'candidate_ids', to_jsonb(v_matches))
+          );
+        end if;
+      end if;
+    end if;
+
+    if v_batch.import_type = 'eventos' then
+      v_value := nullif(lower(btrim(coalesce(v_row.normalized_data ->> 'tipo_evento', ''))), '');
+      if v_value is not null and not exists (
+        select 1 from public.canonical_event_types canonical_type where lower(canonical_type.key) = v_value
+        union all
+        select 1 from public.event_types event_type where lower(event_type.key) = v_value and event_type.status = 'active'
+      ) then
+        insert into public.import_batch_row_issues (
+          batch_id, row_id, issue_type, code, field_name, message, details
+        ) values (
+          p_batch_id, v_row.id, 'validation_error', 'invalid_event_type', 'tipo_evento',
+          'El tipo de evento no pertenece a un catálogo vigente.',
           jsonb_build_object('received', v_value)
         );
       end if;
@@ -625,7 +747,7 @@ begin
 
   v_status := case
     when v_error_rows + v_duplicate_rows + v_unresolved_rows > 0 then 'needs_review'
-    else 'ready_to_apply'
+    else 'validated'
   end;
 
   v_summary := jsonb_build_object(
@@ -819,16 +941,6 @@ begin
   );
 
   return v_summary || jsonb_build_object('audit_log_id', v_audit_log_id);
-exception
-  when others then
-    if v_batch_id is not null then
-      update public.import_batches
-      set status = 'failed',
-          last_error = sqlerrm,
-          updated_at = now()
-      where id = v_batch_id;
-    end if;
-    raise;
 end;
 $$;
 

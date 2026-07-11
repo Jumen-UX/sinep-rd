@@ -16,7 +16,9 @@ test('batch import provides downloadable CSV templates and a bounded preview', a
   assert.match(page, /parseCsvPreview/)
   assert.match(page, /Descargar plantilla CSV/)
   assert.match(page, /Vista previa del CSV/)
-  assert.match(parser, /dataRows\.slice\(0, limit\)/)
+  assert.match(parser, /normalizedRows\.slice\(0, limit\)/)
+  assert.match(parser, /sha256Hex\(source: ArrayBuffer\)/)
+  assert.match(page, /file\.arrayBuffer\(\)/)
 })
 
 test('CSV parser handles quoted fields and validates its header', async () => {
