@@ -1,7 +1,9 @@
 'use client'
 
 import type { MouseEvent, ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 type AdminNavItem = {
   href: string
@@ -13,6 +15,10 @@ type AdminNavItem = {
 type AdminNavSection = {
   title: string
   items: AdminNavItem[]
+}
+
+type IncompatibilityQueue = {
+  total?: number
 }
 
 const adminNavSections: AdminNavSection[] = [
@@ -39,6 +45,7 @@ const adminNavSections: AdminNavSection[] = [
       { href: '/admin/paises', icon: '◎', label: 'Países ISO', sublabel: 'Banderas y visibilidad' },
       { href: '/admin/eventos', icon: '◷', label: 'Historial', sublabel: 'Eventos y fuentes' },
       { href: '/admin/revision', icon: '!', label: 'Pendientes', sublabel: 'Validación' },
+      { href: '/admin/incompatibilidades-canonicas', icon: '⚠', label: 'Incompatibilidades', sublabel: 'Nombramientos y reglas' },
     ],
   },
   {
@@ -70,6 +77,36 @@ function forceNavigation(event: MouseEvent<HTMLAnchorElement>, href: string) {
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const supabase = useMemo(() => createClient(), [])
+  const [canonicalIncompatibilities, setCanonicalIncompatibilities] = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadCanonicalIncompatibilities() {
+      if (pathname === '/admin/login') return
+
+      const { data, error } = await supabase.rpc('admin_list_assignment_canonical_incompatibilities', {
+        p_status: 'open',
+        p_limit: 1,
+      })
+
+      if (cancelled) return
+      if (error) {
+        setCanonicalIncompatibilities(null)
+        return
+      }
+
+      const queue = data as IncompatibilityQueue | null
+      setCanonicalIncompatibilities(typeof queue?.total === 'number' ? queue.total : 0)
+    }
+
+    loadCanonicalIncompatibilities()
+
+    return () => {
+      cancelled = true
+    }
+  }, [pathname, supabase])
 
   if (pathname === '/admin/login') {
     return <div className="admin-area admin-login-shell">{children}</div>
@@ -92,15 +129,22 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               <section className="admin-sidebar-section" key={section.title}>
                 <p>{section.title}</p>
                 <div>
-                  {section.items.map((item) => (
-                    <a aria-current={isActiveNavItem(pathname, item.href) ? 'page' : undefined} href={item.href} key={`${item.href}-${item.label}`} onClick={(event) => forceNavigation(event, item.href)}>
-                      <span aria-hidden="true">{item.icon}</span>
-                      <span>
-                        <strong>{item.label}</strong>
-                        {item.sublabel && <small>{item.sublabel}</small>}
-                      </span>
-                    </a>
-                  ))}
+                  {section.items.map((item) => {
+                    const isCanonicalQueue = item.href === '/admin/incompatibilidades-canonicas'
+                    const badge = isCanonicalQueue && canonicalIncompatibilities !== null
+                      ? canonicalIncompatibilities
+                      : null
+
+                    return (
+                      <a aria-current={isActiveNavItem(pathname, item.href) ? 'page' : undefined} href={item.href} key={`${item.href}-${item.label}`} onClick={(event) => forceNavigation(event, item.href)}>
+                        <span aria-hidden="true">{item.icon}</span>
+                        <span>
+                          <strong>{item.label}{badge !== null && badge > 0 ? ` · ${badge}` : ''}</strong>
+                          {item.sublabel && <small>{item.sublabel}</small>}
+                        </span>
+                      </a>
+                    )
+                  })}
                 </div>
               </section>
             ))}
@@ -115,6 +159,16 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         </aside>
 
         <div className="admin-workspace">
+          {pathname === '/admin' && canonicalIncompatibilities !== null && canonicalIncompatibilities > 0 && (
+            <section className="admin-dashboard-review-notice has-pending" aria-label="Incompatibilidades canónicas pendientes">
+              <span className="admin-dashboard-review-icon" aria-hidden="true">!</span>
+              <div>
+                <strong>Nombramientos incompatibles con las reglas vigentes</strong>
+                <p>{canonicalIncompatibilities} caso{canonicalIncompatibilities === 1 ? '' : 's'} requiere{canonicalIncompatibilities === 1 ? '' : 'n'} revisión canónica.</p>
+              </div>
+              <a href="/admin/incompatibilidades-canonicas" onClick={(event) => forceNavigation(event, '/admin/incompatibilidades-canonicas')}>Abrir bandeja</a>
+            </section>
+          )}
           {children}
         </div>
       </div>
