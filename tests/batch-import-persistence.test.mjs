@@ -15,6 +15,9 @@ const migrationPaths = {
   eventDispatch: 'supabase/migrations/20260711203456_dispatch_event_import_validation.sql',
   eventApply: 'supabase/migrations/20260711203628_apply_historical_event_import_batches.sql',
   eventReview: 'supabase/migrations/20260711203655_enable_event_import_review_capability.sql',
+  noopPromote: 'supabase/migrations/20260711213847_promote_exact_import_matches_to_noop.sql',
+  noopApply: 'supabase/migrations/20260711214021_apply_noop_only_import_batches.sql',
+  noopUuidFix: 'supabase/migrations/20260711214142_fix_noop_uuid_aggregation.sql',
 }
 
 async function readRepoFile(path) {
@@ -75,12 +78,38 @@ test('historical event batches create reviewable event records without mutating 
   assert.match(review, /v_batch\.import_type in \('personas','parroquias','asignaciones','eventos'\)/)
 })
 
+test('exact deterministic matches become auditable noop operations', async () => {
+  const [promotion, application, uuidFix] = await Promise.all([
+    readRepoFile(migrationPaths.noopPromote),
+    readRepoFile(migrationPaths.noopApply),
+    readRepoFile(migrationPaths.noopUuidFix),
+  ])
+
+  assert.match(promotion, /promote_exact_import_matches_to_noop/)
+  assert.match(promotion, /v_batch\.import_type not in \('parroquias','asignaciones','eventos'\)/)
+  assert.match(promotion, /target_operation='noop'/)
+  assert.match(promotion, /exact_contextual_match/)
+  assert.match(promotion, /exact_assignment_match/)
+  assert.match(promotion, /exact_event_match/)
+  assert.match(promotion, /array_agg\(pa\.id order by pa\.id\)/)
+  assert.doesNotMatch(promotion, /min\([^)]*\.id\)/)
+
+  assert.match(application, /admin_apply_noop_import_batch/)
+  assert.match(application, /operation,'noop'/)
+  assert.match(application, /canonical_records_modified',false/)
+  assert.match(application, /before_data,after_data/)
+  assert.match(application, /idempotent_replay',true/)
+  assert.match(application, /Los lotes mixtos con create y noop/)
+  assert.match(uuidFix, /array_agg\(uuid\)\[1\]/)
+})
+
 test('privileged implementations remain outside the exposed public schema', async () => {
   const files = await Promise.all([
     readRepoFile(migrationPaths.personApply),
     readRepoFile(migrationPaths.structureApply),
     readRepoFile(migrationPaths.assignmentApply),
     readRepoFile(migrationPaths.eventApply),
+    readRepoFile(migrationPaths.noopApply),
   ])
 
   for (const migration of files) {
@@ -89,6 +118,7 @@ test('privileged implementations remain outside the exposed public schema', asyn
   assert.match(files[0], /create or replace function public\.admin_apply_import_batch/)
   assert.match(files[0], /security invoker/)
   assert.match(files[3], /revoke all on function app_private\.admin_apply_event_import_batch/)
+  assert.match(files[4], /revoke all on function app_private\.admin_apply_noop_import_batch/)
 })
 
 test('admin workspace exposes all four application domains with scoped permissions', async () => {
