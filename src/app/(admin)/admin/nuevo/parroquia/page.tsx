@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import StructureHierarchySelector from '@/components/StructureHierarchySelector'
+import { reviewPotentialDuplicates } from '@/lib/admin/duplicateReview'
 import { createClient } from '@/lib/supabase/client'
 
 type EntityTypeRelation = { key: string; name: string }
@@ -194,10 +195,14 @@ export default function NuevaParroquiaPage() {
     }
 
     try {
+      const duplicateMatchCount = await reviewPotentialDuplicates('entity', {
+        ...payload,
+        scope_entity_id: payload.parent_entity_id,
+      })
       const response = await fetch('/api/admin/entidad', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, duplicate_review_confirmed: duplicateMatchCount > 0, duplicate_match_count: duplicateMatchCount }),
       })
       const data = await response.json()
 

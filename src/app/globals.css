@@ -32,6 +32,34 @@ a {
   min-height: 100vh;
 }
 
+.site-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-top: 10px;
+}
+
+.site-footer-links a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.legal-page {
+  display: grid;
+  gap: 20px;
+  max-width: 860px;
+}
+
+.legal-page section {
+  display: grid;
+  gap: 10px;
+}
+
+.legal-page p,
+.legal-page li {
+  line-height: 1.7;
+}
+
 .site-header {
   border-bottom: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.86);

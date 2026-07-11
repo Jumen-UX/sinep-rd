@@ -2,6 +2,8 @@
 
 Fecha: 2026-07-09
 
+> Nota de actualización (2026-07-10): esta auditoría conserva el estado observado el 9 de julio. Varias tareas de seguridad, permisos granulares, arquitectura por dominios y contratos canónicos fueron implementadas posteriormente. Para decidir trabajo nuevo se debe contrastar cada pendiente con las migraciones y pruebas actuales; no asumir que toda casilla abierta continúa vigente.
+
 ## Estado general
 
 La reorganización hacia grupos de rutas `(admin)` y `(public)` conserva las URLs y la mayoría de los módulos. El repositorio ya tiene una base más clara, pero todavía mezcla composición de rutas, lógica de pantalla, estilos extensos y acceso a datos en algunos archivos de `src/app`.

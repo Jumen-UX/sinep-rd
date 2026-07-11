@@ -1,6 +1,7 @@
 'use client'
 
 import { type ChangeEvent, type MouseEvent, useMemo, useState } from 'react'
+import { buildCsvTemplate, parseCsvPreview, type CsvPreview } from '@/features/importaciones/services/csv-preview'
 
 type ImportType = 'personas' | 'parroquias' | 'asignaciones' | 'eventos'
 
@@ -75,15 +76,17 @@ function forceNavigation(event: MouseEvent<HTMLAnchorElement>, href: string) {
 export default function AdminBatchImportPage() {
   const [importType, setImportType] = useState<ImportType>('personas')
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null)
+  const [preview, setPreview] = useState<CsvPreview | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const selectedOption = useMemo(() => importOptions.find((option) => option.key === importType) ?? importOptions[0], [importType])
   const acceptedExtensions = '.csv,.xlsx,.xls'
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     setMessage(null)
     setError(null)
+    setPreview(null)
     const file = event.target.files?.[0]
 
     if (!file) {
@@ -105,7 +108,41 @@ export default function AdminBatchImportPage() {
     }
 
     setSelectedFile({ name: file.name, size: file.size, extension, lastModified: file.lastModified })
-    setMessage('Archivo listo para revisión. El procesamiento automático se conectará a la cola de importación controlada.')
+
+    if (extension !== 'csv') {
+      setError('La vista previa segura está disponible actualmente para CSV. Exporta este archivo de Excel como CSV UTF-8 para continuar.')
+      return
+    }
+
+    try {
+      const result = parseCsvPreview(await file.text(), selectedOption.columns)
+      setPreview(result)
+      if (result.missingColumns.length > 0) {
+        setError(`Faltan columnas obligatorias: ${result.missingColumns.join(', ')}.`)
+      } else {
+        setMessage(`CSV leído correctamente: ${result.totalRows} fila(s) listas para revisión.`)
+      }
+    } catch (readError) {
+      setError(readError instanceof Error ? readError.message : 'No se pudo leer el archivo CSV.')
+    }
+  }
+
+  function selectImportType(nextType: ImportType) {
+    setImportType(nextType)
+    setSelectedFile(null)
+    setPreview(null)
+    setMessage(null)
+    setError(null)
+  }
+
+  function downloadTemplate() {
+    const blob = new Blob([buildCsvTemplate(selectedOption.columns)], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `sinep-${selectedOption.key}-plantilla.csv`
+    anchor.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -153,7 +190,7 @@ export default function AdminBatchImportPage() {
 
         <div className="admin-module-grid">
           {importOptions.map((option) => (
-            <button className={`admin-module-card is-active ${importType === option.key ? 'active-filter' : ''}`} key={option.key} onClick={() => setImportType(option.key)} type="button">
+            <button className={`admin-module-card is-active ${importType === option.key ? 'active-filter' : ''}`} key={option.key} onClick={() => selectImportType(option.key)} type="button">
               <div className="admin-module-card-head">
                 <span className="admin-module-icon">{option.icon}</span>
                 <span className="admin-status-pill active">{importType === option.key ? 'Seleccionado' : 'Disponible'}</span>
@@ -177,7 +214,7 @@ export default function AdminBatchImportPage() {
               <h2>{selectedOption.title}</h2>
               <p className="meta">Columnas mínimas recomendadas para iniciar la importación.</p>
             </div>
-            <span className="role-pill">{selectedOption.columns.length} columnas</span>
+            <button className="button button-secondary" onClick={downloadTemplate} type="button">Descargar plantilla CSV</button>
           </div>
 
           <div className="admin-module-grid">
@@ -230,6 +267,29 @@ export default function AdminBatchImportPage() {
             <h3>Sin archivo seleccionado</h3>
             <p>Elige un archivo para validar tipo y tamaño antes de enviarlo a procesamiento.</p>
           </div>
+        )}
+
+        {preview && (
+          <section aria-labelledby="vista-previa-importacion">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Lectura real</p>
+                <h2 id="vista-previa-importacion">Vista previa del CSV</h2>
+                <p className="meta">Se muestran hasta 25 filas. Ningún registro ha sido guardado todavía.</p>
+              </div>
+              <span className="role-pill">{preview.totalRows} filas</span>
+            </div>
+            {preview.extraColumns.length > 0 && <div className="admin-info-box"><span>Columnas adicionales conservadas para revisión: {preview.extraColumns.join(', ')}.</span></div>}
+            <div className="table-wrap">
+              <table>
+                <thead><tr>{preview.headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead>
+                <tbody>
+                  {preview.rows.map((row, rowIndex) => <tr key={`row-${rowIndex}`}>{row.map((value, columnIndex) => <td key={`${rowIndex}-${preview.headers[columnIndex]}`}>{value || '—'}</td>)}</tr>)}
+                </tbody>
+              </table>
+            </div>
+            {preview.truncated && <p className="meta">La vista previa fue limitada a 25 filas; el archivo contiene {preview.totalRows}.</p>}
+          </section>
         )}
       </section>
     </div>

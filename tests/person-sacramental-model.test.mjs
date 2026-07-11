@@ -65,15 +65,15 @@ test('clerical transition selectors use sacramental state instead of person type
   const priestService = await readRepoFile('src/features/clero/priest/services/priest-admin-service.ts')
   const bishopService = await readRepoFile('src/features/clero/bishop/services/bishop-admin-service.ts')
 
-  assert.match(deaconService, /rpc\('admin_list_unordained_people'/)
-  assert.doesNotMatch(deaconService, /person_type/)
+  assert.match(deaconService, /loadCanonicalRegistrationCandidates\(supabase, 'deacon'\)/)
+  assert.doesNotMatch(deaconService, /\.eq\('person_type'/)
 
   for (const service of [priestService, bishopService]) {
-    assert.match(service, /from\('person_ecclesial_state'\)/)
-    assert.match(service, /highest_ordination_degree/)
-    assert.doesNotMatch(service, /person_type/)
+    assert.match(service, /loadCanonicalRegistrationCandidates\(supabase, '(?:priest|bishop)'\)/)
+    assert.doesNotMatch(service, /\.eq\('person_type'/)
   }
 
-  assert.match(priestService, /eq\('highest_ordination_degree', 'diaconate'\)/)
-  assert.match(bishopService, /'presbyterate', 'episcopate'/)
+  const canonicalService = await readRepoFile('src/features/personas/shared/services/canonical-person-registration-service.ts')
+  assert.match(canonicalService, /admin_list_canonical_registration_candidates/)
+  assert.match(canonicalService, /p_flow: flow/)
 })

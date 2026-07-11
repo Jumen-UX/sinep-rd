@@ -20,7 +20,10 @@ import './brand.css'
 import './admin-brand.css'
 
 export const metadata: Metadata = {
-  title: 'SINEP RD',
+  title: {
+    default: 'SINEP RD',
+    template: '%s | SINEP RD',
+  },
   description: 'Sistema Nacional de Información Eclesiástica y Pastoral de República Dominicana',
 }
 
@@ -32,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
+        <a className="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
         <div className="site-shell">
           <header className="site-header">
             <div className="container site-header-inner">
@@ -51,11 +55,18 @@ export default function RootLayout({
             </div>
           </header>
 
-          {children}
+          <div id="contenido-principal" tabIndex={-1}>
+            {children}
+          </div>
 
           <footer className="site-footer">
             <div className="container">
               <p>SINEP RD · Sistema Nacional de Información Eclesiástica y Pastoral</p>
+              <nav className="site-footer-links" aria-label="Información legal">
+                <Link href="/privacidad">Privacidad</Link>
+                <Link href="/cookies">Cookies</Link>
+                <Link href="/aviso-legal">Aviso legal</Link>
+              </nav>
             </div>
           </footer>
         </div>

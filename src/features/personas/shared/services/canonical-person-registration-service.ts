@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { reviewPotentialDuplicates } from '@/lib/admin/duplicateReview'
 
 export type CanonicalRegistrationFlow = 'layperson' | 'religious' | 'deacon' | 'priest' | 'bishop'
 export type CanonicalRegistrationMode = 'existing' | 'new'
@@ -62,6 +63,10 @@ export async function saveCanonicalPersonRegistration(
     ? 'existing'
     : 'new'
 
+  const duplicateMatchCount = mode === 'new'
+    ? await reviewPotentialDuplicates('person', payload)
+    : 0
+
   const response = await fetch('/api/admin/persona-canonica', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -70,6 +75,8 @@ export async function saveCanonicalPersonRegistration(
       flow,
       mode,
       selected_person_id: selectedPersonId,
+      duplicate_review_confirmed: duplicateMatchCount > 0,
+      duplicate_match_count: duplicateMatchCount,
     }),
   })
 

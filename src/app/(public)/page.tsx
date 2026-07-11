@@ -590,8 +590,6 @@ export default function HomePage() {
 
   return (
     <div className="public-dashboard-layout">
-      <a className="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
-
       <header className="public-mobile-header">
         <Link className="public-mobile-brand" href="/" aria-label="Ir al inicio de SINEP RD">
           <span className="public-brand-mark" aria-hidden="true">✛</span>
@@ -629,7 +627,7 @@ export default function HomePage() {
         </div>
       </aside>
 
-      <main className="public-main" id="contenido-principal" tabIndex={-1}>
+      <main className="public-main">
         <div className="public-topbar">
           <Link className="public-user-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
         </div>

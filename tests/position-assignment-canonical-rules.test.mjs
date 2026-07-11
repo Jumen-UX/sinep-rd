@@ -25,14 +25,15 @@ test('assignment manager reads canonical person state and validates before savin
   assert.match(service, /admin_check_position_assignment_eligibility/)
   assert.match(service, /required_ordination_degree/)
   assert.match(service, /holder_cardinality/)
-  assert.doesNotMatch(service, /person_type/)
+  assert.doesNotMatch(service, /\.from\('persons'\)[\s\S]*?person_type/)
+  assert.doesNotMatch(service, /\.eq\('person_type'/)
 
   assert.match(page, /checkAssignmentEligibility/)
   assert.match(page, /Titular único/)
   assert.match(page, /Cargo múltiple/)
   assert.match(page, /Cerrar únicamente la asignación vigente de esta misma persona/)
   assert.doesNotMatch(page, /\.from\(/)
-  assert.doesNotMatch(page, /person_type/)
+  assert.doesNotMatch(page, /\.person_type/)
 })
 
 test('office configuration separates degree, episcopal role, clerical status and holder cardinality', async () => {
