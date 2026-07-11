@@ -88,13 +88,13 @@ export default function ImportBatchHistoryPage() {
       <section className="admin-welcome-panel">
         <div>
           <p className="eyebrow">Carga masiva controlada</p>
-          <h1>Lotes preparados y validados</h1>
-          <p className="lead">Consulta archivos persistidos, abre sus filas, revisa incidencias, corrige datos y registra la aprobación editorial sin modificar todavía los registros canónicos.</p>
+          <h1>Lotes preparados, revisados y aplicados</h1>
+          <p className="lead">Consulta archivos persistidos, revisa incidencias y sigue la aplicación canónica. Los lotes de personas aprobados pueden aplicarse manualmente; los demás dominios continúan en preparación y revisión.</p>
           <div className="role-list admin-role-list">
             <span className="role-pill">RLS por alcance</span>
             <span className="role-pill">Corrección por fila</span>
             <span className="role-pill">Aprobación explícita</span>
-            <span className="role-pill">Aplicación deshabilitada</span>
+            <span className="role-pill">Aplicación idempotente</span>
           </div>
         </div>
         <div className="admin-welcome-illustration" aria-hidden="true">▤</div>
@@ -116,6 +116,8 @@ export default function ImportBatchHistoryPage() {
                 <option value="">Todos</option>
                 <option value="needs_review">Requiere revisión</option>
                 <option value="validated">Validado</option>
+                <option value="applying">Aplicando</option>
+                <option value="applied">Aplicado</option>
                 <option value="failed">Fallido</option>
                 <option value="cancelled">Cancelado</option>
               </select>
@@ -143,7 +145,7 @@ export default function ImportBatchHistoryPage() {
                 <tr>
                   <th scope="col">Archivo</th>
                   <th scope="col">Tipo</th>
-                  <th scope="col">Validación</th>
+                  <th scope="col">Estado</th>
                   <th scope="col">Revisión</th>
                   <th scope="col">Filas</th>
                   <th scope="col">Incidencias</th>
