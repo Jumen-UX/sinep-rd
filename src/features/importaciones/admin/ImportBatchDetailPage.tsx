@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  applyImportBatch,
   getImportBatchDetail,
   revalidateImportBatch,
   reviewImportBatch,
@@ -93,6 +94,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
   const [isSaving, setIsSaving] = useState(false)
   const [isRevalidating, setIsRevalidating] = useState(false)
   const [isReviewing, setIsReviewing] = useState(false)
+  const [isApplying, setIsApplying] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -187,10 +189,12 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
     setMessage(null)
 
     try {
-      await reviewImportBatch(batchId, decision, reviewNotes)
+      const result = await reviewImportBatch(batchId, decision, reviewNotes)
       setMessage(
         decision === 'approved'
-          ? 'Lote aprobado editorialmente. La aplicación canónica continúa deshabilitada.'
+          ? result.can_apply
+            ? 'Lote aprobado editorialmente y listo para aplicación canónica.'
+            : 'Lote aprobado editorialmente. Este tipo de importación todavía no tiene contrato de aplicación.'
           : 'Lote rechazado y devuelto para corrección.',
       )
       await loadDetail()
@@ -198,6 +202,35 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
       setError(reviewError instanceof Error ? reviewError.message : 'No se pudo registrar la revisión del lote.')
     } finally {
       setIsReviewing(false)
+    }
+  }
+
+  async function applyBatch() {
+    const confirmed = window.confirm(
+      'Esta acción creará los registros canónicos del lote de personas y dejará auditoría por cada fila. ¿Deseas continuar?',
+    )
+    if (!confirmed) return
+
+    setIsApplying(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const result = await applyImportBatch(batchId)
+      if (result.status === 'failed') {
+        setError(result.error ?? 'La aplicación fue revertida porque una fila no pudo procesarse.')
+      } else {
+        setMessage(
+          result.idempotent_replay
+            ? 'El lote ya estaba aplicado. No se crearon registros duplicados.'
+            : `Lote aplicado correctamente: ${result.applied_rows} fila(s) registradas en el sistema canónico.`,
+        )
+      }
+      await loadDetail()
+    } catch (applicationError) {
+      setError(applicationError instanceof Error ? applicationError.message : 'No se pudo aplicar el lote.')
+    } finally {
+      setIsApplying(false)
     }
   }
 
@@ -224,7 +257,15 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
 
   const { batch, rows } = detail
   const blockingIssues = batch.error_rows + batch.duplicate_rows + batch.unresolved_rows
+  const isApplicationLocked = batch.status === 'applying' || batch.status === 'applied'
   const canDecide = detail.can_review && batch.status === 'validated' && blockingIssues === 0
+  const applicationLabel = batch.status === 'applied'
+    ? 'Aplicación completada'
+    : batch.status === 'failed'
+      ? 'Último intento fallido'
+      : detail.can_apply
+        ? 'Listo para aplicar'
+        : 'Aplicación pendiente'
 
   return (
     <div id="top">
@@ -236,7 +277,12 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
         <div className="admin-top-actions">
           <a className="button button-secondary" href="/admin/importar/lotes">Volver al historial</a>
           <a className="button button-secondary" href="/admin/importar">Preparar otro lote</a>
-          <button className="button button-primary" disabled={isRevalidating || isReviewing} onClick={() => void revalidate()} type="button">
+          <button
+            className="button button-primary"
+            disabled={isRevalidating || isReviewing || isApplying || isApplicationLocked}
+            onClick={() => void revalidate()}
+            type="button"
+          >
             {isRevalidating ? 'Revalidando…' : 'Revalidar lote'}
           </button>
         </div>
@@ -246,13 +292,13 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
         <div>
           <p className="eyebrow">{batch.import_type}</p>
           <h1>{batch.file_name}</h1>
-          <p className="lead">Lote persistido con hash {batch.file_sha256.slice(0, 16)}… Las correcciones y la aprobación editorial no modifican registros canónicos.</p>
+          <p className="lead">Lote persistido con hash {batch.file_sha256.slice(0, 16)}… La aplicación requiere validación, aprobación editorial y permiso por alcance.</p>
           <div className="role-list admin-role-list">
             <span className="role-pill">{statusLabels[batch.status] ?? batch.status}</span>
             <span className="role-pill">{reviewLabels[batch.review_status] ?? batch.review_status}</span>
             <span className="role-pill">{formatBytes(batch.file_size_bytes)}</span>
             <span className="role-pill">{batch.row_count} filas</span>
-            <span className="role-pill">Aplicación deshabilitada</span>
+            <span className="role-pill">{detail.application_rpc_available ? 'Contrato canónico disponible' : 'Solo preparación y revisión'}</span>
           </div>
         </div>
         <div className="admin-welcome-illustration" aria-hidden="true">≡</div>
@@ -268,7 +314,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
             <h2>{blockingIssues > 0 ? 'El lote requiere correcciones' : 'El lote no tiene bloqueos'}</h2>
             <p className="meta">Creado {formatDate(batch.created_at)} · Validado {formatDate(batch.validated_at)}</p>
           </div>
-          <span className="role-pill">can_apply: false</span>
+          <span className="role-pill">{detail.can_apply ? 'Puede aplicarse' : statusLabels[batch.status] ?? batch.status}</span>
         </div>
         <div className="admin-stat-strip" aria-label="Resumen del lote">
           <div><span>✓</span><strong>{batch.valid_rows}</strong><small>Válidas</small></div>
@@ -296,23 +342,61 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
             <label>
               Nota de revisión
               <textarea
+                disabled={isApplicationLocked}
                 onChange={(event) => setReviewNotes(event.target.value)}
                 placeholder="Opcional al aprobar; obligatoria al rechazar."
                 value={reviewNotes}
               />
             </label>
             <div className="admin-top-actions">
-              <button className="button button-primary" disabled={!canDecide || isReviewing} onClick={() => void submitReview('approved')} type="button">
+              <button className="button button-primary" disabled={!canDecide || isReviewing || isApplying} onClick={() => void submitReview('approved')} type="button">
                 {isReviewing ? 'Registrando…' : 'Aprobar lote'}
               </button>
-              <button className="button button-secondary" disabled={!canDecide || isReviewing} onClick={() => void submitReview('rejected')} type="button">
+              <button className="button button-secondary" disabled={!canDecide || isReviewing || isApplying} onClick={() => void submitReview('rejected')} type="button">
                 Rechazar lote
               </button>
             </div>
-            {!canDecide && <p className="meta">La aprobación requiere un lote validado sin errores, duplicados ni relaciones no resueltas.</p>}
+            {!canDecide && !isApplicationLocked && <p className="meta">La aprobación requiere un lote validado sin errores, duplicados ni relaciones no resueltas.</p>}
           </div>
         ) : (
           <div className="admin-info-box"><span>Tu usuario puede consultar y corregir este lote, pero no registrar la decisión editorial.</span></div>
+        )}
+      </section>
+
+      <section className="card dashboard-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Aplicación canónica</p>
+            <h2>{applicationLabel}</h2>
+            <p className="meta">La operación es transaccional: si una fila falla, no se conserva ninguna creación parcial.</p>
+          </div>
+          <span className="role-pill">Permiso: imports.apply</span>
+        </div>
+
+        {detail.application_rpc_available ? (
+          <>
+            <div className="admin-stat-strip" aria-label="Estado de aplicación">
+              <div><span>↻</span><strong>{batch.application_attempt_count}</strong><small>Intentos</small></div>
+              <div><span>✓</span><strong>{batch.applied_rows}</strong><small>Aplicadas</small></div>
+              <div><span>◷</span><strong>{formatDate(batch.application_started_at)}</strong><small>Inicio</small></div>
+              <div><span>●</span><strong>{formatDate(batch.applied_at)}</strong><small>Finalización</small></div>
+            </div>
+
+            {batch.last_error && <div className="error-box">Último error: {batch.last_error}</div>}
+
+            {batch.status === 'applied' ? (
+              <div className="success-box">El lote fue aplicado. Cada fila conserva su registro objetivo y su entrada de auditoría.</div>
+            ) : (
+              <div className="admin-top-actions">
+                <button className="button button-primary" disabled={!detail.can_apply || isApplying} onClick={() => void applyBatch()} type="button">
+                  {isApplying ? 'Aplicando lote…' : batch.status === 'failed' ? 'Reintentar aplicación' : 'Aplicar lote de personas'}
+                </button>
+                <span className="meta">Solo se habilita con validación vigente, aprobación editorial y alcance autorizado.</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="admin-info-box"><span>Este dominio todavía permite preparación, corrección y aprobación, pero no aplicación canónica.</span></div>
         )}
       </section>
 
@@ -369,10 +453,11 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
                       {entries.map(([key, value]) => (
                         <div key={key}><span>{key}</span><strong>{String(value || '—')}</strong></div>
                       ))}
+                      {row.target_record_id && <div><span>Registro canónico</span><strong>{row.target_record_id}</strong></div>}
                     </div>
                     <IssueList issues={rowIssues} />
                     <div className="admin-top-actions">
-                      <button className="button button-secondary" onClick={() => startEditing(row)} type="button">Corregir fila</button>
+                      <button className="button button-secondary" disabled={isApplicationLocked || isApplying} onClick={() => startEditing(row)} type="button">Corregir fila</button>
                     </div>
                   </>
                 )}
