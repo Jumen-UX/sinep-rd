@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   try {
     let query = auth.supabase
       .from('import_batches')
-      .select('id, import_type, status, file_name, file_size_bytes, file_sha256, scope_entity_id, row_count, valid_rows, warning_rows, error_rows, duplicate_rows, unresolved_rows, created_by, validated_at, created_at, updated_at')
+      .select('id, import_type, status, review_status, file_name, file_size_bytes, file_sha256, scope_entity_id, row_count, valid_rows, warning_rows, error_rows, duplicate_rows, unresolved_rows, created_by, validated_at, reviewed_at, created_at, updated_at')
       .order('created_at', { ascending: false })
       .limit(limit)
 
