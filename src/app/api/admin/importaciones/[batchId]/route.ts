@@ -93,7 +93,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       )
     }
 
-    const applicationRpcAvailable = ['personas', 'parroquias', 'asignaciones'].includes(batch.import_type)
+    const applicationRpcAvailable = ['personas', 'parroquias', 'asignaciones', 'eventos'].includes(batch.import_type)
     const blockingIssues = batch.error_rows + batch.duplicate_rows + batch.unresolved_rows
     const canApply = applicationRpcAvailable
       && hasApplyPermission
