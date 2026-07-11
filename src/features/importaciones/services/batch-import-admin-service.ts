@@ -11,6 +11,8 @@ export type ImportBatchStatus =
   | 'cancelled'
   | (string & {})
 
+export type ImportBatchReviewStatus = 'pending' | 'approved' | 'rejected'
+
 export type PrepareImportBatchInput = {
   importType: ImportBatchType
   templateVersion?: number
@@ -42,10 +44,21 @@ export type ImportBatchSummary = {
   audit_log_id?: string
 }
 
+export type ImportBatchReviewResult = {
+  batch_id: string
+  status: ImportBatchStatus
+  review_status: ImportBatchReviewStatus
+  reviewed_at: string
+  can_apply: false
+  application_rpc_available: false
+  audit_log_id: string
+}
+
 export type ImportBatchListItem = {
   id: string
   import_type: ImportBatchType
   status: ImportBatchStatus
+  review_status: ImportBatchReviewStatus
   file_name: string
   file_size_bytes: number
   file_sha256: string
@@ -58,6 +71,7 @@ export type ImportBatchListItem = {
   unresolved_rows: number
   created_by: string
   validated_at: string | null
+  reviewed_at: string | null
   created_at: string
   updated_at: string
 }
@@ -100,20 +114,22 @@ export type ImportBatchRowDetail = {
 
 export type ImportBatchDetail = {
   batch: ImportBatchListItem & {
+    review_notes: string | null
     template_version: number
     file_extension: 'csv' | 'xlsx' | 'xls'
     file_mime_type: string | null
     file_last_modified_at: string | null
     source_metadata: Record<string, unknown>
     validated_by: string | null
+    reviewed_by: string | null
     applied_rows: number
     validation_summary: Record<string, unknown>
     last_error: string | null
-    reviewed_at: string | null
     applied_at: string | null
   }
   rows: ImportBatchRowDetail[]
   issues: ImportBatchRowIssue[]
+  can_review: boolean
 }
 
 function readErrorMessage(payload: unknown): string | null {
@@ -189,6 +205,19 @@ export async function revalidateImportBatch(batchId: string): Promise<ImportBatc
     method: 'POST',
   })
   return readPayload<ImportBatchSummary>(response, 'No se pudo revalidar el lote de importación.')
+}
+
+export async function reviewImportBatch(
+  batchId: string,
+  decision: 'approved' | 'rejected',
+  notes?: string,
+): Promise<ImportBatchReviewResult> {
+  const response = await fetch(`/api/admin/importaciones/${encodeURIComponent(batchId)}/revisar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ decision, notes: notes ?? '' }),
+  })
+  return readPayload<ImportBatchReviewResult>(response, 'No se pudo registrar la revisión del lote.')
 }
 
 export async function updateImportBatchRow(
