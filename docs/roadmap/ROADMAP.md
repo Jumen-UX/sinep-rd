@@ -8,13 +8,13 @@
 
 La base cuenta con registro canónico de personas, dimensiones clericales, estructura configurable, permisos por jurisdicción, auditoría, revisión de incompatibilidades, portal público y CI con typecheck, pruebas y build.
 
-La importación controlada persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y exige una decisión editorial explícita. Los lotes aprobados de personas y estructuras ya pueden aplicarse con transacción integral, auditoría por fila, registro en `import_batch_changes` y repetición idempotente. Nombramientos y eventos continúan bloqueados hasta tener su propio contrato seguro.
+La importación controlada persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y exige una decisión editorial explícita. Los lotes aprobados de personas, estructuras y nombramientos ya pueden aplicarse con transacción integral, auditoría por fila, registro en `import_batch_changes` y repetición idempotente. Los eventos históricos continúan bloqueados hasta tener su propio contrato seguro.
 
 ## Prioridad 0 — operación segura
 
 - [ ] Aplicar y verificar en cada entorno todas las migraciones pendientes. Las migraciones de importación están aplicadas y verificadas en el proyecto Supabase conectado.
 - [ ] Ejecutar pruebas de integración contra una instancia no productiva de Supabase.
-- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación, aprobación, aplicación de personas, aplicación estructural e idempotencia ya tienen smoke test autenticado por RPC.
+- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación, aprobación y aplicación de personas, estructuras y nombramientos ya tienen smoke test autenticado por RPC.
 - [ ] Confirmar protección contra contraseñas filtradas y revisar asesores de seguridad de Supabase. Los asesores fueron revisados; la protección contra contraseñas filtradas continúa pendiente de activación.
 - [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal.
 
@@ -28,13 +28,12 @@ Disponible actualmente:
 - Historial de lotes, detalle por fila, corrección y revalidación.
 - Aprobación o rechazo mediante el permiso `imports.review`.
 - Reinicio automático de la aprobación cuando el lote vuelve a validarse.
-- Aplicación de lotes de personas y estructuras mediante el permiso `imports.apply`.
-- Validación estructural contextual por diócesis, plantilla, nivel y nodo superior.
-- Creación atómica de entidad, nodo y relación jerárquica mediante el motor estructural.
+- Aplicación de lotes de personas, estructuras y nombramientos mediante `imports.apply`.
+- Validación de elegibilidad, cardinalidad y vigencia de nombramientos.
+- Creación atómica mediante los motores canónicos de personas, estructuras y cargos.
 - Reversión transaccional completa ante el fallo de cualquier fila.
 - Protección contra doble aplicación mediante respuesta idempotente.
-- Auditoría de preparación, correcciones, revisión y aplicación canónica.
-- Trazabilidad entre fila, registro creado, cambio aplicado y auditoría.
+- Auditoría y trazabilidad entre fila, registro creado, cambio aplicado y auditoría.
 
 ### Completado
 
@@ -47,16 +46,13 @@ Disponible actualmente:
 - [x] Invalidar automáticamente una aprobación anterior cuando cambian los datos validados.
 - [x] Implementar aplicación transaccional e idempotente para lotes de personas.
 - [x] Implementar aplicación transaccional e idempotente para parroquias y estructuras.
-- [x] Detectar duplicados estructurales por plantilla, nivel, padre y nombre normalizado.
-- [x] Crear entidad, nodo y relación estructural mediante el RPC oficial.
-- [x] Registrar cada persona o estructura creada en `import_batch_changes` y enlazar su auditoría.
-- [x] Impedir doble aplicación de lotes de personas y estructuras.
-- [x] Revertir todas las creaciones del intento cuando falla una fila.
-- [x] Auditar preparación, corrección, revisión, fallo y aplicación sin copiar datos privados innecesarios al log.
+- [x] Implementar aplicación transaccional e idempotente para cargos y nombramientos.
+- [x] Reutilizar elegibilidad, titular único, cardinalidad y cierre de nombramientos incompatibles.
+- [x] Registrar cada creación en `import_batch_changes` y enlazar su auditoría.
+- [x] Impedir doble aplicación y revertir todo el intento cuando falla una fila.
 
 ### Pendiente
 
-- [ ] Implementar contrato de aplicación para cargos y nombramientos.
 - [ ] Implementar contrato de aplicación para eventos históricos.
 - [ ] Definir operaciones `update` y `noop` para archivos que enlacen registros canónicos existentes.
 - [ ] Añadir reporte final descargable del lote aplicado.
