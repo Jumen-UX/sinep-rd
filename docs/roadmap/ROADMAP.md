@@ -8,24 +8,45 @@
 
 La base cuenta con registro canónico de personas, dimensiones clericales, estructura configurable, permisos por jurisdicción, auditoría, revisión de incompatibilidades, portal público y CI con typecheck, pruebas y build.
 
+La importación controlada ya persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y conserva auditoría de preparación. La aplicación a registros canónicos continúa intencionalmente deshabilitada hasta completar revisión, idempotencia y pruebas integrales.
+
 ## Prioridad 0 — operación segura
 
-- [ ] Aplicar y verificar en cada entorno todas las migraciones pendientes.
+- [ ] Aplicar y verificar en cada entorno todas las migraciones pendientes. Las migraciones de importación están aplicadas y verificadas en el proyecto Supabase conectado.
 - [ ] Ejecutar pruebas de integración contra una instancia no productiva de Supabase.
-- [ ] Realizar smoke test autenticado de las rutas administrativas críticas.
-- [ ] Confirmar protección contra contraseñas filtradas y revisar asesores de seguridad de Supabase.
+- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. La preparación, corrección y revalidación por RPC ya tienen smoke test autenticado.
+- [ ] Confirmar protección contra contraseñas filtradas y revisar asesores de seguridad de Supabase. Los asesores fueron revisados; la protección contra contraseñas filtradas continúa pendiente de activación.
 - [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal.
 
 ## Prioridad 1 — importación controlada
 
-Disponible actualmente: plantillas CSV, lectura local, validación de encabezados y vista previa limitada.
+Disponible actualmente:
 
-- [ ] Crear tablas de lote y filas con estado, errores y actor.
-- [ ] Diseñar RPC de preparación, validación y aplicación transaccional.
-- [ ] Validar catálogos, relaciones, alcance y duplicados por fila.
-- [ ] Permitir corrección y reintento sin duplicar registros ya aplicados.
+- Plantillas CSV, lectura local, hash SHA-256 y vista previa limitada.
+- Persistencia de lotes, filas e incidencias con RLS por alcance.
+- Validación de campos, catálogos, fechas, duplicados y relaciones.
+- Historial de lotes, detalle por fila, corrección y revalidación.
+- Auditoría de preparación y correcciones.
+- Aplicación canónica deshabilitada explícitamente.
+
+### Completado
+
+- [x] Crear tablas de lote, filas, incidencias y registro futuro de cambios aplicados.
+- [x] Implementar RPC de preparación y validación transaccional.
+- [x] Validar catálogos, relaciones, alcance y duplicados por fila.
+- [x] Permitir corrección y reintento del lote sin modificar registros canónicos.
+- [x] Añadir historial, detalle e incidencias accesibles según el alcance administrativo.
+- [x] Auditar preparación y corrección sin guardar datos privados innecesarios en el log.
+
+### Pendiente
+
+- [ ] Añadir revisión y aprobación explícita del lote antes de aplicarlo.
+- [ ] Implementar RPC de aplicación transaccional e idempotente por tipo de importación.
+- [ ] Registrar cada alta, modificación o no-op en `import_batch_changes`.
+- [ ] Impedir doble aplicación y definir compensación o reversión lógica.
+- [ ] Añadir reporte final descargable del lote aplicado.
 - [ ] Añadir lectura XLSX después de evaluar dependencia, límites y seguridad.
-- [ ] Auditar cada aplicación y conservar resumen del archivo, no datos privados innecesarios.
+- [ ] Auditar cada aplicación canónica y enlazar sus registros creados o modificados.
 
 ## Prioridad 2 — calidad del producto
 
@@ -43,6 +64,7 @@ Disponible actualmente: plantillas CSV, lectura local, validación de encabezado
 - [ ] Unificar componentes visuales administrativos sobre primitivas oficiales.
 - [ ] Definir caché e invalidación para endpoints públicos.
 - [ ] Medir consultas lentas, tamaño de respuestas y crecimiento de tablas históricas.
+- [ ] Revisar y retirar RPC históricas `SECURITY DEFINER` expuestas cuando exista un wrapper seguro equivalente.
 
 ## Fuera de alcance inmediato
 
