@@ -7,6 +7,9 @@ const importMigrationPath = 'supabase/migrations/20260711025340_prepare_persiste
 const reviewMigrationPath = 'supabase/migrations/20260711030620_review_persistent_import_batches.sql'
 const applicationMigrationPath = 'supabase/migrations/20260711032519_apply_person_import_batches.sql'
 const reviewCapabilityMigrationPath = 'supabase/migrations/20260711032920_align_import_review_application_capability.sql'
+const structureValidationMigrationPath = 'supabase/migrations/20260711040000_validate_structure_import_batches.sql'
+const structureApplicationMigrationPath = 'supabase/migrations/20260711040100_dispatch_structure_import_application.sql'
+const structureReviewMigrationPath = 'supabase/migrations/20260711040200_enable_structure_import_review_application.sql'
 
 async function readRepoFile(path) {
   return readFile(new URL(path, repoRoot), 'utf8')
@@ -14,7 +17,6 @@ async function readRepoFile(path) {
 
 test('batch imports persist batches, rows, issues and future change audit records', async () => {
   const migration = await readRepoFile(importMigrationPath)
-
   assert.match(migration, /create table if not exists public\.import_batches/)
   assert.match(migration, /create table if not exists public\.import_batch_rows/)
   assert.match(migration, /create table if not exists public\.import_batch_row_issues/)
@@ -26,7 +28,6 @@ test('batch imports persist batches, rows, issues and future change audit record
 
 test('batch preparation validates and supports correction before canonical application', async () => {
   const migration = await readRepoFile(importMigrationPath)
-
   assert.match(migration, /admin_prepare_import_batch/)
   assert.match(migration, /admin_validate_import_batch/)
   assert.match(migration, /admin_update_import_batch_row/)
@@ -49,7 +50,7 @@ test('privileged batch implementations stay outside the exposed public schema', 
   const scopeHelper = await readRepoFile('supabase/migrations/20260711025044_current_user_root_jurisdiction_helper.sql')
   const hardening = await readRepoFile('supabase/migrations/20260711025611_harden_import_batch_rpc_exposure.sql')
   const application = await readRepoFile(applicationMigrationPath)
-
+  const structureApplication = await readRepoFile(structureApplicationMigrationPath)
   assert.match(scopeHelper, /app_private\.current_user_root_jurisdiction_id/)
   assert.match(scopeHelper, /public\.current_user_root_jurisdiction_id/)
   assert.match(hardening, /alter function public\.admin_prepare_import_batch\(jsonb\) set schema app_private/)
@@ -57,12 +58,14 @@ test('privileged batch implementations stay outside the exposed public schema', 
   assert.match(application, /app_private\.admin_apply_import_batch/)
   assert.match(application, /create or replace function public\.admin_apply_import_batch/)
   assert.match(application, /language sql[\s\S]*security invoker/)
+  assert.match(structureApplication, /app_private\.admin_apply_structure_import_batch/)
+  assert.match(structureApplication, /revoke all on function app_private\.admin_apply_structure_import_batch/)
 })
 
 test('validated batches require an explicit scoped editorial decision', async () => {
   const migration = await readRepoFile(reviewMigrationPath)
   const capability = await readRepoFile(reviewCapabilityMigrationPath)
-
+  const structureReview = await readRepoFile(structureReviewMigrationPath)
   assert.match(migration, /'imports\.review'/)
   assert.match(migration, /review_status text not null default 'pending'/)
   assert.match(migration, /review_status in \('pending', 'approved', 'rejected'\)/)
@@ -73,11 +76,11 @@ test('validated batches require an explicit scoped editorial decision', async ()
   assert.match(capability, /v_application_available := v_batch\.import_type = 'personas'/)
   assert.match(capability, /current_user_has_permission\('imports\.apply'\)/)
   assert.match(capability, /'can_apply', v_can_apply/)
+  assert.match(structureReview, /v_batch\.import_type in \('personas','parroquias'\)/)
 })
 
 test('approved person batches apply transactionally and idempotently through the canonical engine', async () => {
   const migration = await readRepoFile(applicationMigrationPath)
-
   assert.match(migration, /'imports\.apply'/)
   assert.match(migration, /invalid_person_status_for_type/)
   assert.match(migration, /invalid_person_visibility/)
@@ -92,12 +95,28 @@ test('approved person batches apply transactionally and idempotently through the
   assert.match(migration, /'canonical_records_modified', false/)
 })
 
+test('approved structure batches resolve context and apply atomically through the structure engine', async () => {
+  const validation = await readRepoFile(structureValidationMigrationPath)
+  const application = await readRepoFile(structureApplicationMigrationPath)
+  assert.match(validation, /exact_structure_duplicate/)
+  assert.match(validation, /active_structure_template_not_found/)
+  assert.match(validation, /parent_structure_node_not_found/)
+  assert.match(validation, /invalid_structure_parent_level/)
+  assert.match(validation, /structure_engine_slugify/)
+  assert.match(validation, /target_table='ecclesiastical_entities'/)
+  assert.match(application, /public\.admin_create_structure_node_entity/)
+  assert.match(application, /'import\.structure\.created'/)
+  assert.match(application, /insert into public\.import_batch_changes/)
+  assert.match(application, /'idempotent_replay',true/)
+  assert.match(application, /exception when others/)
+  assert.match(application, /v_type='parroquias'/)
+})
+
 test('admin import page sends complete CSV rows to the protected preparation API', async () => {
   const page = await readRepoFile('src/app/(admin)/admin/importar/page.tsx')
   const parser = await readRepoFile('src/features/importaciones/services/csv-preview.ts')
   const client = await readRepoFile('src/features/importaciones/services/batch-import-admin-service.ts')
   const route = await readRepoFile('src/app/api/admin/importaciones/preparar/route.ts')
-
   assert.match(page, /prepareImportBatch/)
   assert.match(page, /Preparar y validar lote/)
   assert.match(page, /Esta acción no crea ni modifica registros canónicos/)
@@ -122,11 +141,7 @@ test('batch workspace supports review, correction and scoped canonical applicati
   const historyRoute = await readRepoFile('src/app/(admin)/admin/importar/lotes/page.tsx')
   const detailPageRoute = await readRepoFile('src/app/(admin)/admin/importar/[batchId]/page.tsx')
   const layout = await readRepoFile('src/app/(admin)/admin/importar/layout.tsx')
-
-  for (const route of [listRoute, detailRoute, validateRoute, rowRoute]) {
-    assert.match(route, /permissionKey: 'imports\.prepare'/)
-  }
-
+  for (const route of [listRoute, detailRoute, validateRoute, rowRoute]) assert.match(route, /permissionKey: 'imports\.prepare'/)
   assert.match(reviewRoute, /permissionKey: 'imports\.review'/)
   assert.match(applyRoute, /permissionKey: 'imports\.apply'/)
   assert.match(applyRoute, /admin_apply_import_batch/)
@@ -134,6 +149,7 @@ test('batch workspace supports review, correction and scoped canonical applicati
   assert.match(detailRoute, /can_review/)
   assert.match(detailRoute, /can_apply/)
   assert.match(detailRoute, /application_rpc_available/)
+  assert.match(detailRoute, /batch\.import_type === 'personas' \|\| batch\.import_type === 'parroquias'/)
   assert.match(detailRoute, /current_user_can_manage_entity/)
   assert.match(detailRoute, /from\('import_batch_rows'\)/)
   assert.match(detailRoute, /from\('import_batch_row_issues'\)/)
@@ -144,7 +160,6 @@ test('batch workspace supports review, correction and scoped canonical applicati
   assert.match(detailPage, /Guardar y revalidar/)
   assert.match(detailPage, /Aprobar lote/)
   assert.match(detailPage, /Rechazar lote/)
-  assert.match(detailPage, /Aplicar lote de personas/)
   assert.match(detailPage, /window\.confirm/)
   assert.match(client, /applyImportBatch/)
   assert.match(client, /\/aplicar/)
