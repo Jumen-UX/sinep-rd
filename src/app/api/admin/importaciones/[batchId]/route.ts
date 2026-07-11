@@ -21,13 +21,14 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const [batchResult, reviewPermissionResult, nationalResult] = await Promise.all([
+    const [batchResult, reviewPermissionResult, applyPermissionResult, nationalResult] = await Promise.all([
       auth.supabase
         .from('import_batches')
-        .select('id, import_type, status, review_status, review_notes, template_version, file_name, file_extension, file_mime_type, file_size_bytes, file_sha256, file_last_modified_at, source_metadata, scope_entity_id, created_by, validated_by, reviewed_by, row_count, valid_rows, warning_rows, error_rows, duplicate_rows, unresolved_rows, applied_rows, validation_summary, last_error, validated_at, reviewed_at, applied_at, created_at, updated_at')
+        .select('id, import_type, status, review_status, review_notes, template_version, file_name, file_extension, file_mime_type, file_size_bytes, file_sha256, file_last_modified_at, source_metadata, scope_entity_id, created_by, validated_by, reviewed_by, applied_by, row_count, valid_rows, warning_rows, error_rows, duplicate_rows, unresolved_rows, applied_rows, validation_summary, application_summary, application_started_at, application_attempt_count, last_error, validated_at, reviewed_at, applied_at, created_at, updated_at')
         .eq('id', batchId)
         .maybeSingle(),
       auth.supabase.rpc('current_user_has_permission', { p_permission_key: 'imports.review' }),
+      auth.supabase.rpc('current_user_has_permission', { p_permission_key: 'imports.apply' }),
       auth.supabase.rpc('current_user_is_super_or_national'),
     ])
 
@@ -45,14 +46,29 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'El lote no existe o está fuera de tu alcance.' }, { status: 404 })
     }
 
-    if (reviewPermissionResult.error || nationalResult.error) {
-      console.error('Failed to resolve import review capability', {
-        permissionError: reviewPermissionResult.error,
+    if (reviewPermissionResult.error || applyPermissionResult.error || nationalResult.error) {
+      console.error('Failed to resolve import capabilities', {
+        reviewPermissionError: reviewPermissionResult.error,
+        applyPermissionError: applyPermissionResult.error,
         nationalError: nationalResult.error,
       })
     }
 
-    const canReview = reviewPermissionResult.data === true || nationalResult.data === true
+    const isSuperOrNational = nationalResult.data === true
+    const canReview = reviewPermissionResult.data === true || isSuperOrNational
+    const hasApplyPermission = applyPermissionResult.data === true || isSuperOrNational
+
+    let scopeAllowsApplication = isSuperOrNational
+    if (!scopeAllowsApplication && hasApplyPermission && batch.scope_entity_id) {
+      const scopeResult = await auth.supabase.rpc('current_user_can_manage_entity', {
+        p_permission_key: 'imports.apply',
+        p_entity_id: batch.scope_entity_id,
+      })
+      if (scopeResult.error) {
+        console.error('Failed to resolve import application scope', scopeResult.error)
+      }
+      scopeAllowsApplication = scopeResult.data === true
+    }
 
     const [{ data: rows, error: rowsError }, { data: issues, error: issuesError }] = await Promise.all([
       auth.supabase
@@ -77,7 +93,23 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       )
     }
 
-    return NextResponse.json({ batch, rows: rows ?? [], issues: issues ?? [], can_review: canReview })
+    const applicationRpcAvailable = batch.import_type === 'personas'
+    const blockingIssues = batch.error_rows + batch.duplicate_rows + batch.unresolved_rows
+    const canApply = applicationRpcAvailable
+      && hasApplyPermission
+      && scopeAllowsApplication
+      && batch.review_status === 'approved'
+      && (batch.status === 'validated' || batch.status === 'failed')
+      && blockingIssues === 0
+
+    return NextResponse.json({
+      batch,
+      rows: rows ?? [],
+      issues: issues ?? [],
+      can_review: canReview,
+      can_apply: canApply,
+      application_rpc_available: applicationRpcAvailable,
+    })
   } catch (error) {
     console.error('Unexpected import batch detail error', error)
     return NextResponse.json({ error: 'No se pudo consultar el detalle del lote.' }, { status: 500 })
