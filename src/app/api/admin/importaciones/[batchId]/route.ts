@@ -53,8 +53,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         .order('created_at', { ascending: true }),
     ])
 
-    if (rowsError || issuesError) {
-      const readError = rowsError ?? issuesError
+    const readError = rowsError ?? issuesError
+    if (readError) {
       console.error('Failed to read import batch detail', readError)
       return NextResponse.json(
         { error: toSpanishAdminError(readError, 'No se pudo consultar el detalle del lote.') },
