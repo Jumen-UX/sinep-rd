@@ -12,6 +12,7 @@ Este índice reúne únicamente documentación funcional y vigente. Antes de imp
 | Revisar permisos o privacidad | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
 | Confirmar tecnologías | [Stack oficial](./architecture/STACK_OFICIAL.md) |
 | Crear una pantalla | [Estándares web](./standards/ESTANDARES_WEB_SINEP_RD.md) y [guía de interfaz](./design/SINEP_UI_SKILL.md) |
+| Registrar o validar una fuente | [Fuentes del proyecto](./standards/FUENTES_DEL_PROYECTO.md) |
 | Consultar prioridades | [Hoja de ruta](./roadmap/ROADMAP.md) |
 
 ## Documentación vigente
@@ -30,6 +31,7 @@ Este índice reúne únicamente documentación funcional y vigente. Antes de imp
 - [Parámetros de interfaz](./design/SINEP_UI_PARAMETERS.json).
 - [Perfil visual institucional](./design/PERFIL_VISUAL_ARQUIDIOCESIS_SANTO_DOMINGO.md).
 - [Estándares web obligatorios](./standards/ESTANDARES_WEB_SINEP_RD.md).
+- [Fuentes del proyecto](./standards/FUENTES_DEL_PROYECTO.md): autoridad, trazabilidad, discrepancias y publicación.
 
 ### Planificación
 

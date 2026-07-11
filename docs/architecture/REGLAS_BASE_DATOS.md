@@ -103,3 +103,4 @@ Los datos históricos o institucionales deben admitir fuente, documento o nota. 
 
 - [Arquitectura](./ARQUITECTURA.md)
 - [Seguridad de datos](./SEGURIDAD_DATOS.md)
+- [Fuentes del proyecto](../standards/FUENTES_DEL_PROYECTO.md)

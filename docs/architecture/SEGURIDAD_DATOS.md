@@ -117,4 +117,5 @@ No copiar documentos, secretos o notas privadas completas dentro de la metadata 
 
 - [Arquitectura](./ARQUITECTURA.md)
 - [Reglas de base de datos](./REGLAS_BASE_DATOS.md)
+- [Fuentes del proyecto](../standards/FUENTES_DEL_PROYECTO.md)
 - [Política pública de privacidad](<../../src/app/(public)/privacidad/page.tsx>)
