@@ -93,7 +93,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       )
     }
 
-    const applicationRpcAvailable = batch.import_type === 'personas' || batch.import_type === 'parroquias'
+    const applicationRpcAvailable = ['personas', 'parroquias', 'asignaciones'].includes(batch.import_type)
     const blockingIssues = batch.error_rows + batch.duplicate_rows + batch.unresolved_rows
     const canApply = applicationRpcAvailable
       && hasApplyPermission
@@ -112,6 +112,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     })
   } catch (error) {
     console.error('Unexpected import batch detail error', error)
-    return NextResponse.json({ error: 'No se pudo consultar el detalle del lote.' }, { status: 500 })
+    return NextResponse.json({ error: 'No se pudo consultar el lote de importación.' }, { status: 500 })
   }
 }
