@@ -8,13 +8,13 @@
 
 La base cuenta con registro canónico de personas, dimensiones clericales, estructura configurable, permisos por jurisdicción, auditoría, revisión de incompatibilidades, portal público y CI con typecheck, pruebas y build.
 
-La importación controlada persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y exige una decisión editorial explícita. Los lotes aprobados de personas, estructuras, nombramientos y eventos históricos cuentan con contratos transaccionales, auditoría por fila, registro en `import_batch_changes` y repetición idempotente. Los eventos importados se crean en `pending_review`, generan su plan de acciones y no modifican automáticamente el estado estructural vigente.
+La importación controlada persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y exige una decisión editorial explícita. Los lotes aprobados de personas, estructuras, nombramientos y eventos históricos cuentan con contratos transaccionales, auditoría por fila, registro en `import_batch_changes` y repetición idempotente. Los eventos importados se crean en `pending_review`, generan su plan de acciones y no modifican automáticamente el estado estructural vigente. Las coincidencias exactas de estructuras, nombramientos y eventos pueden enlazarse como operaciones `noop` sin mutar registros canónicos.
 
 ## Prioridad 0 — operación segura
 
 - [ ] Aplicar y verificar en cada entorno todas las migraciones pendientes. Las migraciones de importación están aplicadas y verificadas en el proyecto Supabase conectado.
 - [ ] Ejecutar pruebas de integración contra una instancia no productiva de Supabase.
-- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación, aprobación y aplicación de los cuatro dominios tienen smoke test autenticado por RPC.
+- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación, aprobación y aplicación de los cuatro dominios tienen smoke test autenticado por RPC. La aplicación `noop` también fue verificada con repetición idempotente.
 - [ ] Confirmar protección contra contraseñas filtradas y revisar asesores de seguridad de Supabase. Los asesores fueron revisados; la protección contra contraseñas filtradas continúa pendiente de activación.
 - [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal.
 
@@ -31,9 +31,10 @@ Disponible actualmente:
 - Aplicación de lotes de personas, estructuras, nombramientos y eventos mediante `imports.apply`.
 - Creación atómica mediante los motores canónicos de personas, estructuras, cargos y eventos.
 - Eventos importados en `pending_review`, con plan de acciones y sin mutación estructural automática.
+- Enlace `noop` para coincidencias exactas y únicas de estructuras, nombramientos y eventos.
 - Reversión transaccional completa ante el fallo de cualquier fila.
 - Protección contra doble aplicación mediante respuesta idempotente.
-- Auditoría y trazabilidad entre fila, registro creado, cambio aplicado y auditoría.
+- Auditoría y trazabilidad entre fila, registro creado o enlazado, cambio aplicado y auditoría.
 
 ### Completado
 
@@ -49,13 +50,17 @@ Disponible actualmente:
 - [x] Implementar aplicación transaccional e idempotente para cargos y nombramientos.
 - [x] Implementar registro transaccional e idempotente de eventos históricos.
 - [x] Mantener los eventos importados en revisión y bloquear efectos estructurales automáticos.
-- [x] Registrar cada creación en `import_batch_changes` y enlazar su auditoría.
+- [x] Detectar coincidencias exactas y únicas de estructuras, nombramientos y eventos.
+- [x] Aplicar lotes completamente `noop` sin modificar registros canónicos.
+- [x] Registrar operaciones `noop` en `import_batch_changes` y en auditoría.
 - [x] Impedir doble aplicación y revertir todo el intento cuando falla una fila.
 
 ### Pendiente
 
+- [ ] Permitir lotes mixtos `create + noop` dentro de una única transacción.
+- [ ] Añadir un identificador estable para habilitar `noop` seguro en personas.
+- [ ] Definir operaciones `update` con comparación de cambios y aprobación explícita.
 - [ ] Sustituir la etiqueta fija del botón de aplicación por una etiqueta dinámica según el dominio.
-- [ ] Definir operaciones `update` y `noop` para archivos que enlacen registros canónicos existentes.
 - [ ] Añadir reporte final descargable del lote aplicado.
 - [ ] Añadir lectura XLSX después de evaluar dependencia, límites y seguridad.
 - [ ] Añadir pruebas E2E del recorrido preparar → corregir → aprobar → aplicar.
