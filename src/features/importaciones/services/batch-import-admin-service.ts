@@ -9,7 +9,7 @@ export type ImportBatchStatus =
   | 'applied'
   | 'failed'
   | 'cancelled'
-  | string
+  | (string & {})
 
 export type PrepareImportBatchInput = {
   importType: ImportBatchType
@@ -116,11 +116,17 @@ export type ImportBatchDetail = {
   issues: ImportBatchRowIssue[]
 }
 
+function readErrorMessage(payload: unknown): string | null {
+  if (typeof payload !== 'object' || payload === null || !('error' in payload)) return null
+  const error = (payload as { error?: unknown }).error
+  return typeof error === 'string' && error.trim() ? error : null
+}
+
 async function readPayload<T>(response: Response, fallback: string): Promise<T> {
-  const payload = await response.json().catch(() => null) as T | { error?: string } | null
+  const payload: unknown = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new Error(payload && typeof payload === 'object' && 'error' in payload && payload.error ? payload.error : fallback)
+    throw new Error(readErrorMessage(payload) ?? fallback)
   }
 
   return payload as T
