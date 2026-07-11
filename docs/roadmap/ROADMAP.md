@@ -8,13 +8,13 @@
 
 La base cuenta con registro canónico de personas, dimensiones clericales, estructura configurable, permisos por jurisdicción, auditoría, revisión de incompatibilidades, portal público y CI con typecheck, pruebas y build.
 
-La importación controlada ya persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila, exige una decisión editorial explícita y conserva auditoría de preparación, corrección y revisión. La aplicación a registros canónicos continúa intencionalmente deshabilitada hasta completar idempotencia, contratos por dominio y pruebas integrales.
+La importación controlada persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y exige una decisión editorial explícita. Los lotes de personas aprobados ya pueden aplicarse mediante el motor canónico común con transacción integral, auditoría por fila, registro en `import_batch_changes` y repetición idempotente. Los demás dominios continúan bloqueados hasta tener su propio contrato seguro.
 
 ## Prioridad 0 — operación segura
 
 - [ ] Aplicar y verificar en cada entorno todas las migraciones pendientes. Las migraciones de importación están aplicadas y verificadas en el proyecto Supabase conectado.
 - [ ] Ejecutar pruebas de integración contra una instancia no productiva de Supabase.
-- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación y aprobación ya tienen smoke test autenticado por RPC.
+- [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación, aprobación, aplicación de personas e idempotencia ya tienen smoke test autenticado por RPC.
 - [ ] Confirmar protección contra contraseñas filtradas y revisar asesores de seguridad de Supabase. Los asesores fueron revisados; la protección contra contraseñas filtradas continúa pendiente de activación.
 - [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal.
 
@@ -28,28 +28,36 @@ Disponible actualmente:
 - Historial de lotes, detalle por fila, corrección y revalidación.
 - Aprobación o rechazo mediante el permiso `imports.review`.
 - Reinicio automático de la aprobación cuando el lote vuelve a validarse.
-- Auditoría de preparación, correcciones y revisión editorial.
-- Aplicación canónica deshabilitada explícitamente.
+- Aplicación de lotes de personas mediante el permiso `imports.apply`.
+- Reversión transaccional completa ante el fallo de cualquier fila.
+- Protección contra doble aplicación mediante respuesta idempotente.
+- Auditoría de preparación, correcciones, revisión y aplicación canónica.
+- Trazabilidad entre fila, persona creada, cambio aplicado y auditoría.
 
 ### Completado
 
-- [x] Crear tablas de lote, filas, incidencias y registro futuro de cambios aplicados.
+- [x] Crear tablas de lote, filas, incidencias y cambios aplicados.
 - [x] Implementar RPC de preparación y validación transaccional.
 - [x] Validar catálogos, relaciones, alcance y duplicados por fila.
 - [x] Permitir corrección y reintento del lote sin modificar registros canónicos.
 - [x] Añadir historial, detalle e incidencias accesibles según el alcance administrativo.
 - [x] Añadir revisión editorial explícita, separada de la aplicación canónica.
 - [x] Invalidar automáticamente una aprobación anterior cuando cambian los datos validados.
-- [x] Auditar preparación, corrección y revisión sin guardar datos privados innecesarios en el log.
+- [x] Implementar aplicación transaccional e idempotente para lotes de personas.
+- [x] Registrar cada persona creada en `import_batch_changes` y enlazar su auditoría.
+- [x] Impedir doble aplicación de un lote de personas.
+- [x] Revertir todas las creaciones del intento cuando falla una fila.
+- [x] Auditar preparación, corrección, revisión, fallo y aplicación sin copiar datos privados innecesarios al log.
 
 ### Pendiente
 
-- [ ] Implementar RPC de aplicación transaccional e idempotente por tipo de importación.
-- [ ] Registrar cada alta, modificación o no-op en `import_batch_changes`.
-- [ ] Impedir doble aplicación y definir compensación o reversión lógica.
+- [ ] Implementar contrato de aplicación para parroquias y estructuras.
+- [ ] Implementar contrato de aplicación para cargos y nombramientos.
+- [ ] Implementar contrato de aplicación para eventos históricos.
+- [ ] Definir operaciones `update` y `noop` para archivos que enlacen registros canónicos existentes.
 - [ ] Añadir reporte final descargable del lote aplicado.
 - [ ] Añadir lectura XLSX después de evaluar dependencia, límites y seguridad.
-- [ ] Auditar cada aplicación canónica y enlazar sus registros creados o modificados.
+- [ ] Añadir pruebas E2E del recorrido preparar → corregir → aprobar → aplicar.
 
 ## Prioridad 2 — calidad del producto
 
