@@ -1,9 +1,19 @@
 'use client'
 
 import { type ChangeEvent, type MouseEvent, useMemo, useState } from 'react'
-import { buildCsvTemplate, parseCsvPreview, type CsvPreview } from '@/features/importaciones/services/csv-preview'
+import {
+  prepareImportBatch,
+  type ImportBatchSummary,
+  type ImportBatchType,
+} from '@/features/importaciones/services/batch-import-admin-service'
+import {
+  buildCsvTemplate,
+  parseCsvPreview,
+  sha256Hex,
+  type CsvPreview,
+} from '@/features/importaciones/services/csv-preview'
 
-type ImportType = 'personas' | 'parroquias' | 'asignaciones' | 'eventos'
+type ImportType = ImportBatchType
 
 type ImportOption = {
   key: ImportType
@@ -18,8 +28,10 @@ type ImportOption = {
 type SelectedFile = {
   name: string
   size: number
-  extension: string
+  extension: 'csv' | 'xlsx' | 'xls'
+  mimeType: string | null
   lastModified: number
+  sha256: string | null
 }
 
 const importOptions: ImportOption[] = [
@@ -77,16 +89,27 @@ export default function AdminBatchImportPage() {
   const [importType, setImportType] = useState<ImportType>('personas')
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null)
   const [preview, setPreview] = useState<CsvPreview | null>(null)
+  const [preparedBatch, setPreparedBatch] = useState<ImportBatchSummary | null>(null)
+  const [isPreparing, setIsPreparing] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const selectedOption = useMemo(() => importOptions.find((option) => option.key === importType) ?? importOptions[0], [importType])
   const acceptedExtensions = '.csv,.xlsx,.xls'
+  const canPrepare = Boolean(
+    selectedFile?.extension === 'csv'
+    && selectedFile.sha256
+    && preview
+    && preview.totalRows > 0
+    && preview.totalRows <= 5000
+    && preview.missingColumns.length === 0,
+  )
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     setMessage(null)
     setError(null)
     setPreview(null)
+    setPreparedBatch(null)
     const file = event.target.files?.[0]
 
     if (!file) {
@@ -107,20 +130,37 @@ export default function AdminBatchImportPage() {
       return
     }
 
-    setSelectedFile({ name: file.name, size: file.size, extension, lastModified: file.lastModified })
+    const typedExtension = extension as SelectedFile['extension']
+    setSelectedFile({
+      name: file.name,
+      size: file.size,
+      extension: typedExtension,
+      mimeType: file.type || null,
+      lastModified: file.lastModified,
+      sha256: null,
+    })
 
-    if (extension !== 'csv') {
+    if (typedExtension !== 'csv') {
       setError('La vista previa segura está disponible actualmente para CSV. Exporta este archivo de Excel como CSV UTF-8 para continuar.')
       return
     }
 
     try {
-      const result = parseCsvPreview(await file.text(), selectedOption.columns)
+      const source = await file.text()
+      const [result, fileSha256] = await Promise.all([
+        Promise.resolve(parseCsvPreview(source, selectedOption.columns)),
+        sha256Hex(source),
+      ])
+
+      setSelectedFile((current) => current ? { ...current, sha256: fileSha256 } : current)
       setPreview(result)
+
       if (result.missingColumns.length > 0) {
         setError(`Faltan columnas obligatorias: ${result.missingColumns.join(', ')}.`)
+      } else if (result.totalRows > 5000) {
+        setError(`El archivo contiene ${result.totalRows} filas y supera el límite inicial de 5,000.`)
       } else {
-        setMessage(`CSV leído correctamente: ${result.totalRows} fila(s) listas para revisión.`)
+        setMessage(`CSV leído correctamente: ${result.totalRows} fila(s) listas para preparar y validar.`)
       }
     } catch (readError) {
       setError(readError instanceof Error ? readError.message : 'No se pudo leer el archivo CSV.')
@@ -131,6 +171,7 @@ export default function AdminBatchImportPage() {
     setImportType(nextType)
     setSelectedFile(null)
     setPreview(null)
+    setPreparedBatch(null)
     setMessage(null)
     setError(null)
   }
@@ -143,6 +184,46 @@ export default function AdminBatchImportPage() {
     anchor.download = `sinep-${selectedOption.key}-plantilla.csv`
     anchor.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function prepareBatch() {
+    if (!selectedFile || !selectedFile.sha256 || !preview || !canPrepare) return
+
+    setIsPreparing(true)
+    setError(null)
+    setMessage(null)
+    setPreparedBatch(null)
+
+    try {
+      const summary = await prepareImportBatch({
+        importType,
+        file: {
+          name: selectedFile.name,
+          extension: selectedFile.extension,
+          mimeType: selectedFile.mimeType,
+          sizeBytes: selectedFile.size,
+          sha256: selectedFile.sha256,
+          lastModifiedAt: selectedFile.lastModified ? new Date(selectedFile.lastModified).toISOString() : null,
+        },
+        headers: preview.headers,
+        rows: preview.records,
+        sourceMetadata: {
+          client_preview_rows: Math.min(preview.totalRows, 25),
+          extra_columns: preview.extraColumns,
+        },
+      })
+
+      setPreparedBatch(summary)
+      setMessage(
+        summary.status === 'ready_to_apply'
+          ? 'Lote persistido y validado. No se aplicaron registros definitivos; la aplicación permanece deshabilitada.'
+          : 'Lote persistido. Revisa errores, duplicados y relaciones no resueltas antes de cualquier aplicación futura.',
+      )
+    } catch (prepareError) {
+      setError(prepareError instanceof Error ? prepareError.message : 'No se pudo preparar el lote de importación.')
+    } finally {
+      setIsPreparing(false)
+    }
   }
 
   return (
@@ -163,12 +244,12 @@ export default function AdminBatchImportPage() {
         <div>
           <p className="eyebrow">Carga masiva controlada</p>
           <h1>Importar registros por lotes</h1>
-          <p className="lead">Prepara archivos CSV o Excel para cargar datos de personas, estructuras, nombramientos o eventos sin saltar la validación editorial ni las reglas de duplicidad.</p>
+          <p className="lead">Prepara archivos CSV para persistirlos, validarlos y enviarlos a revisión sin modificar todavía personas, estructuras, nombramientos ni eventos definitivos.</p>
           <div className="role-list admin-role-list">
-            <span className="role-pill">CSV / XLSX</span>
+            <span className="role-pill">CSV seguro</span>
+            <span className="role-pill">Hash SHA-256</span>
             <span className="role-pill">Revisión previa</span>
-            <span className="role-pill">Antiduplicados</span>
-            <span className="role-pill">Aplicación controlada</span>
+            <span className="role-pill">Sin aplicación automática</span>
           </div>
         </div>
         <div className="admin-welcome-illustration" aria-hidden="true">⇪</div>
@@ -241,13 +322,13 @@ export default function AdminBatchImportPage() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Archivo</p>
-            <h2>Subir lote</h2>
-            <p className="meta">Esta pantalla deja preparado el lote para la siguiente fase: lectura, previsualización, validación y aplicación.</p>
+            <h2>Subir y preparar lote</h2>
+            <p className="meta">La preparación guarda el lote, valida cada fila y registra incidencias. No aplica datos definitivos.</p>
           </div>
-          <span className="role-pill">Máx. 10 MB</span>
+          <span className="role-pill">Máx. 10 MB / 5,000 filas</span>
         </div>
 
-        <form className="auth-form access-form">
+        <form className="auth-form access-form" onSubmit={(event) => event.preventDefault()}>
           <label>
             Archivo CSV o Excel
             <input accept={acceptedExtensions} onChange={handleFileChange} type="file" />
@@ -259,13 +340,13 @@ export default function AdminBatchImportPage() {
             <div><span>▤</span><strong>{selectedFile.extension.toUpperCase()}</strong><small>Formato</small></div>
             <div><span>⇪</span><strong>{formatBytes(selectedFile.size)}</strong><small>Tamaño</small></div>
             <div><span>◷</span><strong>{new Date(selectedFile.lastModified).toLocaleDateString('es-DO')}</strong><small>Modificado</small></div>
-            <div><span>✓</span><strong>Listo</strong><small>Validación básica</small></div>
-            <div><span>!</span><strong>Pendiente</strong><small>Procesamiento</small></div>
+            <div><span>✓</span><strong>{selectedFile.sha256 ? 'Calculado' : 'Pendiente'}</strong><small>Hash SHA-256</small></div>
+            <div><span>!</span><strong>{preparedBatch ? 'Persistido' : 'Pendiente'}</strong><small>Lote</small></div>
           </div>
         ) : (
           <div className="empty-state">
             <h3>Sin archivo seleccionado</h3>
-            <p>Elige un archivo para validar tipo y tamaño antes de enviarlo a procesamiento.</p>
+            <p>Elige un archivo para validar tipo y tamaño antes de enviarlo a preparación.</p>
           </div>
         )}
 
@@ -275,7 +356,7 @@ export default function AdminBatchImportPage() {
               <div>
                 <p className="eyebrow">Lectura real</p>
                 <h2 id="vista-previa-importacion">Vista previa del CSV</h2>
-                <p className="meta">Se muestran hasta 25 filas. Ningún registro ha sido guardado todavía.</p>
+                <p className="meta">Se muestran hasta 25 filas. Ningún registro definitivo ha sido guardado.</p>
               </div>
               <span className="role-pill">{preview.totalRows} filas</span>
             </div>
@@ -289,6 +370,32 @@ export default function AdminBatchImportPage() {
               </table>
             </div>
             {preview.truncated && <p className="meta">La vista previa fue limitada a 25 filas; el archivo contiene {preview.totalRows}.</p>}
+            <div className="admin-top-actions">
+              <button className="button button-primary" disabled={!canPrepare || isPreparing} onClick={prepareBatch} type="button">
+                {isPreparing ? 'Preparando lote…' : 'Preparar y validar lote'}
+              </button>
+              <span className="meta">Esta acción no crea ni modifica registros canónicos.</span>
+            </div>
+          </section>
+        )}
+
+        {preparedBatch && (
+          <section aria-labelledby="resultado-preparacion-lote">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Resultado persistido</p>
+                <h2 id="resultado-preparacion-lote">Lote {preparedBatch.batch_id}</h2>
+                <p className="meta">Estado: {preparedBatch.status}. La RPC de aplicación no existe todavía.</p>
+              </div>
+              <span className="role-pill">Aplicación deshabilitada</span>
+            </div>
+            <div className="admin-stat-strip" aria-label="Resumen de validación del lote">
+              <div><span>✓</span><strong>{preparedBatch.valid_rows}</strong><small>Válidas</small></div>
+              <div><span>!</span><strong>{preparedBatch.warning_rows}</strong><small>Advertencias</small></div>
+              <div><span>×</span><strong>{preparedBatch.error_rows}</strong><small>Errores</small></div>
+              <div><span>≡</span><strong>{preparedBatch.duplicate_rows}</strong><small>Duplicadas</small></div>
+              <div><span>?</span><strong>{preparedBatch.unresolved_rows}</strong><small>No resueltas</small></div>
+            </div>
           </section>
         )}
       </section>
