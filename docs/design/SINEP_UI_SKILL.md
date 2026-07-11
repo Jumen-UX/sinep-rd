@@ -1,5 +1,8 @@
 # Skill de Interfaz SINEP RD
 
+> Estado: guía vigente  
+> Última revisión: 2026-07-10
+
 Este documento fija los parametros de interfaz para todas las pantallas administrativas y publicas del proyecto SINEP RD.
 
 ## Objetivo

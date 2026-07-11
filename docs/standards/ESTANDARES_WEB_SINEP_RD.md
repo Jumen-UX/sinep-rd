@@ -1,5 +1,8 @@
 # Estándares web obligatorios de SINEP RD
 
+> Estado: norma vigente  
+> Última revisión: 2026-07-10
+
 Este documento define los criterios mínimos que debe cumplir toda página, componente o flujo nuevo del proyecto SINEP RD. Su cumplimiento es obligatorio antes de considerar una entrega como terminada.
 
 ## 1. Estándares técnicos W3C

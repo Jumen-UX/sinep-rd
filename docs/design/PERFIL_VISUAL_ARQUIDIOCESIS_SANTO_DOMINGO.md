@@ -1,5 +1,8 @@
 # Perfil visual institucional - Arquidiocesis de Santo Domingo
 
+> Estado: referencia visual vigente  
+> Última revisión: 2026-07-10
+
 Este documento cierra la adaptacion visual inicial de SINEP RD a la linea grafica institucional de la Arquidiocesis de Santo Domingo.
 
 ## Paleta base

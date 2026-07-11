@@ -33,6 +33,6 @@ Las pruebas de integración requieren `NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_SER
 - `src/lib`: autorización, validación, privacidad y clientes Supabase.
 - `supabase/migrations`: esquema, RLS, RPC y contratos de lectura.
 - `tests`: pruebas unitarias, estructurales y de integración.
-- `docs`: arquitectura, seguridad, convenciones y planes técnicos.
+- `docs`: documentación funcional vigente, diseño, estándares y hoja de ruta.
 
-Antes de cerrar una pantalla o flujo, aplica [los estándares web obligatorios](./ESTANDARES_WEB_SINEP_RD.md) y ejecuta `pnpm check`.
+Consulta el [índice de documentación](./docs/README.md). Antes de cerrar una pantalla o flujo, aplica [los estándares web obligatorios](./docs/standards/ESTANDARES_WEB_SINEP_RD.md) y ejecuta `pnpm check`.
