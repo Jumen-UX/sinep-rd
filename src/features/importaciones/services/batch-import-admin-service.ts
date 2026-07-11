@@ -39,8 +39,10 @@ export type ImportBatchSummary = {
   error_rows: number
   duplicate_rows: number
   unresolved_rows: number
-  can_apply: false
-  application_rpc_available: false
+  can_apply: boolean
+  application_rpc_available: boolean
+  application_domain?: ImportBatchType
+  review_status?: ImportBatchReviewStatus
   audit_log_id?: string
 }
 
@@ -49,9 +51,27 @@ export type ImportBatchReviewResult = {
   status: ImportBatchStatus
   review_status: ImportBatchReviewStatus
   reviewed_at: string
-  can_apply: false
-  application_rpc_available: false
+  can_apply: boolean
+  application_rpc_available: boolean
   audit_log_id: string
+}
+
+export type ImportBatchApplicationResult = {
+  batch_id: string
+  status: ImportBatchStatus
+  review_status: ImportBatchReviewStatus
+  row_count: number
+  applied_rows: number
+  domain: ImportBatchType
+  contract_version: number
+  can_apply: boolean
+  application_rpc_available: boolean
+  idempotent_replay: boolean
+  applied_at: string | null
+  application_summary?: Record<string, unknown>
+  error?: string
+  sqlstate?: string
+  audit_log_id?: string
 }
 
 export type ImportBatchListItem = {
@@ -122,14 +142,20 @@ export type ImportBatchDetail = {
     source_metadata: Record<string, unknown>
     validated_by: string | null
     reviewed_by: string | null
+    applied_by: string | null
     applied_rows: number
     validation_summary: Record<string, unknown>
+    application_summary: Record<string, unknown>
+    application_started_at: string | null
+    application_attempt_count: number
     last_error: string | null
     applied_at: string | null
   }
   rows: ImportBatchRowDetail[]
   issues: ImportBatchRowIssue[]
   can_review: boolean
+  can_apply: boolean
+  application_rpc_available: boolean
 }
 
 function readErrorMessage(payload: unknown): string | null {
@@ -218,6 +244,13 @@ export async function reviewImportBatch(
     body: JSON.stringify({ decision, notes: notes ?? '' }),
   })
   return readPayload<ImportBatchReviewResult>(response, 'No se pudo registrar la revisión del lote.')
+}
+
+export async function applyImportBatch(batchId: string): Promise<ImportBatchApplicationResult> {
+  const response = await fetch(`/api/admin/importaciones/${encodeURIComponent(batchId)}/aplicar`, {
+    method: 'POST',
+  })
+  return readPayload<ImportBatchApplicationResult>(response, 'No se pudo aplicar el lote de importación.')
 }
 
 export async function updateImportBatchRow(
