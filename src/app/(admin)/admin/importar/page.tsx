@@ -216,8 +216,10 @@ export default function AdminBatchImportPage() {
       setPreparedBatch(summary)
       setMessage(
         summary.status === 'validated'
-          ? 'Lote persistido y validado. No se aplicaron registros definitivos; la aplicación permanece deshabilitada.'
-          : 'Lote persistido. Revisa errores, duplicados y relaciones no resueltas antes de cualquier aplicación futura.',
+          ? summary.application_rpc_available
+            ? 'Lote persistido y validado. Ábrelo para aprobarlo y aplicar sus personas mediante el contrato canónico.'
+            : 'Lote persistido y validado. Puede aprobarse, pero este dominio todavía no tiene contrato de aplicación.'
+          : 'Lote persistido. Revisa errores, duplicados y relaciones no resueltas antes de aprobarlo.',
       )
     } catch (prepareError) {
       setError(prepareError instanceof Error ? prepareError.message : 'No se pudo preparar el lote de importación.')
@@ -235,6 +237,7 @@ export default function AdminBatchImportPage() {
         </div>
         <div className="admin-top-actions">
           <a className="button button-secondary" href="/admin" onClick={(event) => forceNavigation(event, '/admin')}>Volver al panel</a>
+          <a className="button button-secondary" href="/admin/importar/lotes" onClick={(event) => forceNavigation(event, '/admin/importar/lotes')}>Historial de lotes</a>
           <a className="button button-secondary" href="/admin/revision" onClick={(event) => forceNavigation(event, '/admin/revision')}>Cola de revisión</a>
           <a className="button button-primary" href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>Carga individual</a>
         </div>
@@ -244,12 +247,12 @@ export default function AdminBatchImportPage() {
         <div>
           <p className="eyebrow">Carga masiva controlada</p>
           <h1>Importar registros por lotes</h1>
-          <p className="lead">Prepara archivos CSV para persistirlos, validarlos y enviarlos a revisión sin modificar todavía personas, estructuras, nombramientos ni eventos definitivos.</p>
+          <p className="lead">Prepara archivos CSV para persistirlos, validarlos y enviarlos a revisión. Los lotes de personas aprobados pueden aplicarse después mediante el motor canónico; los demás dominios permanecen en revisión.</p>
           <div className="role-list admin-role-list">
             <span className="role-pill">CSV seguro</span>
             <span className="role-pill">Hash SHA-256</span>
             <span className="role-pill">Revisión previa</span>
-            <span className="role-pill">Sin aplicación automática</span>
+            <span className="role-pill">Aplicación manual</span>
           </div>
         </div>
         <div className="admin-welcome-illustration" aria-hidden="true">⇪</div>
@@ -385,9 +388,9 @@ export default function AdminBatchImportPage() {
               <div>
                 <p className="eyebrow">Resultado persistido</p>
                 <h2 id="resultado-preparacion-lote">Lote {preparedBatch.batch_id}</h2>
-                <p className="meta">Estado: {preparedBatch.status}. La RPC de aplicación no existe todavía.</p>
+                <p className="meta">Estado: {preparedBatch.status}. {preparedBatch.application_rpc_available ? 'El contrato de personas estará disponible después de la aprobación.' : 'La aplicación de este dominio todavía no está disponible.'}</p>
               </div>
-              <span className="role-pill">Aplicación deshabilitada</span>
+              <span className="role-pill">{preparedBatch.application_rpc_available ? 'Aplicación manual disponible' : 'Solo revisión'}</span>
             </div>
             <div className="admin-stat-strip" aria-label="Resumen de validación del lote">
               <div><span>✓</span><strong>{preparedBatch.valid_rows}</strong><small>Válidas</small></div>
@@ -395,6 +398,10 @@ export default function AdminBatchImportPage() {
               <div><span>×</span><strong>{preparedBatch.error_rows}</strong><small>Errores</small></div>
               <div><span>≡</span><strong>{preparedBatch.duplicate_rows}</strong><small>Duplicadas</small></div>
               <div><span>?</span><strong>{preparedBatch.unresolved_rows}</strong><small>No resueltas</small></div>
+            </div>
+            <div className="admin-top-actions">
+              <a className="button button-primary" href={`/admin/importar/${preparedBatch.batch_id}`}>Abrir lote y continuar</a>
+              <a className="button button-secondary" href="/admin/importar/lotes">Ver historial</a>
             </div>
           </section>
         )}
