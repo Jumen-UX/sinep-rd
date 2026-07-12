@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import '@/styles/person-wizard-ui.css'
 import '@/styles/deacon-wizard-ui.css'
 
 export default function DeaconWizardLayout({ children }: { children: ReactNode }) {
