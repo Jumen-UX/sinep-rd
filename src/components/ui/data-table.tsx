@@ -36,8 +36,8 @@ function DataTableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   return <tr className={cn('transition-colors hover:bg-[var(--surface-hover)] focus-within:bg-[var(--surface-hover)]', className)} {...props} />
 }
 
-function DataTableHead({ className, ...props }: React.ComponentProps<'th'>) {
-  return <th className={cn('h-11 px-4 font-semibold', className)} scope={props.scope ?? 'col'} {...props} />
+function DataTableHead({ className, scope = 'col', ...props }: React.ComponentProps<'th'>) {
+  return <th className={cn('h-11 px-4 font-semibold', className)} scope={scope} {...props} />
 }
 
 function DataTableCell({ className, ...props }: React.ComponentProps<'td'>) {
