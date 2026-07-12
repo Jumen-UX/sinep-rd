@@ -2,9 +2,11 @@
   --surface: #ffffff;
   --surface-subtle: #fbf8f1;
   --surface-muted: #f1ece2;
+  --surface-hover: #faf6ee;
   --surface-inverse: #2b2020;
 
   --text: #1f2933;
+  --text-strong: #17202a;
   --text-muted: #667085;
   --text-subtle: #8a8f98;
   --text-inverse: #ffffff;
