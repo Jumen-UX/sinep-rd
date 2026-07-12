@@ -12,11 +12,18 @@ type AdminWizardProgressProps = {
   steps: WizardStep[]
   currentStep: number
   onStepChange?: (step: number) => void
+  maxReachableStep?: number
 }
 
-export default function AdminWizardProgress({ steps, currentStep, onStepChange }: AdminWizardProgressProps) {
+export default function AdminWizardProgress({
+  steps,
+  currentStep,
+  onStepChange,
+  maxReachableStep = currentStep,
+}: AdminWizardProgressProps) {
   const completed = Math.max(0, Math.min(steps.length, currentStep))
   const progress = steps.length > 1 ? Math.round((completed / (steps.length - 1)) * 100) : 100
+  const reachableStep = Math.max(currentStep, Math.min(steps.length - 1, maxReachableStep))
 
   return (
     <aside
@@ -46,6 +53,7 @@ export default function AdminWizardProgress({ steps, currentStep, onStepChange }
         {steps.map((step, index) => {
           const isComplete = index < currentStep
           const isCurrent = index === currentStep
+          const canNavigate = Boolean(onStepChange) && index <= reachableStep
           const content = (
             <>
               <span className="grid size-7 shrink-0 place-items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-bold text-[var(--text-strong)]">
@@ -63,13 +71,13 @@ export default function AdminWizardProgress({ steps, currentStep, onStepChange }
 
           const className = cn(
             'flex w-full items-start gap-3 rounded-[var(--radius-md)] px-3 py-3 text-left transition-colors',
-            isCurrent ? 'bg-[var(--primary-soft)]' : 'hover:bg-[var(--surface-hover)]',
+            isCurrent ? 'bg-[var(--primary-soft)]' : canNavigate ? 'hover:bg-[var(--surface-hover)]' : 'opacity-70',
           )
 
           return (
             <li key={`${index}-${step.label}`}>
-              {onStepChange && index <= currentStep ? (
-                <button className={className} onClick={() => onStepChange(index)} type="button" aria-current={isCurrent ? 'step' : undefined}>
+              {canNavigate ? (
+                <button className={className} onClick={() => onStepChange?.(index)} type="button" aria-current={isCurrent ? 'step' : undefined}>
                   {content}
                 </button>
               ) : (
