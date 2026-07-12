@@ -135,3 +135,15 @@ test('admin workspace exposes all four application domains with scoped permissio
   assert.match(detailRoute, /\['personas', 'parroquias', 'asignaciones', 'eventos'\]/)
   assert.match(client, /application_rpc_available/)
 })
+
+test('import domain presentation matches the canonical application contracts', async () => {
+  const contract = await readRepoFile('src/features/importaciones/domain/import-domain-contract.ts')
+
+  assert.match(contract, /importDomainKeys = \['personas', 'parroquias', 'asignaciones', 'eventos'\]/)
+  assert.match(contract, /Aplicar lote de personas/)
+  assert.match(contract, /Aplicar lote de estructuras/)
+  assert.match(contract, /Aplicar lote de asignaciones/)
+  assert.match(contract, /Aplicar lote de eventos/)
+  assert.match(contract, /eventos canónicos pendientes de revisión/)
+  assert.match(contract, /No modificará directamente el estado estructural/)
+})
