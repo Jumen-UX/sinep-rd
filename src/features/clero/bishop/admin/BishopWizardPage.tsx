@@ -3,6 +3,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import AdminWizardProgress from '@/components/admin/AdminWizardProgress'
 import { createClient } from '@/lib/supabase/client'
 import type { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
 import {
@@ -17,6 +18,13 @@ import {
 } from '../services/bishop-admin-service'
 
 const steps = ['Origen', 'Datos básicos', 'Episcopado', 'Cargo', 'Revisión']
+const wizardSteps = [
+  { label: 'Origen', description: 'Seleccionar sacerdote o crear identidad' },
+  { label: 'Datos básicos', description: 'Identidad y biografía pública' },
+  { label: 'Episcopado', description: 'Ordenación y sucesión apostólica' },
+  { label: 'Cargo', description: 'Función, estado y jurisdicción' },
+  { label: 'Revisión', description: 'Fuente y guardado canónico' },
+]
 
 const dignityOptions: Array<{ value: EcclesiasticalDignity; label: string }> = [
   { value: 'archbishop', label: 'Arzobispo' },
@@ -231,141 +239,142 @@ export default function BishopWizardPage() {
       {error && <div className="error-box">{error}</div>}
       {message && <div className="empty-state">{message} {savedSlug && <Link href={`/personas/${savedSlug}`}>Ver ficha pública</Link>}</div>}
 
-      <div className="dashboard-grid dashboard-summary">
-        {steps.map((label, index) => (
-          <button key={label} className={`metric-card metric-button ${step === index ? 'active-filter' : ''}`} type="button" onClick={() => setStep(index)}>
-            <strong>{index + 1}</strong><span>{label}</span>
-          </button>
-        ))}
-      </div>
+      <div className="admin-wizard-layout">
+        <AdminWizardProgress
+          steps={wizardSteps}
+          currentStep={step}
+          maxReachableStep={steps.length - 1}
+          onStepChange={setStep}
+        />
 
-      <form className="admin-form admin-config-form card dashboard-section" onSubmit={handleSubmit}>
-        <section hidden={step !== 0}>
-          <p className="eyebrow">Paso 1</p>
-          <h2>¿Ya existe como sacerdote?</h2>
-          <p className="meta">El flujo normal es seleccionar una persona con presbiterado registrado y agregarle el episcopado. No se crea otra ficha.</p>
-          <div className="dashboard-grid dashboard-summary">
-            <button className={`metric-card metric-button ${mode === 'existing' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('existing')}><strong>Sí</strong><span>Seleccionar sacerdote registrado</span></button>
-            <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => { setMode('new'); setSelectedClergyId('') }}><strong>No</strong><span>Registrar obispo externo</span></button>
-          </div>
-          {mode === 'existing' && (
-            <select value={selectedClergyId} onChange={(event) => setSelectedClergyId(event.target.value)}>
-              <option value="">Selecciona sacerdote</option>
-              {priestRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}
+        <form className="admin-form admin-config-form card dashboard-section admin-wizard-form" onSubmit={handleSubmit}>
+          <section hidden={step !== 0}>
+            <p className="eyebrow">Paso 1</p>
+            <h2>¿Ya existe como sacerdote?</h2>
+            <p className="meta">El flujo normal es seleccionar una persona con presbiterado registrado y agregarle el episcopado. No se crea otra ficha.</p>
+            <div className="dashboard-grid dashboard-summary">
+              <button className={`metric-card metric-button ${mode === 'existing' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('existing')}><strong>Sí</strong><span>Seleccionar sacerdote registrado</span></button>
+              <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => { setMode('new'); setSelectedClergyId('') }}><strong>No</strong><span>Registrar obispo externo</span></button>
+            </div>
+            {mode === 'existing' && (
+              <select value={selectedClergyId} onChange={(event) => setSelectedClergyId(event.target.value)}>
+                <option value="">Selecciona sacerdote</option>
+                {priestRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}
+              </select>
+            )}
+            {mode === 'new' && <div className="empty-state"><strong>Obispo externo</strong><span>El sistema creará la identidad y añadirá los antecedentes sacramentales sin tratarlos como tipos independientes de persona.</span></div>}
+          </section>
+
+          <section hidden={step !== 1}>
+            <p className="eyebrow">Paso 2</p>
+            <h2>{mode === 'existing' ? 'Sacerdote seleccionado' : 'Datos básicos del obispo externo'}</h2>
+            {mode === 'existing' ? <div className="empty-state"><strong>{selectedClergy?.display_name ?? 'No seleccionado'}</strong><span>Se actualizará la misma ficha, sin duplicarla.</span></div> : (
+              <>
+                <input name="first_name" placeholder="Primer nombre" />
+                <input name="middle_name" placeholder="Segundo nombre" />
+                <input name="last_name" placeholder="Primer apellido" />
+                <input name="second_last_name" placeholder="Segundo apellido" />
+                <input name="display_name" placeholder="Nombre como aparecerá en la ficha" />
+                <label>Fecha de nacimiento<input name="birth_date" type="date" /></label>
+                <input name="birth_place" placeholder="Lugar de nacimiento" />
+                <textarea name="biography_public" placeholder="Biografía pública breve" />
+              </>
+            )}
+          </section>
+
+          <section hidden={step !== 2}>
+            <p className="eyebrow">Paso 3</p>
+            <h2>Historia sacramental</h2>
+            <label>Ordenación sacerdotal<input name="priestly_ordination_date" type="date" /></label>
+            <label>Ordenación episcopal<input name="episcopal_ordination_date" type="date" /></label>
+            <input name="ordination_place" placeholder="Lugar de ordenación episcopal" />
+            <input name="religious_order" placeholder="Orden o congregación, si aplica" />
+            <select name="incardination_entity_id" value={incardinationEntityId} onChange={(event) => setIncardinationEntityId(event.target.value)}>
+              <option value="">Incardinación o pertenencia actual</option>
+              {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name}{entity.hierarchy_path ? ` · ${entity.hierarchy_path}` : ''}</option>)}
             </select>
-          )}
-          {mode === 'new' && <div className="empty-state"><strong>Obispo externo</strong><span>El sistema creará la identidad y añadirá los antecedentes sacramentales sin tratarlos como tipos independientes de persona.</span></div>}
-        </section>
+            <p className="meta">La incardinación queda como historial independiente y no define el grado del Orden.</p>
+            <h3>Sucesión apostólica</h3>
+            <select name="principal_consecrator_person_id" defaultValue=""><option value="">Consagrante principal registrado</option>{bishopRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
+            <input name="principal_consecrator_name" placeholder="Consagrante principal si no está registrado" />
+            <select name="co_consecrator_1_person_id" defaultValue=""><option value="">Co-consagrante 1 registrado</option>{bishopRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
+            <input name="co_consecrator_1_name" placeholder="Co-consagrante 1 si no está registrado" />
+            <select name="co_consecrator_2_person_id" defaultValue=""><option value="">Co-consagrante 2 registrado</option>{bishopRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
+            <input name="co_consecrator_2_name" placeholder="Co-consagrante 2 si no está registrado" />
+            <textarea name="ordination_notes_public" placeholder="Notas públicas de la ordenación" />
+          </section>
 
-        <section hidden={step !== 1}>
-          <p className="eyebrow">Paso 2</p>
-          <h2>{mode === 'existing' ? 'Sacerdote seleccionado' : 'Datos básicos del obispo externo'}</h2>
-          {mode === 'existing' ? <div className="empty-state"><strong>{selectedClergy?.display_name ?? 'No seleccionado'}</strong><span>Se actualizará la misma ficha, sin duplicarla.</span></div> : (
-            <>
-              <input name="first_name" placeholder="Primer nombre" />
-              <input name="middle_name" placeholder="Segundo nombre" />
-              <input name="last_name" placeholder="Primer apellido" />
-              <input name="second_last_name" placeholder="Segundo apellido" />
-              <input name="display_name" placeholder="Nombre como aparecerá en la ficha" />
-              <label>Fecha de nacimiento<input name="birth_date" type="date" /></label>
-              <input name="birth_place" placeholder="Lugar de nacimiento" />
-              <textarea name="biography_public" placeholder="Biografía pública breve" />
-            </>
-          )}
-        </section>
+          <section hidden={step !== 3}>
+            <p className="eyebrow">Paso 4</p>
+            <h2>Función, estado, dignidades y cargo</h2>
+            <select value={episcopalRoleType} onChange={(event) => changeEpiscopalRole(event.target.value as BishopRoleType)}>
+              <option value="diocesan">Obispo diocesano</option>
+              <option value="auxiliary">Obispo auxiliar</option>
+              <option value="coadjutor">Obispo coadjutor — con derecho de sucesión</option>
+              <option value="titular">Obispo titular</option>
+              <option value="emeritus">Obispo emérito</option>
+              <option value="apostolic_administrator">Administrador apostólico</option>
+              <option value="apostolic_vicar">Vicario apostólico</option>
+              <option value="apostolic_prefect">Prefecto apostólico</option>
+              <option value="other">Otra función episcopal</option>
+            </select>
+            <input name="title_see_name" placeholder="Sede titular, si aplica" />
+            <select value={canonicalStatus} onChange={(event) => setCanonicalStatus(event.target.value as ClericalStatusType)}>
+              <option value="active">Activo</option>
+              <option value="retired">Retirado</option>
+              <option value="emeritus">Emérito</option>
+              <option value="suspended">Suspendido</option>
+              <option value="restricted">Con restricciones</option>
+              <option value="inactive">Inactivo</option>
+              <option value="deceased">Fallecido</option>
+              <option value="lost_clerical_state">Pérdida del estado clerical</option>
+              <option value="unknown">No identificado</option>
+            </select>
+            <div className="card compact-section">
+              <strong>Dignidades o tratamientos</strong>
+              {dignityOptions.map((option) => (
+                <label key={option.value} className="role-pill">
+                  <input
+                    type="checkbox"
+                    checked={dignities.includes(option.value)}
+                    onChange={(event) => toggleDignity(option.value, event.target.checked)}
+                  /> {option.label}
+                </label>
+              ))}
+            </div>
+            <p className="meta">Arzobispo, metropolitano, cardenal o monseñor no son grados adicionales del Orden.</p>
+            <select name="assignment_entity_id" value={assignmentEntityId} onChange={(event) => setAssignmentEntityId(event.target.value)}>
+              <option value="">Jurisdicción o entidad de la función</option>
+              {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
+            </select>
+            <div className="empty-state"><strong>Ruta</strong><span>{selectedEntity?.hierarchy_path ?? selectedEntity?.direct_entity_name ?? 'Selecciona la jurisdicción o entidad.'}</span></div>
+            <select name="office_configuration_id" value={officeConfigurationId} onChange={(event) => setOfficeConfigurationId(event.target.value)} disabled={!assignmentEntityId || filteredOffices.length === 0}>
+              <option value="">Sin cargo configurado por ahora</option>
+              {filteredOffices.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
+            </select>
+            <p className="meta">{officeFilterMessage}</p>
+            <input name="title_override" placeholder="Título público del nombramiento, si requiere una variante" />
+            <label>Inicio de la función o nombramiento<input name="appointment_start_date" type="date" /></label>
+            <textarea name="appointment_notes_public" placeholder="Notas públicas de la función o del cargo" />
+          </section>
 
-        <section hidden={step !== 2}>
-          <p className="eyebrow">Paso 3</p>
-          <h2>Historia sacramental</h2>
-          <label>Ordenación sacerdotal<input name="priestly_ordination_date" type="date" /></label>
-          <label>Ordenación episcopal<input name="episcopal_ordination_date" type="date" /></label>
-          <input name="ordination_place" placeholder="Lugar de ordenación episcopal" />
-          <input name="religious_order" placeholder="Orden o congregación, si aplica" />
-          <select name="incardination_entity_id" value={incardinationEntityId} onChange={(event) => setIncardinationEntityId(event.target.value)}>
-            <option value="">Incardinación o pertenencia actual</option>
-            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name}{entity.hierarchy_path ? ` · ${entity.hierarchy_path}` : ''}</option>)}
-          </select>
-          <p className="meta">La incardinación queda como historial independiente y no define el grado del Orden.</p>
-          <h3>Sucesión apostólica</h3>
-          <select name="principal_consecrator_person_id" defaultValue=""><option value="">Consagrante principal registrado</option>{bishopRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
-          <input name="principal_consecrator_name" placeholder="Consagrante principal si no está registrado" />
-          <select name="co_consecrator_1_person_id" defaultValue=""><option value="">Co-consagrante 1 registrado</option>{bishopRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
-          <input name="co_consecrator_1_name" placeholder="Co-consagrante 1 si no está registrado" />
-          <select name="co_consecrator_2_person_id" defaultValue=""><option value="">Co-consagrante 2 registrado</option>{bishopRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}</select>
-          <input name="co_consecrator_2_name" placeholder="Co-consagrante 2 si no está registrado" />
-          <textarea name="ordination_notes_public" placeholder="Notas públicas de la ordenación" />
-        </section>
+          <section hidden={step !== 4}>
+            <p className="eyebrow">Paso 5</p>
+            <h2>Fuente y revisión</h2>
+            <input name="source_name" placeholder="Fuente" />
+            <input name="source_url" placeholder="URL de fuente" />
+            <label>Fecha de revisión<input name="source_checked_at" type="date" /></label>
+            <p className="lead">Se guardarán por separado la identidad, el episcopado, la función episcopal, el estado canónico, las dignidades y el nombramiento.</p>
+          </section>
 
-        <section hidden={step !== 3}>
-          <p className="eyebrow">Paso 4</p>
-          <h2>Función, estado, dignidades y cargo</h2>
-          <select value={episcopalRoleType} onChange={(event) => changeEpiscopalRole(event.target.value as BishopRoleType)}>
-            <option value="diocesan">Obispo diocesano</option>
-            <option value="auxiliary">Obispo auxiliar</option>
-            <option value="coadjutor">Obispo coadjutor — con derecho de sucesión</option>
-            <option value="titular">Obispo titular</option>
-            <option value="emeritus">Obispo emérito</option>
-            <option value="apostolic_administrator">Administrador apostólico</option>
-            <option value="apostolic_vicar">Vicario apostólico</option>
-            <option value="apostolic_prefect">Prefecto apostólico</option>
-            <option value="other">Otra función episcopal</option>
-          </select>
-          <input name="title_see_name" placeholder="Sede titular, si aplica" />
-          <select value={canonicalStatus} onChange={(event) => setCanonicalStatus(event.target.value as ClericalStatusType)}>
-            <option value="active">Activo</option>
-            <option value="retired">Retirado</option>
-            <option value="emeritus">Emérito</option>
-            <option value="suspended">Suspendido</option>
-            <option value="restricted">Con restricciones</option>
-            <option value="inactive">Inactivo</option>
-            <option value="deceased">Fallecido</option>
-            <option value="lost_clerical_state">Pérdida del estado clerical</option>
-            <option value="unknown">No identificado</option>
-          </select>
-          <div className="card compact-section">
-            <strong>Dignidades o tratamientos</strong>
-            {dignityOptions.map((option) => (
-              <label key={option.value} className="role-pill">
-                <input
-                  type="checkbox"
-                  checked={dignities.includes(option.value)}
-                  onChange={(event) => toggleDignity(option.value, event.target.checked)}
-                /> {option.label}
-              </label>
-            ))}
+          <div className="admin-form-grid">
+            <button className="button button-secondary" type="button" onClick={() => setStep(Math.max(0, step - 1))}>Anterior</button>
+            {step < steps.length - 1
+              ? <button className="button button-secondary" type="button" onClick={() => setStep(Math.min(steps.length - 1, step + 1))}>Siguiente</button>
+              : <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar obispo'}</button>}
           </div>
-          <p className="meta">Arzobispo, metropolitano, cardenal o monseñor no son grados adicionales del Orden.</p>
-          <select name="assignment_entity_id" value={assignmentEntityId} onChange={(event) => setAssignmentEntityId(event.target.value)}>
-            <option value="">Jurisdicción o entidad de la función</option>
-            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-          </select>
-          <div className="empty-state"><strong>Ruta</strong><span>{selectedEntity?.hierarchy_path ?? selectedEntity?.direct_entity_name ?? 'Selecciona la jurisdicción o entidad.'}</span></div>
-          <select name="office_configuration_id" value={officeConfigurationId} onChange={(event) => setOfficeConfigurationId(event.target.value)} disabled={!assignmentEntityId || filteredOffices.length === 0}>
-            <option value="">Sin cargo configurado por ahora</option>
-            {filteredOffices.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
-          </select>
-          <p className="meta">{officeFilterMessage}</p>
-          <input name="title_override" placeholder="Título público del nombramiento, si requiere una variante" />
-          <label>Inicio de la función o nombramiento<input name="appointment_start_date" type="date" /></label>
-          <textarea name="appointment_notes_public" placeholder="Notas públicas de la función o del cargo" />
-        </section>
-
-        <section hidden={step !== 4}>
-          <p className="eyebrow">Paso 5</p>
-          <h2>Fuente y revisión</h2>
-          <input name="source_name" placeholder="Fuente" />
-          <input name="source_url" placeholder="URL de fuente" />
-          <label>Fecha de revisión<input name="source_checked_at" type="date" /></label>
-          <p className="lead">Se guardarán por separado la identidad, el episcopado, la función episcopal, el estado canónico, las dignidades y el nombramiento.</p>
-        </section>
-
-        <div className="admin-form-grid">
-          <button className="button button-secondary" type="button" onClick={() => setStep(Math.max(0, step - 1))}>Anterior</button>
-          {step < steps.length - 1
-            ? <button className="button button-secondary" type="button" onClick={() => setStep(Math.min(steps.length - 1, step + 1))}>Siguiente</button>
-            : <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar obispo'}</button>}
-        </div>
-      </form>
+        </form>
+      </div>
     </main>
   )
 }
