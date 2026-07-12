@@ -122,20 +122,16 @@ test('privileged implementations remain outside the exposed public schema', asyn
 })
 
 test('admin workspace exposes all four application domains with scoped permissions', async () => {
-  const [detailRoute, applyRoute, reviewRoute, detailPage, client] = await Promise.all([
+  const [detailRoute, applyRoute, reviewRoute, client] = await Promise.all([
     readRepoFile('src/app/api/admin/importaciones/[batchId]/route.ts'),
     readRepoFile('src/app/api/admin/importaciones/[batchId]/aplicar/route.ts'),
     readRepoFile('src/app/api/admin/importaciones/[batchId]/revisar/route.ts'),
-    readRepoFile('src/features/importaciones/admin/ImportBatchDetailPage.tsx'),
     readRepoFile('src/features/importaciones/services/batch-import-admin-service.ts'),
   ])
 
   assert.match(detailRoute, /imports\.prepare/)
   assert.match(applyRoute, /imports\.apply/)
   assert.match(reviewRoute, /imports\.review/)
-  assert.match(detailPage, /personas/)
-  assert.match(detailPage, /parroquias/)
-  assert.match(detailPage, /asignaciones/)
-  assert.match(detailPage, /eventos/)
+  assert.match(detailRoute, /\['personas', 'parroquias', 'asignaciones', 'eventos'\]/)
   assert.match(client, /application_rpc_available/)
 })
