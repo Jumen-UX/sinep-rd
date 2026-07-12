@@ -27,6 +27,22 @@
   box-shadow: var(--shadow-sm);
 }
 
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .dashboard-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--brand-primary) 12%, transparent), transparent 42%),
+    var(--surface-raised);
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .dashboard-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary, var(--brand-primary)));
+}
+
 :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) :is(.dashboard-hero, .admin-wizard-header) h1 {
   margin: 0.25rem 0 0.75rem;
   color: var(--text-strong);
@@ -40,7 +56,76 @@
   color: var(--text-secondary, var(--text-muted));
 }
 
-:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) :is(.admin-wizard-actions, .admin-actions) {
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .admin-config-form {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .admin-config-form > section {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  border-bottom: 1px solid var(--border-subtle, var(--border-default));
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .admin-config-form > section:last-of-type {
+  border-bottom: 0;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .admin-config-form h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .dashboard-summary {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.85rem;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .metric-button {
+  min-height: 112px;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle, var(--border-default));
+  border-radius: var(--radius-lg);
+  background: var(--surface-default);
+  text-align: left;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background-color 180ms ease;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .metric-button:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .metric-button.active-filter {
+  border-color: var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 8%, var(--surface-raised));
+  box-shadow: 0 0 0 1px var(--brand-primary), var(--shadow-sm);
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .metric-button strong,
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .metric-button span {
+  display: block;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .metric-button span {
+  margin-top: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) :is(.admin-wizard-actions, .admin-actions, .admin-config-form > .admin-form-grid:last-child) {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: 0;
+  padding: 1rem clamp(1.25rem, 2.5vw, 2rem);
+  border-top: 1px solid var(--border-subtle, var(--border-default));
   background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
   backdrop-filter: blur(12px);
 }
@@ -54,6 +139,14 @@
   :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) {
     gap: 1rem;
   }
+
+  :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .dashboard-summary {
+    grid-template-columns: 1fr;
+  }
+
+  :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .metric-button {
+    min-height: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -61,5 +154,6 @@
   :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) *::before,
   :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) *::after {
     scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
