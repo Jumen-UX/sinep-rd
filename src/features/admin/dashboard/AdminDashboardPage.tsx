@@ -2,6 +2,11 @@
 
 import { type FormEvent, type MouseEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from '@/components/ui/data-table'
+import { EmptyState } from '@/components/ui/empty-state'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { createClient } from '@/lib/supabase/client'
 
 type Profile = {
@@ -253,17 +258,31 @@ export default function AdminDashboardPage() {
     window.location.assign('/admin/login')
   }
 
-  if (loading) return <div className="empty-state">Cargando portal administrativo...</div>
-  if (error) return <div className="error-box">{error}</div>
+  if (loading) {
+    return (
+      <div data-ui="page-shell">
+        <EmptyState compact title="Cargando portal administrativo" description="Estamos preparando tus indicadores, permisos y actividad reciente." />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div data-ui="page-shell">
+        <EmptyState compact title="No pudimos cargar el portal" description={error} />
+      </div>
+    )
+  }
 
   if (roles.length === 0) {
     return (
-      <section className="card">
-        <p className="eyebrow">Acceso pendiente</p>
-        <h1>Usuario sin rol activo</h1>
-        <p className="lead">Tu cuenta existe, pero todavía no tiene un rol administrativo activo.</p>
-        <button className="button button-secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
-      </section>
+      <div data-ui="page-shell">
+        <EmptyState
+          title="Usuario sin rol activo"
+          description="Tu cuenta existe, pero todavía no tiene un rol administrativo activo. Solicita la asignación correspondiente antes de continuar."
+          action={<Button variant="secondary" onClick={handleSignOut}>Cerrar sesión</Button>}
+        />
+      </div>
     )
   }
 
@@ -297,17 +316,27 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      <section className="admin-dashboard-heading">
-        <div>
-          <p className="eyebrow">Panel de control</p>
-          <h1>Resumen administrativo</h1>
-          <p>Supervisa la información eclesial, los flujos de revisión y la actividad reciente.</p>
-        </div>
-        <div className="admin-dashboard-heading-actions">
-          <a className="button button-secondary" href="/admin/importar" onClick={(event) => forceNavigation(event, '/admin/importar')}>Importar datos</a>
-          <a className="button button-primary" href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>+ Nuevo registro</a>
-        </div>
-      </section>
+      <PageHeader
+        className="admin-dashboard-heading"
+        breadcrumbs={[{ label: 'Administración', href: '/admin' }, { label: 'Resumen' }]}
+        eyebrow="Panel de control"
+        title="Resumen administrativo"
+        description="Supervisa la información eclesial, los flujos de revisión y la actividad reciente."
+        metadata={(
+          <>
+            <StatusBadge tone="institutional" dot>{getRoleInfo(roles[0])?.name ?? 'Administrador'}</StatusBadge>
+            <StatusBadge tone={pendingReviews > 0 ? 'warning' : 'success'} dot>
+              {pendingReviews > 0 ? `${formatNumber(pendingReviews)} pendientes` : 'Revisión al día'}
+            </StatusBadge>
+          </>
+        )}
+        actions={(
+          <>
+            <Button asChild variant="secondary"><a href="/admin/importar" onClick={(event) => forceNavigation(event, '/admin/importar')}>Importar datos</a></Button>
+            <Button asChild><a href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>+ Nuevo registro</a></Button>
+          </>
+        )}
+      />
 
       <section className={`admin-dashboard-review-notice ${pendingReviews > 0 ? 'has-pending' : 'is-clear'}`}>
         <span className="admin-dashboard-review-icon" aria-hidden="true">i</span>
@@ -381,34 +410,32 @@ export default function AdminDashboardPage() {
           <a href="/admin/actividad" onClick={(event) => forceNavigation(event, '/admin/actividad')}>Ver toda la actividad</a>
         </div>
 
-        <div className="admin-dashboard-table-wrap">
-          <table>
-            <thead>
+        {activities.length > 0 ? (
+          <DataTable caption="Última actividad administrativa">
+            <DataTableHeader>
               <tr>
-                <th>Registro</th>
-                <th>Acción</th>
-                <th>Usuario</th>
-                <th>Fecha</th>
-                <th>Estado</th>
+                <DataTableHead>Registro</DataTableHead>
+                <DataTableHead>Acción</DataTableHead>
+                <DataTableHead>Usuario</DataTableHead>
+                <DataTableHead>Fecha</DataTableHead>
+                <DataTableHead>Estado</DataTableHead>
               </tr>
-            </thead>
-            <tbody>
-              {activities.length > 0 ? activities.map((activity) => (
-                <tr key={activity.id}>
-                  <td><strong>{activityTarget(activity)}</strong></td>
-                  <td>{formatAction(activity.action)}</td>
-                  <td>{activity.actor_name}</td>
-                  <td>{formatDate(activity.created_at)}</td>
-                  <td><span className="admin-dashboard-state">{activityStatus(activity)}</span></td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={5} className="admin-dashboard-empty-row">Todavía no hay actividad administrativa registrada.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            </DataTableHeader>
+            <DataTableBody>
+              {activities.map((activity) => (
+                <DataTableRow key={activity.id}>
+                  <DataTableCell><strong>{activityTarget(activity)}</strong></DataTableCell>
+                  <DataTableCell>{formatAction(activity.action)}</DataTableCell>
+                  <DataTableCell>{activity.actor_name}</DataTableCell>
+                  <DataTableCell>{formatDate(activity.created_at)}</DataTableCell>
+                  <DataTableCell><StatusBadge tone="info" dot>{activityStatus(activity)}</StatusBadge></DataTableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
+        ) : (
+          <EmptyState compact title="Sin actividad registrada" description="Los cambios administrativos auditados aparecerán aquí cuando se realice la primera operación." />
+        )}
       </section>
     </div>
   )
