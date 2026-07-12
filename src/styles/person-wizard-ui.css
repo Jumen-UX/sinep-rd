@@ -1,0 +1,65 @@
+:is(.admin-priest-wizard, .admin-deacon-wizard) {
+  display: grid;
+  gap: var(--space-6, 1.5rem);
+  padding-bottom: 3rem;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard) input,
+:is(.admin-priest-wizard, .admin-deacon-wizard) select,
+:is(.admin-priest-wizard, .admin-deacon-wizard) textarea {
+  width: 100%;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard) .empty-state,
+:is(.admin-priest-wizard, .admin-deacon-wizard) .error-box,
+:is(.admin-priest-wizard, .admin-deacon-wizard) .success-box,
+:is(.admin-priest-wizard, .admin-deacon-wizard) .compact-section {
+  border-radius: var(--radius-lg);
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard) .dashboard-hero,
+:is(.admin-priest-wizard, .admin-deacon-wizard) .admin-wizard-header,
+:is(.admin-priest-wizard, .admin-deacon-wizard) .admin-config-form,
+:is(.admin-priest-wizard, .admin-deacon-wizard) .admin-wizard-form {
+  border: 1px solid var(--border-subtle, var(--border-default));
+  border-radius: var(--radius-xl);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard) :is(.dashboard-hero, .admin-wizard-header) h1 {
+  margin: 0.25rem 0 0.75rem;
+  color: var(--text-strong);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.08;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard) :is(.dashboard-hero, .admin-wizard-header) .lead {
+  max-width: 72ch;
+  margin: 0;
+  color: var(--text-secondary, var(--text-muted));
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard) :is(.admin-wizard-actions, .admin-actions) {
+  background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard) :is(button, a):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 820px) {
+  :is(.admin-priest-wizard, .admin-deacon-wizard) {
+    gap: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.admin-priest-wizard, .admin-deacon-wizard) *,
+  :is(.admin-priest-wizard, .admin-deacon-wizard) *::before,
+  :is(.admin-priest-wizard, .admin-deacon-wizard) *::after {
+    scroll-behavior: auto !important;
+  }
+}
