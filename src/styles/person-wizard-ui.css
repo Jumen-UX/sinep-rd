@@ -209,6 +209,33 @@
   border-top: 1px solid var(--border-subtle, var(--border-default));
 }
 
+.auto-section-wizard {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.auto-section-wizard__content {
+  min-width: 0;
+}
+
+.auto-section-wizard__actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle, var(--border-default));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+}
+
 @media (max-width: 1100px) {
   .person-wizard-with-context {
     grid-template-columns: 1fr;
@@ -221,6 +248,16 @@
 
   .person-wizard-context-list {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .auto-section-wizard {
+    grid-template-columns: 1fr;
+  }
+
+  .auto-section-wizard__actions {
+    grid-column: 1;
   }
 }
 
