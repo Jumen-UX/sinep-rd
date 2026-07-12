@@ -135,12 +135,102 @@
   outline-offset: 2px;
 }
 
+.person-wizard-with-context {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  align-items: start;
+}
+
+.person-wizard-primary {
+  min-width: 0;
+}
+
+.person-wizard-context-rail {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border-subtle, var(--border-default));
+  border-radius: var(--radius-xl);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+}
+
+.person-wizard-context-heading h2 {
+  margin: 0.25rem 0 0.5rem;
+  color: var(--text-strong);
+  font-size: 1.2rem;
+}
+
+.person-wizard-context-heading p:last-child,
+.person-wizard-context-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.person-wizard-context-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.person-wizard-context-list > div {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.person-wizard-context-list > div > span:first-child {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--text-strong);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.person-wizard-context-list strong {
+  min-width: 0;
+  color: var(--text-strong);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.person-wizard-context-note {
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-subtle, var(--border-default));
+}
+
+@media (max-width: 1100px) {
+  .person-wizard-with-context {
+    grid-template-columns: 1fr;
+  }
+
+  .person-wizard-context-rail {
+    position: static;
+    order: -1;
+  }
+
+  .person-wizard-context-list {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
 @media (max-width: 820px) {
   :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) {
     gap: 1rem;
   }
 
-  :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .dashboard-summary {
+  :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard, .admin-religious-wizard, .admin-lay-wizard) .dashboard-summary,
+  .person-wizard-context-list {
     grid-template-columns: 1fr;
   }
 
