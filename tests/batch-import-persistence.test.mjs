@@ -130,7 +130,7 @@ test('admin workspace exposes all four application domains with scoped permissio
     readRepoFile('src/features/importaciones/services/batch-import-admin-service.ts'),
   ])
 
-  assert.match(detailRoute, /imports\.read/)
+  assert.match(detailRoute, /imports\.prepare/)
   assert.match(applyRoute, /imports\.apply/)
   assert.match(reviewRoute, /imports\.review/)
   assert.match(detailPage, /personas/)
