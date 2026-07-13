@@ -1,0 +1,135 @@
+.admin-assignments-page {
+  display: grid;
+  gap: 1.375rem;
+  min-width: 0;
+  padding-bottom: 3rem;
+}
+
+.admin-assignments-page > * {
+  min-width: 0;
+}
+
+.admin-assignments-page #assignment-form {
+  overflow: visible;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+  width: 100%;
+  padding: 0;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > * {
+  min-width: 0;
+  align-self: start;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > select,
+.admin-assignments-page #assignment-form .admin-config-form > input,
+.admin-assignments-page #assignment-form .admin-config-form > label {
+  min-height: 3rem;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > label {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--text-muted, var(--muted));
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > .meta,
+.admin-assignments-page #assignment-form .admin-config-form > .empty-state,
+.admin-assignments-page #assignment-form .admin-config-form > .compact-section,
+.admin-assignments-page #assignment-form .admin-config-form > .role-pill,
+.admin-assignments-page #assignment-form .admin-config-form > textarea,
+.admin-assignments-page #assignment-form .admin-config-form > button {
+  grid-column: 1 / -1;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > .meta {
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--border-subtle, var(--border));
+  border-radius: var(--radius-md, 0.75rem);
+  background: var(--surface-subtle, #fbf8f1);
+  color: var(--text-muted, var(--muted));
+  line-height: 1.45;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > .empty-state {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 0;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle, var(--border));
+  border-radius: var(--radius-lg, 1rem);
+  background: var(--surface-subtle, #fbf8f1);
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > .empty-state strong,
+.admin-assignments-page #assignment-form .admin-config-form > .empty-state span {
+  display: block;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > .compact-section {
+  display: grid;
+  gap: 0.875rem;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle, var(--border));
+  border-radius: var(--radius-lg, 1rem);
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > .compact-section h3,
+.admin-assignments-page #assignment-form .admin-config-form > .compact-section p {
+  margin: 0;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > .role-pill {
+  max-width: none;
+  margin: 0;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > textarea {
+  min-height: 7rem;
+}
+
+.admin-assignments-page #assignment-form .admin-config-form > button {
+  justify-self: end;
+  min-width: 14rem;
+  margin-top: 0.25rem;
+}
+
+.admin-assignments-page #assignment-list {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.admin-assignments-page #assignment-list .table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-assignments-page #assignment-list table {
+  min-width: 72rem;
+}
+
+@media (max-width: 980px) {
+  .admin-assignments-page #assignment-form .admin-config-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-assignments-page #assignment-form .admin-config-form > * {
+    grid-column: 1;
+  }
+
+  .admin-assignments-page #assignment-form .admin-config-form > button {
+    width: 100%;
+    min-width: 0;
+  }
+}
