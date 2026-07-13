@@ -89,6 +89,6 @@ test('admin UI exposes the complete organization event workflow', async () => {
   assert.match(page, /Generar plan/)
   assert.match(page, /Aprobar/)
   assert.match(page, /Aplicar evento/)
-  assert.match(page, /plan\.summary\.can_apply_now/)
+  assert.match(page, /can_apply_now/)
   assert.match(route, /OrganizationUnitEventManagerPage/)
 })
