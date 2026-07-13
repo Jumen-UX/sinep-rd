@@ -73,6 +73,7 @@ type StatisticsSnapshot = {
 }
 
 type Position = EntityOrganizationPosition & {
+  organization_unit_slug: string | null
   parish_name: string | null
   parish_slug: string | null
   zone_name: string | null
@@ -81,8 +82,6 @@ type Position = EntityOrganizationPosition & {
   vicariate_slug: string | null
   diocese_name: string | null
   diocese_slug: string | null
-  pastoral_entity_name: string | null
-  pastoral_entity_slug: string | null
   predecessor_person_name: string | null
   predecessor_person_slug: string | null
   successor_person_name: string | null
