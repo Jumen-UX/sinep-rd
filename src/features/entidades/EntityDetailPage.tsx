@@ -10,6 +10,7 @@ import EntityInstitutionalTimeline, {
   type EntityAuthorityAppointment,
   type EntityEvolutionEvent,
 } from './EntityInstitutionalTimeline'
+import EntityProfileNavigation from './EntityProfileNavigation'
 import EntityRelationshipMap, {
   type EntityRelationship,
   type EntityRelationshipNode,
@@ -194,6 +195,10 @@ export function EntityDetailPageView() {
     return <main className="container dashboard-page"><div className="error-box">{error ?? 'No se encontró la entidad'}</div></main>
   }
 
+  const activeRelationshipCount = data.relationships.filter((relationship) => relationship.is_current).length
+  const activePositionCount = positions.filter((position) => position.is_current).length
+  const timelineCount = data.evolution_events.length + ordinaryAppointments.length + (entity.erected_at ? 1 : 0)
+
   return (
     <main className="container dashboard-page">
       <div className="dashboard-hero card dashboard-hero-split">
@@ -212,6 +217,14 @@ export function EntityDetailPageView() {
           <Link className="inline-link" href="/diocesis">Volver al directorio</Link>
         </aside>
       </div>
+
+      <EntityProfileNavigation
+        hasAuthority={Boolean(currentOrdinary)}
+        positionCount={activePositionCount}
+        relationshipCount={activeRelationshipCount}
+        statisticsCount={statisticsSnapshots.length}
+        timelineCount={timelineCount}
+      />
 
       <section className="dashboard-grid dashboard-summary">
         <div className="metric-card">
@@ -232,7 +245,7 @@ export function EntityDetailPageView() {
         </div>
       </section>
 
-      <section className="card dashboard-section">
+      <section className="card dashboard-section" id="datos">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Datos básicos</p>
@@ -260,7 +273,7 @@ export function EntityDetailPageView() {
       </section>
 
       {currentOrdinary && (
-        <section className="card dashboard-section">
+        <section className="card dashboard-section" id="autoridad">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Autoridad actual</p>
@@ -276,22 +289,26 @@ export function EntityDetailPageView() {
         </section>
       )}
 
-      <EntityRelationshipMap
-        entity={entity}
-        relatedEntities={data.related_entities}
-        relationships={data.relationships}
-      />
+      <div id="jerarquia">
+        <EntityRelationshipMap
+          entity={entity}
+          relatedEntities={data.related_entities}
+          relationships={data.relationships}
+        />
+      </div>
 
-      <EntityInstitutionalTimeline
-        payload={{
-          entity: { name: entity.name, erected_at: entity.erected_at },
-          evolution_events: data.evolution_events,
-          appointment_history: data.appointment_history,
-        }}
-      />
+      <div id="historia">
+        <EntityInstitutionalTimeline
+          payload={{
+            entity: { name: entity.name, erected_at: entity.erected_at },
+            evolution_events: data.evolution_events,
+            appointment_history: data.appointment_history,
+          }}
+        />
+      </div>
 
       {statisticsSnapshots.length > 0 && (
-        <section className="card dashboard-section">
+        <section className="card dashboard-section" id="estadisticas">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Estadísticas</p>
