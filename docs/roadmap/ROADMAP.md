@@ -10,7 +10,7 @@ La base cuenta con registro canónico de personas, dimensiones clericales, estru
 
 La importación controlada persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y exige una decisión editorial explícita. Los lotes aprobados de personas, estructuras, nombramientos y eventos históricos cuentan con contratos transaccionales, auditoría por fila, registro en `import_batch_changes` y repetición idempotente. Los eventos importados se crean en `pending_review`, generan su plan de acciones y no modifican automáticamente el estado estructural vigente. Las coincidencias exactas de estructuras, nombramientos y eventos pueden enlazarse como operaciones `noop` sin mutar registros canónicos.
 
-El piloto real de eventos ya verificó creación canónica, corrección en línea, revalidación, aprobación, aplicación y una segunda aplicación `noop` sin duplicar el evento. La interfaz distingue operaciones `create`, `update` y `noop`, y separa columnas obligatorias de campos opcionales de plantilla.
+El piloto real de eventos ya verificó creación canónica, corrección en línea, revalidación, aprobación, aplicación y una segunda aplicación `noop` sin duplicar el evento. El dispatcher y el contrato mixto soportan lotes `create + noop` en una única operación transaccional. La interfaz distingue `create`, `update` y `noop`, usa acciones de aplicación según el dominio y separa columnas obligatorias de campos opcionales de plantilla.
 
 ## Prioridad 0 — operación segura
 
@@ -34,11 +34,13 @@ Disponible actualmente:
 - Creación atómica mediante los motores canónicos de personas, estructuras, cargos y eventos.
 - Eventos importados en `pending_review`, con plan de acciones y sin mutación estructural automática.
 - Enlace `noop` para coincidencias exactas y únicas de estructuras, nombramientos y eventos.
+- Lotes mixtos `create + noop` dentro de una única operación transaccional.
 - Reversión transaccional completa ante el fallo de cualquier fila.
 - Protección contra doble aplicación mediante respuesta idempotente.
 - Auditoría y trazabilidad entre fila, registro creado o enlazado, cambio aplicado y auditoría.
 - Fixtures reproducibles del piloto de eventos y su corrección.
 - Suite Playwright/Axe manual, versionada y separada de `pnpm check`.
+- Reporte final CSV de lotes aplicados con hash, resumen de aplicación, operación y objetivo canónico por fila.
 
 ### Completado
 
@@ -57,21 +59,21 @@ Disponible actualmente:
 - [x] Detectar coincidencias exactas y únicas de estructuras, nombramientos y eventos.
 - [x] Aplicar lotes completamente `noop` sin modificar registros canónicos.
 - [x] Registrar operaciones `noop` en `import_batch_changes` y en auditoría.
+- [x] Permitir lotes mixtos `create + noop` dentro de una única transacción.
 - [x] Impedir doble aplicación y revertir todo el intento cuando falla una fila.
 - [x] Añadir soporte visual y contractual para operaciones `update`.
 - [x] Separar columnas obligatorias de columnas opcionales de plantilla.
+- [x] Usar acciones de aplicación dinámicas según el dominio.
+- [x] Añadir reporte final descargable para lotes aplicados.
 - [x] Añadir suite E2E manual del portal público, accesibilidad y preparación administrativa de importaciones.
 
 ### Pendiente — orden de ejecución
 
-1. [ ] Permitir lotes mixtos `create + noop` dentro de una única transacción.
-2. [ ] Completar operaciones `update` con comparación visible de cambios y aprobación explícita.
-3. [ ] Añadir un identificador estable para habilitar `noop` seguro en personas.
-4. [ ] Sustituir la etiqueta fija del botón de aplicación por una etiqueta dinámica según el dominio y las operaciones.
-5. [ ] Añadir reporte final descargable del lote aplicado.
-6. [ ] Añadir lectura XLSX después de evaluar dependencia, límites y seguridad.
-7. [ ] Ampliar E2E al recorrido autenticado preparar → corregir → aprobar → aplicar en un entorno no productivo.
-8. [ ] Ejecutar `pnpm check` y el navegador real cuando el entorno de CI/despliegue vuelva a estar disponible.
+1. [ ] Completar operaciones `update` con comparación visible de cambios y aprobación explícita para todos los dominios que deban admitir actualización.
+2. [ ] Añadir un identificador estable para habilitar `noop` seguro en personas.
+3. [ ] Añadir lectura XLSX después de evaluar dependencia, límites y seguridad.
+4. [ ] Ampliar E2E al recorrido autenticado preparar → corregir → aprobar → aplicar en un entorno no productivo.
+5. [ ] Ejecutar `pnpm check` y el navegador real cuando el entorno de CI/despliegue vuelva a estar disponible.
 
 ## Prioridad 2 — calidad del producto
 
