@@ -7,6 +7,7 @@ import CompletionIndicator from '@/components/admin/CompletionIndicator'
 import EntitySectionCard from '@/components/admin/EntitySectionCard'
 import SmartContextPanel from '@/components/admin/SmartContextPanel'
 import { createClient } from '@/lib/supabase/client'
+import PersonCanonicalTimeline from './PersonCanonicalTimeline'
 import { getAdminPersonDetail, type AdminPersonDetail } from '../services/person-admin-service'
 
 function valueLabel(value: string | null | undefined) {
@@ -137,7 +138,7 @@ export default function PersonDetailPage() {
         <div className="admin-entity-header-actions">{person.can_update_proposal && <Link className="button button-primary" href={editHref}>Editar ficha</Link>}<Link className="button button-secondary" href={assignmentHref}>Nuevo nombramiento</Link></div>
       </section>
 
-      <nav className="admin-entity-tabs" aria-label="Secciones de la ficha"><a href="#resumen">Resumen</a><a href="#personales">Datos personales</a><a href="#orden">Orden sagrado</a><a href="#clericales">Situación canónica</a><a href="#servicio">Servicio</a><a href="#acciones">Acciones</a></nav>
+      <nav className="admin-entity-tabs" aria-label="Secciones de la ficha"><a href="#resumen">Resumen</a><a href="#personales">Datos personales</a><a href="#orden">Orden sagrado</a><a href="#clericales">Situación canónica</a><a href="#servicio">Servicio</a><a href="#historial">Línea de tiempo</a><a href="#acciones">Acciones</a></nav>
 
       <div className="admin-entity-layout">
         <div className="admin-entity-main">
@@ -194,6 +195,8 @@ export default function PersonDetailPage() {
             </EntitySectionCard>
           </div>
 
+          <PersonCanonicalTimeline person={person} />
+
           <section className="card admin-entity-quick-actions" id="acciones">
             <div className="section-heading"><div><p className="eyebrow">Operaciones</p><h2>Acciones sobre la ficha</h2><p className="meta">Las acciones históricas generan trazabilidad y no reemplazan la identidad personal.</p></div></div>
             <div className="admin-actions"><Link className="button button-primary" href={assignmentHref}>Registrar nombramiento</Link>{person.status !== 'deceased' && <Link className="button button-secondary" href={deathHref}>Registrar fallecimiento</Link>}{person.can_update_proposal && <Link className="button button-secondary" href={editHref}>Proponer corrección</Link>}</div>
@@ -205,6 +208,7 @@ export default function PersonDetailPage() {
           <div className="admin-context-block"><span>Grado más alto recibido</span><strong>{ordinationDegreeLabel(person.highest_ordination_degree)}</strong></div>
           <div className="admin-context-block"><span>Cargo o servicio visible</span><strong>{valueLabel(person.current_entity_name ?? person.current_pastoral_entity_name)}</strong></div>
           <div className="admin-context-block"><span>Pertenencia</span><strong>{valueLabel(person.incardination_entity_name ?? person.incardination_institute_name ?? person.religious_institute_name)}</strong></div>
+          <div className="admin-context-block"><span>Hitos canónicos</span><strong>{person.ordination_history.length + person.clerical_history.length}</strong></div>
           <div className="admin-context-block"><span>Alertas</span><strong>{completion.missing.length > 0 ? `${completion.missing.length} datos pendientes` : 'Sin alertas principales'}</strong></div>
         </SmartContextPanel>
       </div>
