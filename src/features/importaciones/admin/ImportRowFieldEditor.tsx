@@ -5,12 +5,15 @@ import { SearchableSelect, type SearchableSelectOption } from '@/components/admi
 import { getImportRowFieldContract } from '@/features/importaciones/domain/import-row-field-contract'
 import { getImportReferenceOptions } from '@/features/importaciones/services/import-reference-catalog-service'
 
+export type ImportReferenceResolution = 'empty' | 'loading' | 'canonical' | 'provisional' | 'error'
+
 type Props = {
   fieldName: string
   importType: string
   value: string
   onChange: (value: string) => void
   referenceOptions?: SearchableSelectOption[]
+  onResolutionChange?: (resolution: ImportReferenceResolution) => void
 }
 
 export function ImportRowFieldEditor({
@@ -19,6 +22,7 @@ export function ImportRowFieldEditor({
   value,
   onChange,
   referenceOptions,
+  onResolutionChange,
 }: Props) {
   const contract = getImportRowFieldContract(importType, fieldName)
   const controlId = `import-row-${fieldName}`
@@ -57,17 +61,21 @@ export function ImportRowFieldEditor({
     [availableOptions, value],
   )
 
-  if (contract.kind === 'reference') {
-    const referenceState = isLoadingCatalog
+  const referenceState: ImportReferenceResolution = contract.kind !== 'reference' || !value.trim()
+    ? 'empty'
+    : isLoadingCatalog
       ? 'loading'
       : catalogError
         ? 'error'
         : selectedCanonicalOption
           ? 'canonical'
-          : value.trim()
-            ? 'provisional'
-            : 'empty'
+          : 'provisional'
 
+  useEffect(() => {
+    if (contract.kind === 'reference') onResolutionChange?.(referenceState)
+  }, [contract.kind, onResolutionChange, referenceState])
+
+  if (contract.kind === 'reference') {
     return (
       <div className="admin-import-reference-editor" data-reference-state={referenceState}>
         <SearchableSelect
@@ -82,21 +90,21 @@ export function ImportRowFieldEditor({
         />
 
         <div className="admin-import-reference-status" aria-live="polite">
-          {isLoadingCatalog ? (
+          {referenceState === 'loading' ? (
             <span className="is-loading">Cargando opciones disponibles…</span>
-          ) : catalogError ? (
+          ) : referenceState === 'error' ? (
             <>
-              <span className="is-error">No se pudo cargar el catálogo. Puedes conservar una referencia textual exacta.</span>
+              <span className="is-error">No se pudo cargar el catálogo. Reintenta antes de guardar esta fila.</span>
               <button className="button button-secondary" onClick={() => setRetryToken((current) => current + 1)} type="button">
                 Reintentar catálogo
               </button>
             </>
-          ) : selectedCanonicalOption ? (
-            <span className="is-canonical">Referencia canónica seleccionada: {selectedCanonicalOption.label}</span>
-          ) : value.trim() ? (
-            <span className="is-provisional">Referencia textual provisional. Debe resolverse durante la validación del lote.</span>
+          ) : referenceState === 'canonical' ? (
+            <span className="is-canonical">Referencia canónica seleccionada: {selectedCanonicalOption?.label}</span>
+          ) : referenceState === 'provisional' ? (
+            <span className="is-provisional">Referencia textual provisional. Selecciona una opción canónica antes de guardar.</span>
           ) : (
-            <span className="is-empty">Selecciona una referencia canónica o escribe una referencia exacta.</span>
+            <span className="is-empty">Selecciona una referencia canónica.</span>
           )}
         </div>
       </div>
@@ -116,12 +124,7 @@ export function ImportRowFieldEditor({
       ) : contract.kind === 'textarea' ? (
         <textarea id={controlId} onChange={(event) => onChange(event.target.value)} value={value} />
       ) : (
-        <input
-          id={controlId}
-          onChange={(event) => onChange(event.target.value)}
-          type={contract.kind}
-          value={value}
-        />
+        <input id={controlId} onChange={(event) => onChange(event.target.value)} type={contract.kind} value={value} />
       )}
       {contract.help && <small className="meta">{contract.help}</small>}
     </label>
