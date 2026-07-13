@@ -86,6 +86,13 @@ export default function RootLayout({
           data-sdkn="@vercel/analytics/next"
           data-sdkv="2.0.1"
         />
+        <Script
+          id="vercel-speed-insights"
+          src="/_vercel/speed-insights/script.js"
+          strategy="afterInteractive"
+          data-sdkn="@vercel/speed-insights/next"
+          data-sdkv="2.0.0"
+        />
       </body>
     </html>
   )
