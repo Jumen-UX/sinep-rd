@@ -68,7 +68,7 @@ const importOptions: ImportOption[] = [
     title: 'Eventos históricos',
     description: 'Carga por lotes de erecciones, divisiones, fusiones, nombramientos y hechos verificables.',
     icon: '◷',
-    columns: ['tipo_evento', 'fecha_efectiva', 'entidad', 'descripcion', 'fuente', 'estado_revision'],
+    columns: ['tipo_evento', 'fecha_efectiva', 'entidad', 'descripcion', 'titulo', 'fuente', 'url_fuente'],
     notes: ['Cada evento debe ser trazable.', 'Los eventos pueden quedar en cola de revisión.', 'No se deben aplicar cambios estructurales sin validación.'],
   },
 ]
@@ -217,7 +217,7 @@ export default function AdminBatchImportPage() {
       setMessage(
         summary.status === 'validated'
           ? summary.application_rpc_available
-            ? 'Lote persistido y validado. Ábrelo para aprobarlo y aplicar sus personas mediante el contrato canónico.'
+            ? 'Lote persistido y validado. Ábrelo para aprobarlo y aplicar sus operaciones mediante el contrato canónico.'
             : 'Lote persistido y validado. Puede aprobarse, pero este dominio todavía no tiene contrato de aplicación.'
           : 'Lote persistido. Revisa errores, duplicados y relaciones no resueltas antes de aprobarlo.',
       )
@@ -247,7 +247,7 @@ export default function AdminBatchImportPage() {
         <div>
           <p className="eyebrow">Carga masiva controlada</p>
           <h1>Importar registros por lotes</h1>
-          <p className="lead">Prepara archivos CSV para persistirlos, validarlos y enviarlos a revisión. Los lotes de personas aprobados pueden aplicarse después mediante el motor canónico; los demás dominios permanecen en revisión.</p>
+          <p className="lead">Prepara archivos CSV para persistirlos, validarlos y enviarlos a revisión. Los lotes aprobados de personas, estructuras, asignaciones y eventos pueden aplicarse mediante contratos canónicos con auditoría e idempotencia.</p>
           <div className="role-list admin-role-list">
             <span className="role-pill">CSV seguro</span>
             <span className="role-pill">Hash SHA-256</span>
@@ -388,7 +388,7 @@ export default function AdminBatchImportPage() {
               <div>
                 <p className="eyebrow">Resultado persistido</p>
                 <h2 id="resultado-preparacion-lote">Lote {preparedBatch.batch_id}</h2>
-                <p className="meta">Estado: {preparedBatch.status}. {preparedBatch.application_rpc_available ? 'El contrato de personas estará disponible después de la aprobación.' : 'La aplicación de este dominio todavía no está disponible.'}</p>
+                <p className="meta">Estado: {preparedBatch.status}. {preparedBatch.application_rpc_available ? 'El contrato canónico estará disponible después de la aprobación editorial.' : 'La aplicación de este dominio todavía no está disponible.'}</p>
               </div>
               <span className="role-pill">{preparedBatch.application_rpc_available ? 'Aplicación manual disponible' : 'Solo revisión'}</span>
             </div>
