@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import Script from 'next/script'
 import { PublicCountryFlagEnhancements } from '../features/public/components/public-country-flag-enhancements'
 import { PublicDashboardEntityCards } from '../features/public/components/public-dashboard-entity-cards'
 import { PublicJurisdictionStructureNavigation } from '../features/public/components/public-jurisdiction-structure-navigation'
@@ -78,6 +79,13 @@ export default function RootLayout({
         <PublicPastoralEnhancements />
         <PublicTerritorialLevelEnhancements />
         <ScopeBackControls />
+        <Script
+          id="vercel-web-analytics"
+          src="/_vercel/insights/script.js"
+          strategy="afterInteractive"
+          data-sdkn="@vercel/analytics/next"
+          data-sdkv="2.0.1"
+        />
       </body>
     </html>
   )
