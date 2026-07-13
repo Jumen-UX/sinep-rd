@@ -134,3 +134,64 @@ label {
   margin: 0;
   padding: 12px;
 }
+
+.admin-import-reference-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-import-reference-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.admin-import-reference-status .button {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 0.8125rem;
+}
+
+.admin-import-reference-editor[data-reference-state="canonical"] .admin-import-reference-status {
+  border-color: #b9dfba;
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.admin-import-reference-editor[data-reference-state="provisional"] .admin-import-reference-status {
+  border-color: #ead7a2;
+  background: #fff9e8;
+  color: #7a5a0a;
+}
+
+.admin-import-reference-editor[data-reference-state="error"] .admin-import-reference-status {
+  border-color: #edc0bb;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.admin-import-reference-status .is-loading::before {
+  content: "↻ ";
+}
+
+.admin-import-reference-status .is-canonical::before {
+  content: "✓ ";
+}
+
+.admin-import-reference-status .is-provisional::before {
+  content: "! ";
+}
+
+.admin-import-reference-status .is-error::before {
+  content: "× ";
+}
