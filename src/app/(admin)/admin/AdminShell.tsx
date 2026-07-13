@@ -35,6 +35,7 @@ const adminNavSections: AdminNavSection[] = [
     items: [
       { href: '/admin/jurisdicciones', icon: '▥', label: 'Jurisdicciones', sublabel: 'Diócesis y provincias' },
       { href: '/admin/estructura', icon: '▦', label: 'Estructura', sublabel: 'Niveles y nodos' },
+      { href: '/admin/organizacion', icon: '◇', label: 'Organización', sublabel: 'Pastorales, curia y unidades' },
       { href: '/admin/personas', icon: '◉', label: 'Personas', sublabel: 'Clero y agentes' },
       { href: '/admin/asignaciones', icon: '▣', label: 'Nombramientos', sublabel: 'Cargos y sucesión' },
     ],
