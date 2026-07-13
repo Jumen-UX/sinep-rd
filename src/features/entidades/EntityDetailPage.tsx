@@ -10,12 +10,13 @@ import EntityInstitutionalTimeline, {
   type EntityAuthorityAppointment,
   type EntityEvolutionEvent,
 } from './EntityInstitutionalTimeline'
+import EntityRelationshipMap, {
+  type EntityRelationship,
+  type EntityRelationshipNode,
+} from './EntityRelationshipMap'
 
-type Entity = {
-  id: string
-  name: string
+type Entity = EntityRelationshipNode & {
   official_name: string | null
-  slug: string
   description: string | null
   entity_type_key: string | null
   entity_type_name: string | null
@@ -37,21 +38,6 @@ type Entity = {
   phone: string | null
   website: string | null
   erected_at: string | null
-}
-
-type Relationship = {
-  id: string
-  parent_entity_id: string
-  child_entity_id: string
-  relationship_type: string | null
-  start_date: string | null
-  is_current: boolean
-}
-
-type RelatedEntity = {
-  id: string
-  name: string
-  slug: string
 }
 
 type Appointment = {
@@ -108,8 +94,8 @@ type Position = EntityOrganizationPosition & {
 
 type EntityResponse = {
   entity: Entity
-  relationships: Relationship[]
-  related_entities: RelatedEntity[]
+  relationships: EntityRelationship[]
+  related_entities: EntityRelationshipNode[]
   appointments: Appointment[]
   appointment_history: AppointmentHistory[]
   evolution_events: EntityEvolutionEvent[]
@@ -156,18 +142,6 @@ function formatRange(start: string | null, end: string | null) {
   return `${formatDate(start)} – ${end ? formatDate(end) : 'actual'}`
 }
 
-function getEntityKind(entity: Entity) {
-  const key = entity.entity_type_key ?? ''
-  const name = (entity.entity_type_name ?? entity.name ?? '').toLowerCase()
-  if (['archdiocese', 'diocese', 'military_ordinariate'].includes(key)) return 'diocesan'
-  if (['parish', 'quasi_parish'].includes(key) || name.includes('parroquia')) return 'parish'
-  if (['chapel', 'sanctuary'].includes(key) || name.includes('capilla') || name.includes('santuario')) return 'chapel'
-  if (key === 'vicariate' || name.includes('vicar')) return 'vicariate'
-  if (['pastoral_zone', 'deanery', 'pastoral_region'].includes(key) || name.includes('zona') || name.includes('decan')) return 'zone'
-  if (key === 'curia_office') return 'administrative'
-  return 'generic'
-}
-
 export function EntityDetailPageView() {
   const params = useParams<{ slug: string }>()
   const slug = params?.slug
@@ -200,10 +174,8 @@ export function EntityDetailPageView() {
 
   const entity = data?.entity
   const appointmentHistory = data?.appointment_history ?? []
-  const relatedEntities = data?.related_entities ?? []
   const statisticsSnapshots = data?.statistics_snapshots ?? []
   const positions = data?.positions ?? []
-  const entityKind = entity ? getEntityKind(entity) : 'generic'
 
   const ordinaryAppointments = useMemo(() => {
     if (!appointmentHistory.length) return []
@@ -304,24 +276,11 @@ export function EntityDetailPageView() {
         </section>
       )}
 
-      {relatedEntities.length > 0 && (
-        <section className="card dashboard-section">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Vinculación</p>
-              <h2>Entidades relacionadas</h2>
-            </div>
-          </div>
-          <div className="public-directory-list">
-            {relatedEntities.map((item) => (
-              <div className="public-directory-item" key={item.slug}>
-                <div><strong>{item.name}</strong><span>{entityKind}</span></div>
-                <small><Link href={`/entidades/${item.slug}`}>Ver ficha</Link></small>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <EntityRelationshipMap
+        entity={entity}
+        relatedEntities={data.related_entities}
+        relationships={data.relationships}
+      />
 
       <EntityInstitutionalTimeline
         payload={{
