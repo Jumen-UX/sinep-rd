@@ -14,7 +14,7 @@ type RoleAssignment = {
   scope_entity_id: string | null
   diocese_id: string | null
   pastoral_area_id: string | null
-  pastoral_entity_id: string | null
+  organization_unit_id: string | null
   starts_at: string | null
   ends_at: string | null
   status: string
@@ -61,9 +61,11 @@ type ScopeOption = {
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
+  pending_invitation: 'Invitación pendiente',
   active: 'Activo',
   suspended: 'Suspendido',
   disabled: 'Desactivado',
+  inactive: 'Inactivo',
 }
 
 const scopeTypes = [
@@ -73,34 +75,32 @@ const scopeTypes = [
   { value: 'zone', label: 'Zona pastoral' },
   { value: 'parish', label: 'Parroquia' },
   { value: 'pastoral_area', label: 'Área pastoral' },
-  { value: 'pastoral_entity', label: 'Entidad pastoral' },
+  { value: 'organization_unit', label: 'Unidad organizativa' },
   { value: 'entity', label: 'Entidad eclesial / nodo' },
   { value: 'global', label: 'Global técnico' },
 ]
 
 function parseJsonArray<T>(value: T[] | string | null | undefined): T[] {
   if (Array.isArray(value)) return value
+  if (typeof value !== 'string') return []
 
-  if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value)
-      return Array.isArray(parsed) ? (parsed as T[]) : []
-    } catch {
-      return []
-    }
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? (parsed as T[]) : []
+  } catch {
+    return []
   }
-
-  return []
 }
 
 function formatDate(value: string | null) {
   if (!value) return 'No registrado'
-
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Fecha no válida'
   return new Intl.DateTimeFormat('es-DO', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(value))
+  }).format(date)
 }
 
 function getStatusLabel(status: string) {
@@ -109,6 +109,10 @@ function getStatusLabel(status: string) {
 
 function scopeNeedsEntity(scopeType: string) {
   return !['national', 'global'].includes(scopeType)
+}
+
+function scopeLabel(scopeType: string) {
+  return scopeTypes.find((scope) => scope.value === scopeType)?.label ?? scopeType
 }
 
 export default function AdminUsersPage() {
@@ -135,7 +139,6 @@ export default function AdminUsersPage() {
     setError(null)
 
     const { data: userData, error: userError } = await supabase.auth.getUser()
-
     if (userError || !userData.user) {
       router.replace('/admin/login')
       return
@@ -180,7 +183,7 @@ export default function AdminUsersPage() {
   }
 
   useEffect(() => {
-    loadAccessData()
+    void loadAccessData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -198,8 +201,11 @@ export default function AdminUsersPage() {
 
   const metrics = useMemo(() => {
     const active = users.filter((user) => user.profile_status === 'active').length
-    const pending = users.filter((user) => user.profile_status === 'pending').length
-    const assignments = users.reduce((total, user) => total + parseJsonArray<RoleAssignment>(user.active_roles).length, 0)
+    const pending = users.filter((user) => ['pending', 'pending_invitation'].includes(user.profile_status)).length
+    const assignments = users.reduce(
+      (total, user) => total + parseJsonArray<RoleAssignment>(user.active_roles).length,
+      0,
+    )
 
     return { active, pending, assignments }
   }, [users])
@@ -296,6 +302,7 @@ export default function AdminUsersPage() {
         <div className="admin-top-actions">
           <Link className="button button-secondary" href="/admin">Volver al panel</Link>
           <Link className="button button-secondary" href="/admin/configuracion">Configuración</Link>
+          <Link className="button button-primary" href="/admin/usuarios/invitar">Invitar usuario</Link>
         </div>
       </header>
 
@@ -330,7 +337,7 @@ export default function AdminUsersPage() {
             <div>
               <p className="eyebrow">Asignación rápida</p>
               <h2>Asignar rol a usuario</h2>
-              <p className="meta">El alcance puede apuntar a una diócesis, parroquia, nodo de estructura o entidad pastoral real.</p>
+              <p className="meta">El alcance puede apuntar a una diócesis, parroquia, nodo estructural, área pastoral o unidad organizativa.</p>
             </div>
           </div>
 
@@ -391,7 +398,7 @@ export default function AdminUsersPage() {
           </div>
 
           <div className="access-flow">
-            <div><strong>1</strong><span>Crear o invitar usuario en Supabase Auth.</span></div>
+            <div><strong>1</strong><span>Invitar usuario desde el formulario administrativo.</span></div>
             <div><strong>2</strong><span>Verificar que aparezca en esta pantalla como pendiente o activo.</span></div>
             <div><strong>3</strong><span>Asignar rol, tipo de alcance y entidad concreta.</span></div>
             <div><strong>4</strong><span>Auditar cambios de acceso desde los registros internos.</span></div>
@@ -422,7 +429,7 @@ export default function AdminUsersPage() {
                   <div className="access-actions actions">
                     <button className="button button-secondary" disabled={saving || user.profile_status === 'active'} onClick={() => handleStatusChange(user.user_id, 'active')} type="button">Activar</button>
                     <button className="button button-secondary" disabled={saving || user.profile_status === 'suspended'} onClick={() => handleStatusChange(user.user_id, 'suspended')} type="button">Suspender</button>
-                    <button className="button button-secondary" disabled={saving || user.profile_status === 'disabled'} onClick={() => handleStatusChange(user.user_id, 'disabled')} type="button">Desactivar</button>
+                    <button className="button button-secondary" disabled={saving || ['disabled', 'inactive'].includes(user.profile_status)} onClick={() => handleStatusChange(user.user_id, 'disabled')} type="button">Desactivar</button>
                   </div>
                 </div>
 
@@ -431,7 +438,7 @@ export default function AdminUsersPage() {
                     <span className="role-pill">Sin rol activo</span>
                   ) : activeRoles.map((role) => (
                     <span className="role-pill" key={role.assignment_id}>
-                      {role.role_name} · {role.scope_type}
+                      {role.role_name} · {scopeLabel(role.scope_type)}
                       <button disabled={saving} onClick={() => handleEndRole(role.assignment_id)} type="button">Cerrar</button>
                     </span>
                   ))}
