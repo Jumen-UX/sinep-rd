@@ -55,4 +55,20 @@ La suite usa:
 - reporte HTML en `playwright-report/`;
 - resultados completos de Axe adjuntos a cada prueba.
 
+## Ejecución desde GitHub Actions
+
+El workflow `CI` mantiene el flujo directo sobre `main`:
+
+- cada `push` ejecuta TypeScript, pruebas unitarias, contratos estructurales, build y CodeQL;
+- cada lunes ejecuta CodeQL y una auditoría de vulnerabilidades críticas en dependencias de producción;
+- la prueba de navegador contra producción se inicia manualmente para no consumir minutos ni generar tráfico en cada cambio.
+
+Para probar un despliegue:
+
+1. Abre **GitHub → Actions → CI → Run workflow**.
+2. Escribe la URL pública completa en `base_url`.
+3. Ejecuta el workflow.
+
+La ejecución prueba las rutas públicas con Playwright y Axe. Si existen los secretos `E2E_ADMIN_EMAIL` y `E2E_ADMIN_PASSWORD`, también prueba el flujo administrativo de importación. El reporte HTML, las capturas, los videos y las trazas se conservan como artefactos durante 14 días.
+
 Los escaneos automáticos no sustituyen la revisión manual con teclado, lector de pantalla ni pruebas con usuarios.
