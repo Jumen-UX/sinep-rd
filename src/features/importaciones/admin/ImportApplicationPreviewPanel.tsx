@@ -29,6 +29,7 @@ export default function ImportApplicationPreviewPanel({ rows, serverCanApply }: 
 
       <div className="admin-stat-strip" aria-label="Operaciones previstas">
         <div><span>＋</span><strong>{preview.createRows}</strong><small>Creaciones</small></div>
+        <div><span>↻</span><strong>{preview.updateRows}</strong><small>Actualizaciones</small></div>
         <div><span>＝</span><strong>{preview.noopRows}</strong><small>Sin cambios</small></div>
         <div><span>✓</span><strong>{preview.completedRows}</strong><small>Completadas</small></div>
         <div><span>×</span><strong>{preview.blockedRows}</strong><small>Bloqueadas</small></div>
@@ -49,7 +50,7 @@ export default function ImportApplicationPreviewPanel({ rows, serverCanApply }: 
       {preview.isCompleted && (
         <div className="admin-info-box">
           <span>
-            El lote ya fue procesado. Las operaciones sin cambio quedaron registradas y auditadas como omitidas, sin crear ni modificar registros canónicos.
+            El lote ya fue procesado. Las creaciones, actualizaciones y coincidencias sin cambio conservan su objetivo y auditoría sin permitir una segunda aplicación.
           </span>
         </div>
       )}
