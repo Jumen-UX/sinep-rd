@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import ImportApplicationPreviewPanel from '@/features/importaciones/admin/ImportApplicationPreviewPanel'
-import { ImportRowFieldEditor } from '@/features/importaciones/admin/ImportRowFieldEditor'
+import {
+  ImportRowFieldEditor,
+  type ImportReferenceResolution,
+} from '@/features/importaciones/admin/ImportRowFieldEditor'
 import { getImportDomainContract } from '@/features/importaciones/domain/import-domain-contract'
 import {
   applyImportBatch,
@@ -18,10 +21,10 @@ import {
 type Props = { batchId: string }
 
 const statusLabels: Record<string, string> = {
-  prepared: 'Preparado', validating: 'Validando', needs_review: 'Requiere revisión',
-  validated: 'Validado', applying: 'Aplicando', applied: 'Aplicado', failed: 'Fallido',
-  cancelled: 'Cancelado', pending: 'Pendiente', valid: 'Válida', warning: 'Advertencia',
-  error: 'Error', duplicate: 'Duplicada', unresolved: 'No resuelta', ready: 'Lista', skipped: 'Omitida',
+  prepared: 'Preparado', validating: 'Validando', needs_review: 'Requiere revisión', validated: 'Validado',
+  applying: 'Aplicando', applied: 'Aplicado', failed: 'Fallido', cancelled: 'Cancelado', pending: 'Pendiente',
+  valid: 'Válida', warning: 'Advertencia', error: 'Error', duplicate: 'Duplicada', unresolved: 'No resuelta',
+  ready: 'Lista', skipped: 'Omitida',
 }
 
 const reviewLabels: Record<string, string> = {
@@ -29,8 +32,8 @@ const reviewLabels: Record<string, string> = {
 }
 
 const issueLabels: Record<string, string> = {
-  validation_error: 'Error de validación', warning: 'Advertencia',
-  duplicate: 'Posible duplicado', unresolved_relation: 'Relación no resuelta',
+  validation_error: 'Error de validación', warning: 'Advertencia', duplicate: 'Posible duplicado',
+  unresolved_relation: 'Relación no resuelta',
 }
 
 function formatDate(value: string | null) {
@@ -52,7 +55,6 @@ function toEditableValues(row: ImportBatchRowDetail): Record<string, string> {
 
 function IssueList({ issues }: { issues: ImportBatchRowIssue[] }) {
   if (issues.length === 0) return <p className="meta">La fila no tiene incidencias abiertas.</p>
-
   return (
     <div className="admin-system-list">
       {issues.map((issue) => (
@@ -69,6 +71,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
   const [detail, setDetail] = useState<ImportBatchDetail | null>(null)
   const [editingRowId, setEditingRowId] = useState<string | null>(null)
   const [draftValues, setDraftValues] = useState<Record<string, string>>({})
+  const [referenceStates, setReferenceStates] = useState<Record<string, ImportReferenceResolution>>({})
   const [reviewNotes, setReviewNotes] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -100,9 +103,17 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
     return grouped
   }, [detail])
 
+  const unresolvedReferenceFields = useMemo(
+    () => Object.entries(referenceStates)
+      .filter(([, state]) => state === 'loading' || state === 'error' || state === 'provisional')
+      .map(([field]) => field),
+    [referenceStates],
+  )
+
   function startEditing(row: ImportBatchRowDetail) {
     setEditingRowId(row.id)
     setDraftValues(toEditableValues(row))
+    setReferenceStates({})
     setMessage(null)
     setError(null)
   }
@@ -110,9 +121,15 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
   function cancelEditing() {
     setEditingRowId(null)
     setDraftValues({})
+    setReferenceStates({})
   }
 
   async function saveRow(rowId: string) {
+    if (unresolvedReferenceFields.length > 0) {
+      setError(`Selecciona referencias canónicas antes de guardar: ${unresolvedReferenceFields.join(', ')}.`)
+      return
+    }
+
     setIsSaving(true)
     setError(null)
     setMessage(null)
@@ -152,7 +169,6 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
       setError('Debes indicar el motivo del rechazo.')
       return
     }
-
     setIsReviewing(true)
     setError(null)
     setMessage(null)
@@ -175,19 +191,15 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
     if (!detail) return
     const domain = getImportDomainContract(detail.batch.import_type)
     if (!window.confirm(domain.confirmation)) return
-
     setIsApplying(true)
     setError(null)
     setMessage(null)
     try {
       const result = await applyImportBatch(batchId)
-      if (result.status === 'failed') {
-        setError(result.error ?? 'La aplicación fue revertida porque una fila no pudo procesarse.')
-      } else {
-        setMessage(result.idempotent_replay
-          ? 'El lote ya estaba aplicado. No se crearon registros duplicados.'
-          : `Lote aplicado correctamente: ${result.applied_rows} ${domain.plural} procesadas en el sistema canónico.`)
-      }
+      if (result.status === 'failed') setError(result.error ?? 'La aplicación fue revertida porque una fila no pudo procesarse.')
+      else setMessage(result.idempotent_replay
+        ? 'El lote ya estaba aplicado. No se crearon registros duplicados.'
+        : `Lote aplicado correctamente: ${result.applied_rows} ${domain.plural} procesadas en el sistema canónico.`)
       await loadDetail()
     } catch (applicationError) {
       setError(applicationError instanceof Error ? applicationError.message : 'No se pudo aplicar el lote.')
@@ -196,9 +208,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
     }
   }
 
-  if (isLoading && !detail) {
-    return <div className="empty-state"><h1>Cargando lote</h1><p>Consultando filas e incidencias.</p></div>
-  }
+  if (isLoading && !detail) return <div className="empty-state"><h1>Cargando lote</h1><p>Consultando filas e incidencias.</p></div>
 
   if (!detail) {
     return (
@@ -255,11 +265,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
 
       <section className="card dashboard-section">
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Resumen de validación</p>
-            <h2>{blockingIssues > 0 ? 'El lote requiere correcciones' : 'El lote no tiene bloqueos'}</h2>
-            <p className="meta">Creado {formatDate(batch.created_at)} · Validado {formatDate(batch.validated_at)}</p>
-          </div>
+          <div><p className="eyebrow">Resumen de validación</p><h2>{blockingIssues > 0 ? 'El lote requiere correcciones' : 'El lote no tiene bloqueos'}</h2><p className="meta">Creado {formatDate(batch.created_at)} · Validado {formatDate(batch.validated_at)}</p></div>
           <span className="role-pill">{detail.can_apply ? 'Puede aplicarse' : statusLabels[batch.status] ?? batch.status}</span>
         </div>
         <div className="admin-stat-strip" aria-label="Resumen del lote">
@@ -273,19 +279,13 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
 
       <section className="card dashboard-section">
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Revisión editorial</p>
-            <h2>{reviewLabels[batch.review_status] ?? batch.review_status}</h2>
-            <p className="meta">Revisado {formatDate(batch.reviewed_at)}. Revalidar o corregir una fila reinicia esta decisión.</p>
-          </div>
+          <div><p className="eyebrow">Revisión editorial</p><h2>{reviewLabels[batch.review_status] ?? batch.review_status}</h2><p className="meta">Revisado {formatDate(batch.reviewed_at)}. Revalidar o corregir una fila reinicia esta decisión.</p></div>
           <span className="role-pill">Permiso: imports.review</span>
         </div>
         {batch.review_notes && <div className="admin-info-box"><span>Nota registrada: {batch.review_notes}</span></div>}
         {detail.can_review ? (
           <div className="auth-form access-form">
-            <label>Nota de revisión
-              <textarea disabled={isApplicationLocked} onChange={(event) => setReviewNotes(event.target.value)} placeholder="Opcional al aprobar; obligatoria al rechazar." value={reviewNotes} />
-            </label>
+            <label>Nota de revisión<textarea disabled={isApplicationLocked} onChange={(event) => setReviewNotes(event.target.value)} placeholder="Opcional al aprobar; obligatoria al rechazar." value={reviewNotes} /></label>
             <div className="admin-top-actions">
               <button className="button button-primary" disabled={!canDecide || isReviewing || isApplying} onClick={() => void submitReview('approved')} type="button">{isReviewing ? 'Registrando…' : 'Aprobar lote'}</button>
               <button className="button button-secondary" disabled={!canDecide || isReviewing || isApplying} onClick={() => void submitReview('rejected')} type="button">Rechazar lote</button>
@@ -297,11 +297,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
 
       <section className="card dashboard-section">
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Aplicación canónica</p>
-            <h2>{applicationLabel}</h2>
-            <p className="meta">La operación es transaccional: {domain.applicationDescription}. Si una fila falla, no se conserva ninguna aplicación parcial.</p>
-          </div>
+          <div><p className="eyebrow">Aplicación canónica</p><h2>{applicationLabel}</h2><p className="meta">La operación es transaccional: {domain.applicationDescription}. Si una fila falla, no se conserva ninguna aplicación parcial.</p></div>
           <span className="role-pill">Permiso: imports.apply</span>
         </div>
         {detail.application_rpc_available ? (
@@ -314,13 +310,9 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
               <div><span>●</span><strong>{formatDate(batch.applied_at)}</strong><small>Finalización</small></div>
             </div>
             {batch.last_error && <div className="error-box">Último error: {batch.last_error}</div>}
-            {batch.status === 'applied' ? (
-              <div className="success-box">El lote fue aplicado. Cada fila conserva su registro objetivo y su entrada de auditoría.</div>
-            ) : (
+            {batch.status === 'applied' ? <div className="success-box">El lote fue aplicado. Cada fila conserva su registro objetivo y su entrada de auditoría.</div> : (
               <div className="admin-top-actions">
-                <button className="button button-primary" disabled={!detail.can_apply || isApplying} onClick={() => void applyBatch()} type="button">
-                  {isApplying ? 'Aplicando lote…' : batch.status === 'failed' ? 'Reintentar aplicación' : domain.applicationAction}
-                </button>
+                <button className="button button-primary" disabled={!detail.can_apply || isApplying} onClick={() => void applyBatch()} type="button">{isApplying ? 'Aplicando lote…' : batch.status === 'failed' ? 'Reintentar aplicación' : domain.applicationAction}</button>
                 <span className="meta">Solo se habilita con validación vigente, aprobación editorial, objetivos resueltos y alcance autorizado.</span>
               </div>
             )}
@@ -352,11 +344,15 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
                         importType={batch.import_type}
                         key={key}
                         onChange={(nextValue) => setDraftValues((current) => ({ ...current, [key]: nextValue }))}
+                        onResolutionChange={(resolution) => setReferenceStates((current) => current[key] === resolution ? current : { ...current, [key]: resolution })}
                         value={value}
                       />
                     ))}
+                    {unresolvedReferenceFields.length > 0 && (
+                      <div className="admin-info-box" role="status"><span>Selecciona referencias canónicas en: {unresolvedReferenceFields.join(', ')}.</span></div>
+                    )}
                     <div className="admin-top-actions">
-                      <button className="button button-primary" disabled={isSaving} onClick={() => void saveRow(row.id)} type="button">{isSaving ? 'Guardando…' : 'Guardar y revalidar'}</button>
+                      <button className="button button-primary" disabled={isSaving || unresolvedReferenceFields.length > 0} onClick={() => void saveRow(row.id)} type="button">{isSaving ? 'Guardando…' : 'Guardar y revalidar'}</button>
                       <button className="button button-secondary" disabled={isSaving} onClick={cancelEditing} type="button">Cancelar</button>
                     </div>
                   </div>
