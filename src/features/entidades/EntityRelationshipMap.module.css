@@ -1,0 +1,84 @@
+.map {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+.level {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.levelLabel {
+  color: var(--muted-foreground, #667085);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.node,
+.current {
+  border: 1px solid var(--border, #d8dee8);
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+}
+
+.node {
+  background: var(--card, #fff);
+}
+
+.node strong,
+.current strong {
+  font-size: 1rem;
+}
+
+.node small {
+  color: var(--muted-foreground, #667085);
+}
+
+.node a {
+  font-weight: 700;
+  margin-top: 0.35rem;
+  width: fit-content;
+}
+
+.type {
+  color: var(--muted-foreground, #667085);
+  font-size: 0.78rem;
+  text-transform: capitalize;
+}
+
+.current {
+  background: color-mix(in srgb, var(--primary, #8d6b1f) 9%, white);
+  border-color: color-mix(in srgb, var(--primary, #8d6b1f) 45%, transparent);
+  justify-self: center;
+  min-width: min(100%, 320px);
+  text-align: center;
+}
+
+.current span {
+  color: var(--muted-foreground, #667085);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .current {
+    justify-self: stretch;
+  }
+}
