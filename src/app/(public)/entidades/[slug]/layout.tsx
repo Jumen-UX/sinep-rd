@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { loadPublicEntityDetail } from '@/lib/public/entity-detail'
+import { loadPublicEntityDetail } from '@/lib/public/cache'
 
 type LayoutProps = {
   children: ReactNode
