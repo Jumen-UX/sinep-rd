@@ -93,8 +93,8 @@ export type PublicAppointment = {
   office_name: string | null
   entity_name: string | null
   entity_slug: string | null
-  pastoral_entity_name: string | null
-  pastoral_entity_slug: string | null
+  organization_unit_name: string | null
+  organization_unit_slug: string | null
   start_date: string | null
   end_date: string | null
   is_current: boolean
@@ -108,10 +108,9 @@ export type PublicPosition = {
   organization_chart_name: string | null
   organization_chart_key: string | null
   organization_unit_name: string | null
+  organization_unit_slug: string | null
   ecclesiastical_entity_name: string | null
   ecclesiastical_entity_slug: string | null
-  pastoral_entity_name: string | null
-  pastoral_entity_slug: string | null
   predecessor_person_name: string | null
   predecessor_person_slug: string | null
   successor_person_name: string | null
@@ -130,8 +129,8 @@ export type PublicMovement = {
   id: string
   entity_name: string | null
   entity_slug: string | null
-  pastoral_entity_name: string | null
-  pastoral_entity_slug: string | null
+  organization_unit_name: string | null
+  organization_unit_slug: string | null
   movement_type: string | null
   title: string | null
   description: string | null
@@ -202,12 +201,12 @@ const episcopalRoleColumns = [
 const dignityColumns = ['person_id','dignity_type','title_text','start_date'].join(',')
 
 const appointmentColumns = [
-  'id','office_name','entity_name','entity_slug','pastoral_entity_name','pastoral_entity_slug','start_date','end_date',
+  'id','office_name','entity_name','entity_slug','organization_unit_name','organization_unit_slug','start_date','end_date',
   'is_current','appointment_type','notes_public',
 ].join(',')
 
 const movementColumns = [
-  'id','entity_name','entity_slug','pastoral_entity_name','pastoral_entity_slug','movement_type','title','description',
+  'id','entity_name','entity_slug','organization_unit_name','organization_unit_slug','movement_type','title','description',
   'effective_date','end_date',
 ].join(',')
 
@@ -219,10 +218,10 @@ const episcopalOrdinationColumns = [
 ].join(',')
 
 const positionColumns = [
-  'id','position_title','organization_chart_name','organization_chart_key','organization_unit_name',
-  'ecclesiastical_entity_name','ecclesiastical_entity_slug','pastoral_entity_name','pastoral_entity_slug',
-  'predecessor_person_name','predecessor_person_slug','successor_person_name','successor_person_slug','start_date',
-  'term_start_date','term_end_date','actual_end_date','is_current','assignment_status','selection_method','notes_public',
+  'id','position_title','organization_chart_name','organization_chart_key','organization_unit_name','organization_unit_slug',
+  'ecclesiastical_entity_name','ecclesiastical_entity_slug','predecessor_person_name','predecessor_person_slug',
+  'successor_person_name','successor_person_slug','start_date','term_start_date','term_end_date','actual_end_date',
+  'is_current','assignment_status','selection_method','notes_public',
 ].join(',')
 
 async function fetchPublicPersonDetail(slug: string): Promise<PublicPersonDetail | null> {
