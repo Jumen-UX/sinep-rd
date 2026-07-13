@@ -5,20 +5,20 @@ import test from 'node:test'
 const repoRoot = new URL('../', import.meta.url)
 const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
-test('public entity profile exposes a unified institutional timeline from one detail request', async () => {
+test('public entity profile exposes a unified institutional timeline from one server detail load', async () => {
   const [page, detail, timeline] = await Promise.all([
     readRepoFile('src/app/(public)/entidades/[slug]/page.tsx'),
-    readRepoFile('src/features/entidades/EntityDetailPage.tsx'),
+    readRepoFile('src/features/entidades/EntityDetailServerView.tsx'),
     readRepoFile('src/features/entidades/EntityInstitutionalTimeline.tsx'),
   ])
 
-  assert.match(page, /EntityDetailPageView/)
-  assert.doesNotMatch(page, /EntityInstitutionalTimeline/)
-  assert.match(detail, /fetch\(`\/api\/entidades\/\$\{slug\}`\)/)
-  assert.equal((detail.match(/fetch\(/g) ?? []).length, 1)
+  assert.match(page, /EntityDetailServerView/)
+  assert.match(page, /loadPublicEntityDetail\(slug\)/)
+  assert.doesNotMatch(page, /fetch\(/)
   assert.match(detail, /<EntityInstitutionalTimeline/)
   assert.match(detail, /evolution_events: data\.evolution_events/)
   assert.match(detail, /appointment_history: data\.appointment_history/)
+  assert.doesNotMatch(detail, /fetch\(/)
   assert.doesNotMatch(timeline, /fetch\(/)
   assert.match(timeline, /buildEntityInstitutionalTimeline/)
   assert.match(timeline, /evolution_events/)
