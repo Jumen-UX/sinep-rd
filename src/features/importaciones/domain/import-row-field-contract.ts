@@ -1,10 +1,13 @@
-export type ImportRowFieldKind = 'text' | 'email' | 'date' | 'select' | 'textarea' | 'boolean'
+export type ImportReferenceType = 'person' | 'entity' | 'office' | 'event_type'
+
+export type ImportRowFieldKind = 'text' | 'email' | 'date' | 'select' | 'textarea' | 'boolean' | 'reference'
 
 export type ImportRowFieldContract = {
   label: string
   kind: ImportRowFieldKind
-  options?: Array<{ value: string; label: string }>
+  options?: Array<{ value: string; label: string; description?: string }>
   help?: string
+  referenceType?: ImportReferenceType
 }
 
 const visibilityOptions = [
@@ -60,23 +63,43 @@ const domainFields: Record<string, Record<string, ImportRowFieldContract>> = {
       help: 'La condición clerical definitiva se deriva de las dimensiones canónicas registradas.',
     },
     estado: { label: 'Estado', kind: 'select', options: activeStatusOptions },
-    entidad: { label: 'Entidad de referencia', kind: 'text', help: 'Usa el identificador o nombre exacto reconocido por el validador.' },
+    entidad: {
+      label: 'Entidad de referencia',
+      kind: 'reference',
+      referenceType: 'entity',
+      help: 'Busca una entidad dentro del alcance del lote. Mientras no exista catálogo cargado, se admite una referencia textual exacta.',
+    },
   },
   parroquias: {
     nombre: { label: 'Nombre', kind: 'text' },
     nombre_oficial: { label: 'Nombre oficial', kind: 'text' },
     tipo_estructura: { label: 'Tipo de estructura', kind: 'text' },
-    entidad_padre: { label: 'Estructura superior', kind: 'text', help: 'Debe resolverse dentro de la jerarquía y alcance del lote.' },
+    entidad_padre: {
+      label: 'Estructura superior',
+      kind: 'reference',
+      referenceType: 'entity',
+      help: 'Debe resolverse dentro de la jerarquía y alcance del lote.',
+    },
     estado: { label: 'Estado', kind: 'select', options: activeStatusOptions },
   },
   asignaciones: {
-    persona: { label: 'Persona', kind: 'text', help: 'Usa una referencia inequívoca para evitar asignar el cargo a otra identidad.' },
-    cargo: { label: 'Cargo', kind: 'text' },
-    entidad: { label: 'Entidad', kind: 'text' },
+    persona: {
+      label: 'Persona',
+      kind: 'reference',
+      referenceType: 'person',
+      help: 'Busca una identidad canónica inequívoca para evitar asignar el cargo a otra persona.',
+    },
+    cargo: { label: 'Cargo', kind: 'reference', referenceType: 'office' },
+    entidad: { label: 'Entidad', kind: 'reference', referenceType: 'entity' },
   },
   eventos: {
-    entidad: { label: 'Entidad participante', kind: 'text' },
-    tipo_evento: { label: 'Tipo canónico de evento', kind: 'text', help: 'Debe corresponder a un tipo canónico activo.' },
+    entidad: { label: 'Entidad participante', kind: 'reference', referenceType: 'entity' },
+    tipo_evento: {
+      label: 'Tipo canónico de evento',
+      kind: 'reference',
+      referenceType: 'event_type',
+      help: 'Debe corresponder a un tipo canónico activo.',
+    },
     titulo: { label: 'Título', kind: 'text' },
     descripcion: { label: 'Descripción', kind: 'textarea' },
     fuente_documental: { label: 'Fuente documental', kind: 'textarea' },
