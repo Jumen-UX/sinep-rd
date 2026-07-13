@@ -8,6 +8,14 @@ const migrationPaths = [
   new URL('../supabase/migrations/20260713152305_revoke_direct_canonical_table_writes.sql', import.meta.url),
   new URL('../supabase/migrations/20260713152413_normalize_unknown_audit_scope.sql', import.meta.url),
   new URL('../supabase/migrations/20260713153323_finalize_audit_scope_defaults.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713154230_consolidate_audit_permission_mapping.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713154343_consolidate_canonical_person_auditing.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713154401_consolidate_death_flow_auditing.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713154503_consolidate_entity_mutation_auditing.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713154522_consolidate_assignment_mutation_auditing.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713154637_consolidate_structure_mutation_auditing.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713154857_audit_and_seal_canonical_event_mutations.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713155005_audit_and_seal_structural_event_mutations.sql', import.meta.url),
 ]
 
 async function readSecurityMigrations() {
@@ -29,6 +37,7 @@ test('audit records persist jurisdiction and pastoral scope', async () => {
 test('audit writer requires permission and validates entity scope', async () => {
   const sql = await readSecurityMigrations()
 
+  assert.match(sql, /audit_permission_for_action/)
   assert.match(sql, /current_user_has_permission\(v_permission_key\)/)
   assert.match(sql, /current_user_can_manage_entity\(v_permission_key, v_scope\.resolved_scope_entity_id\)/)
   assert.match(sql, /La operación de auditoría está fuera de tu alcance/)
@@ -60,4 +69,73 @@ test('critical canonical tables cannot be written directly by authenticated clie
   assert.match(sql, /drop policy if exists phase0_clergy_profiles_insert/)
   assert.match(sql, /drop policy if exists phase0_ecclesiastical_entities_insert/)
   assert.match(sql, /drop policy if exists phase0_position_assignments_insert/)
+})
+
+test('core person entity assignment and structure mutations write scoped audits', async () => {
+  const sql = await readSecurityMigrations()
+
+  for (const action of [
+    'people.person.created',
+    'people.person.deceased',
+    'entities.entity.created',
+    'appointments.assignment.created',
+    'structures.template.saved',
+    'structures.level.saved',
+    'structures.node.saved',
+  ]) {
+    assert.match(sql, new RegExp(action.replaceAll('.', '\\.'), 'i'))
+  }
+
+  for (const internalFunction of [
+    'internal.admin_save_canonical_person',
+    'internal.admin_mark_person_deceased',
+    'internal.admin_save_ecclesiastical_entity',
+    'internal.admin_save_position_assignment',
+    'internal.admin_save_structure_template',
+    'internal.admin_save_structure_level',
+    'internal.admin_save_structure_node',
+  ]) {
+    assert.match(sql, new RegExp(`revoke all on function ${internalFunction.replaceAll('.', '\\.')}`))
+  }
+})
+
+test('canonical and structural event mutations require scope and audit every write path', async () => {
+  const sql = await readSecurityMigrations()
+
+  assert.match(sql, /canonical_event_scope_entity_id/)
+  assert.match(sql, /structure_event_diocese_id/)
+  assert.match(sql, /current_user_can_manage_entity\('events\.create_proposal'/)
+  assert.match(sql, /current_user_can_manage_entity\('events\.approve'/)
+  assert.match(sql, /current_user_can_manage_entity\('events\.update_proposal'/)
+  assert.match(sql, /current_user_can_manage_entity\('structures\.manage'/)
+
+  for (const action of [
+    'events.draft.created',
+    'events.reviewed',
+    'events.plan.generated',
+    'events.action.updated',
+    'events.action.configured',
+    'structures.event.draft.created',
+    'structures.event.reviewed',
+    'structures.event.plan.generated',
+    'structures.event.action.updated',
+    'structures.event.action.configured',
+  ]) {
+    assert.match(sql, new RegExp(action.replaceAll('.', '\\.'), 'i'))
+  }
+
+  for (const internalFunction of [
+    'internal.admin_create_event_draft',
+    'internal.admin_review_event',
+    'internal.admin_generate_event_action_plan',
+    'internal.admin_update_event_action',
+    'internal.admin_configure_event_action',
+    'internal.admin_create_structural_evolution_event_draft',
+    'internal.admin_review_structural_evolution_event',
+    'internal.admin_generate_structural_application_plan',
+    'internal.admin_update_structural_event_action',
+    'internal.admin_configure_structural_event_action',
+  ]) {
+    assert.match(sql, new RegExp(`revoke all on function ${internalFunction.replaceAll('.', '\\.')}`))
+  }
 })
