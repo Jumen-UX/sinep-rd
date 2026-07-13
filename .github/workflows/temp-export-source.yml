@@ -1,4 +1,4 @@
-name: Temporary migration inventory
+name: Verify organization unit cutover
 
 on:
   push:
@@ -7,9 +7,10 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
-  inventory:
+  verify:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -18,18 +19,53 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Build index
-        run: |
-          {
-            echo '# Migration files'
-            echo
-            find supabase/migrations -maxdepth 1 -type f -printf '%f\n' | sort
-          } > migration-index.txt
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 10.18.3
 
-      - name: Commit index
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Apply source cutover
+        run: python scripts/temp-remove-legacy-pastoral.py
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify cutover
+        id: check
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pnpm check 2>&1 | tee cutover-check.log
+
+      - name: Commit failure report
+        if: steps.check.outcome == 'failure'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add migration-index.txt
-          git commit -m 'chore: temporary migration index [skip ci]'
+          git add cutover-check.log
+          git commit -m 'chore: organization unit cutover failure log [skip ci]'
           git push
+          exit 1
+
+      - name: Commit verified cutover
+        if: steps.check.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -f cutover-check.log
+          rm -f repo-source-export.zip repo-source-snapshot.zip
+          rm -f legacy-pastoral-report.txt legacy-source-bundle.txt migration-index.txt
+          rm -f scripts/temp-remove-legacy-pastoral.py
+          rm -f .github/workflows/temp-export-source.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: completar corte a unidades organizativas [skip ci]'
+          git push
+          gh issue close 6 --reason completed --comment 'Corte verificado: guardia heredada, TypeScript, pruebas y build completados correctamente.' || true
