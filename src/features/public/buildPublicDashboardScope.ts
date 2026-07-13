@@ -26,7 +26,7 @@ export function buildPublicDashboardScope(
   const inScope = (dioceseId: string | null, dioceseSlug: string | null) => !scopeFiltered || Boolean(
     (dioceseId && scopedIds.has(dioceseId)) || (dioceseSlug && scopedSlugs.has(dioceseSlug)),
   )
-  const scopedParishes = initialData.parishes.filter((item) => inScope(item.ecclesiastical_entity_id, item.ecclesiastical_entity_slug))
+  const scopedParishes = initialData.parishes.filter((item) => inScope(item.diocese_id, item.diocese_slug))
   const scopedPastoral = initialData.organization_units.filter((item) => inScope(item.ecclesiastical_entity_id, item.ecclesiastical_entity_slug))
   const pastoralGroups = Array.from(scopedPastoral.reduce((map, item) => {
     const name = item.organization_chart_name ?? 'Sin nivel configurado'

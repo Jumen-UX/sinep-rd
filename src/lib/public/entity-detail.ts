@@ -116,7 +116,6 @@ export type PublicEntityPosition = {
   position_title: string | null
   organization_chart_name: string | null
   organization_chart_key: string | null
-  organization_unit_name: string | null
   direct_entity_name: string | null
   direct_entity_slug: string | null
   direct_entity_type_name: string | null

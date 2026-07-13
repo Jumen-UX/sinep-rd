@@ -107,7 +107,6 @@ export type PublicPosition = {
   position_title: string | null
   organization_chart_name: string | null
   organization_chart_key: string | null
-  organization_unit_name: string | null
   ecclesiastical_entity_name: string | null
   ecclesiastical_entity_slug: string | null
   organization_unit_name: string | null

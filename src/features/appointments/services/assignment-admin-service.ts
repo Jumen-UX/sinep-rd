@@ -62,7 +62,6 @@ export type RawAssignment = {
   organization_chart_id: string | null
   organization_unit_id: string | null
   ecclesiastical_entity_id: string | null
-  organization_unit_id: string | null
   title_override: string | null
   is_current: boolean
   record_status: string
