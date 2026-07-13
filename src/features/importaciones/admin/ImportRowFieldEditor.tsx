@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { SearchableSelect, type SearchableSelectOption } from '@/components/admin/SearchableSelect'
 import { getImportRowFieldContract } from '@/features/importaciones/domain/import-row-field-contract'
 import { getImportReferenceOptions } from '@/features/importaciones/services/import-reference-catalog-service'
@@ -25,6 +25,7 @@ export function ImportRowFieldEditor({
   const [catalogOptions, setCatalogOptions] = useState<SearchableSelectOption[]>(referenceOptions ?? [])
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(false)
+  const [retryToken, setRetryToken] = useState(0)
 
   useEffect(() => {
     if (contract.kind !== 'reference' || !contract.referenceType || referenceOptions) return
@@ -48,26 +49,57 @@ export function ImportRowFieldEditor({
       })
 
     return () => { active = false }
-  }, [contract.kind, contract.referenceType, referenceOptions])
+  }, [contract.kind, contract.referenceType, referenceOptions, retryToken])
+
+  const availableOptions = referenceOptions ?? catalogOptions
+  const selectedCanonicalOption = useMemo(
+    () => availableOptions.find((option) => option.value === value),
+    [availableOptions, value],
+  )
 
   if (contract.kind === 'reference') {
-    const help = [
-      contract.help,
-      isLoadingCatalog ? 'Cargando opciones disponibles…' : null,
-      catalogError ? 'No se pudo cargar el catálogo; puedes conservar una referencia textual exacta.' : null,
-    ].filter(Boolean).join(' ')
+    const referenceState = isLoadingCatalog
+      ? 'loading'
+      : catalogError
+        ? 'error'
+        : selectedCanonicalOption
+          ? 'canonical'
+          : value.trim()
+            ? 'provisional'
+            : 'empty'
 
     return (
-      <SearchableSelect
-        allowCustomValue
-        disabled={false}
-        help={help}
-        label={contract.label}
-        onChange={onChange}
-        options={referenceOptions ?? catalogOptions}
-        placeholder={`Buscar ${contract.label.toLocaleLowerCase('es')}…`}
-        value={value}
-      />
+      <div className="admin-import-reference-editor" data-reference-state={referenceState}>
+        <SearchableSelect
+          allowCustomValue
+          disabled={false}
+          help={contract.help}
+          label={contract.label}
+          onChange={onChange}
+          options={availableOptions}
+          placeholder={`Buscar ${contract.label.toLocaleLowerCase('es')}…`}
+          value={value}
+        />
+
+        <div className="admin-import-reference-status" aria-live="polite">
+          {isLoadingCatalog ? (
+            <span className="is-loading">Cargando opciones disponibles…</span>
+          ) : catalogError ? (
+            <>
+              <span className="is-error">No se pudo cargar el catálogo. Puedes conservar una referencia textual exacta.</span>
+              <button className="button button-secondary" onClick={() => setRetryToken((current) => current + 1)} type="button">
+                Reintentar catálogo
+              </button>
+            </>
+          ) : selectedCanonicalOption ? (
+            <span className="is-canonical">Referencia canónica seleccionada: {selectedCanonicalOption.label}</span>
+          ) : value.trim() ? (
+            <span className="is-provisional">Referencia textual provisional. Debe resolverse durante la validación del lote.</span>
+          ) : (
+            <span className="is-empty">Selecciona una referencia canónica o escribe una referencia exacta.</span>
+          )}
+        </div>
+      </div>
     )
   }
 
