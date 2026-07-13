@@ -97,13 +97,21 @@ export async function getUserScope(
     // Get entity name for restricted users
     let scopeName = null
     if (assignments.scope_entity_id) {
-      const { data: entity } = await supabase
-        .from('ecclesiastical_entities')
-        .select('name')
-        .eq('id', assignments.scope_entity_id)
-        .single()
-
-      scopeName = entity?.name || null
+      if (assignments.scope_type === 'organization_unit') {
+        const { data: unit } = await supabase
+.from('organization_units')
+.select('name')
+.eq('id', assignments.scope_entity_id)
+.single()
+        scopeName = unit?.name || null
+      } else {
+        const { data: entity } = await supabase
+.from('ecclesiastical_entities')
+.select('name')
+.eq('id', assignments.scope_entity_id)
+.single()
+        scopeName = entity?.name || null
+      }
     }
 
     return {

@@ -55,30 +55,35 @@ export type Assignment = {
   vicariate_slug: string | null
   diocese_name: string | null
   diocese_slug: string | null
-  pastoral_entity_name: string | null
-  pastoral_entity_slug: string | null
+  organization_unit_name: string | null
+  organization_unit_slug: string | null
   is_current: boolean | null
   assignment_status: string | null
 }
 
-export type PastoralEntity = {
-  id: string
-  name: string
-  slug: string
-  diocese_id: string | null
-  diocese_name: string | null
-  diocese_slug: string | null
-  level_name: string | null
-  level_key: string | null
-  level_order: number | null
-  linked_entity_name?: string | null
-  linked_entity_slug?: string | null
-  parent_pastoral_entity_id: string | null
-  parent_pastoral_entity_name: string | null
-}
-
 export type OrganizationChart = { id: string; key: string; name: string; description: string | null }
-export type OrganizationUnit = { id: string; organization_chart_id: string | null; parent_unit_id: string | null; name: string; description: string | null }
+
+export type OrganizationUnit = {
+  id: string
+  organization_chart_id: string
+  organization_chart_key: string
+  organization_chart_name: string
+  organization_chart_sort_order: number
+  parent_unit_id: string | null
+  parent_unit_name: string | null
+  parent_unit_slug: string | null
+  ecclesiastical_entity_id: string | null
+  ecclesiastical_entity_name: string | null
+  ecclesiastical_entity_slug: string | null
+  pastoral_area_id: string | null
+  pastoral_area_name: string | null
+  pastoral_area_slug: string | null
+  key: string | null
+  slug: string
+  name: string
+  description: string | null
+  sort_order: number
+}
 
 export type PublicDashboardData = {
   countries: { key: string; name: string }[]
@@ -86,7 +91,6 @@ export type PublicDashboardData = {
   parishes: Parish[]
   people: Person[]
   assignments: Assignment[]
-  pastoral_entities: PastoralEntity[]
   organization_charts: OrganizationChart[]
   organization_units: OrganizationUnit[]
 }
@@ -143,15 +147,14 @@ async function safeFetch<T>(table: string, params: Record<string, string>) {
 }
 
 export async function loadPublicDashboardData(): Promise<PublicDashboardData> {
-  const [countries, dioceses, parishes, people, assignments, pastoralEntities, organizationCharts, organizationUnits] = await Promise.all([
+  const [countries, dioceses, parishes, people, assignments, organizationCharts, organizationUnits] = await Promise.all([
     safeFetch<{ key: string; name: string }>('public_countries', { select: 'key,name', order: 'name.asc' }),
     fetchSupabaseJson<Diocese[]>('public_dioceses', { select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count,country_iso2,country_name', order: 'name.asc' }),
     safeFetch<Parish>('public_parishes', { select: 'id,name,slug,diocese_id,diocese_name,diocese_slug', status: 'eq.active', visibility: 'eq.public', order: 'name.asc' }),
     fetchSupabaseJson<Person[]>('person_public_directory', { select: 'id,display_name,slug,person_type,is_religious,status,death_date', status: 'eq.active', visibility: 'eq.public', death_date: 'is.null', order: 'display_name.asc' }),
-    safeFetch<Assignment>('public_position_assignments_with_hierarchy', { select: 'id,person_id,person_name,person_slug,person_type,position_title,base_role_name,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,parish_slug,zone_name,zone_slug,vicariate_name,vicariate_slug,diocese_name,diocese_slug,pastoral_entity_name,pastoral_entity_slug,is_current,assignment_status', is_current: 'eq.true', order: 'person_name.asc' }),
-    safeFetch<PastoralEntity>('public_pastoral_entities', { select: 'id,name,slug,diocese_id,diocese_name,diocese_slug,level_name,level_key,level_order,parent_pastoral_entity_id,parent_pastoral_entity_name', status: 'eq.active', visibility: 'eq.public', order: 'level_order.asc,name.asc' }),
+    safeFetch<Assignment>('public_position_assignments_with_hierarchy', { select: 'id,person_id,person_name,person_slug,person_type,position_title,base_role_name,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,parish_slug,zone_name,zone_slug,vicariate_name,vicariate_slug,diocese_name,diocese_slug,organization_unit_name,organization_unit_slug,is_current,assignment_status', is_current: 'eq.true', order: 'person_name.asc' }),
     safeFetch<OrganizationChart>('organization_charts', { select: 'id,key,name,description', status: 'eq.active', visibility: 'eq.public', order: 'sort_order.asc,name.asc' }),
-    safeFetch<OrganizationUnit>('organization_units', { select: 'id,organization_chart_id,parent_unit_id,name,description', status: 'eq.active', visibility: 'eq.public', order: 'sort_order.asc,name.asc' }),
+    safeFetch<OrganizationUnit>('public_organization_units', { select: 'id,organization_chart_id,organization_chart_key,organization_chart_name,organization_chart_sort_order,parent_unit_id,parent_unit_name,parent_unit_slug,ecclesiastical_entity_id,ecclesiastical_entity_name,ecclesiastical_entity_slug,pastoral_area_id,pastoral_area_name,pastoral_area_slug,key,slug,name,description,sort_order', order: 'organization_chart_sort_order.asc,sort_order.asc,name.asc' }),
   ])
 
   return {
@@ -160,7 +163,6 @@ export async function loadPublicDashboardData(): Promise<PublicDashboardData> {
     parishes,
     people,
     assignments,
-    pastoral_entities: pastoralEntities,
     organization_charts: organizationCharts,
     organization_units: organizationUnits,
   }

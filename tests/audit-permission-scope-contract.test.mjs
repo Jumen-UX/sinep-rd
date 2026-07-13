@@ -54,7 +54,7 @@ test('audit reader filters records by the current user jurisdiction', async () =
   const sql = await readSecurityMigrations()
 
   assert.match(sql, /current_user_can_manage_entity\('audit\.view', al\.scope_entity_id\)/)
-  assert.match(sql, /current_user_has_scope_access\(\s*'pastoral_entity'/)
+  assert.match(sql, /current_user_has_scope_access\(\s*'organization_unit'/)
   assert.match(sql, /current_user_has_scope_access\(\s*'pastoral_area'/)
 })
 

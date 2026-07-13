@@ -10,20 +10,20 @@ type Diocese = {
   ecclesiastical_province_name: string | null
 }
 
-type PastoralEntity = {
+type OrganizationUnit = {
   id: string
   name: string
   slug: string
-  diocese_id: string | null
-  diocese_name: string | null
-  diocese_slug: string | null
-  level_name: string | null
-  level_order: number | null
+  ecclesiastical_entity_id: string | null
+  ecclesiastical_entity_name: string | null
+  ecclesiastical_entity_slug: string | null
+  organization_chart_name: string | null
+  organization_chart_sort_order: number | null
 }
 
 type DashboardData = {
   dioceses: Diocese[]
-  pastoral_entities: PastoralEntity[]
+  organization_units: OrganizationUnit[]
 }
 
 function normalize(value: string) {
@@ -116,7 +116,7 @@ function renderPastoralPanel(data: DashboardData) {
   const hasProvince = province && province !== 'Todas las provincias'
   const hasJurisdiction = jurisdiction && jurisdiction !== 'Todas las jurisdicciones'
   const mode = hasJurisdiction ? 'jurisdiction' : hasProvince ? 'province' : 'country'
-  const signature = `${mode}|${country}|${province}|${jurisdiction}|${data.dioceses.length}|${data.pastoral_entities.length}`
+  const signature = `${mode}|${country}|${province}|${jurisdiction}|${data.dioceses.length}|${data.organization_units.length}`
 
   let container = pastoralPanel.querySelector<HTMLElement>('#public-pastoral-scope-panel')
   if (!container) {
@@ -136,12 +136,12 @@ function renderPastoralPanel(data: DashboardData) {
   const selectedProvinceDioceses = hasProvince ? territorialDioceses.filter((item) => item.ecclesiastical_province_name === province) : []
   const provinceNames = Array.from(groupCount(territorialDioceses, (item) => item.ecclesiastical_province_name ?? '').entries()).sort((a, b) => a[0].localeCompare(b[0], 'es'))
   const scopeEntities = selectedJurisdiction
-    ? data.pastoral_entities.filter((item) => !!item.diocese_slug && selectedJurisdictionSlugs.has(item.diocese_slug))
+    ? data.organization_units.filter((item) => !!item.ecclesiastical_entity_slug && selectedJurisdictionSlugs.has(item.ecclesiastical_entity_slug))
     : hasProvince
-      ? data.pastoral_entities.filter((item) => selectedProvinceDioceses.some((diocese) => diocese.slug === item.diocese_slug))
-      : data.pastoral_entities
+      ? data.organization_units.filter((item) => selectedProvinceDioceses.some((diocese) => diocese.slug === item.ecclesiastical_entity_slug))
+      : data.organization_units
 
-  const levelCounts = Array.from(groupCount(scopeEntities, (item) => item.level_name ?? 'Sin nivel').entries()).sort((a, b) => a[0].localeCompare(b[0], 'es'))
+  const levelCounts = Array.from(groupCount(scopeEntities, (item) => item.organization_chart_name ?? 'Sin nivel').entries()).sort((a, b) => a[0].localeCompare(b[0], 'es'))
 
   const filterArticle = document.createElement('article')
   filterArticle.className = 'public-panel public-section-card'

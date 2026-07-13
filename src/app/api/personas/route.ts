@@ -125,8 +125,8 @@ const appointmentColumns = [
   'office_key',
   'entity_name',
   'entity_slug',
-  'pastoral_entity_name',
-  'pastoral_entity_slug',
+  'organization_unit_name',
+  'organization_unit_slug',
   'start_date',
   'end_date',
   'is_current',
@@ -143,8 +143,8 @@ const movementColumns = [
   'person_slug',
   'entity_name',
   'entity_slug',
-  'pastoral_entity_name',
-  'pastoral_entity_slug',
+  'organization_unit_name',
+  'organization_unit_slug',
   'movement_type',
   'title',
   'description',
@@ -192,8 +192,8 @@ const positionColumns = [
   'organization_unit_name',
   'ecclesiastical_entity_name',
   'ecclesiastical_entity_slug',
-  'pastoral_entity_name',
-  'pastoral_entity_slug',
+  'organization_unit_name',
+  'organization_unit_slug',
   'predecessor_person_name',
   'predecessor_person_slug',
   'successor_person_name',
@@ -318,12 +318,12 @@ function buildCompatibilityClergy(
     incardination_entity_slug: currentIncardination?.related_entity_slug ?? null,
     current_service_entity_name:
       currentPosition?.ecclesiastical_entity_name
-      ?? currentPosition?.pastoral_entity_name
+      ?? currentPosition?.organization_unit_name
       ?? currentPosition?.organization_unit_name
       ?? null,
     current_service_entity_slug:
       currentPosition?.ecclesiastical_entity_slug
-      ?? currentPosition?.pastoral_entity_slug
+      ?? currentPosition?.organization_unit_slug
       ?? null,
   }
 }

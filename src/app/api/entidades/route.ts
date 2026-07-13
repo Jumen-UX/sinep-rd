@@ -33,7 +33,7 @@ const positionColumns = [
   'id','person_id','person_name','person_slug','position_title','office_configuration_key','base_role_name','scope_name','category_name',
   'organization_chart_name','organization_chart_key','organization_unit_name','direct_entity_name','direct_entity_slug','direct_entity_type_name',
   'parish_name','parish_slug','zone_name','zone_slug','vicariate_name','vicariate_slug','diocese_name','diocese_slug','hierarchy_path',
-  'pastoral_entity_name','pastoral_entity_slug','predecessor_person_name','predecessor_person_slug','successor_person_name',
+  'organization_unit_name','organization_unit_slug','predecessor_person_name','predecessor_person_slug','successor_person_name',
   'successor_person_slug','start_date','term_start_date','term_end_date','actual_end_date','is_current','assignment_status',
   'selection_method','notes_public'
 ].join(',')

@@ -40,7 +40,7 @@ type StructureNode = {
   slug: string
   code: string | null
   linked_ecclesiastical_entity_id: string | null
-  linked_pastoral_entity_id: string | null
+  linked_organization_unit_id: string | null
   start_date: string | null
   end_date: string | null
   is_current: boolean

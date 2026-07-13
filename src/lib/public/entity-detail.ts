@@ -129,8 +129,8 @@ export type PublicEntityPosition = {
   vicariate_slug: string | null
   diocese_name: string | null
   diocese_slug: string | null
-  pastoral_entity_name: string | null
-  pastoral_entity_slug: string | null
+  organization_unit_name: string | null
+  organization_unit_slug: string | null
   predecessor_person_name: string | null
   predecessor_person_slug: string | null
   successor_person_name: string | null
@@ -182,7 +182,7 @@ const statisticsColumns = [
 const positionColumns = [
   'id','person_name','person_slug','position_title','organization_chart_name','organization_chart_key','organization_unit_name',
   'direct_entity_name','direct_entity_slug','direct_entity_type_name','hierarchy_path','parish_name','parish_slug','zone_name',
-  'zone_slug','vicariate_name','vicariate_slug','diocese_name','diocese_slug','pastoral_entity_name','pastoral_entity_slug',
+  'zone_slug','vicariate_name','vicariate_slug','diocese_name','diocese_slug','organization_unit_name','organization_unit_slug',
   'predecessor_person_name','predecessor_person_slug','successor_person_name','successor_person_slug','start_date',
   'term_start_date','term_end_date','actual_end_date','is_current','assignment_status',
 ].join(',')

@@ -21,8 +21,8 @@ export type AssignmentHistoryItem = {
   vicariate_slug: string | null
   diocese_name: string | null
   diocese_slug: string | null
-  pastoral_entity_name: string | null
-  pastoral_entity_slug: string | null
+  organization_unit_name: string | null
+  organization_unit_slug: string | null
   predecessor_person_name: string | null
   predecessor_person_slug: string | null
   successor_person_name: string | null
@@ -67,7 +67,7 @@ function statusLabel(value: string | null, current: boolean) {
 export function assignmentEntityTarget(item: AssignmentHistoryItem) {
   const candidates = [
     [item.direct_entity_name, item.direct_entity_slug],
-    [item.pastoral_entity_name, item.pastoral_entity_slug],
+    [item.organization_unit_name, item.organization_unit_slug],
     [item.parish_name, item.parish_slug],
     [item.zone_name, item.zone_slug],
     [item.vicariate_name, item.vicariate_slug],
@@ -97,7 +97,7 @@ export default function PersonAssignmentHistory({ personId, onCountChange, onIte
 
       const { data, error: queryError } = await supabase
         .from('public_position_assignments_with_hierarchy')
-        .select('id,position_title,organization_chart_name,organization_unit_name,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,parish_slug,zone_name,zone_slug,vicariate_name,vicariate_slug,diocese_name,diocese_slug,pastoral_entity_name,pastoral_entity_slug,predecessor_person_name,predecessor_person_slug,successor_person_name,successor_person_slug,start_date,term_start_date,term_end_date,actual_end_date,is_current,assignment_status,selection_method,notes_public')
+        .select('id,position_title,organization_chart_name,organization_unit_name,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,parish_slug,zone_name,zone_slug,vicariate_name,vicariate_slug,diocese_name,diocese_slug,organization_unit_name,organization_unit_slug,predecessor_person_name,predecessor_person_slug,successor_person_name,successor_person_slug,start_date,term_start_date,term_end_date,actual_end_date,is_current,assignment_status,selection_method,notes_public')
         .eq('person_id', personId)
         .order('start_date', { ascending: false, nullsFirst: false })
 

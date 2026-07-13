@@ -62,7 +62,7 @@ export type AdminPersonDetail = {
   photo_url?: string | null
   biography_public: string | null
   current_entity_name?: string | null
-  current_pastoral_entity_name?: string | null
+  current_organization_unit_name?: string | null
   incardination_entity_id?: string | null
   incardination_entity_name?: string | null
   incardination_institute_name?: string | null

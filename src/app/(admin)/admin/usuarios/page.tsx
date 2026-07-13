@@ -14,7 +14,7 @@ type RoleAssignment = {
   scope_entity_id: string | null
   diocese_id: string | null
   pastoral_area_id: string | null
-  pastoral_entity_id: string | null
+  organization_unit_id: string | null
   starts_at: string | null
   ends_at: string | null
   status: string
@@ -73,7 +73,7 @@ const scopeTypes = [
   { value: 'zone', label: 'Zona pastoral' },
   { value: 'parish', label: 'Parroquia' },
   { value: 'pastoral_area', label: 'Área pastoral' },
-  { value: 'pastoral_entity', label: 'Entidad pastoral' },
+  { value: 'organization_unit', label: 'Unidad organizativa' },
   { value: 'entity', label: 'Entidad eclesial / nodo' },
   { value: 'global', label: 'Global técnico' },
 ]
@@ -330,7 +330,7 @@ export default function AdminUsersPage() {
             <div>
               <p className="eyebrow">Asignación rápida</p>
               <h2>Asignar rol a usuario</h2>
-              <p className="meta">El alcance puede apuntar a una diócesis, parroquia, nodo de estructura o entidad pastoral real.</p>
+              <p className="meta">El alcance puede apuntar a una diócesis, parroquia, nodo de estructura o unidad organizativa.</p>
             </div>
           </div>
 

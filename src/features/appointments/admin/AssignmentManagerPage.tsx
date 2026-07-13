@@ -53,7 +53,6 @@ const emptyCatalogs: AssignmentCatalogs = {
   configs: [],
   charts: [],
   units: [],
-  pastoralEntities: [],
   assignments: [],
   rawAssignments: [],
 }
@@ -265,9 +264,7 @@ export default function AssignmentManagerPage() {
       person_id: requiresPerson ? selectedPersonId : null,
       office_configuration_id: selectedConfigId,
       organization_chart_id: emptyToNull(form.get('organization_chart_id')),
-      organization_unit_id: emptyToNull(form.get('organization_unit_id')),
       ecclesiastical_entity_id: selectedEntityId || null,
-      pastoral_entity_id: emptyToNull(form.get('pastoral_entity_id')),
       title_override: emptyToNull(form.get('title_override')),
       start_date: emptyToNull(form.get('start_date')),
       term_start_date: emptyToNull(form.get('term_start_date')),
@@ -412,11 +409,6 @@ export default function AssignmentManagerPage() {
             onChange={setSelectedEntityId}
           />
 
-          <select name="pastoral_entity_id" defaultValue="">
-            <option value="">Entidad pastoral</option>
-            {catalogs.pastoralEntities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}
-          </select>
-
           <label>Fecha de inicio<input name="start_date" type="date" value={selectedStartDate} onChange={(event) => setSelectedStartDate(event.target.value)} /></label>
           <label>Inicio del período<input name="term_start_date" type="date" /></label>
           <label>Fin previsto<input name="term_end_date" type="date" defaultValue={defaultTermEnd} /></label>
@@ -473,7 +465,7 @@ export default function AssignmentManagerPage() {
                   <td>{assignment.person_slug ? <Link href={`/personas/${assignment.person_slug}`}>{assignment.person_name}</Link> : assignment.person_name ?? 'Vacante'}</td>
                   <td><strong>{assignment.position_title ?? 'Cargo'}</strong></td>
                   <td>{assignment.organization_chart_name ?? '—'}</td>
-                  <td>{assignment.direct_entity_name ?? assignment.pastoral_entity_name ?? '—'}</td>
+                  <td>{assignment.direct_entity_name ?? assignment.organization_unit_name ?? '—'}</td>
                   <td>{assignment.hierarchy_path ?? '—'}</td>
                   <td>{formatDate(assignment.term_start_date ?? assignment.start_date)} – {assignment.actual_end_date ? formatDate(assignment.actual_end_date) : assignment.term_end_date ? formatDate(assignment.term_end_date) : 'actual'}</td>
                   <td>{statusOptions.find(([value]) => value === assignment.assignment_status)?.[1] ?? assignment.assignment_status ?? '—'}</td>

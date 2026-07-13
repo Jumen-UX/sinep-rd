@@ -36,11 +36,6 @@ export type AssignmentUnit = {
   organization_chart_id: string
 }
 
-export type AssignmentPastoralEntity = {
-  id: string
-  name: string
-  slug: string
-}
 
 export type AssignmentRow = {
   id: string
@@ -49,7 +44,7 @@ export type AssignmentRow = {
   position_title: string | null
   organization_chart_name: string | null
   direct_entity_name: string | null
-  pastoral_entity_name: string | null
+  organization_unit_name: string | null
   hierarchy_path: string | null
   predecessor_person_name: string | null
   successor_person_name: string | null
@@ -67,7 +62,7 @@ export type RawAssignment = {
   organization_chart_id: string | null
   organization_unit_id: string | null
   ecclesiastical_entity_id: string | null
-  pastoral_entity_id: string | null
+  organization_unit_id: string | null
   title_override: string | null
   is_current: boolean
   record_status: string
@@ -90,7 +85,6 @@ export type AssignmentCatalogs = {
   configs: AssignmentOfficeConfiguration[]
   charts: AssignmentChart[]
   units: AssignmentUnit[]
-  pastoralEntities: AssignmentPastoralEntity[]
   assignments: AssignmentRow[]
   rawAssignments: RawAssignment[]
 }
@@ -107,7 +101,7 @@ export type SaveAssignmentResponse = {
 export { loadAllowedOfficeIds }
 
 export async function loadAssignmentCatalogs(supabase: SupabaseClient): Promise<AssignmentCatalogs> {
-  const [peopleResult, configResult, chartResult, unitResult, pastoralResult, assignmentResult, rawAssignmentResult] = await Promise.all([
+  const [peopleResult, configResult, chartResult, unitResult, assignmentResult, rawAssignmentResult] = await Promise.all([
     supabase
       .from('person_ecclesial_state')
       .select('id,display_name,slug,highest_ordination_degree,effective_person_type')
@@ -120,15 +114,14 @@ export async function loadAssignmentCatalogs(supabase: SupabaseClient): Promise<
       .order('display_name'),
     supabase.from('organization_charts').select('id,key,name').eq('status', 'active').order('sort_order'),
     supabase.from('organization_units').select('id,name,organization_chart_id').eq('status', 'active').order('name'),
-    supabase.from('pastoral_entities').select('id,name,slug').eq('status', 'active').order('name'),
     supabase
       .from('public_position_assignments_with_hierarchy')
-      .select('id,person_name,person_slug,position_title,organization_chart_name,direct_entity_name,pastoral_entity_name,hierarchy_path,predecessor_person_name,successor_person_name,start_date,term_start_date,term_end_date,actual_end_date,assignment_status')
+      .select('id,person_name,person_slug,position_title,organization_chart_name,direct_entity_name,organization_unit_name,hierarchy_path,predecessor_person_name,successor_person_name,start_date,term_start_date,term_end_date,actual_end_date,assignment_status')
       .order('start_date', { ascending: false, nullsFirst: false })
       .limit(100),
     supabase
       .from('position_assignments')
-      .select('id,person_id,office_configuration_id,organization_chart_id,organization_unit_id,ecclesiastical_entity_id,pastoral_entity_id,title_override,is_current,record_status')
+      .select('id,person_id,office_configuration_id,organization_chart_id,organization_unit_id,ecclesiastical_entity_id,organization_unit_id,title_override,is_current,record_status')
       .order('created_at', { ascending: false })
       .limit(500),
   ])
@@ -137,7 +130,6 @@ export async function loadAssignmentCatalogs(supabase: SupabaseClient): Promise<
     ?? configResult.error
     ?? chartResult.error
     ?? unitResult.error
-    ?? pastoralResult.error
     ?? assignmentResult.error
     ?? rawAssignmentResult.error
   if (error) throw error
@@ -147,7 +139,6 @@ export async function loadAssignmentCatalogs(supabase: SupabaseClient): Promise<
     configs: (configResult.data ?? []) as AssignmentOfficeConfiguration[],
     charts: (chartResult.data ?? []) as AssignmentChart[],
     units: (unitResult.data ?? []) as AssignmentUnit[],
-    pastoralEntities: (pastoralResult.data ?? []) as AssignmentPastoralEntity[],
     assignments: (assignmentResult.data ?? []) as AssignmentRow[],
     rawAssignments: (rawAssignmentResult.data ?? []) as RawAssignment[],
   }
