@@ -17,7 +17,9 @@ test('person detail exposes canonical assignment history and succession links', 
   assert.match(component, /actual_end_date/)
   assert.match(component, /predecessor_person_name/)
   assert.match(component, /successor_person_name/)
-  assert.match(component, /href=\{`\/entidades\/\$\{entitySlug\}`\}/)
+  assert.match(component, /item\.organization_unit_name, item\.organization_unit_slug, 'unit'/)
+  assert.match(component, /targetKind === 'unit' \? `\/pastoral\/\$\{entitySlug\}` : `\/entidades\/\$\{entitySlug\}`/)
+  assert.match(component, /href=\{href\}/)
   assert.match(component, /href=\{`\/personas\/\$\{slug\}`\}/)
   assert.match(component, /aria-labelledby="person-assignment-history-title"/)
 
