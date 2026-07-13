@@ -1,4 +1,4 @@
-name: Temporary legacy inventory
+name: Temporary legacy source bundle
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  inventory:
+  bundle:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -18,24 +18,24 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Build report
+      - name: Build bundle
         run: |
-          {
-            echo '# Legacy pastoral references'
-            echo
-            grep -RInE \
-              --exclude-dir=.git \
-              --exclude-dir=node_modules \
-              --exclude-dir=.next \
-              --exclude='repo-source-export.zip' \
-              'pastoral_entity|PastoralEntity|pastoralEntities|public_pastoral_entities|pastoral_entities' \
-              src tests scripts package.json supabase/migrations 2>/dev/null || true
-          } > legacy-pastoral-report.txt
+          : > legacy-source-bundle.txt
+          while IFS= read -r file; do
+            printf '\n===== FILE: %s =====\n' "$file" >> legacy-source-bundle.txt
+            cat "$file" >> legacy-source-bundle.txt
+            printf '\n===== END FILE: %s =====\n' "$file" >> legacy-source-bundle.txt
+          done < <(grep -RlE \
+            --exclude-dir=.git \
+            --exclude-dir=node_modules \
+            --exclude-dir=.next \
+            'pastoral_entity|PastoralEntity|pastoralEntities|public_pastoral_entities|pastoral_entities' \
+            src tests 2>/dev/null | sort)
 
-      - name: Commit report
+      - name: Commit bundle
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add legacy-pastoral-report.txt
-          git commit -m 'chore: temporary legacy pastoral inventory [skip ci]'
+          git add legacy-source-bundle.txt
+          git commit -m 'chore: temporary legacy source bundle [skip ci]'
           git push
