@@ -1,0 +1,125 @@
+.admin-deacon-wizard .auto-section-wizard {
+  grid-template-columns: minmax(292px, 320px) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.admin-deacon-wizard .auto-section-wizard > aside {
+  min-width: 0;
+  padding: 16px;
+  border-radius: 20px;
+}
+
+.admin-deacon-wizard .auto-section-wizard > aside ol {
+  gap: 6px;
+}
+
+.admin-deacon-wizard .auto-section-wizard > aside ol > li > :is(button, div) {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 10px;
+  row-gap: 4px;
+  padding: 12px;
+}
+
+.admin-deacon-wizard .auto-section-wizard > aside ol > li > :is(button, div) > span:nth-child(2) strong {
+  line-height: 1.35;
+}
+
+.admin-deacon-wizard .auto-section-wizard > aside ol > li > :is(button, div) > span:last-child {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.admin-deacon-wizard .auto-section-wizard__content .admin-config-form.dashboard-section > section:not([hidden]) {
+  max-width: none;
+}
+
+.admin-deacon-wizard .empty-state {
+  display: grid;
+  gap: 4px;
+  line-height: 1.45;
+}
+
+.admin-deacon-wizard .empty-state > strong,
+.admin-deacon-wizard .empty-state > span,
+.admin-deacon-wizard .empty-state > a {
+  display: block;
+}
+
+.admin-deacon-wizard .empty-state > span {
+  color: var(--muted);
+}
+
+.admin-deacon-wizard .auto-section-wizard__actions {
+  align-items: center;
+  min-height: 66px;
+  padding: 10px 12px;
+}
+
+.admin-deacon-wizard .auto-section-wizard__actions .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 116px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.admin-deacon-wizard .auto-section-wizard__actions .button-primary {
+  background: var(--primary);
+  color: var(--foreground);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+}
+
+.admin-deacon-wizard .auto-section-wizard__actions .button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.14);
+}
+
+.admin-deacon-wizard .auto-section-wizard__actions .button-secondary {
+  border-color: var(--border);
+  background: #ffffff;
+  color: var(--foreground);
+}
+
+.admin-deacon-wizard .auto-section-wizard__actions .button-secondary:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--surface-soft, #fbf8f1);
+}
+
+.admin-deacon-wizard .auto-section-wizard__actions .button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 1050px) {
+  .admin-deacon-wizard .auto-section-wizard {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-deacon-wizard .auto-section-wizard > aside {
+    position: static;
+  }
+
+  .admin-deacon-wizard .auto-section-wizard__actions {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-deacon-wizard .auto-section-wizard__actions .button {
+    min-width: 0;
+    flex: 1;
+  }
+}
