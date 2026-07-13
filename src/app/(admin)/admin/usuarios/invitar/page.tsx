@@ -25,7 +25,7 @@ const scopeTypes = [
   { value: 'zone', label: 'Zona pastoral' },
   { value: 'parish', label: 'Parroquia' },
   { value: 'pastoral_area', label: 'Área pastoral' },
-  { value: 'pastoral_entity', label: 'Entidad pastoral' },
+  { value: 'organization_unit', label: 'Unidad organizativa' },
   { value: 'entity', label: 'Entidad eclesial / nodo' },
   { value: 'global', label: 'Global técnico' },
 ]
