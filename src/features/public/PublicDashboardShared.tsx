@@ -5,7 +5,7 @@ import type {
   Assignment,
   DashboardSummary,
   Diocese,
-  PastoralEntity,
+  OrganizationUnit,
   PublicDashboardData,
   PublicView,
 } from '@/lib/public/dashboard'
@@ -30,7 +30,7 @@ export type PersonCard = {
 export const views: { key: PublicView; title: string; icon: string; description: string }[] = [
   { key: 'territorial', title: 'Territorial', icon: '▱', description: 'Provincias, jurisdicciones y parroquias.' },
   { key: 'clero', title: 'Clero y agentes', icon: '♙', description: 'Obispos, sacerdotes, diáconos, consagrados y laicos.' },
-  { key: 'pastoral', title: 'Pastoral', icon: '✝', description: 'Niveles, comunidades y entidades pastorales.' },
+  { key: 'pastoral', title: 'Pastoral', icon: '✝', description: 'Organigramas y unidades de la organización pastoral.' },
   { key: 'administrativa', title: 'Administración', icon: '▣', description: 'Curia, oficinas, departamentos y servicios.' },
   { key: 'colegial', title: 'Colegial', icon: '♧', description: 'Consejos, comisiones, comités y equipos.' },
 ]
@@ -84,7 +84,7 @@ export function assignmentMatches(assignment: Assignment, slugs: Set<string>) {
     assignment.zone_slug,
     assignment.vicariate_slug,
     assignment.diocese_slug,
-    assignment.pastoral_entity_slug,
+    assignment.organization_unit_slug,
   ].some((slug) => Boolean(slug && slugs.has(slug)))
 }
 
@@ -129,7 +129,8 @@ export function PersonItem({ item }: { item: PersonCard }) {
     : <article className="public-directory-item">{content}</article>
 }
 
-export function PastoralItem({ item }: { item: PastoralEntity }) {
-  const href = item.linked_entity_slug ? `/entidades/${item.linked_entity_slug}` : `/pastoral/${item.slug}`
-  return <Link className="public-directory-item" href={href}><strong>{item.name}</strong><span>{item.level_name ?? 'Nivel pastoral'} · {item.diocese_name ?? 'Jurisdicción no indicada'}</span><span className="public-link">Ver ficha →</span></Link>
+export function PastoralItem({ item }: { item: OrganizationUnit }) {
+  const href = item.ecclesiastical_entity_slug ? `/entidades/${item.ecclesiastical_entity_slug}` : `/pastoral/${item.slug}`
+  const scope = item.ecclesiastical_entity_name ?? item.pastoral_area_name ?? 'Ámbito no indicado'
+  return <Link className="public-directory-item" href={href}><strong>{item.name}</strong><span>{item.organization_chart_name ?? 'Organigrama'} · {scope}</span><span className="public-link">Ver ficha →</span></Link>
 }
