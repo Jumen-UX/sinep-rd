@@ -13,6 +13,7 @@ function formatTableName(value: string) {
 export default function ImportApplicationPreviewPanel({ rows, serverCanApply }: Props) {
   const preview = buildImportApplicationPreview(rows)
   const ready = !preview.isCompleted && preview.canApply && serverCanApply
+  const batchId = rows[0]?.batch_id ?? null
 
   return (
     <div className="compact-section" aria-label="Vista previa de aplicación">
@@ -48,11 +49,21 @@ export default function ImportApplicationPreviewPanel({ rows, serverCanApply }: 
       )}
 
       {preview.isCompleted && (
-        <div className="admin-info-box">
-          <span>
-            El lote ya fue procesado. Las creaciones, actualizaciones y coincidencias sin cambio conservan su objetivo y auditoría sin permitir una segunda aplicación.
-          </span>
-        </div>
+        <>
+          <div className="admin-info-box">
+            <span>
+              El lote ya fue procesado. Las creaciones, actualizaciones y coincidencias sin cambio conservan su objetivo y auditoría sin permitir una segunda aplicación.
+            </span>
+          </div>
+          {batchId && (
+            <div className="admin-top-actions">
+              <a className="button button-secondary" href={`/api/admin/importaciones/${batchId}/reporte`}>
+                Descargar reporte final CSV
+              </a>
+              <span className="meta">Incluye hash del archivo, resumen de aplicación, operación y objetivo canónico de cada fila.</span>
+            </div>
+          )}
+        </>
       )}
 
       {!preview.isCompleted && !preview.canApply && (
