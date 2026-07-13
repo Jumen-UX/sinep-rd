@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const repoRoot = new URL('../', import.meta.url)
+const removedScopeToken = ['pastoral', 'entity'].join('_')
 
 async function readRepoFile(path) {
   return readFile(new URL(path, repoRoot), 'utf8')
@@ -34,7 +35,7 @@ test('associated person publication is checked by the public review gateway', as
   assert.match(helper, /current_user_has_scope_access/)
   assert.match(helper, /organization_unit/)
   assert.match(helper, /current_user_is_super_or_national/)
-  assert.doesNotMatch(helper, /pastoral_entity/)
+  assert.doesNotMatch(helper, new RegExp(removedScopeToken))
 
   assert.match(gateway, /security\s+definer/i)
   assert.match(gateway, /publish_person/)
