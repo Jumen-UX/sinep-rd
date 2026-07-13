@@ -125,8 +125,8 @@ const appointmentColumns = [
   'office_key',
   'entity_name',
   'entity_slug',
-  'pastoral_entity_name',
-  'pastoral_entity_slug',
+  'organization_unit_name',
+  'organization_unit_slug',
   'start_date',
   'end_date',
   'is_current',
@@ -143,8 +143,8 @@ const movementColumns = [
   'person_slug',
   'entity_name',
   'entity_slug',
-  'pastoral_entity_name',
-  'pastoral_entity_slug',
+  'organization_unit_name',
+  'organization_unit_slug',
   'movement_type',
   'title',
   'description',
@@ -190,10 +190,9 @@ const positionColumns = [
   'organization_chart_name',
   'organization_chart_key',
   'organization_unit_name',
+  'organization_unit_slug',
   'ecclesiastical_entity_name',
   'ecclesiastical_entity_slug',
-  'pastoral_entity_name',
-  'pastoral_entity_slug',
   'predecessor_person_name',
   'predecessor_person_slug',
   'successor_person_name',
@@ -318,12 +317,11 @@ function buildCompatibilityClergy(
     incardination_entity_slug: currentIncardination?.related_entity_slug ?? null,
     current_service_entity_name:
       currentPosition?.ecclesiastical_entity_name
-      ?? currentPosition?.pastoral_entity_name
       ?? currentPosition?.organization_unit_name
       ?? null,
     current_service_entity_slug:
       currentPosition?.ecclesiastical_entity_slug
-      ?? currentPosition?.pastoral_entity_slug
+      ?? currentPosition?.organization_unit_slug
       ?? null,
   }
 }
@@ -346,7 +344,6 @@ export async function GET(request: NextRequest) {
     })
 
     const person = people[0]
-
     if (!person) {
       return NextResponse.json({ error: 'Persona no encontrada' }, { status: 404 })
     }
@@ -430,11 +427,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Unexpected people API error', error)
-    return NextResponse.json(
-      {
-        error: 'No se pudo cargar la información de personas',
-      },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'No se pudo cargar la información de personas' }, { status: 500 })
   }
 }
