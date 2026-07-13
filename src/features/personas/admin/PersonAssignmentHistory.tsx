@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import styles from './PersonAssignmentHistory.module.css'
 
-type AssignmentHistoryItem = {
+export type AssignmentHistoryItem = {
   id: string
   position_title: string | null
   organization_chart_name: string | null
@@ -40,6 +40,7 @@ type AssignmentHistoryItem = {
 type Props = {
   personId: string
   onCountChange?: (count: number) => void
+  onItemsChange?: (items: AssignmentHistoryItem[]) => void
 }
 
 function formatDate(value: string | null) {
@@ -63,7 +64,7 @@ function statusLabel(value: string | null, current: boolean) {
   return labels[value ?? ''] ?? value ?? 'Finalizado'
 }
 
-function entityTarget(item: AssignmentHistoryItem) {
+export function assignmentEntityTarget(item: AssignmentHistoryItem) {
   const candidates = [
     [item.direct_entity_name, item.direct_entity_slug],
     [item.pastoral_entity_name, item.pastoral_entity_slug],
@@ -81,7 +82,7 @@ function PersonLink({ name, slug }: { name: string | null; slug: string | null }
   return <Link href={`/personas/${slug}`}>{name}</Link>
 }
 
-export default function PersonAssignmentHistory({ personId, onCountChange }: Props) {
+export default function PersonAssignmentHistory({ personId, onCountChange, onItemsChange }: Props) {
   const [items, setItems] = useState<AssignmentHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -105,10 +106,12 @@ export default function PersonAssignmentHistory({ personId, onCountChange }: Pro
         setError(queryError.message)
         setItems([])
         onCountChange?.(0)
+        onItemsChange?.([])
       } else {
         const nextItems = (data ?? []) as AssignmentHistoryItem[]
         setItems(nextItems)
         onCountChange?.(nextItems.length)
+        onItemsChange?.(nextItems)
       }
       setLoading(false)
     }
@@ -117,7 +120,7 @@ export default function PersonAssignmentHistory({ personId, onCountChange }: Pro
     return () => {
       cancelled = true
     }
-  }, [onCountChange, personId])
+  }, [onCountChange, onItemsChange, personId])
 
   const currentCount = useMemo(() => items.filter((item) => item.is_current).length, [items])
 
@@ -139,7 +142,7 @@ export default function PersonAssignmentHistory({ personId, onCountChange }: Pro
       {!loading && !error && items.length > 0 && (
         <div className={styles.timeline}>
           {items.map((item) => {
-            const [entityName, entitySlug] = entityTarget(item)
+            const [entityName, entitySlug] = assignmentEntityTarget(item)
             return (
               <article className={styles.item} key={item.id}>
                 <div className={styles.marker} aria-hidden="true" />
