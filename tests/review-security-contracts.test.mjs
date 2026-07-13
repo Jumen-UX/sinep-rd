@@ -23,10 +23,16 @@ function extractFunction(sql, qualifiedName) {
   return sql.slice(start, Math.min(...candidates))
 }
 
-test('associated person publication is checked by the public review gateway', async () => {
-  const sql = await readRepoFile('supabase/migrations/20260710163459_harden_review_person_publication_scope.sql')
-  const helper = extractFunction(sql, 'app_private.current_user_can_publish_assignment_person')
-  const gateway = extractFunction(sql, 'public.admin_review_item')
+const reviewGatewayMigration = 'supabase/migrations/20260710163459_harden_review_person_publication_scope.sql'
+const canonicalScopeMigration = 'supabase/migrations/20260714022000_finalize_organization_unit_security_contracts.sql'
+
+test('associated person publication is checked by the canonical review gateway', async () => {
+  const [gatewaySql, canonicalSql] = await Promise.all([
+    readRepoFile(reviewGatewayMigration),
+    readRepoFile(canonicalScopeMigration),
+  ])
+  const helper = extractFunction(canonicalSql, 'app_private.current_user_can_publish_assignment_person')
+  const gateway = extractFunction(gatewaySql, 'public.admin_review_item')
 
   assert.match(helper, /people\.publish/)
   assert.match(helper, /current_user_can_manage_entity/)
@@ -40,14 +46,14 @@ test('associated person publication is checked by the public review gateway', as
   assert.match(gateway, /return app_private\.admin_review_item\(payload\)/)
 
   assert.match(
-    sql,
+    gatewaySql,
     /revoke all on function app_private\.admin_review_item\(jsonb\)[\s\S]*from public, anon, authenticated;/,
   )
-  assert.match(sql, /grant execute on function public\.admin_review_item\(jsonb\) to authenticated;/)
+  assert.match(gatewaySql, /grant execute on function public\.admin_review_item\(jsonb\) to authenticated;/)
 })
 
-test('legacy review entry points delegate through the hardened gateway', async () => {
-  const sql = await readRepoFile('supabase/migrations/20260710163459_harden_review_person_publication_scope.sql')
+test('review entry points delegate through the hardened gateway', async () => {
+  const sql = await readRepoFile(reviewGatewayMigration)
   const importedAppointment = extractFunction(sql, 'public.admin_review_imported_appointment')
   const changeRequest = extractFunction(sql, 'public.admin_review_change_request')
 
