@@ -1,7 +1,7 @@
 # Hoja de ruta de SINEP RD
 
 > Estado: vigente  
-> Actualizada: 2026-07-11  
+> Actualizada: 2026-07-13  
 > Regla: validar cada punto contra código, migraciones y pruebas antes de iniciarlo
 
 ## Estado consolidado
@@ -9,6 +9,8 @@
 La base cuenta con registro canónico de personas, dimensiones clericales, estructura configurable, permisos por jurisdicción, auditoría, revisión de incompatibilidades, portal público y CI con typecheck, pruebas y build.
 
 La importación controlada persiste lotes y filas, valida catálogos, alcance, duplicados y relaciones, permite corrección por fila y exige una decisión editorial explícita. Los lotes aprobados de personas, estructuras, nombramientos y eventos históricos cuentan con contratos transaccionales, auditoría por fila, registro en `import_batch_changes` y repetición idempotente. Los eventos importados se crean en `pending_review`, generan su plan de acciones y no modifican automáticamente el estado estructural vigente. Las coincidencias exactas de estructuras, nombramientos y eventos pueden enlazarse como operaciones `noop` sin mutar registros canónicos.
+
+El piloto real de eventos ya verificó creación canónica, corrección en línea, revalidación, aprobación, aplicación y una segunda aplicación `noop` sin duplicar el evento. La interfaz distingue operaciones `create`, `update` y `noop`, y separa columnas obligatorias de campos opcionales de plantilla.
 
 ## Prioridad 0 — operación segura
 
@@ -35,6 +37,8 @@ Disponible actualmente:
 - Reversión transaccional completa ante el fallo de cualquier fila.
 - Protección contra doble aplicación mediante respuesta idempotente.
 - Auditoría y trazabilidad entre fila, registro creado o enlazado, cambio aplicado y auditoría.
+- Fixtures reproducibles del piloto de eventos y su corrección.
+- Suite Playwright/Axe manual, versionada y separada de `pnpm check`.
 
 ### Completado
 
@@ -54,33 +58,37 @@ Disponible actualmente:
 - [x] Aplicar lotes completamente `noop` sin modificar registros canónicos.
 - [x] Registrar operaciones `noop` en `import_batch_changes` y en auditoría.
 - [x] Impedir doble aplicación y revertir todo el intento cuando falla una fila.
+- [x] Añadir soporte visual y contractual para operaciones `update`.
+- [x] Separar columnas obligatorias de columnas opcionales de plantilla.
+- [x] Añadir suite E2E manual del portal público, accesibilidad y preparación administrativa de importaciones.
 
-### Pendiente
+### Pendiente — orden de ejecución
 
-- [ ] Permitir lotes mixtos `create + noop` dentro de una única transacción.
-- [ ] Añadir un identificador estable para habilitar `noop` seguro en personas.
-- [ ] Definir operaciones `update` con comparación de cambios y aprobación explícita.
-- [ ] Sustituir la etiqueta fija del botón de aplicación por una etiqueta dinámica según el dominio.
-- [ ] Añadir reporte final descargable del lote aplicado.
-- [ ] Añadir lectura XLSX después de evaluar dependencia, límites y seguridad.
-- [ ] Añadir pruebas E2E del recorrido preparar → corregir → aprobar → aplicar.
-- [ ] Ejecutar `pnpm check` para confirmar typecheck, pruebas y build de los últimos cambios.
+1. [ ] Permitir lotes mixtos `create + noop` dentro de una única transacción.
+2. [ ] Completar operaciones `update` con comparación visible de cambios y aprobación explícita.
+3. [ ] Añadir un identificador estable para habilitar `noop` seguro en personas.
+4. [ ] Sustituir la etiqueta fija del botón de aplicación por una etiqueta dinámica según el dominio y las operaciones.
+5. [ ] Añadir reporte final descargable del lote aplicado.
+6. [ ] Añadir lectura XLSX después de evaluar dependencia, límites y seguridad.
+7. [ ] Ampliar E2E al recorrido autenticado preparar → corregir → aprobar → aplicar en un entorno no productivo.
+8. [ ] Ejecutar `pnpm check` y el navegador real cuando el entorno de CI/despliegue vuelva a estar disponible.
 
 ## Prioridad 2 — calidad del producto
 
-- [ ] Añadir pruebas E2E de portal público, login y flujos administrativos críticos.
-- [ ] Automatizar WCAG con Axe y recorridos de teclado.
+- [x] Añadir base E2E de portal público y flujo administrativo de importación.
+- [x] Automatizar WCAG con Axe y recorridos básicos de teclado.
+- [x] Añadir metadata dinámica para fichas públicas y URLs canónicas.
+- [ ] Ampliar pruebas E2E a login y flujos administrativos críticos.
 - [ ] Incorporar Lighthouse/Core Web Vitals en una compuerta medible.
 - [ ] Probar navegación móvil real y tablas adaptativas.
-- [ ] Añadir metadata dinámica para fichas públicas y URLs canónicas.
 - [ ] Optimizar imágenes remotas con una política explícita.
 
-## Prioridad 3 — mantenibilidad
+## Prioridad 3 — mantenibilidad y rendimiento
 
 - [ ] Consolidar servicios y selectores jerárquicos que todavía tienen variantes heredadas.
 - [ ] Reducir páginas con lógica de dominio dentro de `src/app`.
 - [ ] Unificar componentes visuales administrativos sobre primitivas oficiales.
-- [ ] Definir caché e invalidación para endpoints públicos.
+- [ ] Completar la estrategia de caché e invalidación para endpoints públicos.
 - [ ] Medir consultas lentas, tamaño de respuestas y crecimiento de tablas históricas.
 - [ ] Revisar y retirar RPC históricas `SECURITY DEFINER` expuestas cuando exista un wrapper seguro equivalente.
 
