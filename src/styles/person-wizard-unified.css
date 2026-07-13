@@ -1,0 +1,243 @@
+/* Shared presentation contract for every person-registration wizard. */
+
+:is(
+  .admin-priest-wizard,
+  .admin-deacon-wizard,
+  .admin-bishop-wizard,
+  .admin-religious-wizard,
+  .admin-lay-wizard
+) {
+  --person-wizard-progress-width: 17.5rem;
+  --person-wizard-context-width: 19rem;
+}
+
+:is(
+  .admin-priest-wizard,
+  .admin-deacon-wizard,
+  .admin-bishop-wizard,
+  .admin-religious-wizard,
+  .admin-lay-wizard
+) :is(.dashboard-hero, .admin-wizard-header) {
+  align-items: start;
+  display: grid;
+  gap: 1rem 1.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+:is(
+  .admin-priest-wizard,
+  .admin-deacon-wizard,
+  .admin-bishop-wizard,
+  .admin-religious-wizard,
+  .admin-lay-wizard
+) :is(.dashboard-hero, .admin-wizard-header) > div:first-child {
+  min-width: 0;
+}
+
+:is(
+  .admin-priest-wizard,
+  .admin-deacon-wizard,
+  .admin-bishop-wizard,
+  .admin-religious-wizard,
+  .admin-lay-wizard
+) :is(.dashboard-hero, .admin-wizard-header) .lead {
+  max-width: 72ch;
+}
+
+/* The automatic and controlled wizards use the same two-column workspace. */
+.auto-section-wizard,
+.admin-priest-wizard .admin-wizard-layout {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(15.5rem, var(--person-wizard-progress-width)) minmax(0, 1fr);
+  min-width: 0;
+}
+
+.auto-section-wizard > aside[aria-label='Progreso del asistente'],
+.admin-priest-wizard .admin-wizard-layout > aside[aria-label='Progreso del asistente'] {
+  align-self: start;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  min-width: 0;
+  position: sticky;
+  top: 1rem;
+}
+
+.auto-section-wizard__content,
+.admin-priest-wizard .admin-wizard-form {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.admin-priest-wizard .admin-wizard-form {
+  min-height: 0;
+}
+
+.admin-priest-wizard .admin-wizard-form > section:not([hidden]),
+.auto-section-wizard__content form.admin-form > section:not([hidden]) {
+  display: grid;
+  gap: 1rem;
+  max-width: none;
+}
+
+/* Keep contextual help without creating a different three-column design. */
+.admin-priest-wizard .admin-wizard-layout > .admin-smart-context-panel {
+  grid-column: 2;
+  position: static;
+}
+
+/* One shared navigation bar for automatic and controlled flows. */
+.auto-section-wizard__actions,
+.admin-priest-wizard .admin-wizard-actions {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface-raised, #fff) 96%, transparent);
+  border: 1px solid var(--border-subtle, var(--border));
+  border-radius: var(--radius-lg);
+  bottom: 0;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin: 0;
+  min-height: 4.25rem;
+  padding: 0.75rem 1rem;
+  position: sticky;
+  z-index: 7;
+  backdrop-filter: blur(12px);
+}
+
+.auto-section-wizard__actions {
+  grid-column: 2;
+}
+
+.admin-priest-wizard .admin-wizard-actions {
+  width: 100%;
+}
+
+.auto-section-wizard__actions .button,
+.admin-priest-wizard .admin-wizard-actions .button {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 2.75rem;
+  min-width: 8.75rem;
+  padding: 0.7rem 1rem;
+}
+
+.admin-priest-wizard .admin-wizard-actions > span {
+  color: var(--text-muted, var(--muted));
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* Shared field and feedback rhythm. */
+:is(
+  .admin-priest-wizard,
+  .admin-deacon-wizard,
+  .admin-bishop-wizard,
+  .admin-religious-wizard,
+  .admin-lay-wizard
+) .empty-state {
+  align-content: start;
+  display: grid;
+  gap: 0.3rem;
+}
+
+:is(
+  .admin-priest-wizard,
+  .admin-deacon-wizard,
+  .admin-bishop-wizard,
+  .admin-religious-wizard,
+  .admin-lay-wizard
+) .empty-state > :is(strong, span, small) {
+  display: block;
+}
+
+:is(
+  .admin-priest-wizard,
+  .admin-deacon-wizard,
+  .admin-bishop-wizard,
+  .admin-religious-wizard,
+  .admin-lay-wizard
+) :is(.admin-choice-grid, .dashboard-summary) {
+  gap: 0.85rem;
+}
+
+:is(
+  .admin-priest-wizard,
+  .admin-deacon-wizard,
+  .admin-bishop-wizard,
+  .admin-religious-wizard,
+  .admin-lay-wizard
+) .admin-choice-grid label.role-pill {
+  align-content: start;
+  min-height: 7rem;
+  padding: 1rem;
+}
+
+@media (max-width: 1180px) {
+  :is(
+    .admin-priest-wizard,
+    .admin-deacon-wizard,
+    .admin-bishop-wizard,
+    .admin-religious-wizard,
+    .admin-lay-wizard
+  ) :is(.dashboard-hero, .admin-wizard-header) {
+    grid-template-columns: 1fr;
+  }
+
+  .person-wizard-with-context {
+    grid-template-columns: 1fr;
+  }
+
+  .person-wizard-context-rail {
+    order: 2;
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .auto-section-wizard,
+  .admin-priest-wizard .admin-wizard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .auto-section-wizard > aside[aria-label='Progreso del asistente'],
+  .admin-priest-wizard .admin-wizard-layout > aside[aria-label='Progreso del asistente'],
+  .auto-section-wizard__content,
+  .auto-section-wizard__actions,
+  .admin-priest-wizard .admin-wizard-form,
+  .admin-priest-wizard .admin-wizard-layout > .admin-smart-context-panel {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .auto-section-wizard > aside[aria-label='Progreso del asistente'],
+  .admin-priest-wizard .admin-wizard-layout > aside[aria-label='Progreso del asistente'] {
+    position: static;
+  }
+}
+
+@media (max-width: 620px) {
+  .auto-section-wizard__actions,
+  .admin-priest-wizard .admin-wizard-actions {
+    align-items: stretch;
+    flex-wrap: wrap;
+    position: static;
+  }
+
+  .auto-section-wizard__actions .button,
+  .admin-priest-wizard .admin-wizard-actions .button {
+    flex: 1 1 9rem;
+    min-width: 0;
+  }
+
+  .admin-priest-wizard .admin-wizard-actions > span {
+    flex: 1 0 100%;
+    order: -1;
+  }
+}
