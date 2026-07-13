@@ -1,0 +1,2 @@
+-- Migration aplicada en Supabase para normalizar los ámbitos de auditoría no resueltos.
+-- La definición consolidada se conserva en la migración siguiente para instalaciones nuevas.
