@@ -10,7 +10,7 @@ test('row corrections cannot be saved while canonical references remain unresolv
   const detail = await readFile(detailPath, 'utf8')
 
   assert.match(editor, /export type ImportReferenceResolution/)
-  assert.match(editor, /onResolutionChange\?\(referenceState\)/)
+  assert.match(editor, /onResolutionChange\?\.\(referenceState\)/)
   assert.match(detail, /referenceStates/)
   assert.match(detail, /state === 'loading' \|\| state === 'error' \|\| state === 'provisional'/)
   assert.match(detail, /disabled=\{isSaving \|\| unresolvedReferenceFields\.length > 0\}/)
