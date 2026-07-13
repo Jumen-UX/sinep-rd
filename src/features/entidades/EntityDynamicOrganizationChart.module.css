@@ -1,0 +1,123 @@
+.charts {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.chart {
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--surface-card);
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--surface-muted) 78%, transparent);
+}
+
+.chartHeader h3,
+.unitHeading h4 {
+  margin: 0;
+}
+
+.chartMarker {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.8rem;
+  background: var(--brand-primary);
+  color: white;
+  font-weight: 700;
+}
+
+.units {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.unit {
+  position: relative;
+  padding-left: 1rem;
+  border-left: 2px solid var(--brand-accent);
+}
+
+.unitHeading,
+.positionHeading,
+.holder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.unitHeading > span {
+  min-width: 2rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.positions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.position {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.8rem;
+  background: var(--surface-card);
+}
+
+.positionHeading > div,
+.holder {
+  min-width: 0;
+}
+
+.positionHeading strong,
+.positionHeading span {
+  display: block;
+}
+
+.positionHeading > div > span {
+  margin-top: 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.holder {
+  align-items: flex-end;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.holder > a:first-child,
+.holder > strong {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .positionHeading,
+  .holder,
+  .unitHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .positions {
+    grid-template-columns: 1fr;
+  }
+}
