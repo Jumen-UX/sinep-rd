@@ -3,6 +3,7 @@ import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
 import { isJsonObject, parseJsonObjectBody, ValidationError } from '@/lib/admin/validation'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
+import { revalidatePublicContent } from '@/lib/public/cache'
 
 function getAssignmentId(value: unknown) {
   if (!isJsonObject(value)) return null
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    revalidatePublicContent()
     return NextResponse.json(data)
   } catch (error) {
     if (error instanceof ValidationError) {
