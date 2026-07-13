@@ -3,6 +3,7 @@ import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
 import { isJsonObject, parseJsonObjectBody, ValidationError } from '@/lib/admin/validation'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
+import { revalidatePublicContent } from '@/lib/public/cache'
 
 type SaveNodeEntityResult = {
   entityId: string | null
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    revalidatePublicContent({ entitySlug: slug })
     return NextResponse.json({
       entity_id: result.entityId,
       node_id: result.nodeId,
