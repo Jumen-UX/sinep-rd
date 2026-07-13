@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation'
 import PersonDetailServerView from '@/features/personas/PersonDetailServerView'
-import { loadPublicPersonDetail } from '@/lib/public/person-detail'
+import { loadPublicPersonDetail } from '@/lib/public/cache'
 
 type PageProps = {
   params: Promise<{ slug: string }>
 }
+
+export const revalidate = 900
 
 export default async function PersonDetailPage({ params }: PageProps) {
   const { slug } = await params
