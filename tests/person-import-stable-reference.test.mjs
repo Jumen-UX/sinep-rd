@@ -21,7 +21,7 @@ test('ambiguous person references remain blocking instead of choosing a person',
   assert.match(migration, /v_match_count>1/)
   assert.match(migration, /ambiguous_person_reference/)
   assert.match(migration, /issue_type in \('duplicate','warning'\)/)
-  assert.match(migration, /issue_type='duplicate'/)
+  assert.match(migration, /'duplicate','ambiguous_person_reference','codigo_referencia'/)
 })
 
 test('canonical validation promotes person references after person-domain validation', () => {
