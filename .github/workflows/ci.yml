@@ -9,77 +9,8 @@ on:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  patch-types:
-    if: github.event_name == 'pull_request' && github.head_ref == 'phase2-canonical-organization-units'
-    runs-on: ubuntu-latest
-    outputs:
-      changed: ${{ steps.patch.outputs.changed }}
-    steps:
-      - name: Checkout source branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - name: Fix canonical type contracts
-        id: patch
-        shell: bash
-        run: |
-          python <<'PY'
-          from pathlib import Path
-
-          replacements = {
-              Path('src/features/appointments/services/assignment-admin-service.ts'): [
-                  ("  organization_unit_id: string | null\n  ecclesiastical_entity_id: string | null\n  organization_unit_id: string | null\n", "  organization_unit_id: string | null\n  ecclesiastical_entity_id: string | null\n"),
-              ],
-              Path('src/features/personas/admin/PersonAssignmentHistory.tsx'): [
-                  ("  organization_chart_name: string | null\n  organization_unit_name: string | null\n  direct_entity_name: string | null\n", "  organization_chart_name: string | null\n  direct_entity_name: string | null\n"),
-              ],
-              Path('src/features/public/PublicPeoplePastoralViews.tsx'): [
-                  ('item.level_name === pastoralLevel', 'item.organization_chart_name === pastoralLevel'),
-              ],
-              Path('src/features/public/buildPublicDashboardScope.ts'): [
-                  ('initialData.parishes.filter((item) => inScope(item.ecclesiastical_entity_id, item.ecclesiastical_entity_slug))', 'initialData.parishes.filter((item) => inScope(item.diocese_id, item.diocese_slug))'),
-              ],
-              Path('src/lib/public/entity-detail.ts'): [
-                  ("  organization_chart_key: string | null\n  organization_unit_name: string | null\n  direct_entity_name: string | null\n", "  organization_chart_key: string | null\n  direct_entity_name: string | null\n"),
-              ],
-              Path('src/lib/public/person-detail.ts'): [
-                  ("  organization_chart_key: string | null\n  organization_unit_name: string | null\n  ecclesiastical_entity_name: string | null\n", "  organization_chart_key: string | null\n  ecclesiastical_entity_name: string | null\n"),
-              ],
-          }
-
-          changes = 0
-          for path, pairs in replacements.items():
-              text = path.read_text(encoding='utf-8')
-              updated = text
-              for old, new in pairs:
-                  updated = updated.replace(old, new)
-              if updated != text:
-                  path.write_text(updated, encoding='utf-8')
-                  changes += 1
-
-          Path('/tmp/patch-changed').write_text('true' if changes else 'false', encoding='utf-8')
-          PY
-          echo "changed=$(cat /tmp/patch-changed)" >> "$GITHUB_OUTPUT"
-
-      - name: Commit type fixes
-        if: steps.patch.outputs.changed == 'true'
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src
-          git commit -m "fix: align canonical organization unit types"
-          git push origin HEAD:${{ github.head_ref }}
-
   typecheck-and-build:
-    needs: patch-types
-    if: always() && (needs.patch-types.result == 'skipped' || needs.patch-types.outputs.changed != 'true')
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
