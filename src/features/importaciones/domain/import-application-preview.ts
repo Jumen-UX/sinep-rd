@@ -8,6 +8,7 @@ export type ImportApplicationPreviewRow = {
 export type ImportApplicationPreview = {
   totalRows: number
   createRows: number
+  updateRows: number
   noopRows: number
   completedRows: number
   blockedRows: number
@@ -19,11 +20,13 @@ export type ImportApplicationPreview = {
 
 const applicableStatuses = new Set(['valid', 'warning'])
 const completedStatuses = new Set(['applied', 'skipped'])
+const supportedOperations = new Set(['create', 'update', 'noop'])
 
 export function buildImportApplicationPreview(
   rows: ImportApplicationPreviewRow[],
 ): ImportApplicationPreview {
   let createRows = 0
+  let updateRows = 0
   let noopRows = 0
   let completedRows = 0
   let blockedRows = 0
@@ -38,9 +41,12 @@ export function buildImportApplicationPreview(
     if (isCompleted) completedRows += 1
 
     if (row.target_operation === 'create') createRows += 1
+    if (row.target_operation === 'update') updateRows += 1
     if (row.target_operation === 'noop') noopRows += 1
 
-    if (!row.target_table || (row.target_operation === 'noop' && !row.target_record_id)) {
+    const operationResolved = row.target_operation !== null && supportedOperations.has(row.target_operation)
+    const existingTargetRequired = row.target_operation === 'update' || row.target_operation === 'noop'
+    if (!row.target_table || !operationResolved || (existingTargetRequired && !row.target_record_id)) {
       unresolvedTargets += 1
     }
 
@@ -58,6 +64,7 @@ export function buildImportApplicationPreview(
   return {
     totalRows: rows.length,
     createRows,
+    updateRows,
     noopRows,
     completedRows,
     blockedRows,
