@@ -42,12 +42,12 @@ jobs:
           set -o pipefail
           python <<'PY' 2>&1 | tee canonicalization-report.txt
           from pathlib import Path
-          import textwrap
 
           workflow = Path('.github/workflows/canonicalize-source.yml').read_text(encoding='utf-8')
           marker = "python <<'PY'\n"
-          source = workflow.split(marker, 1)[1].split("\n          PY", 1)[0]
-          exec(compile(textwrap.dedent(source), 'canonicalize-source', 'exec'), {'__name__': '__main__'})
+          raw_source = workflow.split(marker, 1)[1].split("\n          PY", 1)[0]
+          source = '\n'.join(line[10:] if line.startswith('          ') else line for line in raw_source.splitlines())
+          exec(compile(source, 'canonicalize-source', 'exec'), {'__name__': '__main__'})
           PY
 
       - name: Upload canonicalization report
