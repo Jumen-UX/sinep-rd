@@ -36,9 +36,9 @@ export function usePublicDashboardModel({ initialData, initialSummary, initialVi
     (item) => /(consejo|comisi[oó]n|comit[eé]|colegio|equipo)/i.test(item.name),
   )
   const scopeTitle = scope.selectedJurisdiction?.name
-    ?? province
-    ?? initialData.countries.find((item) => item.key === country)?.name
-    ?? 'Ámbito seleccionado'
+    || province
+    || initialData.countries.find((item) => item.key === country)?.name
+    || 'Ámbito seleccionado'
   const activeMeta = views.find((item) => item.key === activeView) ?? views[0]
 
   function resetScope() {
