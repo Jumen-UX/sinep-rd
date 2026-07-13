@@ -22,6 +22,7 @@ const migrationPaths = [
   new URL('../supabase/migrations/20260713160539_seal_user_private_rpcs.sql', import.meta.url),
   new URL('../supabase/migrations/20260713160552_seal_import_mutation_private_rpcs.sql', import.meta.url),
   new URL('../supabase/migrations/20260713160611_seal_review_queue_private_rpc.sql', import.meta.url),
+  new URL('../supabase/migrations/20260714022000_reassert_organization_unit_security_contracts.sql', import.meta.url),
 ]
 
 async function readSecurityMigrations() {
@@ -29,7 +30,7 @@ async function readSecurityMigrations() {
   return contents.join('\n')
 }
 
-test('audit records persist jurisdiction and pastoral scope', async () => {
+test('audit records persist jurisdiction and organizational scope', async () => {
   const sql = await readSecurityMigrations()
 
   assert.match(sql, /add column if not exists scope_type text/)
@@ -53,12 +54,12 @@ test('audit writer requires permission and validates entity scope', async () => 
 test('audit reader filters records by the current user jurisdiction', async () => {
   const sql = await readSecurityMigrations()
 
-  assert.match(sql, /current_user_can_manage_entity\('audit\.view', al\.scope_entity_id\)/)
-  assert.match(sql, /current_user_has_scope_access\(\s*'pastoral_entity'/)
+  assert.match(sql, /current_user_can_manage_entity\('audit\.view',\s*al\.scope_entity_id\)/)
+  assert.match(sql, /current_user_has_scope_access\(\s*'organization_unit'/)
   assert.match(sql, /current_user_has_scope_access\(\s*'pastoral_area'/)
 })
 
-test('legacy audit writes receive permission and scope automatically', async () => {
+test('audit writes receive permission and scope automatically', async () => {
   const sql = await readSecurityMigrations()
 
   assert.match(sql, /enrich_audit_log_before_write/)
@@ -77,7 +78,7 @@ test('critical canonical tables cannot be written directly by authenticated clie
     'public.ecclesiastical_entities',
     'public.position_assignments',
   ]) {
-    assert.match(sql, new RegExp(table.replace('.', '\\.'), 'i'))
+    assert.match(sql, new RegExp(table.replace('.', '\\.\.'), 'i'))
   }
 
   assert.match(sql, /drop policy if exists canonical_events_admin_insert/)
@@ -98,7 +99,7 @@ test('core person entity assignment and structure mutations write scoped audits'
     'structures.level.saved',
     'structures.node.saved',
   ]) {
-    assert.match(sql, new RegExp(action.replaceAll('.', '\\.'), 'i'))
+    assert.match(sql, new RegExp(action.replaceAll('.', '\\.')))
   }
 
   for (const internalFunction of [
@@ -136,7 +137,7 @@ test('canonical and structural event mutations require scope and audit every wri
     'structures.event.action.updated',
     'structures.event.action.configured',
   ]) {
-    assert.match(sql, new RegExp(action.replaceAll('.', '\\.'), 'i'))
+    assert.match(sql, new RegExp(action.replaceAll('.', '\\.')))
   }
 
   for (const internalFunction of [
