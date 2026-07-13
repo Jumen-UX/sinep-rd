@@ -12,7 +12,7 @@ const migrationPaths = [
 
 const removedScopeName = ['pastoral', 'entity'].join('_')
 const removedScopeId = `${removedScopeName}_id`
-const removedTableName = `${removedScopeName}s`
+const removedTableName = ['pastoral', 'entities'].join('_')
 
 function escaped(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
