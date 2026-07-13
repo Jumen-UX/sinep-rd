@@ -21,7 +21,7 @@ begin
 
     v_header:=split_part(v_def,'AS $function$',1)||'AS $function$';
     v_body:=split_part(v_def,'AS $function$',2);
-    v_body:=regexp_replace(v_body,E'\n?\$function\$\s*$','','n');
+    v_body:=regexp_replace(v_body,E'\\n?\\$function\\$\\s*$','','n');
 
     v_body:=replace(v_body,'related_pastoral_entity_id','related_organization_unit_id');
     v_body:=replace(v_body,'linked_pastoral_entity_id','linked_organization_unit_id');
@@ -197,13 +197,13 @@ begin
   v_def:=pg_get_functiondef(v_oid);
   v_def:=regexp_replace(
     v_def,
-    E'\n  v_pastoral_entity_id uuid := nullif\(payload->>''pastoral_entity_id'',''''\)::uuid;',
+    E'\\n  v_pastoral_entity_id uuid := nullif\\(payload->>''pastoral_entity_id'',''''\\)::uuid;',
     '',
     'g'
   );
   v_def:=regexp_replace(
     v_def,
-    E'\n      and pa\.pastoral_entity_id is not distinct from v_pastoral_entity_id',
+    E'\\n      and pa\\.pastoral_entity_id is not distinct from v_pastoral_entity_id',
     '',
     'g'
   );
@@ -229,13 +229,13 @@ begin
   v_def:=pg_get_functiondef(v_oid);
   v_def:=regexp_replace(
     v_def,
-    E'\n      and pastoral_entity_id is not distinct from new\.pastoral_entity_id',
+    E'\\n      and pastoral_entity_id is not distinct from new\\.pastoral_entity_id',
     '',
     'g'
   );
   v_def:=regexp_replace(
     v_def,
-    E'\n      and pa\.pastoral_entity_id is not distinct from new\.pastoral_entity_id',
+    E'\\n      and pa\\.pastoral_entity_id is not distinct from new\\.pastoral_entity_id',
     '',
     'g'
   );
@@ -249,9 +249,9 @@ begin
     and pg_get_function_identity_arguments(p.oid)='payload jsonb';
 
   v_def:=pg_get_functiondef(v_oid);
-  v_def:=regexp_replace(v_def,E'\n\s*pa\.pastoral_entity_id,','','g');
-  v_def:=regexp_replace(v_def,E'\n\s*pastoral_entity_id,','','g');
-  v_def:=regexp_replace(v_def,E'\n\s*v_assignment\.pastoral_entity_id,','','g');
+  v_def:=regexp_replace(v_def,E'\\n\\s*pa\\.pastoral_entity_id,','','g');
+  v_def:=regexp_replace(v_def,E'\\n\\s*pastoral_entity_id,','','g');
+  v_def:=regexp_replace(v_def,E'\\n\\s*v_assignment\\.pastoral_entity_id,','','g');
   execute v_def;
 end;
 $migration$;
