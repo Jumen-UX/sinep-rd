@@ -1,0 +1,2 @@
+-- Registro local de una migración ya aplicada en Supabase.
+-- Las definiciones completas se conservan en migraciones temáticas posteriores.
