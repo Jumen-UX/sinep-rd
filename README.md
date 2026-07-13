@@ -4,7 +4,7 @@ Sistema Nacional de Información Eclesiástica y Pastoral de República Dominica
 
 ## Requisitos
 
-- Node.js 22
+- Node.js 24
 - pnpm 10.18.3
 - Un proyecto Supabase para los flujos integrados
 
@@ -22,8 +22,13 @@ Sistema Nacional de Información Eclesiástica y Pastoral de República Dominica
 - `pnpm test:integration`: ejecuta pruebas contra una instancia real de Supabase.
 - `pnpm build`: genera la compilación de producción.
 - `pnpm check`: ejecuta typecheck, pruebas unitarias y build.
+- `pnpm test:e2e:install`: instala Chromium para Playwright.
+- `pnpm test:e2e:public`: prueba rutas públicas y accesibilidad con Axe.
+- `pnpm test:e2e:admin`: prueba el flujo administrativo de importación con una cuenta de pruebas.
 
 Las pruebas de integración requieren `NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` reales. No deben ejecutarse contra producción.
+
+El workflow `CI` se ejecuta en cada `push` a `main`, analiza JavaScript y TypeScript con CodeQL y permite lanzar manualmente Playwright y Axe contra una URL desplegada. Consulta [`docs/PRUEBAS_E2E.md`](./docs/PRUEBAS_E2E.md).
 
 ## Organización
 
