@@ -71,3 +71,14 @@ test('admin mutations invalidate public detail caches', async () => {
   assert.equal(cacheLayer.includes("revalidatePath('/diocesis')"), true)
   assert.equal(mutationRoutes.every((route) => route.includes('revalidatePublicContent')), true)
 })
+
+test('approved person proposals use a server route and invalidate cached profiles', async () => {
+  const browserClient = await readRepoFile('src/lib/supabase/client.ts')
+  const reviewRoute = await readRepoFile('src/app/api/admin/solicitudes/revisar/route.ts')
+
+  assert.equal(browserClient.includes("functionName === 'admin_review_person_change_request'"), true)
+  assert.equal(browserClient.includes("fetch('/api/admin/solicitudes/revisar'"), true)
+  assert.equal(reviewRoute.includes("rpc('admin_review_person_change_request'"), true)
+  assert.equal(reviewRoute.includes("decision === 'approved'"), true)
+  assert.equal(reviewRoute.includes('revalidatePublicContent()'), true)
+})
