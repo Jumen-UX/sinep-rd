@@ -8,6 +8,7 @@ const paths = {
   workflow: 'supabase/migrations/20260714027000_support_organization_unit_event_drafts_and_plans.sql',
   apply: 'supabase/migrations/20260714028000_approve_and_apply_organization_unit_events.sql',
   plan: 'supabase/migrations/20260714029000_expose_organization_unit_event_plans.sql',
+  hardening: 'supabase/migrations/20260714029500_harden_organization_unit_event_helpers.sql',
   service: 'src/features/eventos/services/organization-unit-event-service.ts',
   page: 'src/features/eventos/admin/OrganizationUnitEventManagerPage.tsx',
   route: 'src/app/(admin)/admin/eventos/organizacion/page.tsx',
@@ -53,6 +54,12 @@ test('only approved scoped organization events can mutate current state', async 
   assert.match(sql, /set status='applied'/i)
   assert.match(sql, /revoke all on function public\.admin_apply_organization_unit_event\(jsonb\) from public,anon/i)
   assert.match(sql, /grant execute on function public\.admin_apply_organization_unit_event\(jsonb\) to authenticated,service_role/i)
+})
+
+test('internal organization plan helper is never executable by clients', async () => {
+  const sql = await read(paths.hardening)
+  assert.match(sql, /revoke all on function internal\.admin_generate_organization_unit_event_action_plan\(jsonb\)/i)
+  assert.match(sql, /from public,anon,authenticated/i)
 })
 
 test('application plans expose unit targets and keep entity mutations locked', async () => {
