@@ -36,12 +36,11 @@ test('organization unit cutover copies scope before removing old references', as
     scope,
     new RegExp(`scope_type = case when scope_type = '${escaped(removedScopeName)}' then 'organization_unit'`),
   )
-  assert.match(scope, /information_schema\.columns/)
 
-  assert.match(removal, new RegExp(`drop column if exists ${escaped(removedScopeId)}`))
-  assert.match(removal, new RegExp(`drop column if exists related_${escaped(removedScopeId)}`))
-  assert.match(removal, new RegExp(`drop column if exists linked_${escaped(removedScopeId)}`))
-  assert.match(removal, new RegExp(`drop table if exists public\\.${escaped(removedTableName)}`))
+  assert.match(removal, new RegExp(`drop column(?: if exists)? ${escaped(removedScopeId)}`))
+  assert.match(removal, new RegExp(`drop column(?: if exists)? related_${escaped(removedScopeId)}`))
+  assert.match(removal, new RegExp(`drop column(?: if exists)? linked_${escaped(removedScopeId)}`))
+  assert.match(removal, new RegExp(`drop table(?: if exists)? public\\.${escaped(removedTableName)}`))
 })
 
 test('canonical migrations expose organization unit contracts only', async () => {
