@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import EntityInstitutionalTimeline, {
+  type EntityAuthorityAppointment,
+  type EntityEvolutionEvent,
+} from './EntityInstitutionalTimeline'
 
 type Entity = {
   id: string
@@ -55,34 +59,13 @@ type Appointment = {
   notes_public: string | null
 }
 
-type AppointmentHistory = Appointment & {
-  id: string
-  office_key: string | null
+type AppointmentHistory = Appointment & EntityAuthorityAppointment & {
   person_type: string | null
   birth_date: string | null
   age_text: string | null
   death_date: string | null
   priestly_ordination_date: string | null
   episcopal_ordination_date: string | null
-  end_date: string | null
-  is_current: boolean
-}
-
-type EvolutionEvent = {
-  id: string
-  event_type: string | null
-  event_date: string | null
-  title: string | null
-  from_entity_display_name: string | null
-  from_entity_slug: string | null
-  from_entity_name: string | null
-  to_entity_display_name: string | null
-  to_entity_slug: string | null
-  to_entity_name: string | null
-  related_entity_display_name: string | null
-  related_entity_slug: string | null
-  related_entity_name: string | null
-  territory_summary: string | null
 }
 
 type StatisticsSnapshot = {
@@ -139,7 +122,7 @@ type EntityResponse = {
   related_entities: RelatedEntity[]
   appointments: Appointment[]
   appointment_history: AppointmentHistory[]
-  evolution_events: EvolutionEvent[]
+  evolution_events: EntityEvolutionEvent[]
   statistics_snapshots: StatisticsSnapshot[]
   positions: Position[]
 }
@@ -183,70 +166,6 @@ function formatRange(start: string | null, end: string | null) {
   return `${formatDate(start)} – ${end ? formatDate(end) : 'actual'}`
 }
 
-function yearsSince(value: string | null, endValue?: string | null) {
-  if (!value) return null
-  const start = new Date(`${value}T00:00:00`)
-  const end = endValue ? new Date(`${endValue}T00:00:00`) : new Date()
-  let years = end.getFullYear() - start.getFullYear()
-  const beforeAnniversary = end.getMonth() < start.getMonth() || (end.getMonth() === start.getMonth() && end.getDate() < start.getDate())
-  if (beforeAnniversary) years -= 1
-  return years >= 0 ? years : null
-}
-
-function formatYears(value: string | null, label: string, endValue?: string | null) {
-  const years = yearsSince(value, endValue)
-  return years === null ? `${label}: —` : `${label}: ${years} años`
-}
-
-function formatCurrentAge(birthDate: string | null, ageText: string | null, deathDate?: string | null) {
-  const years = yearsSince(birthDate, deathDate)
-  if (years !== null) return `Edad actual: ${years} años`
-  if (ageText) return `Edad actual: ${ageText} años`
-  return 'Edad actual: —'
-}
-
-function eventTypeLabel(value: string | null) {
-  const labels: Record<string, string> = {
-    erection: 'Erección',
-    elevation: 'Elevación',
-    dismemberment: 'Desmembramiento',
-    erection_by_dismemberment: 'Erección por desmembramiento',
-    territory_loss: 'Pérdida territorial',
-    territory_gain: 'Recepción territorial',
-    territorial_reorganization: 'Reorganización territorial',
-    name_change: 'Cambio de nombre',
-    province_change: 'Cambio de provincia',
-  }
-  if (!value) return 'Evento'
-  return labels[value] ?? value
-}
-
-function assignmentStatusLabel(value: string | null) {
-  const labels: Record<string, string> = {
-    active: 'Activo',
-    term_expired_still_serving: 'Período vencido, continúa en funciones',
-    renewed: 'Renovado',
-    replaced: 'Sustituido',
-    vacant: 'Vacante',
-    suspended: 'Suspendido',
-    ended: 'Finalizado',
-  }
-  if (!value) return 'No indicado'
-  return labels[value] ?? value
-}
-
-function entityLink(name: string | null, slug: string | null) {
-  if (!name) return '—'
-  if (!slug) return name
-  return <Link href={`/entidades/${slug}`}>{name}</Link>
-}
-
-function personLink(name: string | null, slug: string | null) {
-  if (!name) return '—'
-  if (!slug) return name
-  return <Link href={`/personas/${slug}`}>{name}</Link>
-}
-
 function getEntityKind(entity: Entity) {
   const key = entity.entity_type_key ?? ''
   const name = (entity.entity_type_name ?? entity.name ?? '').toLowerCase()
@@ -286,14 +205,12 @@ export function EntityDetailPageView() {
       }
     }
 
-    loadData()
+    void loadData()
   }, [slug])
 
   const entity = data?.entity
-  const appointments = data?.appointments ?? []
   const appointmentHistory = data?.appointment_history ?? []
   const relatedEntities = data?.related_entities ?? []
-  const evolutionEvents = data?.evolution_events ?? []
   const statisticsSnapshots = data?.statistics_snapshots ?? []
   const positions = data?.positions ?? []
   const entityKind = entity ? getEntityKind(entity) : 'generic'
@@ -311,7 +228,7 @@ export function EntityDetailPageView() {
     return <main className="container dashboard-page"><div className="empty-state">Cargando entidad...</div></main>
   }
 
-  if (error || !entity) {
+  if (error || !entity || !data) {
     return <main className="container dashboard-page"><div className="error-box">{error ?? 'No se encontró la entidad'}</div></main>
   }
 
@@ -416,24 +333,13 @@ export function EntityDetailPageView() {
         </section>
       )}
 
-      {evolutionEvents.length > 0 && (
-        <section className="card dashboard-section">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Historia</p>
-              <h2>Eventos de evolución</h2>
-            </div>
-          </div>
-          <div className="public-directory-list">
-            {evolutionEvents.map((item) => (
-              <div className="public-directory-item" key={item.id}>
-                <div><strong>{item.title ?? eventTypeLabel(item.event_type)}</strong><span>{formatDate(item.event_date)}</span></div>
-                <small>{item.territory_summary ?? '—'}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <EntityInstitutionalTimeline
+        payload={{
+          entity: { name: entity.name, erected_at: entity.erected_at },
+          evolution_events: data.evolution_events,
+          appointment_history: data.appointment_history,
+        }}
+      />
 
       {statisticsSnapshots.length > 0 && (
         <section className="card dashboard-section">
