@@ -131,7 +131,7 @@ test('admin UI exposes the complete organization event workflow', async () => {
   assert.match(reviewPage, /organization_unit_name/)
   assert.match(reviewPage, /has_action_plan/)
   assert.match(planPage, /subject_organization_unit_name/)
-  assert.match(planPage, /Aplicación automática jurisdiccional todavía no está habilitada/)
+  assert.match(planPage, /aplicación automática jurisdiccional todavía no está habilitada/i)
   assert.match(contractPage, /summary\.can_apply/)
   assert.match(contractPage, /admin_apply_organization_unit_event/)
 })
