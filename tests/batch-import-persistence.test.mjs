@@ -18,6 +18,8 @@ const migrationPaths = {
   noopPromote: 'supabase/migrations/20260711213847_promote_exact_import_matches_to_noop.sql',
   noopApply: 'supabase/migrations/20260711214021_apply_noop_only_import_batches.sql',
   noopUuidFix: 'supabase/migrations/20260711214142_fix_noop_uuid_aggregation.sql',
+  mixedApply: 'supabase/migrations/20260711223057_apply_mixed_create_noop_import_batches.sql',
+  mixedDispatch: 'supabase/migrations/20260711223115_dispatch_mixed_create_noop_import_batches.sql',
 }
 
 async function readRepoFile(path) {
@@ -99,8 +101,34 @@ test('exact deterministic matches become auditable noop operations', async () =>
   assert.match(application, /canonical_records_modified',false/)
   assert.match(application, /before_data,after_data/)
   assert.match(application, /idempotent_replay',true/)
-  assert.match(application, /Los lotes mixtos con create y noop/)
   assert.match(uuidFix, /array_agg\(uuid\)\[1\]/)
+})
+
+test('mixed create and noop batches are applied atomically across every canonical domain', async () => {
+  const [mixedApplication, mixedDispatch] = await Promise.all([
+    readRepoFile(migrationPaths.mixedApply),
+    readRepoFile(migrationPaths.mixedDispatch),
+  ])
+
+  assert.match(mixedApplication, /admin_apply_mixed_import_batch/)
+  assert.match(mixedApplication, /target_operation not in \('create','noop'\)/)
+  assert.match(mixedApplication, /v_batch\.import_type not in \('personas','parroquias','asignaciones','eventos'\)/)
+  assert.match(mixedApplication, /admin_apply_person_import_batch/)
+  assert.match(mixedApplication, /admin_apply_structure_import_batch/)
+  assert.match(mixedApplication, /admin_apply_assignment_import_batch/)
+  assert.match(mixedApplication, /admin_apply_event_import_batch/)
+  assert.match(mixedApplication, /record_import_noop_row/)
+  assert.match(mixedApplication, /contract_version',3/)
+  assert.match(mixedApplication, /created_rows',v_create/)
+  assert.match(mixedApplication, /noop_rows',v_noop_done/)
+  assert.match(mixedApplication, /exception when others/)
+  assert.match(mixedApplication, /canonical_records_modified',false/)
+  assert.match(mixedApplication, /import\.batch\.application_failed/)
+  assert.match(mixedApplication, /idempotent_replay',true/)
+
+  assert.match(mixedDispatch, /v_create>0 and v_noop>0 and v_create\+v_noop=v_total/)
+  assert.match(mixedDispatch, /admin_apply_mixed_import_batch\(payload\)/)
+  assert.match(mixedDispatch, /El lote contiene una combinación de operaciones no soportada/)
 })
 
 test('privileged implementations remain outside the exposed public schema', async () => {
@@ -110,6 +138,7 @@ test('privileged implementations remain outside the exposed public schema', asyn
     readRepoFile(migrationPaths.assignmentApply),
     readRepoFile(migrationPaths.eventApply),
     readRepoFile(migrationPaths.noopApply),
+    readRepoFile(migrationPaths.mixedApply),
   ])
 
   for (const migration of files) {
@@ -119,6 +148,7 @@ test('privileged implementations remain outside the exposed public schema', asyn
   assert.match(files[0], /security invoker/)
   assert.match(files[3], /revoke all on function app_private\.admin_apply_event_import_batch/)
   assert.match(files[4], /revoke all on function app_private\.admin_apply_noop_import_batch/)
+  assert.match(files[5], /revoke all on function app_private\.admin_apply_mixed_import_batch/)
 })
 
 test('admin workspace exposes all four application domains with scoped permissions', async () => {
