@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import ImportApplicationPreviewPanel from '@/features/importaciones/admin/ImportApplicationPreviewPanel'
+import { ImportRowFieldEditor } from '@/features/importaciones/admin/ImportRowFieldEditor'
 import { getImportDomainContract } from '@/features/importaciones/domain/import-domain-contract'
 import {
   applyImportBatch,
@@ -346,7 +347,13 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
                 {isEditing ? (
                   <div className="auth-form access-form">
                     {Object.entries(draftValues).map(([key, value]) => (
-                      <label key={key}>{key}<input onChange={(event) => setDraftValues((current) => ({ ...current, [key]: event.target.value }))} type="text" value={value} /></label>
+                      <ImportRowFieldEditor
+                        fieldName={key}
+                        importType={batch.import_type}
+                        key={key}
+                        onChange={(nextValue) => setDraftValues((current) => ({ ...current, [key]: nextValue }))}
+                        value={value}
+                      />
                     ))}
                     <div className="admin-top-actions">
                       <button className="button button-primary" disabled={isSaving} onClick={() => void saveRow(row.id)} type="button">{isSaving ? 'Guardando…' : 'Guardar y revalidar'}</button>
