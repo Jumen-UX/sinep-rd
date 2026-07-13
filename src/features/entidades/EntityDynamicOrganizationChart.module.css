@@ -109,6 +109,50 @@
   overflow-wrap: anywhere;
 }
 
+.term {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.succession {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--surface-muted);
+}
+
+.succession > div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.succession > div:last-child {
+  text-align: right;
+}
+
+.succession span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.succession a,
+.succession strong {
+  overflow-wrap: anywhere;
+  font-size: 0.86rem;
+}
+
+.successionArrow {
+  color: var(--brand-accent) !important;
+  font-size: 1rem !important;
+}
+
 @media (max-width: 700px) {
   .positionHeading,
   .holder,
@@ -119,5 +163,18 @@
 
   .positions {
     grid-template-columns: 1fr;
+  }
+
+  .succession {
+    grid-template-columns: 1fr;
+  }
+
+  .succession > div:last-child {
+    text-align: left;
+  }
+
+  .successionArrow {
+    transform: rotate(90deg);
+    justify-self: start;
   }
 }
