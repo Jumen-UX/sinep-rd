@@ -1,12 +1,3 @@
-/**
- * Scope Management Utilities for P1 Jurisdiction-based Permissions
- * 
- * These utilities help UI components:
- * 1. Obtain the current user's jurisdiction scope
- * 2. Filter entity lists based on scope
- * 3. Validate that selected entities are within scope
- */
-
 import { createClient } from '@/lib/supabase/server'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
@@ -16,7 +7,7 @@ export interface UserScope {
   scopeType: string | null
   scopeEntityId: string | null
   scopeName: string | null
-  isUnrestricted: boolean // true for super_admin, national_admin
+  isUnrestricted: boolean
 }
 
 export interface ScopeOption {
@@ -27,46 +18,72 @@ export interface ScopeOption {
   parentId: string | null
 }
 
-/**
- * Get the current user's jurisdiction scope
- * 
- * Returns:
- * - scope_type: The level of restriction (diocese, vicariate, etc.)
- * - scope_entity_id: The entity UUID restricting the user
- * - isUnrestricted: True if user is super_admin or national_admin
- */
+type RoleRelation = { id: string; key: string }
+
+type ScopeAssignment = {
+  user_id: string
+  scope_type: string
+  scope_entity_id: string | null
+  role_id: string | null
+  roles: RoleRelation[] | RoleRelation | null
+}
+
+function roleKeyFromAssignment(assignment: ScopeAssignment) {
+  if (!assignment.role_id || !assignment.roles) return null
+  return Array.isArray(assignment.roles)
+    ? assignment.roles[0]?.key ?? null
+    : assignment.roles.key
+}
+
+async function scopeNameForAssignment(
+  supabase: SupabaseServerClient,
+  assignment: ScopeAssignment,
+) {
+  if (!assignment.scope_entity_id) return null
+
+  if (assignment.scope_type === 'organization_unit') {
+    const { data } = await supabase
+      .from('organization_units')
+      .select('name')
+      .eq('id', assignment.scope_entity_id)
+      .maybeSingle()
+    return data?.name ?? null
+  }
+
+  if (assignment.scope_type === 'pastoral_area') {
+    const { data } = await supabase
+      .from('pastoral_areas')
+      .select('name')
+      .eq('id', assignment.scope_entity_id)
+      .maybeSingle()
+    return data?.name ?? null
+  }
+
+  const { data } = await supabase
+    .from('ecclesiastical_entities')
+    .select('name')
+    .eq('id', assignment.scope_entity_id)
+    .maybeSingle()
+  return data?.name ?? null
+}
+
 export async function getUserScope(
   supabase: SupabaseServerClient,
-  userId: string
+  userId: string,
 ): Promise<UserScope> {
   try {
-    // Try to get scope via RPC (includes validation of active role)
-    const { data: rootJurisdiction, error: rpcError } = await supabase
-      .rpc('current_user_root_jurisdiction_id')
-
-    // Query user_role_assignments directly for scope details
-    const { data: assignments, error: assignError } = await supabase
+    const { data, error } = await supabase
       .from('user_role_assignments')
-      .select(
-        `
-        user_id,
-        scope_type,
-        scope_entity_id,
-        role_id,
-        roles (
-          id,
-          key
-        )
-      `
-      )
+      .select('user_id,scope_type,scope_entity_id,role_id,roles(id,key)')
       .eq('user_id', userId)
       .eq('status', 'active')
-      .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`)
+      .lte('starts_at', new Date().toISOString().slice(0, 10))
+      .or(`ends_at.is.null,ends_at.gte.${new Date().toISOString().slice(0, 10)}`)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
-    if (assignError || !assignments) {
+    if (error || !data) {
       return {
         userId,
         scopeType: null,
@@ -76,41 +93,15 @@ export async function getUserScope(
       }
     }
 
-    // Check if user is unrestricted (super_admin or national_admin)
-    const roleKey = assignments.role_id
-      ? assignments.roles?.[0]?.key ?? null
-      : null
-    const isUnrestricted =
-      roleKey === 'super_admin' || roleKey === 'national_admin'
-
-    // If unrestricted, return empty scope
-    if (isUnrestricted) {
-      return {
-        userId,
-        scopeType: assignments.scope_type,
-        scopeEntityId: null,
-        scopeName: null,
-        isUnrestricted: true,
-      }
-    }
-
-    // Get entity name for restricted users
-    let scopeName = null
-    if (assignments.scope_entity_id) {
-      const { data: entity } = await supabase
-        .from('ecclesiastical_entities')
-        .select('name')
-        .eq('id', assignments.scope_entity_id)
-        .single()
-
-      scopeName = entity?.name || null
-    }
+    const assignment = data as unknown as ScopeAssignment
+    const roleKey = roleKeyFromAssignment(assignment)
+    const isUnrestricted = roleKey === 'super_admin' || roleKey === 'national_admin'
 
     return {
       userId,
-      scopeType: assignments.scope_type,
-      scopeEntityId: assignments.scope_entity_id,
-      scopeName,
+      scopeType: assignment.scope_type,
+      scopeEntityId: isUnrestricted ? null : assignment.scope_entity_id,
+      scopeName: isUnrestricted ? null : await scopeNameForAssignment(supabase, assignment),
       isUnrestricted,
     }
   } catch (error) {
@@ -125,37 +116,38 @@ export async function getUserScope(
   }
 }
 
-/**
- * Get available scope options for the current user
- * Used to populate filter dropdowns
- */
 export async function getScopeOptionsForUser(
-  supabase: SupabaseServerClient
+  supabase: SupabaseServerClient,
 ): Promise<ScopeOption[]> {
   try {
-    const { data, error } = await supabase
-      .rpc('admin_list_role_scope_options', {
-        p_scope_type: null,
-      })
+    const { data, error } = await supabase.rpc('admin_list_role_scope_options', {
+      p_scope_type: null,
+    })
 
     if (error || !data) {
       console.error('Error getting scope options:', error)
       return []
     }
 
-    return data as ScopeOption[]
+    return (data as Array<{
+      scope_type: string
+      scope_entity_id: string | null
+      label: string
+      diocese_id: string | null
+      parent_id: string | null
+    }>).map((item) => ({
+      scopeType: item.scope_type,
+      scopeEntityId: item.scope_entity_id,
+      label: item.label,
+      dioceseId: item.diocese_id,
+      parentId: item.parent_id,
+    }))
   } catch (error) {
     console.error('Error in getScopeOptionsForUser:', error)
     return []
   }
 }
 
-/**
- * Filter ecclesiastical_entities by user scope
- * 
- * Usage:
- *   const filtered = await filterEntitiesByScope(supabase, userId)
- */
 export async function filterEntitiesByScope(
   supabase: SupabaseServerClient,
   userId: string,
@@ -163,14 +155,13 @@ export async function filterEntitiesByScope(
     entityTypeKey?: string
     includeChildren?: boolean
     limit?: number
-  }
+  },
 ) {
   const scope = await getUserScope(supabase, userId)
   const selectColumns = options?.entityTypeKey
-    ? 'id, name, official_name, slug, entity_type_id, entity_types!inner(key)'
-    : 'id, name, official_name, slug, entity_type_id'
+    ? 'id,name,official_name,slug,entity_type_id,entity_types!inner(key)'
+    : 'id,name,official_name,slug,entity_type_id'
 
-  // If unrestricted, return all entities (or filtered by type)
   if (scope.isUnrestricted) {
     let query = supabase
       .from('ecclesiastical_entities')
@@ -181,88 +172,65 @@ export async function filterEntitiesByScope(
       query = query.eq('entity_types.key', options.entityTypeKey)
     }
 
-    const { data } = await query
-      .order('name')
-      .limit(options?.limit ?? 250)
-
-    return data || []
+    const { data } = await query.order('name').limit(options?.limit ?? 250)
+    return data ?? []
   }
 
-  // If restricted by entity, get entity + descendants
-  if (scope.scopeEntityId) {
-    // Get the scope entity
-    let scopeQuery = supabase
-      .from('ecclesiastical_entities')
-      .select(selectColumns)
-      .eq('id', scope.scopeEntityId)
-      .eq('status', 'active')
-
-    if (options?.entityTypeKey) {
-      scopeQuery = scopeQuery.eq('entity_types.key', options.entityTypeKey)
-    }
-
-    const { data: scopeEntity } = await scopeQuery
-      .single()
-
-    if (!options?.includeChildren) {
-      return scopeEntity ? [scopeEntity] : []
-    }
-
-    // Get all descendants (children)
-    const { data: descendants } = await supabase
-      .rpc('get_entity_descendants', {
-        p_entity_id: scope.scopeEntityId,
-        p_max_depth: 10,
-      })
-
-    if (!descendants || descendants.length === 0) {
-      return scopeEntity ? [scopeEntity] : []
-    }
-
-    // Combine scope entity with descendants
-    const allEntityIds = [
-      scope.scopeEntityId,
-      ...descendants.map((d: { id: string }) => d.id),
-    ]
-
-    let allEntitiesQuery = supabase
-      .from('ecclesiastical_entities')
-      .select(selectColumns)
-      .in('id', allEntityIds)
-      .eq('status', 'active')
-
-    if (options?.entityTypeKey) {
-      allEntitiesQuery = allEntitiesQuery.eq('entity_types.key', options.entityTypeKey)
-    }
-
-    const { data: allEntities } = await allEntitiesQuery
-      .order('name')
-
-    return allEntities || []
+  if (!scope.scopeEntityId || scope.scopeType === 'organization_unit' || scope.scopeType === 'pastoral_area') {
+    return []
   }
 
-  // No scope -> return empty
-  return []
+  let scopeQuery = supabase
+    .from('ecclesiastical_entities')
+    .select(selectColumns)
+    .eq('id', scope.scopeEntityId)
+    .eq('status', 'active')
+
+  if (options?.entityTypeKey) {
+    scopeQuery = scopeQuery.eq('entity_types.key', options.entityTypeKey)
+  }
+
+  const { data: scopeEntity } = await scopeQuery.single()
+  if (!options?.includeChildren) return scopeEntity ? [scopeEntity] : []
+
+  const { data: descendants } = await supabase.rpc('get_entity_descendants', {
+    p_entity_id: scope.scopeEntityId,
+    p_max_depth: 10,
+  })
+
+  if (!descendants?.length) return scopeEntity ? [scopeEntity] : []
+
+  const allEntityIds = [
+    scope.scopeEntityId,
+    ...descendants.map((item: { id: string }) => item.id),
+  ]
+
+  let allEntitiesQuery = supabase
+    .from('ecclesiastical_entities')
+    .select(selectColumns)
+    .in('id', allEntityIds)
+    .eq('status', 'active')
+
+  if (options?.entityTypeKey) {
+    allEntitiesQuery = allEntitiesQuery.eq('entity_types.key', options.entityTypeKey)
+  }
+
+  const { data: allEntities } = await allEntitiesQuery.order('name')
+  return allEntities ?? []
 }
 
-/**
- * Validate that an entity is within user's scope
- * 
- * Useful in client-side to prevent sending invalid selection to RPC
- */
 export async function isEntityInUserScope(
   supabase: SupabaseServerClient,
   userId: string,
-  entityId: string
+  entityId: string,
 ): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .rpc('current_user_has_scope_for_entity', {
-        p_entity_id: entityId,
-      })
+    const { data, error } = await supabase.rpc('current_user_has_scope_for_entity', {
+      p_entity_id: entityId,
+    })
 
     if (error) {
-      console.error('Error validating entity scope:', error)
+      console.error(`Error validating entity scope for ${userId}:`, error)
       return false
     }
 
@@ -273,89 +241,61 @@ export async function isEntityInUserScope(
   }
 }
 
-/**
- * Helper for React components to filter options in a select/combobox
- * 
- * Usage in component:
- *   const scope = await getUserScope(supabase, userId)
- *   const options = await getFilteredJurisdictionOptions(supabase, scope)
- */
 export async function getFilteredJurisdictionOptions(
   supabase: SupabaseServerClient,
   userScope: UserScope,
   options?: {
     includeChildren?: boolean
     limit?: number
-  }
+  },
 ) {
   if (userScope.isUnrestricted) {
-    // Super/national admin can select any entity
     const { data } = await supabase
       .from('ecclesiastical_entities')
-      .select('id, name, official_name, slug')
+      .select('id,name,official_name,slug')
       .eq('status', 'active')
       .order('name')
       .limit(options?.limit ?? 500)
 
-    return data || []
+    return data ?? []
   }
 
-  if (!userScope.scopeEntityId) {
+  if (!userScope.scopeEntityId || userScope.scopeType === 'organization_unit' || userScope.scopeType === 'pastoral_area') {
     return []
   }
 
-  // Restricted user - include root + children if flag set
   const { data: root } = await supabase
     .from('ecclesiastical_entities')
-    .select('id, name, official_name, slug')
+    .select('id,name,official_name,slug')
     .eq('id', userScope.scopeEntityId)
     .eq('status', 'active')
     .single()
 
   if (!root) return []
+  if (!options?.includeChildren) return [root]
 
-  if (!options?.includeChildren) {
-    return [root]
-  }
+  const { data: children } = await supabase.rpc('get_entity_descendants', {
+    p_entity_id: userScope.scopeEntityId,
+    p_max_depth: 3,
+  })
 
-  // Get children
-  const { data: children } = await supabase
-    .rpc('get_entity_descendants', {
-      p_entity_id: userScope.scopeEntityId,
-      p_max_depth: 3,
-    })
+  if (!children?.length) return [root]
 
-  if (!children || children.length === 0) {
-    return [root]
-  }
-
-  const childIds = children.map((c: { id: string }) => c.id)
-
+  const childIds = children.map((item: { id: string }) => item.id)
   const { data: childEntities } = await supabase
     .from('ecclesiastical_entities')
-    .select('id, name, official_name, slug')
+    .select('id,name,official_name,slug')
     .in('id', childIds)
     .eq('status', 'active')
     .order('name')
     .limit(options?.limit ?? 500)
 
-  return [root, ...(childEntities || [])]
+  return [root, ...(childEntities ?? [])]
 }
 
-/**
- * Get human-readable scope label
- * 
- * Example: { scopeType: 'diocese', scopeName: 'Santo Domingo' }
- * Returns: "Diócesis: Santo Domingo"
- */
 export function getScopeLabel(scope: UserScope): string {
-  if (scope.isUnrestricted) {
-    return 'Acceso Nacional (Sin restricción)'
-  }
-
-  if (!scope.scopeType || !scope.scopeName) {
-    return 'Sin acceso definido'
-  }
+  if (scope.isUnrestricted) return 'Acceso Nacional (Sin restricción)'
+  if (!scope.scopeType || !scope.scopeName) return 'Sin acceso definido'
 
   const typeLabels: Record<string, string> = {
     national: 'Nacional',
@@ -364,11 +304,9 @@ export function getScopeLabel(scope: UserScope): string {
     zone: 'Zona Pastoral',
     parish: 'Parroquia',
     pastoral_area: 'Área Pastoral',
-    pastoral_entity: 'Entidad Pastoral',
+    organization_unit: 'Unidad Organizativa',
     entity: 'Entidad',
   }
 
-  const typeLabel = typeLabels[scope.scopeType] || scope.scopeType
-
-  return `${typeLabel}: ${scope.scopeName}`
+  return `${typeLabels[scope.scopeType] ?? scope.scopeType}: ${scope.scopeName}`
 }
