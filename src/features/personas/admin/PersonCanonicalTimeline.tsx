@@ -1,4 +1,5 @@
 import type { AdminPersonDetail } from '../services/person-admin-service'
+import { assignmentEntityTarget, type AssignmentHistoryItem } from './PersonAssignmentHistory'
 import styles from './PersonCanonicalTimeline.module.css'
 
 type TimelineItem = {
@@ -35,7 +36,10 @@ function formatDate(value: string | null | undefined) {
   }).format(date)
 }
 
-export function buildPersonCanonicalTimeline(person: AdminPersonDetail): TimelineItem[] {
+export function buildPersonCanonicalTimeline(
+  person: AdminPersonDetail,
+  assignments: AssignmentHistoryItem[] = [],
+): TimelineItem[] {
   const ordinations: TimelineItem[] = person.ordination_history.map((ordination) => ({
     id: `ordination-${ordination.degree}`,
     date: ordination.ordination_date,
@@ -56,7 +60,24 @@ export function buildPersonCanonicalTimeline(person: AdminPersonDetail): Timelin
     current: record.is_current,
   }))
 
-  return [...ordinations, ...dimensions].sort((left, right) => {
+  const appointments: TimelineItem[] = assignments.map((assignment) => {
+    const [entityName] = assignmentEntityTarget(assignment)
+    return {
+      id: `assignment-${assignment.id}`,
+      date: assignment.term_start_date ?? assignment.start_date,
+      endDate: assignment.actual_end_date ?? assignment.term_end_date,
+      category: 'Nombramiento',
+      title: assignment.position_title ?? 'Cargo sin título registrado',
+      detail: [
+        entityName,
+        assignment.organization_unit_name ?? assignment.organization_chart_name,
+        assignment.selection_method,
+      ].filter(Boolean).join(' · ') || 'Sin detalles adicionales',
+      current: assignment.is_current,
+    }
+  })
+
+  return [...ordinations, ...dimensions, ...appointments].sort((left, right) => {
     if (!left.date && !right.date) return left.title.localeCompare(right.title, 'es')
     if (!left.date) return 1
     if (!right.date) return -1
@@ -64,22 +85,28 @@ export function buildPersonCanonicalTimeline(person: AdminPersonDetail): Timelin
   })
 }
 
-export default function PersonCanonicalTimeline({ person }: { person: AdminPersonDetail }) {
-  const items = buildPersonCanonicalTimeline(person)
+export default function PersonCanonicalTimeline({
+  person,
+  assignments = [],
+}: {
+  person: AdminPersonDetail
+  assignments?: AssignmentHistoryItem[]
+}) {
+  const items = buildPersonCanonicalTimeline(person, assignments)
 
   return (
     <section className={`card ${styles.card}`} id="historial" aria-labelledby="person-canonical-timeline-title">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Trayectoria canónica</p>
+          <p className="eyebrow">Trayectoria integral</p>
           <h2 id="person-canonical-timeline-title">Línea de tiempo</h2>
-          <p className="meta">Ordenaciones y cambios de estado, pertenencia, función o dignidad registrados para esta persona.</p>
+          <p className="meta">Ordenaciones, estados canónicos, pertenencias, dignidades y nombramientos ordenados en una sola cronología.</p>
         </div>
         <span className="role-pill">{items.length} hitos</span>
       </div>
 
       {items.length === 0 ? (
-        <div className="empty-state">No hay hitos canónicos registrados.</div>
+        <div className="empty-state">No hay hitos registrados.</div>
       ) : (
         <ol className={styles.timeline}>
           {items.map((item) => (
