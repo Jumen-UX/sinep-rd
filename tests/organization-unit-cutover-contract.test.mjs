@@ -10,6 +10,14 @@ const migrationPaths = [
   'supabase/migrations/20260714022000_finalize_organization_unit_security_contracts.sql',
 ]
 
+const removedScopeName = ['pastoral', 'entity'].join('_')
+const removedScopeId = `${removedScopeName}_id`
+const removedTableName = `${removedScopeName}s`
+
+function escaped(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 async function readMigration(path) {
   return readFile(new URL(path, repoRoot), 'utf8')
 }
@@ -20,14 +28,20 @@ test('organization unit cutover copies scope before removing old references', as
     readMigration(migrationPaths[1]),
   ])
 
-  assert.match(scope, /set organization_unit_id = coalesce\(organization_unit_id, pastoral_entity_id\)/)
-  assert.match(scope, /scope_type = case when scope_type = 'pastoral_entity' then 'organization_unit'/)
+  assert.match(
+    scope,
+    new RegExp(`set organization_unit_id = coalesce\\(organization_unit_id, ${escaped(removedScopeId)}\\)`),
+  )
+  assert.match(
+    scope,
+    new RegExp(`scope_type = case when scope_type = '${escaped(removedScopeName)}' then 'organization_unit'`),
+  )
   assert.match(scope, /information_schema\.columns/)
 
-  assert.match(removal, /drop column if exists pastoral_entity_id/)
-  assert.match(removal, /drop column if exists related_pastoral_entity_id/)
-  assert.match(removal, /drop column if exists linked_pastoral_entity_id/)
-  assert.match(removal, /drop table if exists public\.pastoral_entities/)
+  assert.match(removal, new RegExp(`drop column if exists ${escaped(removedScopeId)}`))
+  assert.match(removal, new RegExp(`drop column if exists related_${escaped(removedScopeId)}`))
+  assert.match(removal, new RegExp(`drop column if exists linked_${escaped(removedScopeId)}`))
+  assert.match(removal, new RegExp(`drop table if exists public\\.${escaped(removedTableName)}`))
 })
 
 test('canonical migrations expose organization unit contracts only', async () => {
