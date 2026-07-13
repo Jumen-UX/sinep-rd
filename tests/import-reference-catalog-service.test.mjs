@@ -17,6 +17,7 @@ test('import reference selectors load canonical scoped catalogs with shared cach
   assert.match(service, /\.eq\('status', 'active'\)/)
   assert.match(service, /\.eq\('is_active', true\)/)
   assert.match(editor, /getImportReferenceOptions\(contract\.referenceType\)/)
-  assert.match(editor, /options=\{referenceOptions \?\? catalogOptions\}/)
+  assert.match(editor, /const availableOptions = referenceOptions \?\? catalogOptions/)
+  assert.match(editor, /options=\{availableOptions\}/)
   assert.match(editor, /allowCustomValue/)
 })
