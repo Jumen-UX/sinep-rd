@@ -37,3 +37,14 @@ jobs:
 
       - name: Check
         run: pnpm check
+
+      - name: Build legacy scan report
+        if: always()
+        run: node scripts/check-no-legacy-pastoral.mjs > legacy-scan-report.txt 2>&1 || true
+
+      - name: Upload legacy scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legacy-scan-report
+          path: legacy-scan-report.txt
