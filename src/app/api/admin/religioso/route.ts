@@ -3,22 +3,25 @@ import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
 import { isJsonObject, parseJsonObjectBody, ValidationError } from '@/lib/admin/validation'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
+import { revalidatePublicContent } from '@/lib/public/cache'
 
 type SaveReligiousResult = {
   personId: string | null
   profileId: string | null
   assignmentId: string | null
+  slug: string | null
 }
 
 function getSaveResult(value: unknown): SaveReligiousResult {
   if (!isJsonObject(value)) {
-    return { personId: null, profileId: null, assignmentId: null }
+    return { personId: null, profileId: null, assignmentId: null, slug: null }
   }
 
   return {
     personId: typeof value.person_id === 'string' ? value.person_id : null,
     profileId: typeof value.religious_profile_id === 'string' ? value.religious_profile_id : null,
     assignmentId: typeof value.assignment_id === 'string' ? value.assignment_id : null,
+    slug: typeof value.slug === 'string' ? value.slug : null,
   }
 }
 
@@ -50,6 +53,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    revalidatePublicContent({ personSlug: result.slug })
     return NextResponse.json(data)
   } catch (error) {
     if (error instanceof ValidationError) {
