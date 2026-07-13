@@ -22,6 +22,6 @@ test('person detail exposes canonical assignment history and succession links', 
   assert.match(component, /aria-labelledby="person-assignment-history-title"/)
 
   assert.match(page, /import PersonAssignmentHistory/)
-  assert.match(page, /<PersonAssignmentHistory personId=\{person\.person_id\} \/>/)
+  assert.match(page, /<PersonAssignmentHistory\s+personId=\{person\.person_id\}\s+onItemsChange=\{setAssignments\}\s*\/>/)
   assert.match(page, /href="#nombramientos"/)
 })
