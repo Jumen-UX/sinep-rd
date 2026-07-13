@@ -24,15 +24,17 @@ function extractFunction(sql, qualifiedName) {
 }
 
 test('associated person publication is checked by the public review gateway', async () => {
-  const sql = await readRepoFile('supabase/migrations/20260710163459_harden_review_person_publication_scope.sql')
-  const helper = extractFunction(sql, 'app_private.current_user_can_publish_assignment_person')
-  const gateway = extractFunction(sql, 'public.admin_review_item')
+  const canonical = await readRepoFile('supabase/migrations/20260714022000_reassert_organization_unit_security_contracts.sql')
+  const gatewaySql = await readRepoFile('supabase/migrations/20260710163459_harden_review_person_publication_scope.sql')
+  const helper = extractFunction(canonical, 'app_private.current_user_can_publish_assignment_person')
+  const gateway = extractFunction(gatewaySql, 'public.admin_review_item')
 
   assert.match(helper, /people\.publish/)
   assert.match(helper, /current_user_can_manage_entity/)
   assert.match(helper, /current_user_has_scope_access/)
-  assert.match(helper, /pastoral_entity/)
+  assert.match(helper, /organization_unit/)
   assert.match(helper, /current_user_is_super_or_national/)
+  assert.doesNotMatch(helper, /pastoral_entity/)
 
   assert.match(gateway, /security\s+definer/i)
   assert.match(gateway, /publish_person/)
@@ -40,10 +42,10 @@ test('associated person publication is checked by the public review gateway', as
   assert.match(gateway, /return app_private\.admin_review_item\(payload\)/)
 
   assert.match(
-    sql,
+    gatewaySql,
     /revoke all on function app_private\.admin_review_item\(jsonb\)[\s\S]*from public, anon, authenticated;/,
   )
-  assert.match(sql, /grant execute on function public\.admin_review_item\(jsonb\) to authenticated;/)
+  assert.match(gatewaySql, /grant execute on function public\.admin_review_item\(jsonb\) to authenticated;/)
 })
 
 test('legacy review entry points delegate through the hardened gateway', async () => {
