@@ -1,5 +1,9 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import { SearchableSelect, type SearchableSelectOption } from '@/components/admin/SearchableSelect'
 import { getImportRowFieldContract } from '@/features/importaciones/domain/import-row-field-contract'
+import { getImportReferenceOptions } from '@/features/importaciones/services/import-reference-catalog-service'
 
 type Props = {
   fieldName: string
@@ -14,19 +18,53 @@ export function ImportRowFieldEditor({
   importType,
   value,
   onChange,
-  referenceOptions = [],
+  referenceOptions,
 }: Props) {
   const contract = getImportRowFieldContract(importType, fieldName)
   const controlId = `import-row-${fieldName}`
+  const [catalogOptions, setCatalogOptions] = useState<SearchableSelectOption[]>(referenceOptions ?? [])
+  const [catalogError, setCatalogError] = useState<string | null>(null)
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false)
+
+  useEffect(() => {
+    if (contract.kind !== 'reference' || !contract.referenceType || referenceOptions) return
+
+    let active = true
+    setIsLoadingCatalog(true)
+    setCatalogError(null)
+
+    void getImportReferenceOptions(contract.referenceType)
+      .then((options) => {
+        if (active) setCatalogOptions(options)
+      })
+      .catch((error) => {
+        if (active) {
+          setCatalogError(error instanceof Error ? error.message : 'No se pudo cargar el catálogo.')
+          setCatalogOptions([])
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoadingCatalog(false)
+      })
+
+    return () => { active = false }
+  }, [contract.kind, contract.referenceType, referenceOptions])
 
   if (contract.kind === 'reference') {
+    const help = [
+      contract.help,
+      isLoadingCatalog ? 'Cargando opciones disponibles…' : null,
+      catalogError ? 'No se pudo cargar el catálogo; puedes conservar una referencia textual exacta.' : null,
+    ].filter(Boolean).join(' ')
+
     return (
       <SearchableSelect
         allowCustomValue
-        help={contract.help}
+        disabled={false}
+        help={help}
         label={contract.label}
         onChange={onChange}
-        options={referenceOptions}
+        options={referenceOptions ?? catalogOptions}
         placeholder={`Buscar ${contract.label.toLocaleLowerCase('es')}…`}
         value={value}
       />
