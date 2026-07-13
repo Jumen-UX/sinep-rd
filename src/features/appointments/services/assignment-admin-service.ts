@@ -35,6 +35,7 @@ export type AssignmentUnit = {
   name: string
   slug: string
   organization_chart_id: string
+  ecclesiastical_entity_id: string
 }
 
 export type AssignmentRow = {
@@ -112,7 +113,12 @@ export async function loadAssignmentCatalogs(supabase: SupabaseClient): Promise<
       .eq('status', 'active')
       .order('display_name'),
     supabase.from('organization_charts').select('id,key,name').eq('status', 'active').order('sort_order'),
-    supabase.from('organization_units').select('id,name,slug,organization_chart_id').eq('status', 'active').eq('is_current', true).order('name'),
+    supabase
+      .from('organization_units')
+      .select('id,name,slug,organization_chart_id,ecclesiastical_entity_id')
+      .eq('status', 'active')
+      .eq('is_current', true)
+      .order('name'),
     supabase
       .from('public_position_assignments_with_hierarchy')
       .select('id,person_name,person_slug,position_title,organization_chart_name,organization_unit_name,direct_entity_name,hierarchy_path,predecessor_person_name,successor_person_name,start_date,term_start_date,term_end_date,actual_end_date,assignment_status')
