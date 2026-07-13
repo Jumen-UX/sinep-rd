@@ -63,9 +63,9 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
         <aside className="dashboard-path-card" aria-label="Ruta de la entidad">
           <p className="eyebrow">Ruta</p>
           <div className="dashboard-path-list">
-            <span>República Dominicana</span>
-            <span>{entity.country ?? '—'}</span>
+            <span>{entity.country ?? 'República Dominicana'}</span>
             <span>{entity.province ?? '—'}</span>
+            <span>{entity.municipality ?? '—'}</span>
           </div>
           <Link className="inline-link" href="/diocesis">Volver al directorio</Link>
         </aside>
