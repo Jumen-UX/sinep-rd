@@ -40,7 +40,7 @@ type StructureNode = {
   slug: string
   code: string | null
   linked_ecclesiastical_entity_id: string | null
-  linked_pastoral_entity_id: string | null
+  linked_organization_unit_id: string | null
   start_date: string | null
   end_date: string | null
   is_current: boolean
@@ -88,7 +88,14 @@ type Props = {
   onChange: (value: string) => void
 }
 
-const dioceseEntityTypeKeys = ['archdiocese', 'diocese', 'military_ordinariate', 'ordinariate', 'apostolic_vicariate', 'vicariate']
+const dioceseEntityTypeKeys = [
+  'archdiocese',
+  'diocese',
+  'military_ordinariate',
+  'ordinariate',
+  'apostolic_vicariate',
+  'vicariate',
+]
 
 function slugify(value: string) {
   return value
@@ -108,12 +115,9 @@ function toEntityTypes(entity: Pick<DioceseOption, 'entity_types'>) {
   return Array.isArray(entity.entity_types) ? entity.entity_types : [entity.entity_types]
 }
 
-function hasEntityType(entity: Pick<DioceseOption, 'entity_types'>, keys: string[]) {
-  return toEntityTypes(entity).some((type) => keys.includes(type.key))
-}
-
 function isDioceseLike(entity: DioceseOption) {
-  return hasEntityType(entity, dioceseEntityTypeKeys) || /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato apost[oó]lico/i.test(entity.name)
+  return toEntityTypes(entity).some((type) => dioceseEntityTypeKeys.includes(type.key))
+    || /di[oó]cesis|arquidi[oó]cesis|ordinariato|vicariato apost[oó]lico/i.test(entity.name)
 }
 
 function directChildren(nodes: StructureNode[], parentNodeId: string | null) {
@@ -134,9 +138,13 @@ function buildGroups(nodes: StructureNode[], rootNode: StructureNode | null, sel
     if (children.length === 0) break
 
     const selectedNodeId = selectedPath[depth] ?? ''
-    const label = children[0]?.level_name ?? `Nivel ${depth + 1}`
-
-    groups.push({ parentNodeId, depth, label, selectedNodeId, nodes: children })
+    groups.push({
+      parentNodeId,
+      depth,
+      label: children[0]?.level_name ?? `Nivel ${depth + 1}`,
+      selectedNodeId,
+      nodes: children,
+    })
 
     if (!selectedNodeId) break
     parentNodeId = selectedNodeId
@@ -176,7 +184,7 @@ export default function StructureEntityPicker({
   const selectedNode = nodes.find((node) => node.linked_ecclesiastical_entity_id === value) ?? null
   const rootNode = nodes.find((node) => !node.parent_node_id) ?? null
   const groups = buildGroups(nodes, rootNode, selectedPath)
-  const currentParentNodeId = selectedPath.length > 0 ? selectedPath[selectedPath.length - 1] : rootNode?.node_id ?? null
+  const currentParentNodeId = selectedPath.at(-1) ?? rootNode?.node_id ?? null
   const currentParentNode = nodes.find((node) => node.node_id === currentParentNodeId) ?? rootNode
   const currentParentEntityId = currentParentNode?.linked_ecclesiastical_entity_id ?? dioceseId
   const selectedTemplate = templates.find((template) => template.id === templateId) ?? null
@@ -198,12 +206,11 @@ export default function StructureEntityPicker({
         return
       }
 
-      const loaded = ((data ?? []) as unknown as DioceseOption[]).filter((item) => isDioceseLike(item))
-      setDioceses(loaded)
+      setDioceses(((data ?? []) as unknown as DioceseOption[]).filter(isDioceseLike))
       setLoading(false)
     }
 
-    loadDioceses()
+    void loadDioceses()
   }, [supabase])
 
   useEffect(() => {
@@ -232,11 +239,10 @@ export default function StructureEntityPicker({
 
       const loaded = (data ?? []) as StructureTemplate[]
       setTemplates(loaded)
-      const preferred = loaded.find((template) => template.is_primary) ?? loaded[0]
-      setTemplateId(preferred?.id ?? '')
+      setTemplateId((loaded.find((template) => template.is_primary) ?? loaded[0])?.id ?? '')
     }
 
-    loadTemplates()
+    void loadTemplates()
   }, [dioceseId, kindKey, supabase])
 
   useEffect(() => {
@@ -274,8 +280,8 @@ export default function StructureEntityPicker({
       }
     }
 
-    loadTree()
-  }, [templateId, value, supabase])
+    void loadTree()
+  }, [supabase, templateId, value])
 
   useEffect(() => {
     async function loadChildLevels() {
@@ -302,8 +308,8 @@ export default function StructureEntityPicker({
       setNewLevelId(loaded[0]?.level_id ?? '')
     }
 
-    loadChildLevels()
-  }, [templateId, currentParentNode?.level_id, supabase])
+    void loadChildLevels()
+  }, [currentParentNode?.level_id, supabase, templateId])
 
   function handleDioceseChange(nextDioceseId: string) {
     setDioceseId(nextDioceseId)
@@ -314,7 +320,6 @@ export default function StructureEntityPicker({
   function handleGroupChange(depth: number, nodeId: string) {
     const nextPath = [...selectedPath.slice(0, depth), nodeId].filter(Boolean)
     setSelectedPath(nextPath)
-
     const node = nodes.find((item) => item.node_id === nodeId)
     onChange(node?.linked_ecclesiastical_entity_id ?? '')
   }
