@@ -16,6 +16,12 @@ const migrationPaths = [
   new URL('../supabase/migrations/20260713154637_consolidate_structure_mutation_auditing.sql', import.meta.url),
   new URL('../supabase/migrations/20260713154857_audit_and_seal_canonical_event_mutations.sql', import.meta.url),
   new URL('../supabase/migrations/20260713155005_audit_and_seal_structural_event_mutations.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713155958_route_legacy_person_wizards_through_canonical_contract.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713160159_enrich_legacy_audit_scope_automatically.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713160317_seal_legacy_jurisdiction_and_office_mutations.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713160539_seal_user_private_rpcs.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713160552_seal_import_mutation_private_rpcs.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713160611_seal_review_queue_private_rpc.sql', import.meta.url),
 ]
 
 async function readSecurityMigrations() {
@@ -50,6 +56,15 @@ test('audit reader filters records by the current user jurisdiction', async () =
   assert.match(sql, /current_user_can_manage_entity\('audit\.view', al\.scope_entity_id\)/)
   assert.match(sql, /current_user_has_scope_access\(\s*'pastoral_entity'/)
   assert.match(sql, /current_user_has_scope_access\(\s*'pastoral_area'/)
+})
+
+test('legacy audit writes receive permission and scope automatically', async () => {
+  const sql = await readSecurityMigrations()
+
+  assert.match(sql, /enrich_audit_log_before_write/)
+  assert.match(sql, /trg_audit_logs_enrich_scope/)
+  assert.match(sql, /new\.permission_key := coalesce/)
+  assert.match(sql, /app_private\.resolve_audit_scope/)
 })
 
 test('critical canonical tables cannot be written directly by authenticated clients', async () => {
@@ -138,4 +153,64 @@ test('canonical and structural event mutations require scope and audit every wri
   ]) {
     assert.match(sql, new RegExp(`revoke all on function ${internalFunction.replaceAll('.', '\\.')}`))
   }
+})
+
+test('legacy person wizards route through the canonical public contract', async () => {
+  const sql = await readSecurityMigrations()
+
+  for (const wizard of [
+    'admin_save_bishop',
+    'admin_save_deacon',
+    'admin_save_priest',
+    'admin_save_layperson',
+    'admin_save_religious',
+  ]) {
+    assert.match(sql, new RegExp(`function public\\.${wizard}`))
+  }
+
+  assert.match(sql, /select public\.admin_save_canonical_person/)
+  assert.match(sql, /revoke all on function internal\.admin_save_bishop_with_dimensions/)
+  assert.match(sql, /revoke all on function internal\.admin_save_priest/)
+})
+
+test('jurisdiction office and assignment review mutations are sealed behind scoped public contracts', async () => {
+  const sql = await readSecurityMigrations()
+
+  assert.match(sql, /function public\.admin_save_jurisdiction/)
+  assert.match(sql, /entities\.jurisdiction\.created/)
+  assert.match(sql, /Solo la administración nacional puede crear cargos canónicos globales/)
+  assert.match(sql, /El alcance de la sugerencia está fuera de tu jurisdicción/)
+  assert.match(sql, /current_user_can_manage_entity\('appointments\.approve'/)
+
+  for (const internalFunction of [
+    'internal.admin_save_jurisdiction',
+    'internal.admin_save_office_configuration',
+    'internal.admin_update_office_configuration',
+    'internal.apply_office_canonical_rules',
+    'internal.editor_suggest_office_configuration',
+    'internal.resolve_assignment_canonical_incompatibility',
+  ]) {
+    assert.match(sql, new RegExp(`revoke all on function ${internalFunction.replaceAll('.', '\\.')}`))
+  }
+})
+
+test('user import and review private RPCs are only reachable through public security definer facades', async () => {
+  const sql = await readSecurityMigrations()
+
+  for (const privateFunction of [
+    'app_private.admin_assign_user_role',
+    'app_private.admin_end_user_role',
+    'app_private.admin_update_user_profile_status',
+    'app_private.admin_prepare_import_batch',
+    'app_private.admin_review_import_batch',
+    'app_private.admin_update_import_batch_row',
+    'app_private.validate_import_batch',
+    'app_private.admin_review_queue',
+  ]) {
+    assert.match(sql, new RegExp(`revoke all on function ${privateFunction.replaceAll('.', '\\.')}`))
+  }
+
+  assert.match(sql, /function public\.admin_assign_user_role/)
+  assert.match(sql, /function public\.admin_prepare_import_batch/)
+  assert.match(sql, /alter function public\.admin_review_queue\(jsonb\) security definer/)
 })
