@@ -44,7 +44,7 @@ type StructureTreeNode = {
   slug: string
   code: string | null
   linked_ecclesiastical_entity_id: string | null
-  linked_pastoral_entity_id: string | null
+  linked_organization_unit_id: string | null
   start_date: string | null
   end_date: string | null
   is_current: boolean
@@ -62,6 +62,7 @@ export type StructureSelection = {
   parentLevelKey: string
   parentLevelName: string
   linkedEntityId: string | null
+  linkedOrganizationUnitId: string | null
   pathLabel: string
 }
 
@@ -89,80 +90,14 @@ const componentStyles = `
     gap: 14px;
     padding: 18px;
   }
-
-  .structure-selector h3 {
-    color: var(--foreground);
-    font-size: clamp(19px, 2vw, 22px);
-    line-height: 1.15;
-    margin: 0;
-  }
-
-  .structure-selector-grid {
-    display: grid;
-    gap: 14px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .structure-selector label {
-    color: var(--muted);
-    display: grid;
-    font-size: 14px;
-    font-weight: 800;
-    gap: 7px;
-  }
-
-  .structure-selector select {
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    color: var(--foreground);
-    font: inherit;
-    padding: 12px 14px;
-    width: 100%;
-  }
-
-  .structure-selector-path {
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    display: grid;
-    gap: 6px;
-    padding: 14px;
-  }
-
-  .structure-selector-path strong {
-    color: var(--foreground);
-    line-height: 1.2;
-  }
-
-  .structure-selector-path span,
-  .structure-selector-path small {
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.45;
-  }
-
-  .legacy-parent-selector {
-    border-top: 1px solid var(--border);
-    display: grid;
-    gap: 10px;
-    margin-top: 16px;
-    padding-top: 16px;
-  }
-
-  .legacy-parent-selector label {
-    color: var(--muted);
-    display: grid;
-    font-size: 14px;
-    font-weight: 800;
-    gap: 7px;
-  }
-
-  @media (max-width: 860px) {
-    .structure-selector-grid {
-      grid-template-columns: 1fr;
-    }
-  }
+  .structure-selector h3 { color: var(--foreground); font-size: clamp(19px, 2vw, 22px); line-height: 1.15; margin: 0; }
+  .structure-selector-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .structure-selector label { color: var(--muted); display: grid; font-size: 14px; font-weight: 800; gap: 7px; }
+  .structure-selector select { background: #ffffff; border: 1px solid var(--border); border-radius: 14px; color: var(--foreground); font: inherit; padding: 12px 14px; width: 100%; }
+  .structure-selector-path { background: #ffffff; border: 1px solid var(--border); border-radius: 16px; display: grid; gap: 6px; padding: 14px; }
+  .structure-selector-path strong { color: var(--foreground); line-height: 1.2; }
+  .structure-selector-path span, .structure-selector-path small { color: var(--muted); font-size: 13px; line-height: 1.45; }
+  @media (max-width: 860px) { .structure-selector-grid { grid-template-columns: 1fr; } }
 `
 
 function toEntityTypes(entity: Pick<EcclesiasticalEntity, 'entity_types'>) {
@@ -236,6 +171,7 @@ export default function StructureHierarchySelector({
       parentLevelKey: selectedNode.level_key,
       parentLevelName: selectedNode.level_name,
       linkedEntityId: selectedNode.linked_ecclesiastical_entity_id,
+      linkedOrganizationUnitId: selectedNode.linked_organization_unit_id,
       pathLabel: pathLabel(selectedNode),
     }
   }, [selectedDioceseId, selectedNode, selectedTemplateId])
@@ -267,7 +203,7 @@ export default function StructureHierarchySelector({
       setLoadingBase(false)
     }
 
-    loadDioceses()
+    void loadDioceses()
   }, [countryIso2, supabase])
 
   useEffect(() => {
@@ -304,7 +240,7 @@ export default function StructureHierarchySelector({
       setLoadingTree(false)
     }
 
-    loadTemplates()
+    void loadTemplates()
   }, [kind, selectedDioceseId, supabase])
 
   useEffect(() => {
@@ -345,7 +281,7 @@ export default function StructureHierarchySelector({
       setLoadingTree(false)
     }
 
-    loadTree()
+    void loadTree()
   }, [defaultParentNodeId, selectedTemplateId, supabase])
 
   useEffect(() => {
@@ -394,12 +330,13 @@ export default function StructureHierarchySelector({
       <input name={`${namePrefix}_parent_level_id`} type="hidden" value={selection?.parentLevelId ?? ''} readOnly />
       <input name={`${namePrefix}_parent_level_key`} type="hidden" value={selection?.parentLevelKey ?? ''} readOnly />
       <input name={`${namePrefix}_linked_entity_id`} type="hidden" value={selection?.linkedEntityId ?? ''} readOnly />
+      <input name={`${namePrefix}_linked_organization_unit_id`} type="hidden" value={selection?.linkedOrganizationUnitId ?? ''} readOnly />
       <input name={`${namePrefix}_parent_path`} type="hidden" value={selection?.pathLabel ?? ''} readOnly />
 
       <div className="structure-selector-path">
         <strong>Ruta seleccionada</strong>
         <span>{selection?.pathLabel ?? (loadingBase || loadingTree ? 'Cargando estructura...' : 'Selecciona una unidad del árbol flexible.')}</span>
-        {selection && !selection.linkedEntityId && <small>Esta unidad no está vinculada a una ficha pública; se guardará como contexto estructural cuando el backend lo soporte.</small>}
+        {selection && !selection.linkedEntityId && !selection.linkedOrganizationUnitId && <small>Esta unidad no está vinculada a una ficha pública; se guardará como contexto estructural.</small>}
         {selectedTemplate && <small>Modelo: {selectedTemplate.name}</small>}
       </div>
     </section>
