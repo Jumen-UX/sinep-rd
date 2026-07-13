@@ -10,20 +10,20 @@ type Diocese = {
   ecclesiastical_province_name: string | null
 }
 
-type PastoralEntity = {
+type OrganizationUnit = {
   id: string
   name: string
   slug: string
-  diocese_id: string | null
-  diocese_name: string | null
-  diocese_slug: string | null
-  level_name: string | null
-  level_order: number | null
+  ecclesiastical_entity_id: string | null
+  ecclesiastical_entity_name: string | null
+  ecclesiastical_entity_slug: string | null
+  organization_chart_name: string | null
+  organization_chart_sort_order: number | null
 }
 
 type DashboardData = {
   dioceses: Diocese[]
-  pastoral_entities: PastoralEntity[]
+  organization_units: OrganizationUnit[]
 }
 
 function normalize(value: string) {
@@ -57,15 +57,15 @@ function chooseComboboxOption(labelText: string, optionText: string) {
   input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'ArrowDown' }))
 
   window.setTimeout(() => {
-    const option = Array.from(document.querySelectorAll<HTMLButtonElement>('.public-combobox-option')).find((item) => normalize(item.textContent ?? '') === optionText)
+    const option = Array.from(document.querySelectorAll<HTMLButtonElement>('.public-combobox-option'))
+      .find((item) => normalize(item.textContent ?? '') === optionText)
     option?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
   }, 70)
 }
 
 function clickMetricByLabel(labelText: string) {
   const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('button.public-metric-card'))
-  const target = buttons.find((button) => normalize(button.textContent ?? '').includes(labelText))
-  target?.click()
+  buttons.find((button) => normalize(button.textContent ?? '').includes(labelText))?.click()
 }
 
 function buildCard(icon: string, title: string, subtitle: string, actionLabel: string, onClick: () => void) {
@@ -116,15 +116,14 @@ function renderPastoralPanel(data: DashboardData) {
   const hasProvince = province && province !== 'Todas las provincias'
   const hasJurisdiction = jurisdiction && jurisdiction !== 'Todas las jurisdicciones'
   const mode = hasJurisdiction ? 'jurisdiction' : hasProvince ? 'province' : 'country'
-  const signature = `${mode}|${country}|${province}|${jurisdiction}|${data.dioceses.length}|${data.pastoral_entities.length}`
+  const signature = `${mode}|${country}|${province}|${jurisdiction}|${data.dioceses.length}|${data.organization_units.length}`
 
   let container = pastoralPanel.querySelector<HTMLElement>('#public-pastoral-scope-panel')
   if (!container) {
     container = document.createElement('section')
     container.id = 'public-pastoral-scope-panel'
     container.className = 'public-content-grid public-province-content-grid'
-    const metrics = pastoralPanel.querySelector('.public-metrics-grid')
-    metrics?.insertAdjacentElement('afterend', container)
+    pastoralPanel.querySelector('.public-metrics-grid')?.insertAdjacentElement('afterend', container)
   }
 
   if (container.dataset.signature === signature) return
@@ -133,19 +132,32 @@ function renderPastoralPanel(data: DashboardData) {
   const territorialDioceses = data.dioceses.filter((item) => !isSpecialJurisdiction(item))
   const selectedJurisdiction = data.dioceses.find((item) => item.name === jurisdiction)
   const selectedJurisdictionSlugs = selectedJurisdiction ? new Set([selectedJurisdiction.slug]) : new Set<string>()
-  const selectedProvinceDioceses = hasProvince ? territorialDioceses.filter((item) => item.ecclesiastical_province_name === province) : []
-  const provinceNames = Array.from(groupCount(territorialDioceses, (item) => item.ecclesiastical_province_name ?? '').entries()).sort((a, b) => a[0].localeCompare(b[0], 'es'))
-  const scopeEntities = selectedJurisdiction
-    ? data.pastoral_entities.filter((item) => !!item.diocese_slug && selectedJurisdictionSlugs.has(item.diocese_slug))
-    : hasProvince
-      ? data.pastoral_entities.filter((item) => selectedProvinceDioceses.some((diocese) => diocese.slug === item.diocese_slug))
-      : data.pastoral_entities
+  const selectedProvinceDioceses = hasProvince
+    ? territorialDioceses.filter((item) => item.ecclesiastical_province_name === province)
+    : []
+  const provinceNames = Array.from(groupCount(
+    territorialDioceses,
+    (item) => item.ecclesiastical_province_name ?? '',
+  ).entries()).sort((a, b) => a[0].localeCompare(b[0], 'es'))
 
-  const levelCounts = Array.from(groupCount(scopeEntities, (item) => item.level_name ?? 'Sin nivel').entries()).sort((a, b) => a[0].localeCompare(b[0], 'es'))
+  const scopeUnits = selectedJurisdiction
+    ? data.organization_units.filter((item) => Boolean(
+      item.ecclesiastical_entity_slug && selectedJurisdictionSlugs.has(item.ecclesiastical_entity_slug),
+    ))
+    : hasProvince
+      ? data.organization_units.filter((item) => selectedProvinceDioceses.some(
+        (diocese) => diocese.slug === item.ecclesiastical_entity_slug,
+      ))
+      : data.organization_units
+
+  const chartCounts = Array.from(groupCount(
+    scopeUnits,
+    (item) => item.organization_chart_name ?? 'Sin organigrama',
+  ).entries()).sort((a, b) => a[0].localeCompare(b[0], 'es'))
 
   const filterArticle = document.createElement('article')
   filterArticle.className = 'public-panel public-section-card'
-  filterArticle.innerHTML = `<div class="public-section-title"><p class="eyebrow">Filtros pastorales</p><h2>${mode === 'country' ? 'Provincias eclesiásticas' : mode === 'province' ? 'Jurisdicciones de la provincia' : 'Niveles configurados'}</h2><p>Usa estas tarjetas para bajar el ámbito pastoral sin depender solo de los selectores superiores.</p></div>`
+  filterArticle.innerHTML = `<div class="public-section-title"><p class="eyebrow">Filtros pastorales</p><h2>${mode === 'country' ? 'Provincias eclesiásticas' : mode === 'province' ? 'Jurisdicciones de la provincia' : 'Organigramas configurados'}</h2><p>Usa estas tarjetas para bajar el ámbito pastoral sin depender solo de los selectores superiores.</p></div>`
   const filterList = document.createElement('div')
   filterList.className = 'public-province-list'
 
@@ -162,15 +174,15 @@ function renderPastoralPanel(data: DashboardData) {
   }
 
   if (mode === 'jurisdiction') {
-    for (const [name, count] of levelCounts.slice(0, 6)) {
-      filterList.append(buildCard('▥', name, `${count} registros publicados`, 'Ver nivel →', () => clickMetricByLabel(name)))
+    for (const [name, count] of chartCounts.slice(0, 6)) {
+      filterList.append(buildCard('▥', name, `${count} unidades publicadas`, 'Ver organigrama →', () => clickMetricByLabel(name)))
     }
   }
 
   if (filterList.children.length === 0) {
     const empty = document.createElement('div')
     empty.className = 'public-empty'
-    empty.innerHTML = '<strong>Sin filtros pastorales publicados</strong><br /><span>Cuando existan niveles o nodos pastorales públicos para este ámbito, aparecerán aquí.</span>'
+    empty.innerHTML = '<strong>Sin organización publicada</strong><br /><span>Cuando existan unidades organizativas públicas para este ámbito, aparecerán aquí.</span>'
     filterList.append(empty)
   }
 
@@ -178,23 +190,23 @@ function renderPastoralPanel(data: DashboardData) {
 
   const summaryArticle = document.createElement('article')
   summaryArticle.className = 'public-panel public-section-card'
-  summaryArticle.innerHTML = `<div class="public-section-title"><p class="eyebrow">Estructura pastoral</p><h2>${scopeEntities.length} nodos publicados</h2><p>${mode === 'country' ? country : mode === 'province' ? province : jurisdiction}</p></div>`
+  summaryArticle.innerHTML = `<div class="public-section-title"><p class="eyebrow">Estructura pastoral</p><h2>${scopeUnits.length} unidades publicadas</h2><p>${mode === 'country' ? country : mode === 'province' ? province : jurisdiction}</p></div>`
   const summaryGrid = document.createElement('div')
   summaryGrid.className = 'public-directory-grid'
 
-  for (const [name, count] of levelCounts.slice(0, 6)) {
+  for (const [name, count] of chartCounts.slice(0, 6)) {
     const item = document.createElement('button')
     item.className = 'public-directory-item public-directory-button'
     item.type = 'button'
     item.addEventListener('click', () => clickMetricByLabel(name))
-    item.innerHTML = `<strong>${name}</strong><span>${count} registros · Nivel pastoral</span>`
+    item.innerHTML = `<strong>${name}</strong><span>${count} unidades · Organigrama</span>`
     summaryGrid.append(item)
   }
 
   if (summaryGrid.children.length === 0) {
     const empty = document.createElement('div')
     empty.className = 'public-empty'
-    empty.innerHTML = '<strong>Vista pastoral en preparación</strong><br /><span>Falta publicar la estructura pastoral para este ámbito.</span>'
+    empty.innerHTML = '<strong>Vista pastoral en preparación</strong><br /><span>Falta publicar la organización para este ámbito.</span>'
     summaryGrid.append(empty)
   }
 
@@ -221,7 +233,7 @@ export function PublicPastoralEnhancements() {
       }
     }
 
-    load()
+    void load()
 
     const observer = new MutationObserver(() => {
       if (dataRef.current) renderPastoralPanel(dataRef.current)
