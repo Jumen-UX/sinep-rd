@@ -6,22 +6,32 @@ const migrationUrl = new URL(
   '../supabase/migrations/20260714024000_operationalize_organization_units.sql',
   import.meta.url,
 )
+const hardeningUrl = new URL(
+  '../supabase/migrations/20260714024500_harden_organization_unit_facade.sql',
+  import.meta.url,
+)
 
 async function readMigration() {
   return readFile(migrationUrl, 'utf8')
 }
 
+async function readHardening() {
+  return readFile(hardeningUrl, 'utf8')
+}
+
 test('organization units are written only through the scoped canonical RPC', async () => {
-  const sql = await readMigration()
+  const [sql, hardening] = await Promise.all([readMigration(), readHardening()])
 
   assert.match(sql, /function internal\.admin_save_organization_unit\(payload jsonb\)/i)
   assert.match(sql, /function app_private\.rpc_definer__admin_save_organization_unit\(payload jsonb\)/i)
   assert.match(sql, /function public\.admin_save_organization_unit\(payload jsonb\)/i)
-  assert.match(sql, /security definer/i)
   assert.match(sql, /current_user_can_manage_entity\(v_permission,v_entity_id\)/i)
-  assert.match(sql, /revoke all on function app_private\.rpc_definer__admin_save_organization_unit\(jsonb\) from public,anon,authenticated/i)
-  assert.match(sql, /grant execute on function public\.admin_save_organization_unit\(jsonb\) to authenticated,service_role/i)
   assert.match(sql, /revoke insert,update,delete,truncate,references,trigger on public\.organization_units from anon,authenticated/i)
+
+  assert.match(hardening, /alter function public\.admin_save_organization_unit\(jsonb\) security definer/i)
+  assert.match(hardening, /revoke all on function app_private\.rpc_definer__admin_save_organization_unit\(jsonb\) from public,anon,authenticated/i)
+  assert.match(hardening, /grant execute on function app_private\.rpc_definer__admin_save_organization_unit\(jsonb\) to service_role/i)
+  assert.match(hardening, /grant execute on function public\.admin_save_organization_unit\(jsonb\) to authenticated,service_role/i)
 })
 
 test('organization unit hierarchy validates scope and prevents cycles', async () => {
