@@ -7,6 +7,7 @@ import CompletionIndicator from '@/components/admin/CompletionIndicator'
 import EntitySectionCard from '@/components/admin/EntitySectionCard'
 import SmartContextPanel from '@/components/admin/SmartContextPanel'
 import { createClient } from '@/lib/supabase/client'
+import PersonAssignmentHistory from './PersonAssignmentHistory'
 import PersonCanonicalTimeline from './PersonCanonicalTimeline'
 import { getAdminPersonDetail, type AdminPersonDetail } from '../services/person-admin-service'
 
@@ -138,7 +139,7 @@ export default function PersonDetailPage() {
         <div className="admin-entity-header-actions">{person.can_update_proposal && <Link className="button button-primary" href={editHref}>Editar ficha</Link>}<Link className="button button-secondary" href={assignmentHref}>Nuevo nombramiento</Link></div>
       </section>
 
-      <nav className="admin-entity-tabs" aria-label="Secciones de la ficha"><a href="#resumen">Resumen</a><a href="#personales">Datos personales</a><a href="#orden">Orden sagrado</a><a href="#clericales">Situación canónica</a><a href="#servicio">Servicio</a><a href="#historial">Línea de tiempo</a><a href="#acciones">Acciones</a></nav>
+      <nav className="admin-entity-tabs" aria-label="Secciones de la ficha"><a href="#resumen">Resumen</a><a href="#personales">Datos personales</a><a href="#orden">Orden sagrado</a><a href="#clericales">Situación canónica</a><a href="#servicio">Servicio</a><a href="#nombramientos">Nombramientos</a><a href="#historial">Línea de tiempo</a><a href="#acciones">Acciones</a></nav>
 
       <div className="admin-entity-layout">
         <div className="admin-entity-main">
@@ -195,6 +196,7 @@ export default function PersonDetailPage() {
             </EntitySectionCard>
           </div>
 
+          <PersonAssignmentHistory personId={person.person_id} />
           <PersonCanonicalTimeline person={person} />
 
           <section className="card admin-entity-quick-actions" id="acciones">
