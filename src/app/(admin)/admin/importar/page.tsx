@@ -73,6 +73,13 @@ const importOptions: ImportOption[] = [
   },
 ]
 
+const requiredColumnsByImportType: Record<ImportType, string[]> = {
+  personas: ['tipo_persona', 'primer_nombre', 'primer_apellido'],
+  parroquias: ['pais_iso2', 'diocesis', 'nivel_padre', 'tipo_entidad', 'nombre'],
+  asignaciones: ['persona', 'cargo', 'entidad', 'fecha_inicio'],
+  eventos: ['tipo_evento', 'fecha_efectiva', 'entidad', 'descripcion'],
+}
+
 function formatBytes(value: number) {
   if (value < 1024) return `${value} B`
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
@@ -148,7 +155,7 @@ export default function AdminBatchImportPage() {
     try {
       const [source, fileBytes] = await Promise.all([file.text(), file.arrayBuffer()])
       const [result, fileSha256] = await Promise.all([
-        Promise.resolve(parseCsvPreview(source, selectedOption.columns)),
+        Promise.resolve(parseCsvPreview(source, requiredColumnsByImportType[importType])),
         sha256Hex(fileBytes),
       ])
 
