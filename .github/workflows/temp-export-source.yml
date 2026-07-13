@@ -1,7 +1,9 @@
 name: Verify organization unit cutover
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -9,6 +11,7 @@ permissions:
 
 jobs:
   verify:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,37 +30,40 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Apply and verify cutover
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify cutover
         id: check
         continue-on-error: true
         run: |
           set -o pipefail
-          {
-            python scripts/temp-remove-legacy-pastoral.py
-            pnpm install --frozen-lockfile
-            pnpm check
-          } 2>&1 | tee cutover-check.log
+          pnpm check 2>&1 | tee final-check.log
 
       - name: Commit failure report
         if: steps.check.outcome == 'failure'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add cutover-check.log
-          git commit -m 'chore: organization unit cutover failure log [skip ci]'
+          git add final-check.log
+          git commit -m 'chore: organization unit final check log [skip ci]'
           git push
           exit 1
 
-      - name: Commit verified cutover
+      - name: Commit verified cleanup
         if: steps.check.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          rm -f cutover-check.log
+          rm -f final-check.log cutover-check.log
           rm -f repo-source-export.zip repo-source-snapshot.zip
           rm -f legacy-pastoral-report.txt legacy-source-bundle.txt migration-index.txt
+          rm -f tmp-cutover-trigger.txt tmp-placeholder.txt
           rm -f scripts/temp-remove-legacy-pastoral.py
+          rm -f scripts/temp-align-security-contracts.py
+          rm -f scripts/temp-complete-org-unit-migration.py
           rm -f .github/workflows/temp-export-source.yml
+          rm -f .github/workflows/temp-source-snapshot.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
