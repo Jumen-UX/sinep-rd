@@ -110,18 +110,22 @@ export default function AssignmentManagerPage() {
   const [selectedPersonId, setSelectedPersonId] = useState('')
   const [selectedConfigId, setSelectedConfigId] = useState('')
   const [selectedChartId, setSelectedChartId] = useState('')
+  const [selectedUnitId, setSelectedUnitId] = useState('')
   const [selectedEntityId, setSelectedEntityId] = useState('')
   const [selectedStartDate, setSelectedStartDate] = useState('')
   const [assignmentStatus, setAssignmentStatus] = useState('active')
 
   const selectedConfig = catalogs.configs.find((item) => item.id === selectedConfigId)
   const selectedPerson = catalogs.people.find((item) => item.id === selectedPersonId)
-  const filteredConfigs = selectedEntityId && levelOfficeConfigIds.length > 0
-    ? catalogs.configs.filter((config) => levelOfficeConfigIds.includes(config.id))
-    : catalogs.configs
-  const filteredUnits = selectedChartId
-    ? catalogs.units.filter((unit) => unit.organization_chart_id === selectedChartId)
-    : catalogs.units
+  const filteredConfigs = selectedChartId
+    ? catalogs.configs.filter((config) => config.organization_chart_id === selectedChartId)
+    : selectedEntityId && levelOfficeConfigIds.length > 0
+      ? catalogs.configs.filter((config) => levelOfficeConfigIds.includes(config.id))
+      : catalogs.configs
+  const filteredUnits = catalogs.units.filter((unit) => (
+    (!selectedChartId || unit.organization_chart_id === selectedChartId)
+    && (!selectedEntityId || unit.ecclesiastical_entity_id === selectedEntityId)
+  ))
   const defaultTermEnd = selectedConfig?.default_term_months && selectedStartDate
     ? addMonths(selectedStartDate, selectedConfig.default_term_months)
     : ''
@@ -193,7 +197,7 @@ export default function AssignmentManagerPage() {
         setLevelOfficeConfigIds(ids)
         setLevelFilterMessage(ids.length > 0
           ? 'Cargos filtrados por el nivel estructural seleccionado.'
-          : 'Este nivel no tiene cargos configurados todavía. Se muestran todos los cargos.')
+          : 'Este nivel no tiene cargos configurados todavía. Selecciona un organigrama para aplicar sus cargos compatibles.')
       } catch (loadError) {
         if (!cancelled) setLevelFilterMessage(loadError instanceof Error ? loadError.message : 'No se pudieron cargar los cargos permitidos.')
       }
@@ -208,6 +212,12 @@ export default function AssignmentManagerPage() {
       setSelectedConfigId('')
     }
   }, [filteredConfigs, selectedConfigId])
+
+  useEffect(() => {
+    if (selectedUnitId && !filteredUnits.some((unit) => unit.id === selectedUnitId)) {
+      setSelectedUnitId('')
+    }
+  }, [filteredUnits, selectedUnitId])
 
   useEffect(() => {
     let cancelled = false
@@ -266,8 +276,8 @@ export default function AssignmentManagerPage() {
     const payload = {
       person_id: requiresPerson ? selectedPersonId : null,
       office_configuration_id: selectedConfigId,
-      organization_chart_id: emptyToNull(form.get('organization_chart_id')),
-      organization_unit_id: emptyToNull(form.get('organization_unit_id')),
+      organization_chart_id: selectedChartId || null,
+      organization_unit_id: selectedUnitId || null,
       ecclesiastical_entity_id: selectedEntityId || null,
       title_override: emptyToNull(form.get('title_override')),
       start_date: emptyToNull(form.get('start_date')),
@@ -303,6 +313,7 @@ export default function AssignmentManagerPage() {
       setSelectedPersonId('')
       setSelectedConfigId('')
       setSelectedChartId('')
+      setSelectedUnitId('')
       setSelectedEntityId('')
       setSelectedStartDate('')
       setAssignmentStatus('active')
@@ -356,11 +367,19 @@ export default function AssignmentManagerPage() {
         <div className="section-heading"><div><p className="eyebrow">Nueva asignación</p><h2>Persona, cargo, ámbito y período</h2></div></div>
 
         <form className="admin-form admin-config-form" onSubmit={handleSubmit}>
-          <select value={selectedConfigId} onChange={(event) => setSelectedConfigId(event.target.value)}>
+          <select
+            value={selectedConfigId}
+            onChange={(event) => {
+              const configId = event.target.value
+              setSelectedConfigId(configId)
+              const chartId = catalogs.configs.find((config) => config.id === configId)?.organization_chart_id
+              if (chartId) setSelectedChartId(chartId)
+            }}
+          >
             <option value="">Cargo configurado</option>
             {filteredConfigs.map((config) => <option key={config.id} value={config.id}>{config.display_name}</option>)}
           </select>
-          <p className="meta">{levelFilterMessage}</p>
+          <p className="meta">{selectedChartId ? 'Cargos filtrados por el organigrama seleccionado.' : levelFilterMessage}</p>
 
           {selectedConfig && (
             <div className="empty-state">
@@ -392,23 +411,38 @@ export default function AssignmentManagerPage() {
 
           <input name="title_override" placeholder="Título visible opcional" />
 
-          <select name="organization_chart_id" value={selectedChartId} onChange={(event) => setSelectedChartId(event.target.value)}>
+          <select
+            name="organization_chart_id"
+            value={selectedChartId}
+            onChange={(event) => {
+              setSelectedChartId(event.target.value)
+              setSelectedUnitId('')
+            }}
+          >
             <option value="">Organigrama</option>
             {catalogs.charts.map((chart) => <option key={chart.id} value={chart.id}>{chart.name}</option>)}
           </select>
 
-          <select name="organization_unit_id" defaultValue="">
+          <select
+            name="organization_unit_id"
+            value={selectedUnitId}
+            onChange={(event) => setSelectedUnitId(event.target.value)}
+          >
             <option value="">Unidad organizativa</option>
             {filteredUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
           </select>
+          <p className="meta">Las unidades se limitan al organigrama y a la entidad eclesiástica seleccionados.</p>
 
           <StructureEntityPicker
             emptyLabel={selectedEntityId ? 'Entidad seleccionada' : 'Sin entidad eclesiástica seleccionada'}
-            help="Selecciona la entidad del nombramiento. También se utiliza para validar la función episcopal y la cardinalidad del cargo."
+            help="Selecciona la entidad del nombramiento. También se utiliza para validar la función episcopal, la cardinalidad y las unidades disponibles."
             label="Entidad eclesiástica"
             name="ecclesiastical_entity_id"
             value={selectedEntityId}
-            onChange={setSelectedEntityId}
+            onChange={(entityId) => {
+              setSelectedEntityId(entityId)
+              setSelectedUnitId('')
+            }}
           />
 
           <label>Fecha de inicio<input name="start_date" type="date" value={selectedStartDate} onChange={(event) => setSelectedStartDate(event.target.value)} /></label>
