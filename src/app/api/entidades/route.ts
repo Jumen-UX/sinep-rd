@@ -6,36 +6,35 @@ const entityColumns = [
   'current_ordinary_name','current_ordinary_title','territory_summary','area_km2','statistics_year',
   'population_total','catholics_total','catholics_percent','parishes_count','source_name','source_url',
   'source_checked_at','country','province','municipality','sector','address','email','phone','website',
-  'facebook_url','instagram_url','youtube_url','status','visibility','erected_at','created_at','updated_at'
+  'facebook_url','instagram_url','youtube_url','status','visibility','erected_at','created_at','updated_at',
 ].join(',')
 
 const relationshipColumns = [
-  'id','parent_entity_id','child_entity_id','relationship_type','start_date','end_date','is_current','status','notes','created_at'
+  'id','parent_entity_id','child_entity_id','relationship_type','start_date','end_date','is_current','status','notes','created_at',
 ].join(',')
 
 const appointmentColumns = [
-  'id','person_id','office_id','entity_id','start_date','end_date','is_current','appointment_type','notes_public','status','visibility'
+  'id','person_id','office_id','entity_id','start_date','end_date','is_current','appointment_type','notes_public','status','visibility',
 ].join(',')
 
 const evolutionColumns = [
   'id','event_type','event_date','title','description','from_entity_display_name','from_entity_slug','from_entity_name',
   'to_entity_display_name','to_entity_slug','to_entity_name','related_entity_display_name','related_entity_slug','related_entity_name',
-  'territory_summary','canonical_effect','source_name','source_checked_at','verification_status'
+  'territory_summary','canonical_effect','source_name','source_checked_at','verification_status',
 ].join(',')
 
 const statisticsColumns = [
   'id','statistics_year','catholics_total','population_total','catholics_percent','diocesan_priests_count',
   'religious_priests_count','total_priests_count','catholics_per_priest','permanent_deacons_count',
-  'male_religious_count','female_religious_count','parishes_count','source_code','source_name','verification_status'
+  'male_religious_count','female_religious_count','parishes_count','source_code','source_name','verification_status',
 ].join(',')
 
 const positionColumns = [
   'id','person_id','person_name','person_slug','position_title','office_configuration_key','base_role_name','scope_name','category_name',
-  'organization_chart_name','organization_chart_key','organization_unit_name','direct_entity_name','direct_entity_slug','direct_entity_type_name',
+  'organization_chart_name','organization_chart_key','organization_unit_name','organization_unit_slug','direct_entity_name','direct_entity_slug','direct_entity_type_name',
   'parish_name','parish_slug','zone_name','zone_slug','vicariate_name','vicariate_slug','diocese_name','diocese_slug','hierarchy_path',
-  'pastoral_entity_name','pastoral_entity_slug','predecessor_person_name','predecessor_person_slug','successor_person_name',
-  'successor_person_slug','start_date','term_start_date','term_end_date','actual_end_date','is_current','assignment_status',
-  'selection_method','notes_public'
+  'predecessor_person_name','predecessor_person_slug','successor_person_name','successor_person_slug','start_date','term_start_date',
+  'term_end_date','actual_end_date','is_current','assignment_status','selection_method','notes_public',
 ].join(',')
 
 function byId(items: Record<string, unknown>[]) {
@@ -103,15 +102,15 @@ export async function GET(request: NextRequest) {
         or: positionFilter.replace(/^or=/, ''),
         select: positionColumns,
         order: 'start_date.desc.nullslast',
-      }).catch(() => [])
+      }).catch(() => []),
     ])
 
     const relatedIds = Array.from(
       new Set(
         relationships
           .flatMap((item) => [item.parent_entity_id, item.child_entity_id])
-          .filter((id) => typeof id === 'string' && id !== entityId)
-      )
+          .filter((id) => typeof id === 'string' && id !== entityId),
+      ),
     )
 
     let relatedEntities: Record<string, unknown>[] = []
@@ -144,7 +143,7 @@ export async function GET(request: NextRequest) {
             person_id: `in.(${personIds.join(',')})`,
             select: 'person_id,diaconal_ordination_date,priestly_ordination_date,episcopal_ordination_date,canonical_status',
           }).catch(() => [])
-        : Promise.resolve([])
+        : Promise.resolve([]),
     ])
 
     const peopleById = byId(people)
@@ -193,7 +192,7 @@ export async function GET(request: NextRequest) {
       {
         error: 'No se pudo cargar la ficha de la entidad',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
