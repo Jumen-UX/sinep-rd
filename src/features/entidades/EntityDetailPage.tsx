@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import EntityDynamicOrganizationChart, {
+  type EntityOrganizationPosition,
+} from './EntityDynamicOrganizationChart'
 import EntityInstitutionalTimeline, {
   type EntityAuthorityAppointment,
   type EntityEvolutionEvent,
@@ -82,17 +85,7 @@ type StatisticsSnapshot = {
   source_code: string | null
 }
 
-type Position = {
-  id: string
-  person_name: string | null
-  person_slug: string | null
-  position_title: string | null
-  organization_chart_name: string | null
-  organization_chart_key: string | null
-  organization_unit_name: string | null
-  direct_entity_name: string | null
-  direct_entity_slug: string | null
-  direct_entity_type_name: string | null
+type Position = EntityOrganizationPosition & {
   parish_name: string | null
   parish_slug: string | null
   zone_name: string | null
@@ -101,7 +94,6 @@ type Position = {
   vicariate_slug: string | null
   diocese_name: string | null
   diocese_slug: string | null
-  hierarchy_path: string | null
   pastoral_entity_name: string | null
   pastoral_entity_slug: string | null
   predecessor_person_name: string | null
@@ -112,8 +104,6 @@ type Position = {
   term_start_date: string | null
   term_end_date: string | null
   actual_end_date: string | null
-  is_current: boolean
-  assignment_status: string | null
 }
 
 type EntityResponse = {
@@ -360,24 +350,7 @@ export function EntityDetailPageView() {
         </section>
       )}
 
-      {positions.length > 0 && (
-        <section className="card dashboard-section">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Organigrama</p>
-              <h2>Posiciones y ocupantes</h2>
-            </div>
-          </div>
-          <div className="public-directory-list">
-            {positions.map((item) => (
-              <div className="public-directory-item" key={item.id}>
-                <div><strong>{item.position_title ?? 'Posición'}</strong><span>{item.organization_unit_name ?? '—'}</span></div>
-                <small>{item.person_name ?? 'Vacante'}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <EntityDynamicOrganizationChart positions={positions} />
     </main>
   )
 }
