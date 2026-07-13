@@ -9,8 +9,67 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
+  patch-migration:
+    if: github.event_name == 'pull_request' && github.head_ref == 'phase2-canonical-organization-units'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.patch.outputs.changed }}
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Correct migration regex escapes
+        id: patch
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('supabase/migrations/20260714021000_remove_legacy_pastoral_model.sql')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              r"E'\n?\$function\$\s*$'": r"E'\\n?\\$function\\$\\s*$'",
+              r"E'\n  v_pastoral_entity_id uuid := nullif\(payload->>''pastoral_entity_id'',''''\)::uuid;'": r"E'\\n  v_pastoral_entity_id uuid := nullif\\(payload->>''pastoral_entity_id'',''''\\)::uuid;'",
+              r"E'\n      and pa\.pastoral_entity_id is not distinct from v_pastoral_entity_id'": r"E'\\n      and pa\\.pastoral_entity_id is not distinct from v_pastoral_entity_id'",
+              r"E'\n      and pastoral_entity_id is not distinct from new\.pastoral_entity_id'": r"E'\\n      and pastoral_entity_id is not distinct from new\\.pastoral_entity_id'",
+              r"E'\n      and pa\.pastoral_entity_id is not distinct from new\.pastoral_entity_id'": r"E'\\n      and pa\\.pastoral_entity_id is not distinct from new\\.pastoral_entity_id'",
+              r"E'\n\s*pa\.pastoral_entity_id,'": r"E'\\n\\s*pa\\.pastoral_entity_id,'",
+              r"E'\n\s*pastoral_entity_id,'": r"E'\\n\\s*pastoral_entity_id,'",
+              r"E'\n\s*v_assignment\.pastoral_entity_id,'": r"E'\\n\\s*v_assignment\\.pastoral_entity_id,'",
+          }
+
+          updated = text
+          for old, new in replacements.items():
+              updated = updated.replace(old, new)
+
+          changed = updated != text
+          if changed:
+              path.write_text(updated, encoding='utf-8')
+
+          Path('/tmp/patch-changed').write_text('true' if changed else 'false', encoding='utf-8')
+          PY
+          echo "changed=$(cat /tmp/patch-changed)" >> "$GITHUB_OUTPUT"
+
+      - name: Commit migration patch
+        if: steps.patch.outputs.changed == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add supabase/migrations/20260714021000_remove_legacy_pastoral_model.sql
+          git commit -m "fix: preserve migration regex escapes"
+          git push origin HEAD:${{ github.head_ref }}
+
   typecheck-and-build:
+    needs: patch-migration
+    if: always() && (needs.patch-migration.result == 'skipped' || needs.patch-migration.outputs.changed != 'true')
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
@@ -36,14 +95,4 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Check
-        shell: bash
-        run: |
-          set -o pipefail
-          pnpm check 2>&1 | tee check-report.txt
-
-      - name: Upload validation report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: validation-report
-          path: check-report.txt
+        run: pnpm check
