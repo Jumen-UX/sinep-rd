@@ -53,7 +53,6 @@ const emptyCatalogs: AssignmentCatalogs = {
   configs: [],
   charts: [],
   units: [],
-  pastoralEntities: [],
   assignments: [],
   rawAssignments: [],
 }
@@ -163,16 +162,19 @@ export default function AssignmentManagerPage() {
   }
 
   useEffect(() => {
-    loadData()
+    void loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const requestedEntity = params.get('entity') ?? params.get('entity_id')
+    const requestedPerson = params.get('person') ?? params.get('person_id')
     if (requestedEntity) {
       setSelectedEntityId(requestedEntity)
       setLevelFilterMessage('Entidad cargada desde una alerta. Verifica el cargo y completa el nombramiento.')
     }
+    if (requestedPerson) setSelectedPersonId(requestedPerson)
   }, [])
 
   useEffect(() => {
@@ -197,7 +199,7 @@ export default function AssignmentManagerPage() {
       }
     }
 
-    loadLevelRules()
+    void loadLevelRules()
     return () => { cancelled = true }
   }, [selectedEntityId, supabase])
 
@@ -236,7 +238,7 @@ export default function AssignmentManagerPage() {
       }
     }
 
-    validateSelection()
+    void validateSelection()
     return () => { cancelled = true }
   }, [requiresPerson, selectedPersonId, selectedConfigId, selectedEntityId, supabase])
 
@@ -267,7 +269,6 @@ export default function AssignmentManagerPage() {
       organization_chart_id: emptyToNull(form.get('organization_chart_id')),
       organization_unit_id: emptyToNull(form.get('organization_unit_id')),
       ecclesiastical_entity_id: selectedEntityId || null,
-      pastoral_entity_id: emptyToNull(form.get('pastoral_entity_id')),
       title_override: emptyToNull(form.get('title_override')),
       start_date: emptyToNull(form.get('start_date')),
       term_start_date: emptyToNull(form.get('term_start_date')),
@@ -352,9 +353,7 @@ export default function AssignmentManagerPage() {
       {message && <div className="success-box">{message}</div>}
 
       <section className="card dashboard-section" id="assignment-form">
-        <div className="section-heading">
-          <div><p className="eyebrow">Nueva asignación</p><h2>Persona, cargo, ámbito y período</h2></div>
-        </div>
+        <div className="section-heading"><div><p className="eyebrow">Nueva asignación</p><h2>Persona, cargo, ámbito y período</h2></div></div>
 
         <form className="admin-form admin-config-form" onSubmit={handleSubmit}>
           <select value={selectedConfigId} onChange={(event) => setSelectedConfigId(event.target.value)}>
@@ -412,11 +411,6 @@ export default function AssignmentManagerPage() {
             onChange={setSelectedEntityId}
           />
 
-          <select name="pastoral_entity_id" defaultValue="">
-            <option value="">Entidad pastoral</option>
-            {catalogs.pastoralEntities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}
-          </select>
-
           <label>Fecha de inicio<input name="start_date" type="date" value={selectedStartDate} onChange={(event) => setSelectedStartDate(event.target.value)} /></label>
           <label>Inicio del período<input name="term_start_date" type="date" /></label>
           <label>Fin previsto<input name="term_end_date" type="date" defaultValue={defaultTermEnd} /></label>
@@ -466,14 +460,14 @@ export default function AssignmentManagerPage() {
         <div className="section-heading"><div><p className="eyebrow">Listado</p><h2>Asignaciones recientes visibles públicamente</h2></div><span className="meta">{catalogs.assignments.length} registros</span></div>
         <div className="table-wrap">
           <table className="data-table dashboard-list-table">
-            <thead><tr><th>Persona</th><th>Cargo</th><th>Organigrama</th><th>Entidad</th><th>Ruta</th><th>Período</th><th>Estado</th><th>Predecesor</th><th>Sucesor</th></tr></thead>
+            <thead><tr><th>Persona</th><th>Cargo</th><th>Organigrama</th><th>Unidad o entidad</th><th>Ruta</th><th>Período</th><th>Estado</th><th>Predecesor</th><th>Sucesor</th></tr></thead>
             <tbody>
               {catalogs.assignments.map((assignment) => (
                 <tr key={assignment.id}>
                   <td>{assignment.person_slug ? <Link href={`/personas/${assignment.person_slug}`}>{assignment.person_name}</Link> : assignment.person_name ?? 'Vacante'}</td>
                   <td><strong>{assignment.position_title ?? 'Cargo'}</strong></td>
                   <td>{assignment.organization_chart_name ?? '—'}</td>
-                  <td>{assignment.direct_entity_name ?? assignment.pastoral_entity_name ?? '—'}</td>
+                  <td>{assignment.organization_unit_name ?? assignment.direct_entity_name ?? '—'}</td>
                   <td>{assignment.hierarchy_path ?? '—'}</td>
                   <td>{formatDate(assignment.term_start_date ?? assignment.start_date)} – {assignment.actual_end_date ? formatDate(assignment.actual_end_date) : assignment.term_end_date ? formatDate(assignment.term_end_date) : 'actual'}</td>
                   <td>{statusOptions.find(([value]) => value === assignment.assignment_status)?.[1] ?? assignment.assignment_status ?? '—'}</td>
