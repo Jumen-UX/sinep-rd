@@ -3,27 +3,31 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const migrationPaths = [
-  new URL('../supabase/migrations/20260713152219_audit_scope_columns_and_resolver.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713152254_enforce_scoped_audit_contracts.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713152305_revoke_direct_canonical_table_writes.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713152413_normalize_unknown_audit_scope.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713153323_finalize_audit_scope_defaults.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713154230_consolidate_audit_permission_mapping.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713154343_consolidate_canonical_person_auditing.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713154401_consolidate_death_flow_auditing.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713154503_consolidate_entity_mutation_auditing.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713154522_consolidate_assignment_mutation_auditing.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713154637_consolidate_structure_mutation_auditing.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713154857_audit_and_seal_canonical_event_mutations.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713155005_audit_and_seal_structural_event_mutations.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713155958_route_legacy_person_wizards_through_canonical_contract.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713160159_enrich_legacy_audit_scope_automatically.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713160317_seal_legacy_jurisdiction_and_office_mutations.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713160539_seal_user_private_rpcs.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713160552_seal_import_mutation_private_rpcs.sql', import.meta.url),
-  new URL('../supabase/migrations/20260713160611_seal_review_queue_private_rpc.sql', import.meta.url),
-  new URL('../supabase/migrations/20260714022000_reassert_organization_unit_security_contracts.sql', import.meta.url),
-]
+  '20260713152219_audit_scope_columns_and_resolver.sql',
+  '20260713152254_enforce_scoped_audit_contracts.sql',
+  '20260713152305_revoke_direct_canonical_table_writes.sql',
+  '20260713152413_normalize_unknown_audit_scope.sql',
+  '20260713153323_finalize_audit_scope_defaults.sql',
+  '20260713154230_consolidate_audit_permission_mapping.sql',
+  '20260713154343_consolidate_canonical_person_auditing.sql',
+  '20260713154401_consolidate_death_flow_auditing.sql',
+  '20260713154503_consolidate_entity_mutation_auditing.sql',
+  '20260713154522_consolidate_assignment_mutation_auditing.sql',
+  '20260713154637_consolidate_structure_mutation_auditing.sql',
+  '20260713154857_audit_and_seal_canonical_event_mutations.sql',
+  '20260713155005_audit_and_seal_structural_event_mutations.sql',
+  '20260713155958_route_legacy_person_wizards_through_canonical_contract.sql',
+  '20260713160159_enrich_legacy_audit_scope_automatically.sql',
+  '20260713160317_seal_legacy_jurisdiction_and_office_mutations.sql',
+  '20260713160539_seal_user_private_rpcs.sql',
+  '20260713160552_seal_import_mutation_private_rpcs.sql',
+  '20260713160611_seal_review_queue_private_rpc.sql',
+  '20260714022000_reassert_organization_unit_security_contracts.sql',
+].map((name) => new URL(`../supabase/migrations/${name}`, import.meta.url))
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
 async function readSecurityMigrations() {
   const contents = await Promise.all(migrationPaths.map((path) => readFile(path, 'utf8')))
@@ -32,7 +36,6 @@ async function readSecurityMigrations() {
 
 test('audit records persist jurisdiction and organizational scope', async () => {
   const sql = await readSecurityMigrations()
-
   assert.match(sql, /add column if not exists scope_type text/)
   assert.match(sql, /add column if not exists scope_entity_id uuid/)
   assert.match(sql, /add column if not exists diocese_id uuid/)
@@ -43,7 +46,6 @@ test('audit records persist jurisdiction and organizational scope', async () => 
 
 test('audit writer requires permission and validates entity scope', async () => {
   const sql = await readSecurityMigrations()
-
   assert.match(sql, /audit_permission_for_action/)
   assert.match(sql, /current_user_has_permission\(v_permission_key\)/)
   assert.match(sql, /current_user_can_manage_entity\(v_permission_key, v_scope\.resolved_scope_entity_id\)/)
@@ -53,7 +55,6 @@ test('audit writer requires permission and validates entity scope', async () => 
 
 test('audit reader filters records by the current user jurisdiction', async () => {
   const sql = await readSecurityMigrations()
-
   assert.match(sql, /current_user_can_manage_entity\('audit\.view',\s*al\.scope_entity_id\)/)
   assert.match(sql, /current_user_has_scope_access\(\s*'organization_unit'/)
   assert.match(sql, /current_user_has_scope_access\(\s*'pastoral_area'/)
@@ -61,7 +62,6 @@ test('audit reader filters records by the current user jurisdiction', async () =
 
 test('audit writes receive permission and scope automatically', async () => {
   const sql = await readSecurityMigrations()
-
   assert.match(sql, /enrich_audit_log_before_write/)
   assert.match(sql, /trg_audit_logs_enrich_scope/)
   assert.match(sql, /new\.permission_key := coalesce/)
@@ -70,15 +70,15 @@ test('audit writes receive permission and scope automatically', async () => {
 
 test('critical canonical tables cannot be written directly by authenticated clients', async () => {
   const sql = await readSecurityMigrations()
-
   assert.match(sql, /revoke insert, update, delete, truncate, references, trigger/)
+
   for (const table of [
     'public.canonical_events',
     'public.clergy_profiles',
     'public.ecclesiastical_entities',
     'public.position_assignments',
   ]) {
-    assert.match(sql, new RegExp(table.replace('.', '\\.\.'), 'i'))
+    assert.match(sql, new RegExp(escapeRegex(table), 'i'))
   }
 
   assert.match(sql, /drop policy if exists canonical_events_admin_insert/)
@@ -99,7 +99,7 @@ test('core person entity assignment and structure mutations write scoped audits'
     'structures.level.saved',
     'structures.node.saved',
   ]) {
-    assert.match(sql, new RegExp(action.replaceAll('.', '\\.')))
+    assert.match(sql, new RegExp(escapeRegex(action), 'i'))
   }
 
   for (const internalFunction of [
@@ -111,13 +111,12 @@ test('core person entity assignment and structure mutations write scoped audits'
     'internal.admin_save_structure_level',
     'internal.admin_save_structure_node',
   ]) {
-    assert.match(sql, new RegExp(`revoke all on function ${internalFunction.replaceAll('.', '\\.')}`))
+    assert.match(sql, new RegExp(`revoke all on function ${escapeRegex(internalFunction)}`, 'i'))
   }
 })
 
 test('canonical and structural event mutations require scope and audit every write path', async () => {
   const sql = await readSecurityMigrations()
-
   assert.match(sql, /canonical_event_scope_entity_id/)
   assert.match(sql, /structure_event_diocese_id/)
   assert.match(sql, /current_user_can_manage_entity\('events\.create_proposal'/)
@@ -137,7 +136,7 @@ test('canonical and structural event mutations require scope and audit every wri
     'structures.event.action.updated',
     'structures.event.action.configured',
   ]) {
-    assert.match(sql, new RegExp(action.replaceAll('.', '\\.')))
+    assert.match(sql, new RegExp(escapeRegex(action), 'i'))
   }
 
   for (const internalFunction of [
@@ -152,7 +151,7 @@ test('canonical and structural event mutations require scope and audit every wri
     'internal.admin_update_structural_event_action',
     'internal.admin_configure_structural_event_action',
   ]) {
-    assert.match(sql, new RegExp(`revoke all on function ${internalFunction.replaceAll('.', '\\.')}`))
+    assert.match(sql, new RegExp(`revoke all on function ${escapeRegex(internalFunction)}`, 'i'))
   }
 })
 
@@ -176,7 +175,6 @@ test('legacy person wizards route through the canonical public contract', async 
 
 test('jurisdiction office and assignment review mutations are sealed behind scoped public contracts', async () => {
   const sql = await readSecurityMigrations()
-
   assert.match(sql, /function public\.admin_save_jurisdiction/)
   assert.match(sql, /entities\.jurisdiction\.created/)
   assert.match(sql, /Solo la administración nacional puede crear cargos canónicos globales/)
@@ -191,7 +189,7 @@ test('jurisdiction office and assignment review mutations are sealed behind scop
     'internal.editor_suggest_office_configuration',
     'internal.resolve_assignment_canonical_incompatibility',
   ]) {
-    assert.match(sql, new RegExp(`revoke all on function ${internalFunction.replaceAll('.', '\\.')}`))
+    assert.match(sql, new RegExp(`revoke all on function ${escapeRegex(internalFunction)}`, 'i'))
   }
 })
 
@@ -208,7 +206,7 @@ test('user import and review private RPCs are only reachable through public secu
     'app_private.validate_import_batch',
     'app_private.admin_review_queue',
   ]) {
-    assert.match(sql, new RegExp(`revoke all on function ${privateFunction.replaceAll('.', '\\.')}`))
+    assert.match(sql, new RegExp(`revoke all on function ${escapeRegex(privateFunction)}`, 'i'))
   }
 
   assert.match(sql, /function public\.admin_assign_user_role/)
