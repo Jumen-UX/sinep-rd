@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type SupabaseClient = ReturnType<typeof createClient>
-type ActionStatus = 'planned' | 'ready' | 'skipped' | 'failed'
+type ActionStatus = 'planned' | 'ready' | 'applied' | 'skipped' | 'failed'
 
 type PlanEvent = {
   id: string
@@ -18,6 +18,7 @@ type PlanEvent = {
   effective_date: string | null
   event_type_key: string
   event_type_name: string
+  applies_to: string
 }
 
 type PlanAction = {
@@ -33,6 +34,10 @@ type PlanAction = {
   subject_entity_name: string | null
   target_entity_id: string | null
   target_entity_name: string | null
+  subject_organization_unit_id: string | null
+  subject_organization_unit_name: string | null
+  target_organization_unit_id: string | null
+  target_organization_unit_name: string | null
   relationship_type_id: string | null
   relationship_type_name: string | null
   payload: Record<string, unknown>
@@ -43,13 +48,14 @@ type PlanSummary = {
   action_count: number
   ready_count: number
   planned_count: number
+  applied_count: number
   skipped_count: number
   failed_count: number
   state_changing_count: number
   manual_review_count: number
   can_generate_plan: boolean
   can_apply_now: boolean
-  apply_lock_reason: string
+  apply_lock_reason: string | null
 }
 
 type ApplicationPlan = {
@@ -102,6 +108,14 @@ type ConflictPreview = {
   actions: RelationshipConflictAction[]
 }
 
+const emptyConflictPreview: ConflictPreview = {
+  action_count: 0,
+  conflict_count: 0,
+  error_count: 0,
+  warning_count: 0,
+  actions: [],
+}
+
 const pageStyles = `
   .plan-hero{align-items:stretch;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr)}
   .plan-summary,.plan-card,.action-card,.relationship-editor,.conflict-panel{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:14px}
@@ -138,10 +152,18 @@ function formatDate(value?: string | null) {
 }
 
 function statusClass(status: ActionStatus) {
-  if (status === 'ready') return 'success'
+  if (status === 'ready' || status === 'applied') return 'success'
   if (status === 'failed') return 'danger'
   if (status === 'skipped') return 'warning'
   return ''
+}
+
+function lockReasonLabel(reason?: string | null) {
+  if (!reason) return 'El evento está listo para aplicar desde el contrato.'
+  if (reason === 'entity_application_not_enabled') return 'La aplicación automática jurisdiccional todavía no está habilitada.'
+  if (reason === 'event_not_approved') return 'El evento debe aprobarse antes de aplicar.'
+  if (reason === 'event_actions_not_ready') return 'Todas las acciones deben quedar listas y sin observaciones.'
+  return reason
 }
 
 function conflictClass(conflict: RelationshipConflict) {
@@ -195,15 +217,9 @@ function RelationshipActionEditor({ action, options, saving, onSave }: {
             {(options?.relationship_types ?? []).map((type) => <option key={type.id} value={type.id}>{type.name}{type.is_historical ? ' · histórica' : ''}</option>)}
           </select>
         </label>
-        <label>Vigente desde
-          <input value={validFrom} onChange={(event) => setValidFrom(event.target.value)} type="date" />
-        </label>
-        <label>Vigente hasta
-          <input value={validTo} onChange={(event) => setValidTo(event.target.value)} type="date" />
-        </label>
-        <label className="full-width">Notas de relación
-          <textarea value={relationshipNotes} onChange={(event) => setRelationshipNotes(event.target.value)} placeholder="Motivo, fuente, alcance territorial o relación histórica que debe validarse." />
-        </label>
+        <label>Vigente desde<input value={validFrom} onChange={(event) => setValidFrom(event.target.value)} type="date" /></label>
+        <label>Vigente hasta<input value={validTo} onChange={(event) => setValidTo(event.target.value)} type="date" /></label>
+        <label className="full-width">Notas de relación<textarea value={relationshipNotes} onChange={(event) => setRelationshipNotes(event.target.value)} /></label>
       </div>
       <button className="button button-primary" disabled={saving} onClick={() => onSave({ action_id: action.id, subject_entity_id: subjectEntityId || null, target_entity_id: targetEntityId || null, relationship_type_id: relationshipTypeId || null, valid_from: validFrom || null, valid_to: validTo || null, relationship_notes: relationshipNotes || null, status: subjectEntityId && targetEntityId && relationshipTypeId ? 'ready' : 'planned' })} type="button">Guardar configuración relacional</button>
     </div>
@@ -212,20 +228,8 @@ function RelationshipActionEditor({ action, options, saving, onSave }: {
 
 function ConflictPanel({ conflictAction }: { conflictAction?: RelationshipConflictAction }) {
   if (!conflictAction) return null
-  if (conflictAction.conflicts.length === 0) {
-    return <div className="conflict-panel clear"><strong>Sin conflictos detectados</strong><span className="meta">La relación configurada no presenta duplicados ni superposición conocida.</span></div>
-  }
-
-  return (
-    <div className="conflict-list">
-      {conflictAction.conflicts.map((conflict) => (
-        <div className={`conflict-panel ${conflictClass(conflict)}`} key={`${conflict.code}-${conflict.message}`}>
-          <strong>{conflict.severity === 'error' ? 'Error' : 'Advertencia'} · {conflict.code}</strong>
-          <span className="meta">{conflict.message}</span>
-        </div>
-      ))}
-    </div>
-  )
+  if (conflictAction.conflicts.length === 0) return <div className="conflict-panel clear"><strong>Sin conflictos detectados</strong><span className="meta">La relación configurada no presenta duplicados ni superposición conocida.</span></div>
+  return <div className="conflict-list">{conflictAction.conflicts.map((conflict) => <div className={`conflict-panel ${conflictClass(conflict)}`} key={`${conflict.code}-${conflict.message}`}><strong>{conflict.severity === 'error' ? 'Error' : 'Advertencia'} · {conflict.code}</strong><span className="meta">{conflict.message}</span></div>)}</div>
 }
 
 export default function EventActionPlanPage() {
@@ -233,43 +237,41 @@ export default function EventActionPlanPage() {
   const params = useParams<{ eventId: string }>()
   const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId
   const supabase = useMemo<SupabaseClient>(() => createClient(), [])
-
   const [plan, setPlan] = useState<ApplicationPlan | null>(null)
   const [editorOptions, setEditorOptions] = useState<EditorOptions | null>(null)
-  const [conflictPreview, setConflictPreview] = useState<ConflictPreview | null>(null)
+  const [conflictPreview, setConflictPreview] = useState<ConflictPreview>(emptyConflictPreview)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function loadConflictPreview() {
+  async function loadConflictPreview(currentPlan = plan) {
+    if (currentPlan?.event.applies_to === 'organization_unit') {
+      setConflictPreview(emptyConflictPreview)
+      return
+    }
     const { data, error: conflictError } = await supabase.rpc('get_event_relationship_conflict_preview', { p_event_id: eventId })
     if (conflictError) setError(conflictError.message)
-    setConflictPreview((data ?? null) as ConflictPreview | null)
+    setConflictPreview((data ?? emptyConflictPreview) as ConflictPreview)
   }
 
   async function loadPlan() {
     setError(null)
     setLoading(true)
-
     const { data: userData } = await supabase.auth.getUser()
     if (!userData.user) {
       router.push('/admin/login')
       return
     }
-
-    const [planRes, optionsRes, conflictRes] = await Promise.all([
+    const [planRes, optionsRes] = await Promise.all([
       supabase.rpc('get_event_application_plan', { p_event_id: eventId }),
       supabase.rpc('get_event_action_editor_options'),
-      supabase.rpc('get_event_relationship_conflict_preview', { p_event_id: eventId }),
     ])
-
     if (planRes.error) setError(planRes.error.message)
     if (optionsRes.error) setError(optionsRes.error.message)
-    if (conflictRes.error) setError(conflictRes.error.message)
-
-    setPlan((planRes.data ?? null) as ApplicationPlan | null)
+    const nextPlan = (planRes.data ?? null) as ApplicationPlan | null
+    setPlan(nextPlan)
     setEditorOptions((optionsRes.data ?? null) as EditorOptions | null)
-    setConflictPreview((conflictRes.data ?? null) as ConflictPreview | null)
+    await loadConflictPreview(nextPlan)
     setLoading(false)
   }
 
@@ -282,12 +284,13 @@ export default function EventActionPlanPage() {
       setSaving(false)
       return
     }
-    setPlan(data as ApplicationPlan | null)
-    await loadConflictPreview()
+    const nextPlan = data as ApplicationPlan | null
+    setPlan(nextPlan)
+    await loadConflictPreview(nextPlan)
     setSaving(false)
   }
 
-  async function updateAction(actionId: string, status: ActionStatus) {
+  async function updateAction(actionId: string, status: Exclude<ActionStatus, 'applied'>) {
     setSaving(true)
     setError(null)
     const { data, error: updateError } = await supabase.rpc('admin_update_event_action', { payload: { action_id: actionId, status } })
@@ -296,8 +299,9 @@ export default function EventActionPlanPage() {
       setSaving(false)
       return
     }
-    setPlan(data as ApplicationPlan | null)
-    await loadConflictPreview()
+    const nextPlan = data as ApplicationPlan | null
+    setPlan(nextPlan)
+    await loadConflictPreview(nextPlan)
     setSaving(false)
   }
 
@@ -310,13 +314,14 @@ export default function EventActionPlanPage() {
       setSaving(false)
       return
     }
-    setPlan(data as ApplicationPlan | null)
-    await loadConflictPreview()
+    const nextPlan = data as ApplicationPlan | null
+    setPlan(nextPlan)
+    await loadConflictPreview(nextPlan)
     setSaving(false)
   }
 
   useEffect(() => {
-    if (eventId) loadPlan()
+    if (eventId) void loadPlan()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId])
 
@@ -324,8 +329,9 @@ export default function EventActionPlanPage() {
   if (!plan?.event) return <main className="container"><div className="error-box">No se encontró el evento.</div></main>
 
   const summary = plan.summary
+  const isOrganizational = plan.event.applies_to === 'organization_unit'
   const allReviewed = summary.action_count > 0 && summary.planned_count === 0
-  const conflictFor = (actionId: string) => conflictPreview?.actions.find((action) => action.action_id === actionId)
+  const conflictFor = (actionId: string) => conflictPreview.actions.find((action) => action.action_id === actionId)
 
   return (
     <main className="container dashboard-page event-action-plan-page">
@@ -334,12 +340,12 @@ export default function EventActionPlanPage() {
 
       <section className="dashboard-hero card plan-hero">
         <div>
-          <p className="eyebrow">Fase 1 · plan de aplicación</p>
+          <p className="eyebrow">Plan de aplicación</p>
           <h1>{plan.event.title}</h1>
-          <p className="lead">Esta pantalla traduce el evento en acciones aplicables, permite configurar relaciones y avisa conflictos sin modificar todavía el estado vigente.</p>
+          <p className="lead">Traduce el evento en acciones revisables antes de modificar el estado vigente.</p>
           <div className="button-row">
-            <button className="button button-primary" disabled={!summary.can_generate_plan || saving} onClick={generatePlan} type="button">{saving ? 'Procesando...' : 'Generar / regenerar plan'}</button>
-            <button className="button button-secondary" disabled={saving} onClick={loadConflictPreview} type="button">Revisar conflictos</button>
+            <button className="button button-primary" disabled={!summary.can_generate_plan || saving || plan.event.status === 'applied'} onClick={generatePlan} type="button">{saving ? 'Procesando...' : 'Generar / regenerar plan'}</button>
+            {!isOrganizational && <button className="button button-secondary" disabled={saving} onClick={() => loadConflictPreview()} type="button">Revisar conflictos</button>}
             <Link className="button button-secondary" href={`/admin/eventos/${eventId}`}>Revisar evento</Link>
             <Link className="button button-secondary" href={`/admin/eventos/${eventId}/contrato`}>Contrato de aplicación</Link>
           </div>
@@ -355,9 +361,9 @@ export default function EventActionPlanPage() {
 
       <section className="metric-grid">
         <div className="plan-card"><strong>{summary.action_count}</strong><span className="meta">acciones generadas</span></div>
-        <div className="plan-card"><strong>{summary.state_changing_count}</strong><span className="meta">cambiarían estado</span></div>
-        <div className="plan-card"><strong>{conflictPreview?.error_count ?? 0}</strong><span className="meta">errores relacionales</span></div>
-        <div className="plan-card"><strong>{conflictPreview?.warning_count ?? 0}</strong><span className="meta">advertencias</span></div>
+        <div className="plan-card"><strong>{summary.state_changing_count}</strong><span className="meta">cambian estado</span></div>
+        <div className="plan-card"><strong>{isOrganizational ? 0 : conflictPreview.error_count}</strong><span className="meta">errores relacionales</span></div>
+        <div className="plan-card"><strong>{summary.applied_count}</strong><span className="meta">aplicadas</span></div>
       </section>
 
       <section className="status-grid">
@@ -369,7 +375,7 @@ export default function EventActionPlanPage() {
 
       <section className="plan-grid">
         <div className="card dashboard-section">
-          <div className="section-heading"><div><p className="eyebrow">Acciones</p><h2>Plan generado</h2><p className="meta">Configura origen, destino y tipo de relación. La vista de conflictos detecta duplicados y superposición antes de aplicar.</p></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Acciones</p><h2>Plan generado</h2><p className="meta">{isOrganizational ? 'Las acciones organizativas se habilitan al aprobar el evento.' : 'Configura relaciones y revisa conflictos antes de aprobar.'}</p></div></div>
           <div className="actions-list">
             {plan.actions.length === 0 && <div className="empty-state">Este evento todavía no tiene plan. Usa Generar plan.</div>}
             {plan.actions.map((action) => (
@@ -381,12 +387,14 @@ export default function EventActionPlanPage() {
                   {action.requires_manual_review && <span className="mini-badge warning">Revisión manual</span>}
                   {action.subject_entity_name && <span className="mini-badge">Origen: {action.subject_entity_name}</span>}
                   {action.target_entity_name && <span className="mini-badge">Destino: {action.target_entity_name}</span>}
+                  {action.subject_organization_unit_name && <span className="mini-badge">Unidad: {action.subject_organization_unit_name}</span>}
+                  {action.target_organization_unit_name && <span className="mini-badge">Superior: {action.target_organization_unit_name}</span>}
                   {action.relationship_type_name && <span className="mini-badge">Relación: {action.relationship_type_name}</span>}
                 </div>
                 {action.notes && <p className="meta">{action.notes}</p>}
-                <RelationshipActionEditor action={action} options={editorOptions} saving={saving} onSave={configureAction} />
-                {isRelationalAction(action) && <ConflictPanel conflictAction={conflictFor(action.id)} />}
-                <div className="action-controls">
+                {!isOrganizational && <RelationshipActionEditor action={action} options={editorOptions} saving={saving} onSave={configureAction} />}
+                {!isOrganizational && isRelationalAction(action) && <ConflictPanel conflictAction={conflictFor(action.id)} />}
+                {!isOrganizational && action.status !== 'applied' && <div className="action-controls">
                   <strong>Revisión de acción</strong>
                   <div className="button-row">
                     <button className="button button-secondary" disabled={saving || action.status === 'planned'} onClick={() => updateAction(action.id, 'planned')} type="button">Planificada</button>
@@ -394,18 +402,18 @@ export default function EventActionPlanPage() {
                     <button className="button button-secondary" disabled={saving || action.status === 'skipped'} onClick={() => updateAction(action.id, 'skipped')} type="button">Omitir</button>
                     <button className="button button-secondary" disabled={saving || action.status === 'failed'} onClick={() => updateAction(action.id, 'failed')} type="button">Observación</button>
                   </div>
-                </div>
+                </div>}
               </article>
             ))}
           </div>
         </div>
 
         <aside className="card dashboard-section">
-          <div className="section-heading"><div><p className="eyebrow">Regla de fase</p><h2>Aplicación bloqueada</h2></div></div>
-          <div className="plan-card highlight"><strong>No se aplican cambios todavía</strong><span className="meta">{summary.apply_lock_reason}</span></div>
-          <div className="plan-card"><strong>Conflictos relacionales</strong><span className="meta">{conflictPreview ? `${conflictPreview.error_count} errores y ${conflictPreview.warning_count} advertencias detectadas.` : 'Sin revisión ejecutada.'}</span></div>
-          <div className="plan-card"><strong>Revisión del plan</strong><span className="meta">{allReviewed ? 'Todas las acciones fueron revisadas.' : 'Todavía hay acciones planificadas sin decisión.'}</span></div>
-          <div className="plan-card"><strong>Contrato de aplicación</strong><span className="meta">Valida qué acciones serán automatizables, manuales o bloqueadas antes de la fase de aplicación.</span><Link className="button button-secondary" href={`/admin/eventos/${eventId}/contrato`}>Abrir contrato</Link></div>
+          <div className="section-heading"><div><p className="eyebrow">Aplicación</p><h2>{summary.can_apply_now ? 'Lista para aplicar' : 'Condiciones pendientes'}</h2></div></div>
+          <div className="plan-card highlight"><strong>{isOrganizational ? 'Contrato organizativo' : 'Contrato jurisdiccional'}</strong><span className="meta">{lockReasonLabel(summary.apply_lock_reason)}</span></div>
+          {!isOrganizational && <div className="plan-card"><strong>Conflictos relacionales</strong><span className="meta">{conflictPreview.error_count} errores y {conflictPreview.warning_count} advertencias detectadas.</span></div>}
+          <div className="plan-card"><strong>Revisión del plan</strong><span className="meta">{allReviewed ? 'Todas las acciones fueron revisadas.' : 'Todavía hay acciones planificadas.'}</span></div>
+          <div className="plan-card"><strong>Contrato de aplicación</strong><span className="meta">Confirma permisos, estados y objetivos antes de aplicar.</span><Link className="button button-secondary" href={`/admin/eventos/${eventId}/contrato`}>Abrir contrato</Link></div>
         </aside>
       </section>
     </main>
