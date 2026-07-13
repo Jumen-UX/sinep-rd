@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import Link from 'next/link'
 import styles from './EntityInstitutionalTimeline.module.css'
 
-type EvolutionEvent = {
+export type EntityEvolutionEvent = {
   id: string
   event_type: string | null
   event_date: string | null
@@ -21,7 +21,7 @@ type EvolutionEvent = {
   territory_summary: string | null
 }
 
-type AppointmentHistory = {
+export type EntityAuthorityAppointment = {
   id: string
   person_name: string | null
   person_slug: string | null
@@ -45,10 +45,10 @@ type TimelineItem = {
   current?: boolean
 }
 
-type EntityTimelineResponse = {
+export type EntityTimelinePayload = {
   entity?: { erected_at?: string | null; name?: string | null }
-  evolution_events?: EvolutionEvent[]
-  appointment_history?: AppointmentHistory[]
+  evolution_events?: EntityEvolutionEvent[]
+  appointment_history?: EntityAuthorityAppointment[]
 }
 
 const eventLabels: Record<string, string> = {
@@ -89,7 +89,7 @@ function formatDate(value: string | null | undefined) {
   }).format(date)
 }
 
-function relatedEntity(event: EvolutionEvent) {
+function relatedEntity(event: EntityEvolutionEvent) {
   const candidates = [
     [event.related_entity_display_name ?? event.related_entity_name, event.related_entity_slug],
     [event.to_entity_display_name ?? event.to_entity_name, event.to_entity_slug],
@@ -98,7 +98,7 @@ function relatedEntity(event: EvolutionEvent) {
   return candidates.find(([name]) => Boolean(name)) ?? [null, null]
 }
 
-export function buildEntityInstitutionalTimeline(payload: EntityTimelineResponse): TimelineItem[] {
+export function buildEntityInstitutionalTimeline(payload: EntityTimelinePayload): TimelineItem[] {
   const events = (payload.evolution_events ?? []).map((event): TimelineItem => {
     const [relatedName, relatedSlug] = relatedEntity(event)
     return {
@@ -142,53 +142,23 @@ export function buildEntityInstitutionalTimeline(payload: EntityTimelineResponse
   })
 }
 
-export default function EntityInstitutionalTimeline({ slug }: { slug: string }) {
-  const [payload, setPayload] = useState<EntityTimelineResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      setLoading(true)
-      setError(null)
-      try {
-        const response = await fetch(`/api/entidades/${encodeURIComponent(slug)}`)
-        if (!response.ok) throw new Error('No se pudo cargar la historia institucional.')
-        const data = await response.json() as EntityTimelineResponse
-        if (!cancelled) setPayload(data)
-      } catch (loadError) {
-        if (!cancelled) setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la historia institucional.')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    void load()
-    return () => {
-      cancelled = true
-    }
-  }, [slug])
-
-  const items = useMemo(() => buildEntityInstitutionalTimeline(payload ?? {}), [payload])
+export default function EntityInstitutionalTimeline({ payload }: { payload: EntityTimelinePayload }) {
+  const items = useMemo(() => buildEntityInstitutionalTimeline(payload), [payload])
 
   return (
-    <section className={`container card dashboard-section ${styles.section}`} id="historia-institucional" aria-labelledby="entity-institutional-timeline-title">
+    <section className={`card dashboard-section ${styles.section}`} id="historia-institucional" aria-labelledby="entity-institutional-timeline-title">
       <div className="section-heading">
         <div>
           <p className="eyebrow">Historia oficial</p>
           <h2 id="entity-institutional-timeline-title">Cronología institucional</h2>
           <p className="meta">Evolución canónica, territorial y sucesión de autoridades registradas para esta entidad.</p>
         </div>
-        {!loading && !error && <span className="role-pill">{items.length} hitos</span>}
+        <span className="role-pill">{items.length} hitos</span>
       </div>
 
-      {loading && <div className="empty-state">Cargando historia institucional...</div>}
-      {error && <div className="error-box">{error}</div>}
-      {!loading && !error && items.length === 0 && <div className="empty-state">No hay hechos históricos publicados para esta entidad.</div>}
+      {items.length === 0 && <div className="empty-state">No hay hechos históricos publicados para esta entidad.</div>}
 
-      {!loading && !error && items.length > 0 && (
+      {items.length > 0 && (
         <ol className={styles.timeline}>
           {items.map((item) => (
             <li className={styles.item} key={item.id}>
