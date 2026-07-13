@@ -33,15 +33,21 @@ test('people API derives its clerical compatibility payload from canonical histo
 })
 
 test('public person page presents ordination role status and dignity as separate dimensions', async () => {
-  const page = await readRepoFile('src/app/(public)/personas/[slug]/page.tsx')
+  const [page, serverView] = await Promise.all([
+    readRepoFile('src/app/(public)/personas/[slug]/page.tsx'),
+    readRepoFile('src/features/personas/PersonDetailServerView.tsx'),
+  ])
 
-  assert.match(page, /Historia sacramental/)
-  assert.match(page, /Grados del Orden/)
-  assert.match(page, /Situación canónica actual/)
-  assert.match(page, /Función episcopal actual/)
-  assert.match(page, /Títulos y dignidades/)
-  assert.match(page, /Historia canónica/)
-  assert.match(page, /effective_person_type/)
-  assert.doesNotMatch(page, /clergy\?\.priestly_ordination_date/)
-  assert.doesNotMatch(page, /personTypeLabel\(person\.person_type\)/)
+  assert.match(page, /PersonDetailServerView/)
+  assert.match(page, /loadPublicPersonDetail\(slug\)/)
+  assert.doesNotMatch(page, /fetch\(/)
+  assert.match(serverView, /Historia sacramental/)
+  assert.match(serverView, /Grados del Orden/)
+  assert.match(serverView, /Situación canónica actual/)
+  assert.match(serverView, /Función episcopal actual/)
+  assert.match(serverView, /Títulos y dignidades/)
+  assert.match(serverView, /Historia canónica/)
+  assert.match(serverView, /effective_person_type/)
+  assert.doesNotMatch(serverView, /clergy\?\.priestly_ordination_date/)
+  assert.doesNotMatch(serverView, /personTypeLabel\(person\.person_type\)/)
 })
