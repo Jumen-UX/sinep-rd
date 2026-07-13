@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { loadPublicEntityMetadata } from '@/lib/public/directories'
+import { loadPublicEntityDetail } from '@/lib/public/entity-detail'
 
 type LayoutProps = {
   children: ReactNode
@@ -9,11 +9,12 @@ type LayoutProps = {
 
 export async function generateMetadata({ params }: Omit<LayoutProps, 'children'>): Promise<Metadata> {
   const { slug } = await params
-  const entity = await loadPublicEntityMetadata(slug)
+  const data = await loadPublicEntityDetail(slug)
+  const entity = data?.entity
 
   if (!entity) {
     return {
-      title: 'Entidad no encontrada · SINEP RD',
+      title: 'Entidad no encontrada',
       description: 'La ficha solicitada no está disponible públicamente.',
       robots: { index: false, follow: false },
     }
@@ -21,10 +22,12 @@ export async function generateMetadata({ params }: Omit<LayoutProps, 'children'>
 
   const title = entity.official_name || entity.name
   const description = entity.description?.trim()
-    || (entity.cathedral_name ? `${title}. Sede: ${entity.cathedral_name}. Consulta su ficha institucional en SINEP RD.` : `Ficha institucional pública de ${title} en SINEP RD.`)
+    || (entity.cathedral_name
+      ? `${title}. Sede: ${entity.cathedral_name}. Consulta su ficha institucional en SINEP RD.`
+      : `Ficha institucional pública de ${title} en SINEP RD.`)
 
   return {
-    title: `${title} · SINEP RD`,
+    title,
     description,
     alternates: { canonical: `/entidades/${entity.slug}` },
     openGraph: {
