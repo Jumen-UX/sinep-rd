@@ -21,8 +21,7 @@ export default function AdminWizardProgress({
   onStepChange,
   maxReachableStep = currentStep,
 }: AdminWizardProgressProps) {
-  const completed = Math.max(0, Math.min(steps.length, currentStep))
-  const progress = steps.length > 1 ? Math.round((completed / (steps.length - 1)) * 100) : 100
+  const progress = steps.length > 0 ? Math.round(((currentStep + 1) / steps.length) * 100) : 0
   const reachableStep = Math.max(currentStep, Math.min(steps.length - 1, maxReachableStep))
 
   return (
