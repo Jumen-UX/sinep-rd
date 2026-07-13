@@ -1,4 +1,4 @@
-name: Temporary source export
+name: Temporary legacy inventory
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  export:
+  inventory:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -18,15 +18,24 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Create archive
+      - name: Build report
         run: |
-          zip -qr repo-source-export.zip . \
-            -x '.git/*' 'node_modules/*' '.next/*' 'repo-source-export.zip'
+          {
+            echo '# Legacy pastoral references'
+            echo
+            grep -RInE \
+              --exclude-dir=.git \
+              --exclude-dir=node_modules \
+              --exclude-dir=.next \
+              --exclude='repo-source-export.zip' \
+              'pastoral_entity|PastoralEntity|pastoralEntities|public_pastoral_entities|pastoral_entities' \
+              src tests scripts package.json supabase/migrations 2>/dev/null || true
+          } > legacy-pastoral-report.txt
 
-      - name: Commit archive
+      - name: Commit report
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add repo-source-export.zip
-          git commit -m 'chore: temporary source export [skip ci]'
+          git add legacy-pastoral-report.txt
+          git commit -m 'chore: temporary legacy pastoral inventory [skip ci]'
           git push
