@@ -12,8 +12,8 @@ type PersonRow = {
   visibility: string | null
   current_entity_id: string | null
   current_entity_name: string | null
-  current_pastoral_entity_id: string | null
-  current_pastoral_entity_name: string | null
+  current_organization_unit_id: string | null
+  current_organization_unit_name: string | null
   incardination_entity_id: string | null
   incardination_entity_name: string | null
   updated_at: string | null
@@ -76,7 +76,7 @@ function personName(person: PersonRow) {
 
 function personScope(person: PersonRow) {
   return person.current_entity_name
-    ?? person.current_pastoral_entity_name
+    ?? person.current_organization_unit_name
     ?? person.incardination_entity_name
     ?? 'Sin entidad vinculada visible'
 }
