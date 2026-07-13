@@ -10,6 +10,7 @@ export type AssignmentHistoryItem = {
   position_title: string | null
   organization_chart_name: string | null
   organization_unit_name: string | null
+  organization_unit_slug: string | null
   direct_entity_name: string | null
   direct_entity_slug: string | null
   direct_entity_type_name: string | null
@@ -21,8 +22,6 @@ export type AssignmentHistoryItem = {
   vicariate_slug: string | null
   diocese_name: string | null
   diocese_slug: string | null
-  pastoral_entity_name: string | null
-  pastoral_entity_slug: string | null
   predecessor_person_name: string | null
   predecessor_person_slug: string | null
   successor_person_name: string | null
@@ -66,14 +65,14 @@ function statusLabel(value: string | null, current: boolean) {
 
 export function assignmentEntityTarget(item: AssignmentHistoryItem) {
   const candidates = [
-    [item.direct_entity_name, item.direct_entity_slug],
-    [item.pastoral_entity_name, item.pastoral_entity_slug],
-    [item.parish_name, item.parish_slug],
-    [item.zone_name, item.zone_slug],
-    [item.vicariate_name, item.vicariate_slug],
-    [item.diocese_name, item.diocese_slug],
+    [item.direct_entity_name, item.direct_entity_slug, 'entity'],
+    [item.organization_unit_name, item.organization_unit_slug, 'unit'],
+    [item.parish_name, item.parish_slug, 'entity'],
+    [item.zone_name, item.zone_slug, 'entity'],
+    [item.vicariate_name, item.vicariate_slug, 'entity'],
+    [item.diocese_name, item.diocese_slug, 'entity'],
   ] as const
-  return candidates.find(([name]) => Boolean(name)) ?? [null, null]
+  return candidates.find(([name]) => Boolean(name)) ?? [null, null, 'entity']
 }
 
 function PersonLink({ name, slug }: { name: string | null; slug: string | null }) {
@@ -97,7 +96,7 @@ export default function PersonAssignmentHistory({ personId, onCountChange, onIte
 
       const { data, error: queryError } = await supabase
         .from('public_position_assignments_with_hierarchy')
-        .select('id,position_title,organization_chart_name,organization_unit_name,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,parish_slug,zone_name,zone_slug,vicariate_name,vicariate_slug,diocese_name,diocese_slug,pastoral_entity_name,pastoral_entity_slug,predecessor_person_name,predecessor_person_slug,successor_person_name,successor_person_slug,start_date,term_start_date,term_end_date,actual_end_date,is_current,assignment_status,selection_method,notes_public')
+        .select('id,position_title,organization_chart_name,organization_unit_name,organization_unit_slug,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,parish_slug,zone_name,zone_slug,vicariate_name,vicariate_slug,diocese_name,diocese_slug,predecessor_person_name,predecessor_person_slug,successor_person_name,successor_person_slug,start_date,term_start_date,term_end_date,actual_end_date,is_current,assignment_status,selection_method,notes_public')
         .eq('person_id', personId)
         .order('start_date', { ascending: false, nullsFirst: false })
 
@@ -117,9 +116,7 @@ export default function PersonAssignmentHistory({ personId, onCountChange, onIte
     }
 
     void load()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [onCountChange, onItemsChange, personId])
 
   const currentCount = useMemo(() => items.filter((item) => item.is_current).length, [items])
@@ -127,49 +124,31 @@ export default function PersonAssignmentHistory({ personId, onCountChange, onIte
   return (
     <section className={`card ${styles.section}`} id="nombramientos" aria-labelledby="person-assignment-history-title">
       <div className="section-heading">
-        <div>
-          <p className="eyebrow">Trayectoria de servicio</p>
-          <h2 id="person-assignment-history-title">Nombramientos y asignaciones</h2>
-          <p className="meta">Historial cronológico de oficios, entidades, períodos y sucesiones registrados.</p>
-        </div>
-        {!loading && !error && <span className="role-pill">{items.length} registros · {currentCount} vigentes</span>}
+        <div><p className="eyebrow">Nombramientos</p><h2 id="person-assignment-history-title">Historial de cargos</h2></div>
+        <span className="meta">{currentCount} vigente{currentCount === 1 ? '' : 's'} · {items.length} total</span>
       </div>
 
-      {loading && <div className="empty-state">Cargando trayectoria de servicio...</div>}
-      {error && <div className="error-box">No se pudo cargar el historial de nombramientos: {error}</div>}
-      {!loading && !error && items.length === 0 && <div className="empty-state">No hay nombramientos registrados para esta persona.</div>}
+      {loading && <p className="meta">Cargando nombramientos...</p>}
+      {error && <div className="error-box">{error}</div>}
+      {!loading && !error && items.length === 0 && <p className="meta">No hay nombramientos registrados.</p>}
 
       {!loading && !error && items.length > 0 && (
         <div className={styles.timeline}>
           {items.map((item) => {
-            const [entityName, entitySlug] = assignmentEntityTarget(item)
+            const [entityName, entitySlug, targetKind] = assignmentEntityTarget(item)
+            const href = targetKind === 'unit' ? `/pastoral/${entitySlug}` : `/entidades/${entitySlug}`
             return (
               <article className={styles.item} key={item.id}>
                 <div className={styles.marker} aria-hidden="true" />
-                <div className={styles.card}>
+                <div className={styles.content}>
                   <div className={styles.header}>
-                    <div>
-                      <p className="eyebrow">{item.organization_chart_name ?? item.direct_entity_type_name ?? 'Nombramiento'}</p>
-                      <h3>{item.position_title ?? 'Cargo sin título registrado'}</h3>
-                    </div>
-                    <span className={`role-pill ${item.is_current ? styles.current : ''}`}>{statusLabel(item.assignment_status, item.is_current)}</span>
+                    <strong>{item.position_title ?? 'Cargo sin título'}</strong>
+                    <span>{statusLabel(item.assignment_status, item.is_current)}</span>
                   </div>
-
-                  <dl className={styles.details}>
-                    <div><dt>Entidad</dt><dd>{entityName && entitySlug ? <Link href={`/entidades/${entitySlug}`}>{entityName}</Link> : entityName ?? 'No registrada'}</dd></div>
-                    <div><dt>Período</dt><dd>{formatDate(item.term_start_date ?? item.start_date)} — {item.is_current ? 'actual' : formatDate(item.actual_end_date ?? item.term_end_date)}</dd></div>
-                    <div><dt>Unidad</dt><dd>{item.organization_unit_name ?? item.organization_chart_name ?? 'No registrada'}</dd></div>
-                    <div><dt>Forma de selección</dt><dd>{item.selection_method ?? 'No registrada'}</dd></div>
-                  </dl>
-
-                  {(item.predecessor_person_name || item.successor_person_name) && (
-                    <div className={styles.succession}>
-                      <span>Predecesor: <PersonLink name={item.predecessor_person_name} slug={item.predecessor_person_slug} /></span>
-                      <span>Sucesor: <PersonLink name={item.successor_person_name} slug={item.successor_person_slug} /></span>
-                    </div>
-                  )}
-
-                  {item.notes_public && <p className={styles.notes}>{item.notes_public}</p>}
+                  <p>{entitySlug ? <Link href={href}>{entityName}</Link> : entityName ?? 'Ámbito no indicado'}</p>
+                  <small>{formatDate(item.term_start_date ?? item.start_date)} — {item.actual_end_date ? formatDate(item.actual_end_date) : item.term_end_date ? formatDate(item.term_end_date) : 'actual'}</small>
+                  {(item.predecessor_person_name || item.successor_person_name) && <div className={styles.succession}><span>Predecesor: <PersonLink name={item.predecessor_person_name} slug={item.predecessor_person_slug} /></span><span>Sucesor: <PersonLink name={item.successor_person_name} slug={item.successor_person_slug} /></span></div>}
+                  {item.notes_public && <p className="meta">{item.notes_public}</p>}
                 </div>
               </article>
             )
