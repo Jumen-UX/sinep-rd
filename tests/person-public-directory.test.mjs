@@ -24,15 +24,20 @@ test('public directory derives Holy Orders and keeps religious life transversal'
 })
 
 test('people list and dashboard no longer classify clergy from persons.person_type', async () => {
-  const peopleApi = await readRepoFile('src/app/api/personas/route.ts')
-  const summaryApi = await readRepoFile('src/app/api/dashboard/resumen/route.ts')
+  const [peopleApi, summaryApi, dashboardLoader] = await Promise.all([
+    readRepoFile('src/app/api/personas/route.ts'),
+    readRepoFile('src/app/api/dashboard/resumen/route.ts'),
+    readRepoFile('src/lib/public/dashboard.ts'),
+  ])
 
   assert.match(peopleApi, /'person_public_directory'/)
   assert.match(peopleApi, /filters\.is_religious = 'eq\.true'/)
   assert.doesNotMatch(peopleApi, /fetchSupabaseJson<Record<string, unknown>\[]>\('persons', buildListFilters/)
 
-  assert.match(summaryApi, /fetchSupabaseJson<PersonSummaryRow\[]>\('person_public_directory'/)
-  assert.match(summaryApi, /religious: people\.filter\(\(item\) => item\.is_religious\)\.length/)
+  assert.match(summaryApi, /loadDashboardSummary\(\)/)
+  assert.match(dashboardLoader, /fetchSupabaseJson<Person\[]>\('person_public_directory'/)
+  assert.match(dashboardLoader, /religious: people\.filter\(\(item\) => item\.is_religious\)\.length/)
+  assert.doesNotMatch(dashboardLoader, /fetchSupabaseJson<[^>]+>\('persons'/)
 })
 
 test('public directory explains overlapping ecclesial dimensions', async () => {
