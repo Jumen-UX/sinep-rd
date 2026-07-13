@@ -31,7 +31,7 @@ test('associated person publication is checked by the public review gateway', as
   assert.match(helper, /people\.publish/)
   assert.match(helper, /current_user_can_manage_entity/)
   assert.match(helper, /current_user_has_scope_access/)
-  assert.match(helper, /pastoral_entity/)
+  assert.match(helper, /organization_unit/)
   assert.match(helper, /current_user_is_super_or_national/)
 
   assert.match(gateway, /security\s+definer/i)

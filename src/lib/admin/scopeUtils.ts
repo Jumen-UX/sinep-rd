@@ -372,7 +372,7 @@ export function getScopeLabel(scope: UserScope): string {
     zone: 'Zona Pastoral',
     parish: 'Parroquia',
     pastoral_area: 'Área Pastoral',
-    pastoral_entity: 'Entidad Pastoral',
+    organization_unit: 'Unidad organizativa',
     entity: 'Entidad',
   }
 
