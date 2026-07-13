@@ -115,9 +115,14 @@ label {
 
 .admin-searchable-select-menu button:hover,
 .admin-searchable-select-menu button:focus-visible,
+.admin-searchable-select-menu button.is-active,
 .admin-searchable-select-menu button[aria-selected="true"] {
   outline: none;
   background: var(--surface-subtle);
+}
+
+.admin-searchable-select-menu button.is-active {
+  box-shadow: inset 3px 0 0 var(--gold);
 }
 
 .admin-searchable-select-menu button span {
