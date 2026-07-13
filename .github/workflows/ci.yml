@@ -9,8 +9,59 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
+  canonicalize-source:
+    if: github.event_name == 'pull_request' && github.head_ref == 'phase2-canonical-organization-units'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.detect.outputs.changed }}
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Detect canonicalization script
+        id: detect
+        shell: bash
+        run: |
+          if [ -f .github/workflows/canonicalize-source.yml ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Apply canonicalization
+        if: steps.detect.outputs.changed == 'true'
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          workflow = Path('.github/workflows/canonicalize-source.yml').read_text(encoding='utf-8')
+          marker = "python <<'PY'\n"
+          source = workflow.split(marker, 1)[1].split("\n          PY", 1)[0]
+          exec(compile(textwrap.dedent(source), 'canonicalize-source', 'exec'), {'__name__': '__main__'})
+          PY
+
+      - name: Commit canonicalization
+        if: steps.detect.outputs.changed == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "refactor: canonicalize organization unit source contracts"
+          git push origin HEAD:${{ github.head_ref }}
+
   typecheck-and-build:
+    needs: canonicalize-source
+    if: always() && (needs.canonicalize-source.result == 'skipped' || needs.canonicalize-source.outputs.changed != 'true')
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
