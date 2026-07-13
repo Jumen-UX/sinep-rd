@@ -70,6 +70,7 @@ test('audit writes receive permission and scope automatically', async () => {
 
 test('critical canonical tables cannot be written directly by authenticated clients', async () => {
   const sql = await readSecurityMigrations()
+  const normalizedSql = sql.toLowerCase()
   assert.match(sql, /revoke insert, update, delete, truncate, references, trigger/)
 
   for (const table of [
@@ -78,7 +79,7 @@ test('critical canonical tables cannot be written directly by authenticated clie
     'public.ecclesiastical_entities',
     'public.position_assignments',
   ]) {
-    assert.match(sql, new RegExp(escapeRegex(table), 'i'))
+    assert.ok(normalizedSql.includes(table), `Missing canonical table write seal for ${table}`)
   }
 
   assert.match(sql, /drop policy if exists canonical_events_admin_insert/)
