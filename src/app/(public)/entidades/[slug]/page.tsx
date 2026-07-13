@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation'
 import EntityDetailServerView from '@/features/entidades/EntityDetailServerView'
-import { loadPublicEntityDetail } from '@/lib/public/entity-detail'
+import { loadPublicEntityDetail } from '@/lib/public/cache'
 
 type PageProps = {
   params: Promise<{ slug: string }>
 }
+
+export const revalidate = 900
 
 export default async function EntityDetailPage({ params }: PageProps) {
   const { slug } = await params
