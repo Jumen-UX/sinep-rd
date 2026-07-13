@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const migration = await readFile(
-  new URL('../supabase/migrations/20260714041000_enable_person_import_noop_by_internal_reference.sql', import.meta.url),
+  new URL('../supabase/migrations/20260713233120_enable_person_import_noop_by_internal_reference.sql', import.meta.url),
   'utf8',
 )
 
