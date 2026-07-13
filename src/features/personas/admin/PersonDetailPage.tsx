@@ -91,7 +91,7 @@ export default function PersonDetailPage() {
       ['Fecha de nacimiento', person.birth_date],
       ['Lugar de nacimiento', person.birth_place],
       ['Biografía pública', person.biography_public],
-      ['Servicio actual', person.current_entity_name ?? person.current_pastoral_entity_name],
+      ['Servicio actual', person.current_entity_name ?? person.current_organization_unit_name],
     ]
 
     if (person.ecclesial_condition === 'cleric') {
@@ -135,7 +135,7 @@ export default function PersonDetailPage() {
               {person.priest_type && <span className="role-pill">{priestTypeLabel(person.priest_type)}</span>}
               {currentEpiscopalRole && <span className="role-pill">{episcopalRoleLabel(currentEpiscopalRole.role_type)}</span>}
             </div>
-            <p className="meta">{valueLabel(person.current_entity_name ?? person.current_pastoral_entity_name ?? person.incardination_entity_name ?? person.incardination_institute_name)}</p>
+            <p className="meta">{valueLabel(person.current_entity_name ?? person.current_organization_unit_name ?? person.incardination_entity_name ?? person.incardination_institute_name)}</p>
           </div>
         </div>
         <div className="admin-entity-header-actions">{person.can_update_proposal && <Link className="button button-primary" href={editHref}>Editar ficha</Link>}<Link className="button button-secondary" href={assignmentHref}>Nuevo nombramiento</Link></div>
@@ -148,7 +148,7 @@ export default function PersonDetailPage() {
           <section id="resumen" className="admin-entity-summary-grid">
             <CompletionIndicator completed={completion.completed} total={completion.total} missing={completion.missing} />
             <div className="card admin-entity-summary-card"><p className="eyebrow">Condición sacramental</p><h2>{isOrdained ? ordinationDegreeLabel(person.highest_ordination_degree) : 'Sin ordenación registrada'}</h2><p className="meta">{isOrdained ? 'Grado más alto recibido' : 'Condición laical derivada'}</p></div>
-            <div className="card admin-entity-summary-card"><p className="eyebrow">Servicio visible</p><h2>{valueLabel(person.current_entity_name ?? person.current_pastoral_entity_name)}</h2><p className="meta">Incardinación: {valueLabel(person.incardination_entity_name ?? person.incardination_institute_name)}</p></div>
+            <div className="card admin-entity-summary-card"><p className="eyebrow">Servicio visible</p><h2>{valueLabel(person.current_entity_name ?? person.current_organization_unit_name)}</h2><p className="meta">Incardinación: {valueLabel(person.incardination_entity_name ?? person.incardination_institute_name)}</p></div>
           </section>
 
           <div id="personales">
@@ -181,7 +181,7 @@ export default function PersonDetailPage() {
               <DetailRow label="Estado canónico" value={isOrdained ? statusLabel(person.canonical_status) : 'No aplica'} />
               <DetailRow label="Tipo de incardinación" value={isOrdained ? incardinationKindLabel(person.incardination_kind) : 'No aplica'} />
               <DetailRow label="Incardinación o pertenencia" value={isOrdained ? valueLabel(person.incardination_entity_name ?? person.incardination_institute_name) : 'No aplica'} />
-              <DetailRow label="Tipo de sacerdote heredado" value={priestTypeLabel(person.priest_type)} />
+              <DetailRow label="Tipo de sacerdote" value={priestTypeLabel(person.priest_type)} />
               <DetailRow label="Tipo de diácono" value={valueLabel(person.deacon_type)} />
               <DetailRow label="Instituto religioso" value={valueLabel(person.religious_institute_name)} />
               <DetailRow label="Función episcopal vigente" value={currentEpiscopalRole ? `${episcopalRoleLabel(currentEpiscopalRole.role_type)} · ${valueLabel(currentEpiscopalRole.title_see_name ?? currentEpiscopalRole.jurisdiction_name)}` : 'No registrada'} />
@@ -192,7 +192,7 @@ export default function PersonDetailPage() {
           <div id="servicio">
             <EntitySectionCard eyebrow="Asignación actual" title="Servicio y relaciones" description="Los oficios y nombramientos tienen su propia vigencia e historial." editHref={assignmentHref} editLabel="Gestionar nombramientos">
               <DetailRow label="Entidad de servicio" value={valueLabel(person.current_entity_name)} />
-              <DetailRow label="Entidad pastoral" value={valueLabel(person.current_pastoral_entity_name)} />
+              <DetailRow label="Unidad organizativa" value={valueLabel(person.current_organization_unit_name)} />
               <DetailRow label="Incardinación" value={valueLabel(person.incardination_entity_name ?? person.incardination_institute_name)} />
               <DetailRow label="Cambios canónicos registrados" value={`${person.clerical_history.length}`} />
             </EntitySectionCard>
@@ -210,7 +210,7 @@ export default function PersonDetailPage() {
         <SmartContextPanel title="Contexto de la persona">
           <CompletionIndicator completed={completion.completed} total={completion.total} missing={completion.missing} />
           <div className="admin-context-block"><span>Grado más alto recibido</span><strong>{ordinationDegreeLabel(person.highest_ordination_degree)}</strong></div>
-          <div className="admin-context-block"><span>Cargo o servicio visible</span><strong>{valueLabel(person.current_entity_name ?? person.current_pastoral_entity_name)}</strong></div>
+          <div className="admin-context-block"><span>Cargo o servicio visible</span><strong>{valueLabel(person.current_entity_name ?? person.current_organization_unit_name)}</strong></div>
           <div className="admin-context-block"><span>Pertenencia</span><strong>{valueLabel(person.incardination_entity_name ?? person.incardination_institute_name ?? person.religious_institute_name)}</strong></div>
           <div className="admin-context-block"><span>Nombramientos</span><strong>{assignments.length}</strong></div>
           <div className="admin-context-block"><span>Hitos de trayectoria</span><strong>{totalTimelineItems}</strong></div>
