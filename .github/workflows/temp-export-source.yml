@@ -1,0 +1,32 @@
+name: Temporary source export
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Create archive
+        run: |
+          zip -qr repo-source-export.zip . \
+            -x '.git/*' 'node_modules/*' '.next/*' 'repo-source-export.zip'
+
+      - name: Commit archive
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add repo-source-export.zip
+          git commit -m 'chore: temporary source export [skip ci]'
+          git push
