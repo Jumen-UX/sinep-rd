@@ -15,24 +15,24 @@ type ContractEvent = {
   evidence_status: string
   event_type_key: string
   event_type_name: string
+  applies_to: string
 }
 
 type ContractSummary = {
   event_exists: boolean
   event_status: string
+  applies_to: string
   action_count: number
   ready_count: number
   planned_count: number
+  applied_count: number
   failed_count: number
   state_changing_count: number
-  auto_apply_allowed_count: number
-  manual_application_count: number
   manual_only_count: number
   relationship_error_count: number
   relationship_warning_count: number
-  phase_1_can_apply: boolean
-  phase_1_lock_reason: string
-  future_can_apply_when: string[]
+  can_apply: boolean
+  apply_lock_reason: string | null
 }
 
 type ContractAction = {
@@ -48,6 +48,8 @@ type ContractAction = {
   contract_status: string
   subject_entity_name: string | null
   target_entity_name: string | null
+  subject_organization_unit_name: string | null
+  target_organization_unit_name: string | null
   relationship_type_name: string | null
   sort_order: number
 }
@@ -61,7 +63,7 @@ type ApplicationContract = {
 const pageStyles = `
   .contract-hero{align-items:stretch;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr)}
   .contract-summary,.contract-card,.contract-action{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:14px}
-  .contract-summary,.contract-card.highlight{background:#fbf8f1}.contract-grid,.metric-grid,.actions-list,.requirements-list{display:grid;gap:14px}.contract-grid{align-items:start;grid-template-columns:minmax(0,1fr) minmax(300px,.4fr)}.metric-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.badge-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}.mini-badge.danger{background:#fef2f2;color:#991b1b}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:980px){.contract-hero,.contract-grid,.metric-grid{grid-template-columns:1fr}}
+  .contract-summary,.contract-card.highlight{background:#fbf8f1}.contract-grid,.metric-grid,.actions-list,.requirements-list{display:grid;gap:14px}.contract-grid{align-items:start;grid-template-columns:minmax(0,1fr) minmax(300px,.4fr)}.metric-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.badge-row,.button-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}.mini-badge.danger{background:#fef2f2;color:#991b1b}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:980px){.contract-hero,.contract-grid,.metric-grid{grid-template-columns:1fr}}
 `
 
 function statusLabel(status?: string) {
@@ -87,19 +89,27 @@ function strategyLabel(strategy?: string) {
 }
 
 function contractStatusLabel(status?: string) {
+  if (status === 'applied') return 'Aplicada'
+  if (status === 'eligible_now') return 'Lista para aplicar'
   if (status === 'blocked_failed_action') return 'Bloqueada por observación'
   if (status === 'blocked_not_reviewed') return 'Falta revisar'
   if (status === 'manual_only') return 'Requiere decisión manual'
   if (status === 'requires_manual_application') return 'Requiere aplicación manual'
-  if (status === 'eligible_when_phase_enabled') return 'Elegible cuando se habilite fase'
   if (status === 'review_required') return 'Requiere revisión'
   return status ?? '—'
 }
 
+function lockReasonLabel(reason?: string | null) {
+  if (!reason) return 'El contrato está listo para aplicar.'
+  if (reason === 'entity_application_not_enabled') return 'La aplicación automática de eventos jurisdiccionales todavía no está habilitada.'
+  if (reason === 'event_not_approved') return 'El evento debe aprobarse antes de aplicar.'
+  if (reason === 'event_actions_not_ready') return 'Todas las acciones deben quedar listas y sin observaciones.'
+  return reason
+}
+
 function badgeClass(action: ContractAction) {
   if (action.contract_status.startsWith('blocked')) return 'danger'
-  if (action.auto_apply_allowed) return 'success'
-  if (action.apply_strategy === 'manual_only') return 'warning'
+  if (action.contract_status === 'applied' || action.contract_status === 'eligible_now') return 'success'
   return 'warning'
 }
 
@@ -109,37 +119,59 @@ export default function EventApplicationContractPage() {
   const eventIdParam = params?.eventId
   const eventId = Array.isArray(eventIdParam) ? eventIdParam[0] : String(eventIdParam ?? '')
   const supabase = useMemo<SupabaseClient>(() => createClient(), [])
-
   const [contract, setContract] = useState<ApplicationContract | null>(null)
   const [loading, setLoading] = useState(true)
+  const [applying, setApplying] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function loadContract() {
+    setError(null)
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData.user) {
+      router.push('/admin/login')
+      return
+    }
+    const { data, error: contractError } = await supabase.rpc('get_event_application_contract', { p_event_id: eventId })
+    if (contractError) {
+      setError(contractError.message)
+      setLoading(false)
+      return
+    }
+    setContract(data as ApplicationContract | null)
+    setLoading(false)
+  }
+
+  async function applyEvent() {
+    if (!contract?.summary.can_apply || contract.event.applies_to !== 'organization_unit') return
+    setApplying(true)
+    setError(null)
+    setMessage(null)
+    const { data, error: applyError } = await supabase.rpc('admin_apply_organization_unit_event', {
+      payload: { event_id: eventId },
+    })
+    if (applyError) {
+      setError(applyError.message)
+      setApplying(false)
+      return
+    }
+    const result = data as { applied_action_count?: number }
+    setMessage(`Evento aplicado. ${result.applied_action_count ?? 0} acción(es) quedaron selladas.`)
+    setApplying(false)
+    await loadContract()
+  }
 
   useEffect(() => {
-    async function loadContract() {
-      setError(null)
-      setLoading(true)
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) {
-        router.push('/admin/login')
-        return
-      }
-      const { data, error: contractError } = await supabase.rpc('get_event_application_contract', { p_event_id: eventId })
-      if (contractError) {
-        setError(contractError.message)
-        setLoading(false)
-        return
-      }
-      setContract(data as ApplicationContract | null)
-      setLoading(false)
-    }
-
-    if (eventId) loadContract()
-  }, [eventId, router, supabase])
+    if (eventId) void loadContract()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId])
 
   if (loading) return <main className="container"><div className="empty-state">Cargando contrato de aplicación...</div></main>
   if (!contract?.event) return <main className="container"><div className="error-box">No se encontró el evento.</div></main>
 
   const summary = contract.summary
+  const isOrganizational = contract.event.applies_to === 'organization_unit'
+  const isApplied = contract.event.status === 'applied'
 
   return (
     <main className="container dashboard-page event-application-contract-page">
@@ -148,40 +180,35 @@ export default function EventApplicationContractPage() {
 
       <section className="dashboard-hero card contract-hero">
         <div>
-          <p className="eyebrow">Fase 1 · contrato de aplicación</p>
+          <p className="eyebrow">Contrato de aplicación</p>
           <h1>{contract.event.title}</h1>
-          <p className="lead">Define qué acciones podrán automatizarse, cuáles requieren revisión manual y qué condiciones deben cumplirse antes de aplicar cualquier cambio real.</p>
+          <p className="lead">Declara qué acciones están listas, cuáles requieren revisión y si el evento puede modificar el estado vigente.</p>
           <div className="badge-row">
             <Link className="button button-secondary" href={`/admin/eventos/${eventId}`}>Revisar evento</Link>
             <Link className="button button-secondary" href={`/admin/eventos/${eventId}/plan`}>Plan de acciones</Link>
+            {isOrganizational && !isApplied && <button className="button button-primary" disabled={!summary.can_apply || applying} onClick={applyEvent} type="button">{applying ? 'Aplicando…' : 'Aplicar evento'}</button>}
           </div>
         </div>
         <div className="contract-summary">
-          <span className="mini-badge warning">Aplicación bloqueada</span>
+          <span className={`mini-badge ${isApplied || summary.can_apply ? 'success' : 'warning'}`}>{isApplied ? 'Aplicado' : summary.can_apply ? 'Listo para aplicar' : 'Aplicación bloqueada'}</span>
           <strong>{statusLabel(contract.event.status)}</strong>
-          <span className="meta">{summary.phase_1_lock_reason}</span>
+          <span className="meta">{lockReasonLabel(summary.apply_lock_reason)}</span>
         </div>
       </section>
 
       {error && <div className="error-box">{error}</div>}
+      {message && <div className="success-box">{message}</div>}
 
       <section className="metric-grid">
         <div className="contract-card"><strong>{summary.action_count}</strong><span className="meta">acciones</span></div>
-        <div className="contract-card"><strong>{summary.auto_apply_allowed_count}</strong><span className="meta">automatizables</span></div>
-        <div className="contract-card"><strong>{summary.manual_application_count}</strong><span className="meta">manuales con estado</span></div>
-        <div className="contract-card"><strong>{summary.manual_only_count}</strong><span className="meta">solo manuales</span></div>
-      </section>
-
-      <section className="metric-grid">
         <div className="contract-card"><strong>{summary.ready_count}</strong><span className="meta">listas</span></div>
-        <div className="contract-card"><strong>{summary.planned_count}</strong><span className="meta">sin revisar</span></div>
-        <div className="contract-card"><strong>{summary.relationship_error_count}</strong><span className="meta">errores relacionales</span></div>
-        <div className="contract-card"><strong>{summary.relationship_warning_count}</strong><span className="meta">advertencias</span></div>
+        <div className="contract-card"><strong>{summary.applied_count}</strong><span className="meta">aplicadas</span></div>
+        <div className="contract-card"><strong>{summary.failed_count}</strong><span className="meta">con observación</span></div>
       </section>
 
       <section className="contract-grid">
         <div className="card dashboard-section">
-          <div className="section-heading"><div><p className="eyebrow">Acciones</p><h2>Contrato por acción</h2><p className="meta">Cada acción declara su estrategia de aplicación y su fase de implementación.</p></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Acciones</p><h2>Contrato por acción</h2><p className="meta">Cada acción declara su estrategia, estado y objetivo.</p></div></div>
           <div className="actions-list">
             {contract.actions.length === 0 && <div className="empty-state">El evento todavía no tiene acciones generadas.</div>}
             {contract.actions.map((action) => (
@@ -193,9 +220,10 @@ export default function EventApplicationContractPage() {
                   <span className="mini-badge">{action.implementation_phase}</span>
                   <span className="mini-badge">{statusLabel(action.status)}</span>
                   {action.changes_state && <span className="mini-badge warning">Cambia estado</span>}
-                  {action.auto_apply_allowed && <span className="mini-badge success">Automatizable</span>}
                   {action.subject_entity_name && <span className="mini-badge">Origen: {action.subject_entity_name}</span>}
                   {action.target_entity_name && <span className="mini-badge">Destino: {action.target_entity_name}</span>}
+                  {action.subject_organization_unit_name && <span className="mini-badge">Unidad: {action.subject_organization_unit_name}</span>}
+                  {action.target_organization_unit_name && <span className="mini-badge">Superior: {action.target_organization_unit_name}</span>}
                   {action.relationship_type_name && <span className="mini-badge">Relación: {action.relationship_type_name}</span>}
                 </div>
               </article>
@@ -204,13 +232,16 @@ export default function EventApplicationContractPage() {
         </div>
 
         <aside className="card dashboard-section">
-          <div className="section-heading"><div><p className="eyebrow">Condiciones futuras</p><h2>Antes de aplicar</h2></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Condiciones</p><h2>Estado del contrato</h2></div></div>
           <div className="requirements-list">
-            {(summary.future_can_apply_when ?? []).map((item) => <div className="contract-card" key={item}><span className="meta">{item}</span></div>)}
+            <div className="contract-card"><strong>Tipo de destino</strong><span className="meta">{isOrganizational ? 'Unidad organizativa' : 'Entidad eclesiástica'}</span></div>
+            <div className="contract-card"><strong>Acciones planificadas</strong><span className="meta">{summary.planned_count}</span></div>
+            <div className="contract-card"><strong>Errores relacionales</strong><span className="meta">{summary.relationship_error_count}</span></div>
+            <div className="contract-card"><strong>Acciones solo manuales</strong><span className="meta">{summary.manual_only_count}</span></div>
           </div>
           <div className="contract-card highlight">
-            <strong>Regla actual</strong>
-            <span className="meta">Fase 1 solo define contrato. No hay mutación de estado, relaciones ni fichas vigentes.</span>
+            <strong>Regla vigente</strong>
+            <span className="meta">{isOrganizational ? 'Los eventos organizativos aprobados pueden aplicarse transaccionalmente cuando todas sus acciones están listas.' : 'Los eventos jurisdiccionales siguen limitados a revisión y planificación; su mutación automática permanece bloqueada.'}</span>
           </div>
         </aside>
       </section>
