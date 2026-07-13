@@ -21,6 +21,7 @@ type ReviewEvent = {
   notes: Record<string, unknown> | null
   event_type_key: string
   event_type_name: string
+  applies_to: string
   created_at: string
   approved_at: string | null
   applied_at: string | null
@@ -29,10 +30,17 @@ type ReviewEvent = {
 type ReviewParticipant = {
   id: string
   role: string
+  target_kind: 'entity' | 'organization_unit'
   entity_id: string | null
   entity_name: string | null
   entity_type_key: string | null
   entity_type_name: string | null
+  organization_unit_id: string | null
+  organization_unit_name: string | null
+  organization_chart_id: string | null
+  organization_chart_name: string | null
+  scope_entity_id: string | null
+  scope_entity_name: string | null
   before_state: Record<string, unknown> | null
   after_state: Record<string, unknown> | null
 }
@@ -43,6 +51,8 @@ type ReviewChecks = {
   has_date_or_initial_snapshot: boolean
   has_participant: boolean
   has_source_reference: boolean
+  has_action_plan: boolean
+  has_blocking_action: boolean
   is_pending_review: boolean
   can_approve: boolean
 }
@@ -95,12 +105,15 @@ function CheckCard({ ok, title, detail }: { ok: boolean; title: string; detail: 
   return <div className={`check-card ${ok ? 'ok' : 'fail'}`}><strong>{ok ? '✓ ' : '⚠ '}{title}</strong><span className="meta">{detail}</span></div>
 }
 
+function participantName(participant: ReviewParticipant) {
+  return participant.organization_unit_name ?? participant.entity_name ?? 'Destino no definido'
+}
+
 export default function EventReviewPage() {
   const router = useRouter()
   const params = useParams<{ eventId: string }>()
   const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId
   const supabase = useMemo<SupabaseClient>(() => createClient(), [])
-
   const [review, setReview] = useState<ReviewData | null>(null)
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(true)
@@ -110,20 +123,17 @@ export default function EventReviewPage() {
   async function loadReview() {
     setError(null)
     setLoading(true)
-
     const { data: userData } = await supabase.auth.getUser()
     if (!userData.user) {
       router.push('/admin/login')
       return
     }
-
     const { data, error: loadError } = await supabase.rpc('get_event_review', { p_event_id: eventId })
     if (loadError) {
       setError(loadError.message)
       setLoading(false)
       return
     }
-
     setReview(data as ReviewData | null)
     setLoading(false)
   }
@@ -131,23 +141,20 @@ export default function EventReviewPage() {
   async function reviewAction(action: 'approve' | 'cancel' | 'return_to_draft') {
     setSaving(true)
     setError(null)
-
     const { error: actionError } = await supabase.rpc('admin_review_event', {
       payload: { event_id: eventId, action, review_note: note || null },
     })
-
     if (actionError) {
       setError(actionError.message)
       setSaving(false)
       return
     }
-
     setSaving(false)
     await loadReview()
   }
 
   useEffect(() => {
-    if (eventId) loadReview()
+    if (eventId) void loadReview()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId])
 
@@ -157,6 +164,7 @@ export default function EventReviewPage() {
   const event = review.event
   const checks = review.review_checks
   const canApprove = checks.can_approve && event.status === 'pending_review'
+  const isOrganizational = event.applies_to === 'organization_unit'
 
   return (
     <main className="container dashboard-page event-review-page">
@@ -167,12 +175,12 @@ export default function EventReviewPage() {
         <div>
           <p className="eyebrow">Revisión de evento</p>
           <h1>{event.title}</h1>
-          <p className="lead">Revisa datos, evidencia, participantes e impacto antes de aprobar. Aprobar todavía no aplica cambios al estado vigente.</p>
+          <p className="lead">Revisa datos, fuente, destino y plan de impacto antes de aprobar. La aplicación es un paso posterior y explícito.</p>
         </div>
         <div className="review-summary">
           <span className={`mini-badge ${event.status === 'pending_review' ? 'warning' : 'success'}`}>{statusLabel(event.status)}</span>
           <strong>{modeLabel(event.load_mode)}</strong>
-          <span className="meta">{evidenceLabel(event.evidence_status)}</span>
+          <span className="meta">{isOrganizational ? 'Unidad organizativa' : 'Entidad eclesiástica'} · {evidenceLabel(event.evidence_status)}</span>
         </div>
       </section>
 
@@ -192,14 +200,17 @@ export default function EventReviewPage() {
             <div className="review-card highlight"><strong>Notas</strong><span className="meta">{typeof event.notes?.notes === 'string' ? event.notes.notes : '—'}</span></div>
           </div>
 
-          <div className="section-heading"><div><p className="eyebrow">Participantes</p><h2>Entidades relacionadas</h2></div></div>
+          <div className="section-heading"><div><p className="eyebrow">Destinos</p><h2>{isOrganizational ? 'Unidades organizativas' : 'Entidades relacionadas'}</h2></div></div>
           <div className="participant-list">
-            {review.participants.length === 0 && <div className="empty-state">No hay participantes vinculados.</div>}
+            {review.participants.length === 0 && <div className="empty-state">{isOrganizational && event.event_type_key === 'organization_unit_creation' ? 'La unidad será creada al aplicar el evento.' : 'No hay destinos vinculados.'}</div>}
             {review.participants.map((participant) => (
               <div className="participant-card" key={participant.id}>
-                <strong>{participant.entity_name ?? 'Entidad no definida'}</strong>
+                <strong>{participantName(participant)}</strong>
                 <span className="meta">Rol: {participant.role}</span>
-                <span className="meta">Tipo: {participant.entity_type_name ?? '—'}</span>
+                {participant.target_kind === 'organization_unit' ? <>
+                  <span className="meta">Organigrama: {participant.organization_chart_name ?? '—'}</span>
+                  <span className="meta">Diócesis: {participant.scope_entity_name ?? '—'}</span>
+                </> : <span className="meta">Tipo: {participant.entity_type_name ?? '—'}</span>}
               </div>
             ))}
           </div>
@@ -211,19 +222,21 @@ export default function EventReviewPage() {
             <CheckCard ok={checks.has_title} title="Título" detail="El evento tiene identificación legible." />
             <CheckCard ok={checks.has_event_type} title="Tipo" detail="El evento está clasificado." />
             <CheckCard ok={checks.has_date_or_initial_snapshot} title="Fecha" detail="Tiene fecha o es foto inicial vigente." />
-            <CheckCard ok={checks.has_participant} title="Participante" detail="Tiene entidad principal vinculada." />
+            <CheckCard ok={checks.has_participant} title="Destino" detail={isOrganizational ? 'Tiene unidad vinculada o define una creación válida.' : 'Tiene entidad principal vinculada.'} />
             <CheckCard ok={checks.has_source_reference} title="Fuente" detail="Tiene fuente o referencia declarada." />
+            {isOrganizational && <CheckCard ok={checks.has_action_plan} title="Plan" detail="El impacto organizativo fue generado." />}
+            {isOrganizational && <CheckCard ok={!checks.has_blocking_action} title="Bloqueos" detail="No existen acciones fallidas ni revisión documental pendiente." />}
             <CheckCard ok={checks.is_pending_review} title="Flujo" detail="Está pendiente de revisión." />
           </div>
 
           <div className="impact-list">
-            <div className="impact-card highlight"><strong>Impacto actual</strong><span className="meta">Aprobar no aplica cambios. Solo deja el evento validado para una futura fase de aplicación.</span></div>
-            <div className="impact-card"><strong>Siguiente fase</strong><span className="meta">Aplicar evento deberá crear/cerrar relaciones, actualizar estado vigente y conservar historial.</span></div>
-            <div className="impact-card"><strong>Flujo de aplicación</strong><span className="meta">Después de revisar, abre el plan de acciones y el contrato de aplicación para validar conflictos y reglas antes de aplicar.</span></div>
+            <div className="impact-card highlight"><strong>Impacto actual</strong><span className="meta">Aprobar valida el evento y deja listas sus acciones; no aplica el cambio por sí solo.</span></div>
+            <div className="impact-card"><strong>Aplicación</strong><span className="meta">{isOrganizational ? 'Después de aprobar, el contrato puede aplicar las acciones transaccionalmente y sellar el historial.' : 'La aplicación automática jurisdiccional continúa bloqueada.'}</span></div>
+            <div className="impact-card"><strong>Flujo</strong><span className="meta">Revisión → plan de acciones → contrato → aplicación cuando corresponda.</span></div>
           </div>
 
           <label className="meta">Nota de revisión
-            <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Observación del revisor, corrección requerida o motivo de aprobación." />
+            <textarea value={note} onChange={(changeEvent) => setNote(changeEvent.target.value)} placeholder="Observación del revisor, corrección requerida o motivo de aprobación." />
           </label>
 
           <div className="button-row">
