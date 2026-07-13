@@ -127,6 +127,7 @@ export async function GET() {
         select: 'id,display_name,slug,person_type,status,death_date',
         status: 'eq.active',
         visibility: 'eq.public',
+        death_date: 'is.null',
         order: 'display_name.asc',
       }),
       safeFetch<AssignmentRow>('public_position_assignments_with_hierarchy', {
