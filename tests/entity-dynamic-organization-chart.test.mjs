@@ -6,7 +6,10 @@ const repoRoot = new URL('../', import.meta.url)
 const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
 test('entity organization chart is generated from configured charts and units', async () => {
-  const chart = await readRepoFile('src/features/entidades/EntityDynamicOrganizationChart.tsx')
+  const [chart, detail] = await Promise.all([
+    readRepoFile('src/features/entidades/EntityDynamicOrganizationChart.tsx'),
+    readRepoFile('src/features/entidades/EntityDetailPage.tsx'),
+  ])
 
   assert.match(chart, /buildEntityOrganizationCharts/)
   assert.match(chart, /organization_chart_key/)
@@ -18,4 +21,7 @@ test('entity organization chart is generated from configured charts and units', 
   assert.match(chart, /href=\{`\/personas\/\$\{position\.person_slug\}`\}/)
   assert.match(chart, /href=\{`\/entidades\/\$\{position\.direct_entity_slug\}`\}/)
   assert.match(chart, /aria-labelledby="entity-organization-chart-title"/)
+  assert.match(detail, /EntityDynamicOrganizationChart/)
+  assert.match(detail, /positions=\{positions\}/)
+  assert.doesNotMatch(detail, /<h2>Posiciones y ocupantes<\/h2>/)
 })
