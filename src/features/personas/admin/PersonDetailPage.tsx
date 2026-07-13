@@ -7,7 +7,7 @@ import CompletionIndicator from '@/components/admin/CompletionIndicator'
 import EntitySectionCard from '@/components/admin/EntitySectionCard'
 import SmartContextPanel from '@/components/admin/SmartContextPanel'
 import { createClient } from '@/lib/supabase/client'
-import PersonAssignmentHistory from './PersonAssignmentHistory'
+import PersonAssignmentHistory, { type AssignmentHistoryItem } from './PersonAssignmentHistory'
 import PersonCanonicalTimeline from './PersonCanonicalTimeline'
 import { getAdminPersonDetail, type AdminPersonDetail } from '../services/person-admin-service'
 
@@ -58,6 +58,7 @@ export default function PersonDetailPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const [person, setPerson] = useState<AdminPersonDetail | null>(null)
+  const [assignments, setAssignments] = useState<AssignmentHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -115,6 +116,7 @@ export default function PersonDetailPage() {
   const editHref = `/admin/personas/${person.person_id}/editar`
   const assignmentHref = `/admin/asignaciones?person=${person.person_id}`
   const deathHref = `/admin/fallecimiento?person=${person.person_id}`
+  const totalTimelineItems = person.ordination_history.length + person.clerical_history.length + assignments.length
 
   return (
     <main className="container dashboard-page admin-entity-page" id="top">
@@ -196,8 +198,8 @@ export default function PersonDetailPage() {
             </EntitySectionCard>
           </div>
 
-          <PersonAssignmentHistory personId={person.person_id} />
-          <PersonCanonicalTimeline person={person} />
+          <PersonAssignmentHistory personId={person.person_id} onItemsChange={setAssignments} />
+          <PersonCanonicalTimeline person={person} assignments={assignments} />
 
           <section className="card admin-entity-quick-actions" id="acciones">
             <div className="section-heading"><div><p className="eyebrow">Operaciones</p><h2>Acciones sobre la ficha</h2><p className="meta">Las acciones históricas generan trazabilidad y no reemplazan la identidad personal.</p></div></div>
@@ -210,7 +212,8 @@ export default function PersonDetailPage() {
           <div className="admin-context-block"><span>Grado más alto recibido</span><strong>{ordinationDegreeLabel(person.highest_ordination_degree)}</strong></div>
           <div className="admin-context-block"><span>Cargo o servicio visible</span><strong>{valueLabel(person.current_entity_name ?? person.current_pastoral_entity_name)}</strong></div>
           <div className="admin-context-block"><span>Pertenencia</span><strong>{valueLabel(person.incardination_entity_name ?? person.incardination_institute_name ?? person.religious_institute_name)}</strong></div>
-          <div className="admin-context-block"><span>Hitos canónicos</span><strong>{person.ordination_history.length + person.clerical_history.length}</strong></div>
+          <div className="admin-context-block"><span>Nombramientos</span><strong>{assignments.length}</strong></div>
+          <div className="admin-context-block"><span>Hitos de trayectoria</span><strong>{totalTimelineItems}</strong></div>
           <div className="admin-context-block"><span>Alertas</span><strong>{completion.missing.length > 0 ? `${completion.missing.length} datos pendientes` : 'Sin alertas principales'}</strong></div>
         </SmartContextPanel>
       </div>
