@@ -25,10 +25,16 @@ function readSteps(form: HTMLFormElement): WizardStep[] {
   })
 }
 
+function findSubmitButton(form: HTMLFormElement) {
+  return form.querySelector<HTMLButtonElement>('button[type="submit"], button:not([type])')
+}
+
 export default function AutoSectionWizard({ children, formSelector = 'form.admin-form' }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const [currentStep, setCurrentStep] = useState(0)
   const [steps, setSteps] = useState<WizardStep[]>([])
+  const [submitLabel, setSubmitLabel] = useState('Guardar')
+  const [submitDisabled, setSubmitDisabled] = useState(false)
 
   const synchronize = useCallback(() => {
     const root = rootRef.current
@@ -43,10 +49,13 @@ export default function AutoSectionWizard({ children, formSelector = 'form.admin
       section.hidden = index !== safeStep
     })
 
-    const submitButtons = Array.from(form.querySelectorAll<HTMLButtonElement>('button[type="submit"], button:not([type])'))
-    submitButtons.forEach((button) => {
-      button.hidden = safeStep !== sections.length - 1
-    })
+    const submitButton = findSubmitButton(form)
+    if (submitButton) {
+      if (!submitButton.hidden) submitButton.hidden = true
+      const nextLabel = submitButton.textContent?.trim() || 'Guardar'
+      setSubmitLabel((current) => current === nextLabel ? current : nextLabel)
+      setSubmitDisabled((current) => current === submitButton.disabled ? current : submitButton.disabled)
+    }
 
     setSteps((current) => {
       const currentSignature = JSON.stringify(current)
@@ -64,9 +73,26 @@ export default function AutoSectionWizard({ children, formSelector = 'form.admin
     if (!root) return
 
     const observer = new MutationObserver(synchronize)
-    observer.observe(root, { childList: true, subtree: true })
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ['disabled'],
+      characterData: true,
+      childList: true,
+      subtree: true,
+    })
     return () => observer.disconnect()
   }, [synchronize])
+
+  const submitForm = useCallback(() => {
+    const form = rootRef.current?.querySelector<HTMLFormElement>(formSelector)
+    if (!form) return
+
+    const submitButton = findSubmitButton(form)
+    if (!submitButton || submitButton.disabled) return
+    form.requestSubmit(submitButton)
+  }, [formSelector])
+
+  const isFinalStep = steps.length > 0 && currentStep === steps.length - 1
 
   return (
     <div ref={rootRef} className="auto-section-wizard">
@@ -91,7 +117,16 @@ export default function AutoSectionWizard({ children, formSelector = 'form.admin
           >
             Anterior
           </button>
-          {currentStep < steps.length - 1 && (
+          {isFinalStep ? (
+            <button
+              className="button button-primary"
+              disabled={submitDisabled}
+              onClick={submitForm}
+              type="button"
+            >
+              {submitLabel}
+            </button>
+          ) : (
             <button
               className="button button-primary"
               onClick={() => setCurrentStep((value) => Math.min(steps.length - 1, value + 1))}
