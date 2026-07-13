@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import ImportApplicationPreviewPanel from '@/features/importaciones/admin/ImportApplicationPreviewPanel'
 import { getImportDomainContract } from '@/features/importaciones/domain/import-domain-contract'
 import {
   applyImportBatch,
@@ -50,6 +51,7 @@ function toEditableValues(row: ImportBatchRowDetail): Record<string, string> {
 
 function IssueList({ issues }: { issues: ImportBatchRowIssue[] }) {
   if (issues.length === 0) return <p className="meta">La fila no tiene incidencias abiertas.</p>
+
   return (
     <div className="admin-system-list">
       {issues.map((issue) => (
@@ -149,6 +151,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
       setError('Debes indicar el motivo del rechazo.')
       return
     }
+
     setIsReviewing(true)
     setError(null)
     setMessage(null)
@@ -302,6 +305,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
         </div>
         {detail.application_rpc_available ? (
           <>
+            <ImportApplicationPreviewPanel rows={rows} serverCanApply={detail.can_apply} />
             <div className="admin-stat-strip" aria-label="Estado de aplicación">
               <div><span>↻</span><strong>{batch.application_attempt_count}</strong><small>Intentos</small></div>
               <div><span>✓</span><strong>{batch.applied_rows}</strong><small>Aplicadas</small></div>
@@ -316,7 +320,7 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
                 <button className="button button-primary" disabled={!detail.can_apply || isApplying} onClick={() => void applyBatch()} type="button">
                   {isApplying ? 'Aplicando lote…' : batch.status === 'failed' ? 'Reintentar aplicación' : domain.applicationAction}
                 </button>
-                <span className="meta">Solo se habilita con validación vigente, aprobación editorial y alcance autorizado.</span>
+                <span className="meta">Solo se habilita con validación vigente, aprobación editorial, objetivos resueltos y alcance autorizado.</span>
               </div>
             )}
           </>
@@ -353,6 +357,8 @@ export default function ImportBatchDetailPage({ batchId }: Props) {
                   <>
                     <div className="admin-system-list">
                       {entries.map(([key, value]) => <div key={key}><span>{key}</span><strong>{String(value || '—')}</strong></div>)}
+                      {row.target_operation && <div><span>Operación prevista</span><strong>{row.target_operation}</strong></div>}
+                      {row.target_table && <div><span>Tabla objetivo</span><strong>{row.target_table}</strong></div>}
                       {row.target_record_id && <div><span>Registro canónico</span><strong>{row.target_record_id}</strong></div>}
                     </div>
                     <IssueList issues={rowIssues} />
