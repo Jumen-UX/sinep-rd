@@ -30,18 +30,16 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Apply source cutover
-        run: python scripts/temp-remove-legacy-pastoral.py
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Verify cutover
+      - name: Apply and verify cutover
         id: check
         continue-on-error: true
         run: |
           set -o pipefail
-          pnpm check 2>&1 | tee cutover-check.log
+          {
+            python scripts/temp-remove-legacy-pastoral.py
+            pnpm install --frozen-lockfile
+            pnpm check
+          } 2>&1 | tee cutover-check.log
 
       - name: Commit failure report
         if: steps.check.outcome == 'failure'
