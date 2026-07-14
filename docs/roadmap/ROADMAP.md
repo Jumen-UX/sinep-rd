@@ -153,12 +153,114 @@ Disponible actualmente:
 - [ ] Medir consultas lentas, tamaño de respuestas y crecimiento de tablas históricas.
 - [ ] Revisar y retirar RPC históricas `SECURITY DEFINER` expuestas cuando exista un wrapper seguro equivalente.
 
+## Prioridad 4 — estadísticas e inteligencia eclesial
+
+El módulo de estadísticas debe reutilizar los contratos canónicos de personas, estructuras, cargos, organismos, eventos y calidad de datos. No se crearán conteos manuales ni modelos paralelos. La implementación comenzará después de cerrar los controles de beta interna y de consolidar los servicios de lectura necesarios.
+
+### Alcance funcional
+
+- Vista pública agregada en `/estadisticas`.
+- Vista administrativa por permisos y alcance en `/admin/estadisticas`.
+- Dimensiones territorial, personas y ministerios, pastoral, administrativa, colegial, calidad de datos y evolución histórica.
+- Filtros jerárquicos por país, provincia eclesiástica, jurisdicción, estructura, nodo y periodo.
+- Comparación entre periodos y entre unidades equivalentes.
+- Desglose navegable desde cada KPI hasta los registros que explican el resultado.
+- Compatibilidad con modo oscuro, teclado, lectores de pantalla y tablas equivalentes para los gráficos.
+- Exportaciones controladas y auditadas.
+
+### Fase 1 — gobierno y contratos
+
+1. [ ] Crear el diccionario funcional de KPI con definición, fórmula, numerador, denominador, exclusiones, visibilidad y ámbitos compatibles.
+2. [ ] Seleccionar un MVP de 25 a 35 indicadores validados.
+3. [ ] Clasificar cada indicador como público, administrativo o restringido.
+4. [ ] Crear contratos TypeScript comunes para filtros, periodos, KPI, distribuciones, series, alertas y drilldown.
+5. [ ] Definir permisos separados para lectura pública, lectura administrativa, calidad, historia, exportación y administración de definiciones.
+
+### Fase 2 — motor estadístico
+
+1. [ ] Crear `kpi_definitions`, `kpi_supported_scopes` y `kpi_snapshots`.
+2. [ ] Implementar la resolución común del ámbito y sus descendientes según dominio, vigencia histórica y permisos.
+3. [ ] Crear RPC versionada para el dashboard público agregado.
+4. [ ] Crear RPC versionada para el dashboard administrativo con control de alcance.
+5. [ ] Crear RPC paginada de drilldown por indicador.
+6. [ ] Añadir pruebas de seguridad para usuarios nacionales, diocesanos, restringidos y no autenticados.
+7. [ ] Garantizar que el valor de cada KPI coincida con su lista de detalle.
+
+### Fase 3 — interfaz común
+
+1. [ ] Crear `src/features/estadisticas` con rutas delgadas dentro de `src/app`.
+2. [ ] Implementar filtros sincronizados con parámetros URL.
+3. [ ] Crear tarjetas KPI con estados de valor, carga, sin datos, no aplica, error y restringido.
+4. [ ] Crear tablas y gráficos accesibles con alternativa tabular.
+5. [ ] Mostrar definición, fórmula, periodo, ámbito y fecha de cálculo desde cada indicador.
+6. [ ] Implementar navegación de detalle y retorno conservando los filtros.
+
+### Fase 4 — MVP territorial y de personas
+
+Indicadores mínimos:
+
+- Jurisdicciones, parroquias y lugares de culto activos.
+- Entidades por tipo y por jurisdicción.
+- Entidades con ubicación geográfica.
+- Cambios estructurales por periodo.
+- Personas publicadas.
+- Obispos, sacerdotes y diáconos activos.
+- Religiosos, religiosas y laicos con responsabilidades vigentes.
+- Sacerdotes por parroquia.
+- Clero sin asignación vigente.
+- Parroquias con párroco y parroquias con cargo principal vacante.
+
+Trabajo:
+
+1. [ ] Implementar adaptadores de lectura territorial.
+2. [ ] Implementar adaptadores de personas y ministerios sin duplicar personas con varias asignaciones.
+3. [ ] Añadir distribuciones, comparaciones entre jurisdicciones hermanas y drilldowns.
+4. [ ] Validar resultados actuales e históricos contra los registros canónicos.
+
+### Fase 5 — pastoral, administrativa y colegial
+
+1. [ ] Medir organismos pastorales por nivel, cobertura, responsables y vacantes.
+2. [ ] Medir unidades administrativas, directores, cargos vigentes, vacantes y nombramientos próximos a vencer.
+3. [ ] Medir organismos colegiales, miembros vigentes, representación, puestos vacantes y mandatos próximos a vencer.
+4. [ ] Evitar que una misma unidad se cuente incorrectamente en más de un dominio.
+5. [ ] Mostrar `No aplica` cuando un indicador no sea válido para el nivel seleccionado, en vez de mostrar cero.
+
+### Fase 6 — calidad de datos y alertas
+
+1. [ ] Definir reglas ponderadas de completitud por tipo de registro.
+2. [ ] Medir registros completos, parciales, sin fuente, pendientes de revisión, desactualizados o potencialmente duplicados.
+3. [ ] Detectar relaciones estructurales inconsistentes, cargos vencidos sin cierre y organismos sin responsable.
+4. [ ] Convertir cada alerta en una acción navegable hacia el registro corregible.
+5. [ ] Respetar `No aplica`, `No identificado` y otras ausencias legítimas sin penalizarlas como error.
+
+### Fase 7 — historia, rendimiento y publicación
+
+1. [ ] Generar snapshots mensuales, anuales y de reportes oficiales para indicadores seleccionados.
+2. [ ] Mantener versión de fórmula y evitar reescribir silenciosamente cifras históricas.
+3. [ ] Implementar series temporales y comparación de periodos.
+4. [ ] Relacionar variaciones relevantes con eventos de creación, división, fusión, supresión o cambio de dependencia.
+5. [ ] Implementar caché pública, invalidación, paginación e índices basados en planes de ejecución reales.
+6. [ ] Añadir exportación CSV y PDF con filtros, usuario, fecha y ámbito auditados.
+7. [ ] Incorporar pruebas E2E, accesibilidad, modo oscuro, móvil y presupuestos de rendimiento.
+8. [ ] Documentar el procedimiento para añadir o modificar un KPI.
+
+### Criterio de cierre
+
+- Todas las fórmulas están documentadas y versionadas.
+- Cada valor coincide con su desglose.
+- Los filtros respetan estructura, vigencia y alcance.
+- Ningún dato privado se expone en agregaciones o exportaciones.
+- Las comparaciones históricas no mezclan metodologías incompatibles.
+- Los gráficos tienen alternativa tabular accesible.
+- `pnpm check`, E2E y pruebas de autorización terminan en verde.
+- Existe documentación técnica y funcional para mantener el módulo.
+
 ## Fuera de alcance inmediato
 
 - Reescritura visual completa sin necesidad funcional.
 - Sustitución del motor canónico por modelos paralelos.
 - Aplicación automática de importaciones sin revisión.
-- Analítica no esencial antes de definir consentimiento y privacidad.
+- Analítica avanzada de actividades, finanzas, sacramentos o desempeño pastoral antes de disponer de datos, metodología, permisos y validación institucional.
 - Declarar una versión pública antes de cerrar los controles de beta interna.
 
 ## Criterio de cierre de una iniciativa
