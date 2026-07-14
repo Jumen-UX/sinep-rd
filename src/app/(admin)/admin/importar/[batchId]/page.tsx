@@ -1,4 +1,4 @@
-import ImportBatchDetailPage from '@/features/importaciones/admin/ImportBatchDetailPage'
+import { ImportBatchDetailPage } from '@/features/importaciones'
 
 type Props = {
   params: Promise<{ batchId: string }>
