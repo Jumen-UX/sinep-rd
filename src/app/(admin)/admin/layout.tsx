@@ -5,6 +5,7 @@ import '../../../styles/admin-framework.css'
 import '../../../styles/admin-dashboard.css'
 import '../../../styles/admin-dashboard-brand.css'
 import '../../../styles/admin-modules.css'
+import '../../../styles/admin-feedback.css'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
