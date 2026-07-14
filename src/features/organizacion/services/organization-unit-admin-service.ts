@@ -68,7 +68,6 @@ export type SaveOrganizationUnitPayload = {
   sort_order: number
   valid_from: string | null
   valid_to: string | null
-  is_current: boolean
 }
 
 export async function loadOrganizationUnitCatalogs(
