@@ -4,21 +4,11 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-
-type JurisdictionAlert = {
-  jurisdiction_id: string
-  jurisdiction_name: string
-  jurisdiction_slug: string | null
-  entity_type_name: string | null
-  entity_type_key: string | null
-  municipality: string | null
-  province: string | null
-  titular_count: number
-  titular_names: string | null
-  has_registered_vacancy: boolean
-  alert_status: 'sede_vacante_registrada' | 'posible_sede_vacante' | 'con_obispo_titular'
-  alert_label: string
-}
+import {
+  getAuthenticatedUserId,
+  loadJurisdictionBishopAlerts,
+  type JurisdictionAlert,
+} from '../services/data-quality-admin-service'
 
 type AlertFilter = 'needs_action' | 'possible' | 'registered' | 'resolved' | 'all'
 
@@ -28,7 +18,7 @@ function statusDescription(status: JurisdictionAlert['alert_status']) {
   return 'Tiene obispo titular registrado.'
 }
 
-export default function AdminJurisdictionAlertsPage() {
+export default function JurisdictionAlertsPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [loading, setLoading] = useState(true)
@@ -38,24 +28,21 @@ export default function AdminJurisdictionAlertsPage() {
 
   useEffect(() => {
     async function loadAlerts() {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) {
-        router.push('/admin/login')
-        return
-      }
+      setError(null)
 
-      const { data, error: alertsError } = await supabase
-        .from('admin_jurisdiction_bishop_alerts')
-        .select('jurisdiction_id,jurisdiction_name,jurisdiction_slug,entity_type_name,entity_type_key,municipality,province,titular_count,titular_names,has_registered_vacancy,alert_status,alert_label')
-        .order('alert_status', { ascending: false })
-        .order('jurisdiction_name')
+      try {
+        const userId = await getAuthenticatedUserId(supabase)
+        if (!userId) {
+          router.push('/admin/login')
+          return
+        }
 
-      if (alertsError) {
-        setError(alertsError.message)
-      } else {
-        setAlerts((data ?? []) as JurisdictionAlert[])
+        setAlerts(await loadJurisdictionBishopAlerts(supabase))
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'No se pudieron cargar las alertas.')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     loadAlerts()
