@@ -9,6 +9,10 @@ const eventRoutes = [
   'src/app/(admin)/admin/eventos/[eventId]/page.tsx',
   'src/app/(admin)/admin/eventos/[eventId]/plan/page.tsx',
   'src/app/(admin)/admin/eventos/[eventId]/contrato/page.tsx',
+  'src/app/(admin)/admin/estructura/eventos/page.tsx',
+  'src/app/(admin)/admin/estructura/eventos/[eventId]/page.tsx',
+  'src/app/(admin)/admin/estructura/eventos/[eventId]/plan/page.tsx',
+  'src/app/(admin)/admin/estructura/eventos/[eventId]/contrato/page.tsx',
 ]
 
 test('event administration routes delegate to the events feature', async () => {
@@ -19,7 +23,16 @@ test('event administration routes delegate to the events feature', async () => {
     assert.doesNotMatch(route, /createClient/)
     assert.doesNotMatch(route, /\.from\s*\(/)
     assert.doesNotMatch(route, /\.rpc\s*\(/)
+    assert.doesNotMatch(route, /admin_create_structural_evolution_event_draft/)
   }
+})
+
+test('legacy structural event verification redirects to the canonical verification route', async () => {
+  const route = await readFile('src/app/(admin)/admin/estructura/eventos/verificacion/page.tsx', 'utf8')
+
+  assert.match(route, /redirect\('\/admin\/eventos\/verificacion'\)/)
+  assert.doesNotMatch(route, /createClient/)
+  assert.doesNotMatch(route, /get_structural_workflow_health/)
 })
 
 test('event draft catalogs and mutation stay behind the event service', async () => {
