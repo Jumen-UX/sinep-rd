@@ -20,7 +20,9 @@ test('import workspace separates required CSV columns from optional template fie
 test('import workspace describes canonical application for every supported domain', () => {
   assert.match(source, /personas, estructuras, asignaciones y eventos pueden aplicarse mediante contratos canónicos/)
   assert.match(source, /aplicar sus operaciones mediante el contrato canónico/)
-  assert.match(source, /El contrato canónico estará disponible después de la aprobación editorial/)
+  assert.match(source, /La preparación no modifica registros canónicos/)
+  assert.match(source, /Revisión previa/)
+  assert.match(source, /Aplicación manual/)
   assert.doesNotMatch(source, /aplicar sus personas/)
   assert.doesNotMatch(source, /Los lotes de personas aprobados pueden aplicarse/)
   assert.doesNotMatch(source, /El contrato de personas estará disponible/)
