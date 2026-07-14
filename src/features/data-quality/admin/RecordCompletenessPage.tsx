@@ -4,23 +4,16 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import {
+  getAuthenticatedUserId,
+  loadRecordCompleteness,
+  saveDataFieldStatus,
+  type CompletenessRow,
+  type DataFieldStatus,
+  type DataQualityTargetKind,
+} from '../services/data-quality-admin-service'
 
-type StatusRow = {
-  id: string
-  name: string
-  slug: string
-  entity_type_name?: string | null
-  entity_type_key?: string | null
-  person_type?: string | null
-  required_count: number
-  missing_count: number
-  missing_fields: string[] | null
-  completion_percent: number
-}
-
-type TargetKind = 'ecclesiastical_entities' | 'persons'
 type Segment = 'all' | 'dioceses' | 'parishes' | 'chapels' | 'clergy' | 'bishops' | 'priests' | 'pending' | 'complete'
-type FieldStatus = { record_table: string; record_id: string; status: string }
 
 function fieldKey(label: string) {
   const map: Record<string, string> = {
@@ -41,11 +34,11 @@ function fieldKey(label: string) {
   return map[label] ?? label
 }
 
-function recordUrl(kind: TargetKind, slug: string) {
+function recordUrl(kind: DataQualityTargetKind, slug: string) {
   return kind === 'persons' ? `/personas/${slug}` : `/entidades/${slug}`
 }
 
-function displayRecordType(row: StatusRow) {
+function displayRecordType(row: CompletenessRow) {
   const labels: Record<string, string> = {
     bishop: 'Obispo',
     priest: 'Sacerdote',
@@ -71,15 +64,15 @@ function segmentLabel(segment: Segment) {
   return labels[segment]
 }
 
-export default function AdminEstadoFichasPage() {
+export default function RecordCompletenessPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
-  const [kind, setKind] = useState<TargetKind>('ecclesiastical_entities')
+  const [kind, setKind] = useState<DataQualityTargetKind>('ecclesiastical_entities')
   const [segment, setSegment] = useState<Segment>('all')
   const [scopeMode, setScopeMode] = useState<'all' | 'mine'>('all')
-  const [entities, setEntities] = useState<StatusRow[]>([])
-  const [agents, setAgents] = useState<StatusRow[]>([])
-  const [fieldStatuses, setFieldStatuses] = useState<FieldStatus[]>([])
+  const [entities, setEntities] = useState<CompletenessRow[]>([])
+  const [agents, setAgents] = useState<CompletenessRow[]>([])
+  const [fieldStatuses, setFieldStatuses] = useState<DataFieldStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -89,7 +82,7 @@ export default function AdminEstadoFichasPage() {
     return targetKind === 'ecclesiastical_entities' ? entities : agents
   }
 
-  function matchesSegment(row: StatusRow, targetKind = kind, targetSegment = segment) {
+  function matchesSegment(row: CompletenessRow, targetKind = kind, targetSegment = segment) {
     if (targetSegment === 'pending') return row.missing_count > 0
     if (targetSegment === 'complete') return row.missing_count === 0
 
@@ -115,41 +108,39 @@ export default function AdminEstadoFichasPage() {
   const average = rows.length > 0 ? Math.round(rows.reduce((sum, row) => sum + row.completion_percent, 0) / rows.length) : 0
   const exceptionCount = fieldStatuses.filter((status) => status.record_table === kind && rows.some((row) => row.id === status.record_id)).length
 
-  function count(targetKind: TargetKind, targetSegment: Segment) {
+  function count(targetKind: DataQualityTargetKind, targetSegment: Segment) {
     return sourceRows(targetKind).filter((row) => matchesSegment(row, targetKind, targetSegment)).length
   }
 
-  function selectSegment(targetKind: TargetKind, targetSegment: Segment) {
+  function selectSegment(targetKind: DataQualityTargetKind, targetSegment: Segment) {
     setKind(targetKind)
     setSegment(targetSegment)
   }
 
   async function loadData() {
     setError(null)
-    const { data: userData } = await supabase.auth.getUser()
-    if (!userData.user) {
-      router.push('/admin/login')
-      return
-    }
 
-    const [entityRes, agentRes, statusRes] = await Promise.all([
-      supabase.from('admin_entity_completeness').select('*').order('completion_percent', { ascending: true }).limit(500),
-      supabase.from('admin_person_completeness').select('*').order('completion_percent', { ascending: true }).limit(500),
-      supabase.from('data_field_statuses').select('record_table,record_id,status').in('status', ['unknown', 'not_applicable']),
-    ])
+    try {
+      const userId = await getAuthenticatedUserId(supabase)
+      if (!userId) {
+        router.push('/admin/login')
+        return
+      }
 
-    if (entityRes.error || agentRes.error || statusRes.error) {
-      setError(entityRes.error?.message ?? agentRes.error?.message ?? statusRes.error?.message ?? 'No se pudo cargar el estado de fichas')
-    } else {
-      setEntities((entityRes.data ?? []) as StatusRow[])
-      setAgents((agentRes.data ?? []) as StatusRow[])
-      setFieldStatuses((statusRes.data ?? []) as FieldStatus[])
+      const snapshot = await loadRecordCompleteness(supabase)
+      setEntities(snapshot.entities)
+      setAgents(snapshot.persons)
+      setFieldStatuses(snapshot.fieldStatuses)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar el estado de fichas.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   useEffect(() => {
     loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function markUnknown(event: FormEvent<HTMLFormElement>) {
@@ -159,10 +150,10 @@ export default function AdminEstadoFichasPage() {
     setError(null)
 
     const form = new FormData(event.currentTarget)
-    const recordTable = String(form.get('record_table') ?? '') as TargetKind
+    const recordTable = String(form.get('record_table') ?? '') as DataQualityTargetKind
     const recordId = String(form.get('record_id') ?? '')
     const fieldName = String(form.get('field_name') ?? '')
-    const status = String(form.get('status') ?? 'unknown')
+    const status = form.get('status') === 'not_applicable' ? 'not_applicable' : 'unknown'
 
     if (!recordTable || !recordId || !fieldName) {
       setError('Selecciona la ficha y el dato que vas a marcar.')
@@ -170,25 +161,30 @@ export default function AdminEstadoFichasPage() {
       return
     }
 
-    const { data: userData } = await supabase.auth.getUser()
-    const { error: saveError } = await supabase.from('data_field_statuses').upsert({
-      record_table: recordTable,
-      record_id: recordId,
-      field_name: fieldName,
-      status,
-      notes: String(form.get('notes') ?? '').trim() || null,
-      created_by: userData.user?.id ?? null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'record_table,record_id,field_name' })
+    try {
+      const userId = await getAuthenticatedUserId(supabase)
+      if (!userId) {
+        router.push('/admin/login')
+        return
+      }
 
-    if (saveError) {
-      setError(saveError.message)
-    } else {
+      await saveDataFieldStatus(supabase, {
+        recordTable,
+        recordId,
+        fieldName,
+        status,
+        notes: String(form.get('notes') ?? '').trim() || null,
+        userId,
+      })
+
       setMessage('Dato marcado. Ya no generará alerta pendiente.')
       event.currentTarget.reset()
       await loadData()
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el estado del dato.')
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   if (loading) return <main className="container"><div className="empty-state">Cargando estado de fichas...</div></main>
@@ -262,7 +258,7 @@ export default function AdminEstadoFichasPage() {
           <div><p className="eyebrow">Excepción</p><h2>Marcar dato no identificado</h2></div>
         </div>
         <form className="admin-form admin-config-form" onSubmit={markUnknown}>
-          <select name="record_table" value={kind} onChange={(event) => setKind(event.target.value as TargetKind)}>
+          <select name="record_table" value={kind} onChange={(event) => setKind(event.target.value as DataQualityTargetKind)}>
             <option value="ecclesiastical_entities">Entidad eclesiástica</option>
             <option value="persons">Clero o agente</option>
           </select>
