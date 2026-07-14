@@ -1,0 +1,59 @@
+name: One-time PostCSS remediation
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-postcss-remediation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Configure pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Pin the patched transitive PostCSS version
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+          const path = 'package.json'
+          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'))
+          pkg.pnpm = pkg.pnpm || {}
+          pkg.pnpm.overrides = pkg.pnpm.overrides || {}
+          pkg.pnpm.overrides.postcss = '8.5.19'
+          fs.writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`)
+          NODE
+          pnpm install --lockfile-only
+
+      - name: Install and validate
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm check
+
+      - name: Commit remediation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json pnpm-lock.yaml
+          if git diff --cached --quiet; then
+            echo "No dependency changes were required."
+            exit 0
+          fi
+          git commit -m "fix(deps): override vulnerable transitive PostCSS"
+          git push origin HEAD:main
