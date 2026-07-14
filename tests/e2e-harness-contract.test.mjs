@@ -16,6 +16,7 @@ test('Playwright commands are versioned and remain outside the default check', a
   assert.match(packageJson.scripts['test:e2e'], /@axe-core\/playwright@4\.10\.2/)
   assert.match(packageJson.scripts['test:e2e:public'], /public-accessibility\.spec\.mjs/)
   assert.match(packageJson.scripts['test:e2e:admin'], /admin-import\.spec\.mjs/)
+  assert.match(packageJson.scripts['test:e2e:admin:mutation'], /admin-import-mixed-person\.spec\.mjs/)
   assert.doesNotMatch(packageJson.scripts.check, /e2e/)
 })
 
@@ -65,6 +66,24 @@ test('admin import E2E uses real login but mocks the mutation endpoint', async (
   assert.match(spec, /expectNoBlockingAccessibilityViolations/)
 })
 
+test('mixed person mutation E2E is explicit, non-production and verifies idempotency', async () => {
+  const spec = await read('e2e/admin-import-mixed-person.spec.mjs')
+
+  assert.match(spec, /E2E_ALLOW_MUTATIONS === 'true'/)
+  assert.match(spec, /E2E_PERSON_REFERENCE_CODE/)
+  assert.match(spec, /E2E_PERSON_FIRST_NAME/)
+  assert.match(spec, /E2E_PERSON_LAST_NAME/)
+  assert.match(spec, /test\.skip\(!canRun/)
+  assert.match(spec, /codigo_referencia/)
+  assert.match(spec, /layperson/)
+  assert.match(spec, /visibilidad/)
+  assert.match(spec, /internal/)
+  assert.match(spec, /Aprobar lote/)
+  assert.match(spec, /Aplicar lote de personas/)
+  assert.match(spec, /idempotent_replay/)
+  assert.match(spec, /Descargar reporte final CSV/)
+})
+
 test('Playwright artifacts and optional credentials are documented but not committed', async () => {
   const [gitignore, env, docs] = await Promise.all([
     read('.gitignore'),
@@ -78,8 +97,12 @@ test('Playwright artifacts and optional credentials are documented but not commi
   assert.match(env, /E2E_BASE_URL=/)
   assert.match(env, /E2E_ADMIN_EMAIL=/)
   assert.match(env, /E2E_ADMIN_PASSWORD=/)
+  assert.match(env, /E2E_ALLOW_MUTATIONS=false/)
+  assert.match(env, /E2E_PERSON_REFERENCE_CODE=/)
   assert.match(docs, /pnpm test:e2e:install/)
   assert.match(docs, /pnpm test:e2e:public/)
   assert.match(docs, /pnpm test:e2e:admin/)
+  assert.match(docs, /pnpm test:e2e:admin:mutation/)
+  assert.match(docs, /Nunca habilites `E2E_ALLOW_MUTATIONS=true` contra producción/)
   assert.match(docs, /No forma parte de `pnpm check`/)
 })
