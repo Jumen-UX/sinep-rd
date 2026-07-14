@@ -20,6 +20,7 @@ import './public-combobox.css'
 import './scope-back-controls.css'
 import './brand.css'
 import './admin-brand.css'
+import './public-shell.css'
 
 export const metadata: Metadata = {
   title: {
