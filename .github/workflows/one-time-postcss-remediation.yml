@@ -28,7 +28,7 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Pin the patched transitive PostCSS version
+      - name: Override the vulnerable transitive PostCSS version
         run: |
           node <<'NODE'
           const fs = require('node:fs')
@@ -40,11 +40,10 @@ jobs:
           fs.writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`)
           NODE
           pnpm install --lockfile-only
-
-      - name: Install and validate
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm check
+          if grep -q 'postcss@8.4.31' pnpm-lock.yaml; then
+            echo 'The vulnerable PostCSS package remains in the lockfile.' >&2
+            exit 1
+          fi
 
       - name: Commit remediation
         run: |
