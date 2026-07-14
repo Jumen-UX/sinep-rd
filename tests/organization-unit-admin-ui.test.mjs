@@ -32,7 +32,7 @@ test('organization unit API applies permission and canonical RPC contracts', asy
   assert.match(api, /revalidatePublicContent/)
 })
 
-test('organization manager exposes filters tree parent selection and approval states', async () => {
+test('organization manager exposes filters tree parent selection and explicit lifecycle states', async () => {
   const page = await read('src/features/organizacion/admin/OrganizationUnitManagerPage.tsx')
 
   assert.match(page, /flattenTree/)
@@ -40,7 +40,8 @@ test('organization manager exposes filters tree parent selection and approval st
   assert.match(page, /Diócesis y organigrama/)
   assert.match(page, /Unidad superior/)
   assert.match(page, /Área pastoral/)
-  assert.match(page, /Activa \/ aprobada/)
+  assert.match(page, /status === 'active' \? 'Activa'/)
+  assert.match(page, /action: 'approve', label: 'Aprobar unidad'/)
   assert.match(page, /permiso de publicación/)
 })
 
