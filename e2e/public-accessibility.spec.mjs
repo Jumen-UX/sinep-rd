@@ -31,6 +31,39 @@ for (const publicPage of publicPages) {
   })
 }
 
+test('inicio territorial mantiene sus secciones en flujo vertical', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1200 })
+  const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+  expect(response).not.toBeNull()
+  expect(response.status()).toBeLessThan(400)
+
+  const provinces = page.locator('.public-provinces-section')
+  const jurisdictions = page.locator('.public-jurisdictions-section')
+  const pastors = page.locator('.public-pastors-section')
+
+  await expect(provinces).toBeVisible()
+  await expect(jurisdictions).toBeVisible()
+  await expect(pastors).toBeVisible()
+
+  const [provinceBox, jurisdictionBox, pastorsBox] = await Promise.all([
+    provinces.boundingBox(),
+    jurisdictions.boundingBox(),
+    pastors.boundingBox(),
+  ])
+
+  expect(provinceBox).not.toBeNull()
+  expect(jurisdictionBox).not.toBeNull()
+  expect(pastorsBox).not.toBeNull()
+  expect(provinceBox.y + provinceBox.height).toBeLessThanOrEqual(jurisdictionBox.y + 1)
+  expect(jurisdictionBox.y + jurisdictionBox.height).toBeLessThanOrEqual(pastorsBox.y + 1)
+
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+    'La vista territorial no debe producir desplazamiento horizontal en escritorio.',
+  ).toBe(true)
+})
+
 test('sitemap publica fichas navegables de personas y entidades', async ({ page, request }, testInfo) => {
   const sitemapResponse = await request.get('/sitemap.xml')
   expect(sitemapResponse.ok(), 'El sitemap público debe responder correctamente.').toBe(true)
