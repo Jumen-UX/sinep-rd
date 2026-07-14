@@ -13,7 +13,7 @@ test('public E2E workflow runs Chromium and Axe without privileged credentials',
   assert.match(workflow, /pnpm add --save-dev --lockfile=false @playwright\/test@1\.61\.0 @axe-core\/playwright@4\.10\.2/)
   assert.match(workflow, /pnpm exec playwright install chromium --with-deps/)
   assert.match(workflow, /pnpm exec playwright test e2e\/public-accessibility\.spec\.mjs/)
-  assert.match(workflow, /actions\/upload-artifact@v4/)
+  assert.match(workflow, /uses:\s+actions\/upload-artifact@v\d+/)
   assert.match(workflow, /if: always\(\)/)
   assert.match(workflow, /timeout-minutes: 20/)
   assert.doesNotMatch(workflow, /SERVICE_ROLE/)
