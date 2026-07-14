@@ -1,0 +1,22 @@
+grant select (
+  id,
+  person_id,
+  degree,
+  ordination_date,
+  ordination_place,
+  principal_ordainer_person_id,
+  principal_ordainer_name,
+  assistant_ordainer_1_person_id,
+  assistant_ordainer_1_name,
+  assistant_ordainer_2_person_id,
+  assistant_ordainer_2_name,
+  source_name,
+  source_url,
+  source_checked_at,
+  verification_status,
+  notes_public,
+  record_status,
+  visibility,
+  created_at,
+  updated_at
+) on public.ordination_events to anon, authenticated;
