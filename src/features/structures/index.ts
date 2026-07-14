@@ -1,5 +1,7 @@
+export { default as LevelOfficeConfigurationPage } from './admin/LevelOfficeConfigurationPage'
 export * from './components'
 export * from './config/presets'
 export * from './hooks'
+export * from './services/level-office-admin-service'
 export * from './services/structure-admin-service'
 export * from './types'
