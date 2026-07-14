@@ -17,7 +17,7 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
   } = model
 
   return (
-    <section id="panel-territorial" role="tabpanel" aria-labelledby="tab-territorial">
+    <section className="public-territorial-view" id="panel-territorial" role="tabpanel" aria-labelledby="tab-territorial">
       <section className="public-panel public-scope-card">
         <span className="public-country-mark" aria-hidden="true">▰</span>
         <div><h2>{scopeTitle}</h2><div className="public-scope-summary">
@@ -34,8 +34,8 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
         <Metric label="Parroquias" value={formatNumber(scopedParishes.length)} detail="Registros publicados" />
       </section>
 
-      <section className="public-content-grid public-country-content-grid">
-        <article className="public-panel public-section-card">
+      <section className="public-territorial-sections" aria-label="Resumen territorial">
+        <article className="public-panel public-section-card public-provinces-section">
           <div className="public-section-title"><p className="eyebrow">Provincias eclesiásticas</p><h2>Selecciona una provincia</h2></div>
           <div className="public-province-list">{provinces.map((item) => (
             <article className="public-province-card" key={item.name}>
@@ -46,7 +46,7 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
           ))}</div>
         </article>
 
-        <article className="public-panel public-section-card">
+        <article className="public-panel public-section-card public-jurisdictions-section">
           <div className="public-section-title"><p className="eyebrow">Jurisdicciones</p><h2>{scopedDioceses.length} resultados</h2></div>
           <div className="public-table"><div className="public-table-head"><span>Jurisdicción</span><span>Tipo</span><span>Acción</span></div>
             {scopedDioceses.slice(0, 12).map((item) => <JurisdictionRow item={item} key={item.id} />)}
@@ -54,9 +54,9 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
           </div>
         </article>
 
-        <article className="public-panel public-section-card">
+        <article className="public-panel public-section-card public-pastors-section">
           <div className="public-section-title"><p className="eyebrow">Pastores</p><h2>Obispos y ordinarios</h2></div>
-          <div className="public-directory-grid">{ordinaryPeople.length === 0
+          <div className="public-directory-grid public-pastors-grid">{ordinaryPeople.length === 0
             ? <Empty title="Sin ordinarios publicados" detail="No hay responsables activos asociados a este ámbito." />
             : ordinaryPeople.slice(0, 12).map((item) => <PersonItem item={item} key={item.id} />)}
           </div>
