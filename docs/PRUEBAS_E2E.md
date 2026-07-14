@@ -28,7 +28,7 @@ E2E_BASE_URL=https://entorno-de-prueba.example pnpm test:e2e:public
 
 No uses una URL protegida por SSO externo salvo que el navegador de prueba pueda autenticarse en ese SSO.
 
-## Flujo administrativo de importación
+## Flujo administrativo de importación sin mutaciones
 
 Usa una cuenta de pruebas con el alcance mínimo necesario:
 
@@ -40,6 +40,35 @@ pnpm test:e2e:admin
 
 La prueba inicia sesión de forma real, pero intercepta únicamente `POST /api/admin/importaciones/preparar`. Valida selección del dominio, lectura del CSV, cálculo del hash, vista previa y resultado persistido simulado sin crear lotes adicionales en Supabase.
 
+## Piloto mutante `create + noop` de personas
+
+Este recorrido solo debe ejecutarse contra una rama de desarrollo de Supabase o una base no productiva que pueda restablecerse. Nunca habilites `E2E_ALLOW_MUTATIONS=true` contra producción.
+
+Necesita una persona existente con código interno estable en ese entorno. El recorrido usa esa identidad como `noop` y crea una segunda persona con visibilidad `internal` y nombre único.
+
+```bash
+E2E_BASE_URL=https://entorno-no-productivo.example \
+E2E_ADMIN_EMAIL=usuario-pruebas@example.org \
+E2E_ADMIN_PASSWORD='contraseña-de-pruebas' \
+E2E_ALLOW_MUTATIONS=true \
+E2E_PERSON_REFERENCE_CODE=CLERO-000112 \
+E2E_PERSON_FIRST_NAME=Agustinus \
+E2E_PERSON_LAST_NAME=Panggul \
+pnpm test:e2e:admin:mutation
+```
+
+La prueba verifica el ciclo completo:
+
+1. login real;
+2. preparación de un CSV de dos filas;
+3. clasificación de una fila como `create` y otra como `noop`;
+4. aprobación editorial;
+5. aplicación transaccional;
+6. descarga del reporte final CSV;
+7. repetición idempotente del endpoint de aplicación.
+
+La persona creada queda marcada como interna y contiene un identificador único del recorrido. En una rama efímera, restablece la base al finalizar. En una base compartida de pruebas, archiva o elimina el registro mediante el procedimiento administrativo acordado; no lo borres directamente desde SQL.
+
 ## Suite completa
 
 ```bash
@@ -48,7 +77,7 @@ pnpm test:e2e
 
 La suite usa:
 
-- Chromium.
+- Chromium;
 - trazas, capturas y video solo al fallar;
 - Axe sobre WCAG A y AA;
 - bloqueo de violaciones automáticas con impacto `critical` o `serious`;
@@ -69,6 +98,8 @@ Para probar un despliegue:
 2. Escribe la URL pública completa en `base_url`.
 3. Ejecuta el workflow.
 
-La ejecución prueba las rutas públicas con Playwright y Axe. Si existen los secretos `E2E_ADMIN_EMAIL` y `E2E_ADMIN_PASSWORD`, también prueba el flujo administrativo de importación. El reporte HTML, las capturas, los videos y las trazas se conservan como artefactos durante 14 días.
+La ejecución prueba las rutas públicas con Playwright y Axe. Si existen los secretos `E2E_ADMIN_EMAIL` y `E2E_ADMIN_PASSWORD`, también prueba el flujo administrativo sin mutaciones. El recorrido mutante no debe activarse automáticamente: requiere `E2E_ALLOW_MUTATIONS=true` y las tres variables de referencia de persona en un entorno no productivo.
+
+El reporte HTML, las capturas, los videos y las trazas se conservan como artefactos durante 14 días.
 
 Los escaneos automáticos no sustituyen la revisión manual con teclado, lector de pantalla ni pruebas con usuarios.
