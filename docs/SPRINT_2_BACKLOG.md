@@ -57,8 +57,6 @@ Por tanto, Sprint 2 no debe repetir esa migración. Debe completar la paridad y 
 
 Resultado documentado en `docs/SPRINT_2_STRUCTURAL_MODEL_INVENTORY.md`.
 
-Compatibilidad concreta detectada: `scopeUtils.ts` consume `get_entity_descendants`; S2-03 debe verificar si resuelve descendencia desde el motor territorial canónico o mantiene una jerarquía institucional paralela.
-
 Criterio de cierre:
 
 - Existe una matriz archivo/consulta → modelo canónico → propósito.
@@ -89,20 +87,35 @@ Criterio de cierre:
 - Las discrepancias quedan clasificadas como válidas, migrables o bloqueantes.
 - Las consultas pueden ejecutarse nuevamente después de cada migración.
 
-### S2-03 — Contrato territorial — EN EJECUCIÓN
+### S2-03 — Contrato territorial — COMPLETADO
 
-- [ ] Confirmar que toda jerarquía territorial se lee desde plantillas, niveles, nodos y edges vigentes.
-- [ ] Confirmar que una entidad con ficha propia se enlaza al nodo, pero no se duplica dentro del nodo.
-- [ ] Revisar que las pantallas públicas y administrativas no reconstruyan jerarquías desde `parent_id` heredados cuando existe el edge canónico.
-- [ ] Verificar que `get_entity_descendants` resuelva la descendencia desde el motor territorial canónico.
-- [ ] Mantener compatibilidad temporal únicamente donde exista un consumidor probado.
+- [x] Confirmar que toda jerarquía territorial se lee desde plantillas, niveles, nodos y edges vigentes.
+- [x] Confirmar que una entidad con ficha propia se enlaza al nodo, pero no se duplica dentro del nodo.
+- [x] Sustituir la lectura de `get_structure_tree` basada en `structure_nodes.parent_node_id` por una lectura basada en `structure_node_edges`.
+- [x] Crear `get_entity_descendants` como proyección institucional derivada exclusivamente del motor territorial canónico.
+- [x] Verificar que `scopeUtils.ts` consume la proyección canónica de descendencia.
+- [x] Proteger el contrato territorial mediante pruebas automatizadas.
+
+Resultados documentados en `docs/SPRINT_2_TERRITORIAL_CONTRACT_RESULTS.md`.
+
+Validación real:
+
+- Las 12 plantillas activas devolvieron paridad completa entre nodos activos/vigentes y nodos reconstruidos por `get_structure_tree`.
+- La plantilla principal devolvió 162 de 162 nodos; las otras 11 devolvieron 1 de 1.
+- Una zona pastoral con 14 hijos institucionales devolvió 14 descendientes directos desde edges vigentes.
+- No existe jerarquía padre/hijo almacenada en `ecclesiastical_entities`.
+
+Compatibilidad controlada:
+
+- `structure_nodes.parent_node_id` permanece temporalmente como columna de compatibilidad, pero ya no es fuente canónica de lectura.
+- Su retiro se decidirá en S2-06 después de inventariar consumidores históricos y adaptadores.
 
 Criterio de cierre:
 
-- Todas las jerarquías territoriales vigentes se pueden reconstruir desde el motor canónico.
-- No existen dos escrituras activas para la misma relación padre/hijo.
+- Todas las jerarquías territoriales vigentes se reconstruyen desde `structure_node_edges`.
+- No existen dos fuentes activas de lectura para la relación padre/hijo.
 
-### S2-04 — Contrato organizativo
+### S2-04 — Contrato organizativo — SIGUIENTE
 
 - Verificar que pastoral, administración y colegialidad usan `organization_charts` y `organization_units`.
 - Revisar unidades sin organigrama, sin entidad de alcance o con padre incompatible.
@@ -155,8 +168,8 @@ Criterio de cierre:
 
 1. S2-01 Inventario de correspondencias. — COMPLETADO
 2. S2-02 Consultas de paridad. — COMPLETADO
-3. S2-03 Contrato territorial. — EN EJECUCIÓN
-4. S2-04 Contrato organizativo.
+3. S2-03 Contrato territorial. — COMPLETADO
+4. S2-04 Contrato organizativo. — SIGUIENTE
 5. S2-05 Paridad de cargos y alcance.
 6. S2-06 Compatibilidad y bloqueo de legados.
 7. S2-07 Documentación canónica.
