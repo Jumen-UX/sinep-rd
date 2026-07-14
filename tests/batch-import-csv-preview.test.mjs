@@ -9,9 +9,12 @@ async function readRepoFile(path) {
 }
 
 test('batch import provides downloadable CSV templates and a bounded preview', async () => {
-  const page = await readRepoFile('src/app/(admin)/admin/importar/page.tsx')
+  const route = await readRepoFile('src/app/(admin)/admin/importar/page.tsx')
+  const page = await readRepoFile('src/features/importaciones/admin/AdminBatchImportPage.tsx')
   const parser = await readRepoFile('src/features/importaciones/services/csv-preview.ts')
 
+  assert.match(route, /from '@\/features\/importaciones'/)
+  assert.doesNotMatch(route, /buildCsvTemplate/)
   assert.match(page, /buildCsvTemplate/)
   assert.match(page, /parseCsvPreview/)
   assert.match(page, /Descargar plantilla CSV/)
