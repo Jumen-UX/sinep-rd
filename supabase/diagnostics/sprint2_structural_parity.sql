@@ -99,7 +99,8 @@ group by sn.linked_ecclesiastical_entity_id, sn.template_id
 having count(*) > 1
 order by current_node_count desc, entity_id;
 
--- 7. Entidades activas cuyo tipo exige presencia territorial pero no tienen nodo vigente.
+-- 7. Entidades activas cuyo tipo aparece en un nivel territorial configurado pero no tienen nodo vigente.
+-- La pertenencia diocesana se resuelve mediante el motor estructural; ecclesiastical_entities no conserva diocese_id.
 select
   ee.id as entity_id,
   ee.name as entity_name,
@@ -113,7 +114,6 @@ where ee.status = 'active'
     join public.structure_templates st on st.id = sl.template_id
     where sl.linked_entity_type_id = ee.entity_type_id
       and st.status = 'active'
-      and st.diocese_id = coalesce(ee.diocese_id, ee.id)
   )
   and not exists (
     select 1
