@@ -6,6 +6,7 @@ const eventRoutes = [
   'src/app/(admin)/admin/eventos/page.tsx',
   'src/app/(admin)/admin/eventos/nuevo/page.tsx',
   'src/app/(admin)/admin/eventos/pendientes/page.tsx',
+  'src/app/(admin)/admin/eventos/verificacion/page.tsx',
   'src/app/(admin)/admin/eventos/[eventId]/page.tsx',
   'src/app/(admin)/admin/eventos/[eventId]/plan/page.tsx',
   'src/app/(admin)/admin/eventos/[eventId]/contrato/page.tsx',
@@ -55,17 +56,20 @@ test('event registry reads stay behind the event registry service', async () => 
   assert.match(service, /get_event_registry_stream/)
 })
 
-test('event queue and review mutations stay behind the workflow service', async () => {
+test('event queue review and verification stay behind the workflow service', async () => {
   const pendingPage = await readFile('src/features/events/admin/PendingEventsPage.tsx', 'utf8')
   const reviewPage = await readFile('src/features/events/admin/EventReviewPage.tsx', 'utf8')
+  const verificationPage = await readFile('src/features/events/admin/EventWorkflowVerificationPage.tsx', 'utf8')
   const service = await readFile('src/features/events/services/event-workflow-admin-service.ts', 'utf8')
 
   assert.match(pendingPage, /loadPendingEvents/)
   assert.match(reviewPage, /loadEventReview/)
   assert.match(reviewPage, /submitEventReview/)
+  assert.match(verificationPage, /loadEventWorkflowHealth/)
   assert.match(service, /get_event_registry_stream/)
   assert.match(service, /get_event_review/)
   assert.match(service, /admin_review_event/)
+  assert.match(service, /get_event_workflow_health/)
 })
 
 test('event plans and contracts stay behind the application service', async () => {
