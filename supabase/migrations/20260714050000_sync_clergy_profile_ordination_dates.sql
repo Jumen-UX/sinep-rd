@@ -8,6 +8,10 @@ as $$
 declare
   v_person_id uuid := coalesce(new.person_id, old.person_id);
 begin
+  if pg_trigger_depth() > 1 then
+    return coalesce(new, old);
+  end if;
+
   update public.clergy_profiles cp
   set diaconal_ordination_date = (
         select max(oe.ordination_date)
@@ -47,6 +51,8 @@ on public.ordination_events
 for each row
 execute function app_private.sync_clergy_profile_ordination_dates();
 
+alter table public.clergy_profiles disable trigger clergy_profiles_sync_ordination_events;
+
 with ord as (
   select person_id,
          max(ordination_date) filter (where degree = 'diaconate' and record_status = 'active') as diaconate_date,
@@ -67,5 +73,7 @@ where ord.person_id = cp.person_id
     or cp.priestly_ordination_date is distinct from ord.presbyterate_date
     or cp.episcopal_ordination_date is distinct from ord.episcopate_date
   );
+
+alter table public.clergy_profiles enable trigger clergy_profiles_sync_ordination_events;
 
 commit;
