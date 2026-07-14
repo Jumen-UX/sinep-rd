@@ -9,7 +9,7 @@ test('public active navigation keeps explicit accessible contrast', async () => 
   const css = await read('src/app/globals.css')
 
   assert.match(css, /\.public-sidebar-link\.active > span:nth-child\(2\)/)
-  assert.match(css, /color: #ffffff/)
+  assert.match(css, /color: #17202a/)
   assert.match(css, /#tab-territorial\[aria-selected="true"\] > span:nth-child\(2\)/)
   assert.match(css, /color: #5e1717/)
 })
