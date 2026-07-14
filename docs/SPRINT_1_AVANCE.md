@@ -28,8 +28,9 @@ Mantener las rutas de Next.js como puntos de entrada delgados y concentrar inter
 - La generación y configuración del plan, los conflictos relacionales, el contrato y la aplicación organizativa quedaron centralizados en `event-application-admin-service.ts`.
 - `/admin/importar`, `/admin/importar/lotes` y `/admin/importar/[batchId]` delegan en `features/importaciones`.
 - Preparación, historial, corrección por fila, revalidación, revisión y aplicación de lotes permanecen detrás de `batch-import-admin-service.ts`.
-- `/admin/solicitudes` delega en `features/requests`.
-- La carga de solicitudes internas y sugerencias públicas quedó centralizada en `request-admin-service.ts`; el mismo servicio define el contrato de detalle y revisión para la siguiente extracción.
+- `/admin/solicitudes` y `/admin/solicitudes/[id]` delegan en `features/requests`.
+- La carga de solicitudes internas, sugerencias públicas, detalle de propuestas y decisiones de aprobación o rechazo quedó centralizada en `request-admin-service.ts`.
+- La revisión de propuestas canónicas por identidad, sacramento, estado, incardinación, vida consagrada, función episcopal y dignidades permanece en `ChangeRequestReviewPage.tsx`.
 - Se añadieron pruebas contractuales para impedir que las rutas de nombramientos, cargos, acceso, revisión, eventos, importaciones y solicitudes recuperen consultas, RPC o llamadas HTTP directas.
 
 ## Regla arquitectónica aplicada
@@ -38,7 +39,7 @@ Las rutas bajo `src/app` pueden resolver parámetros, autenticación inicial y c
 
 ## Pendientes para cerrar Sprint 1
 
-1. Extraer el detalle de `/admin/solicitudes/[id]` y las demás rutas identificadas por `audit:routes`.
+1. Extraer las rutas restantes identificadas por `audit:routes`, priorizando estructura heredada, altas de entidades y paneles de calidad.
 2. Confirmar que cada RPC crítica tenga un único servicio consumidor por dominio.
 3. Eliminar utilidades duplicadas de normalización, manejo de errores y alcance.
 4. Ampliar las pruebas contractuales de límites de ruta sobre cualquier ruta crítica detectada por el inventario.
