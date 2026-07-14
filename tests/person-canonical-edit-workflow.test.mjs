@@ -86,8 +86,10 @@ test('person admin service loads selectable canonical references', async () => {
 })
 
 test('review page explains canonical operations instead of printing person type changes', async () => {
-  const reviewPage = await readRepoFile('src/app/(admin)/admin/solicitudes/[id]/page.tsx')
+  const route = await readRepoFile('src/app/(admin)/admin/solicitudes/[id]/page.tsx')
+  const reviewPage = await readRepoFile('src/features/requests/admin/ChangeRequestReviewPage.tsx')
 
+  assert.match(route, /ChangeRequestReviewPage/)
   assert.match(reviewPage, /CanonicalProposalReview/)
   assert.match(reviewPage, /Operaciones sobre los grados del Orden/)
   assert.match(reviewPage, /Vigencias propuestas/)
