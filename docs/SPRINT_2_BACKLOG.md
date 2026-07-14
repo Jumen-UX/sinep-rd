@@ -47,17 +47,22 @@ Por tanto, Sprint 2 no debe repetir esa migración. Debe completar la paridad y 
 
 ## Backlog de ejecución
 
-### S2-01 — Inventario de correspondencias
+### S2-01 — Inventario de correspondencias — COMPLETADO
 
-- Inventariar cada consumidor de `ecclesiastical_entities`, `structure_nodes`, `organization_units` y tablas heredadas todavía existentes.
-- Clasificar cada consumidor como territorial, organizativo, institucional, nombramiento, permiso, evento o presentación pública.
-- Detectar columnas de compatibilidad y adaptadores transitorios.
-- Documentar qué modelo es fuente y cuál es proyección en cada caso.
+- [x] Inventariar consumidores de `ecclesiastical_entities`, `structure_nodes`, `organization_units` y sus proyecciones activas.
+- [x] Clasificar consumidores como territorial, organizativo, institucional, nombramiento, permiso, evento o presentación pública.
+- [x] Detectar compatibilidades y adaptadores transitorios identificables en código activo.
+- [x] Documentar qué modelo es fuente y cuál es proyección en cada caso.
+- [x] Añadir `audit:structures` y `audit:structures:strict` al flujo reproducible; el modo estricto forma parte de `pnpm check`.
+
+Resultado documentado en `docs/SPRINT_2_STRUCTURAL_MODEL_INVENTORY.md`.
+
+Compatibilidad concreta detectada: `scopeUtils.ts` consume `get_entity_descendants`; S2-03 debe verificar si resuelve descendencia desde el motor territorial canónico o mantiene una jerarquía institucional paralela.
 
 Criterio de cierre:
 
 - Existe una matriz archivo/consulta → modelo canónico → propósito.
-- No queda ningún consumidor cuyo modelo fuente sea ambiguo.
+- No queda ningún modelo detectado por el auditor sin fuente canónica clasificada.
 
 ### S2-02 — Consultas de paridad
 
@@ -131,8 +136,8 @@ Criterio de cierre:
 
 ## Orden de ejecución
 
-1. S2-01 Inventario de correspondencias.
-2. S2-02 Consultas de paridad.
+1. S2-01 Inventario de correspondencias. — COMPLETADO
+2. S2-02 Consultas de paridad. — SIGUIENTE
 3. S2-03 Contrato territorial.
 4. S2-04 Contrato organizativo.
 5. S2-05 Paridad de cargos y alcance.
