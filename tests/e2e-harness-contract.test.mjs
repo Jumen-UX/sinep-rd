@@ -32,7 +32,7 @@ test('browser configuration keeps diagnostics and local or remote execution expl
   assert.match(config, /command: 'pnpm dev'/)
 })
 
-test('public E2E checks navigation, images, headings and blocking Axe findings', async () => {
+test('public E2E checks navigation, dynamic profiles, mobile layout and blocking Axe findings', async () => {
   const [spec, accessibility] = await Promise.all([
     read('e2e/public-accessibility.spec.mjs'),
     read('e2e/accessibility.mjs'),
@@ -41,6 +41,11 @@ test('public E2E checks navigation, images, headings and blocking Axe findings',
   assert.match(spec, /path: '\/'/)
   assert.match(spec, /path: '\/diocesis'/)
   assert.match(spec, /path: '\/personas'/)
+  assert.match(spec, /\/sitemap\.xml/)
+  assert.match(spec, /\\\/personas\\\/\[\^<\]\+/)
+  assert.match(spec, /\\\/entidades\\\/\[\^<\]\+/)
+  assert.match(spec, /setViewportSize\(\{ width: 390, height: 844 \}\)/)
+  assert.match(spec, /scrollWidth <= document\.documentElement\.clientWidth/)
   assert.match(spec, /img:not\(\[alt\]\)/)
   assert.match(spec, /document\.activeElement/)
   assert.match(spec, /expectNoBlockingAccessibilityViolations/)
