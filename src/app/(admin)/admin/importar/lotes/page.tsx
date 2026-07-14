@@ -1,1 +1,1 @@
-export { default } from '@/features/importaciones/admin/ImportBatchHistoryPage'
+export { ImportBatchHistoryPage as default } from '@/features/importaciones'
