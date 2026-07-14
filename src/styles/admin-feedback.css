@@ -1,0 +1,56 @@
+/* Consistent layout for administrative feedback, errors and empty states. */
+.admin-workspace :is(
+  .empty-state,
+  .error-box,
+  .success-box,
+  .admin-warning-box,
+  .admin-info-box
+) {
+  min-width: 0;
+}
+
+.admin-workspace :is(
+  .empty-state,
+  .error-box,
+  .success-box,
+  .admin-warning-box,
+  .admin-info-box
+) > div:first-child {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.admin-workspace :is(
+  .empty-state,
+  .error-box,
+  .success-box,
+  .admin-warning-box,
+  .admin-info-box
+) :is(strong, span, small, p) {
+  overflow-wrap: anywhere;
+}
+
+.admin-workspace :is(
+  .empty-state,
+  .error-box,
+  .success-box,
+  .admin-warning-box,
+  .admin-info-box
+) > div:first-child > :is(strong, span, small, p) {
+  display: block;
+  margin: 0;
+}
+
+.admin-workspace :is(.admin-warning-box, .admin-info-box) {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+@media (max-width: 760px) {
+  .admin-workspace :is(.admin-warning-box, .admin-info-box) {
+    flex-direction: column;
+  }
+}
