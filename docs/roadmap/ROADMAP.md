@@ -61,6 +61,22 @@ No se promoverá una candidata pública mientras exista cualquiera de estas cond
 - Incumplimiento de accesibilidad bloqueante.
 - Ausencia de procedimiento de respaldo, restauración o respuesta a incidentes.
 
+## Programa transversal — experiencia de usuario
+
+El [Plan UX vigente](../PLAN_UX.md) forma parte de esta hoja de ruta y debe aplicarse a toda pantalla o flujo nuevo. Su ejecución no es una reescritura decorativa: consolida componentes, navegación, accesibilidad, prevención de errores, rendimiento percibido y validación con usuarios.
+
+### Prioridad inmediata UX
+
+1. [ ] Consolidar tokens y primitivas visuales compartidas.
+2. [ ] Implementar tema claro, oscuro y automático sin destello inicial.
+3. [ ] Incorporar el botón flotante y el panel de preferencias de accesibilidad.
+4. [ ] Corregir contraste AA en textos, acciones y estados.
+5. [ ] Unificar navegación pública y administrativa, eliminando duplicidades.
+6. [ ] Normalizar formularios, resumen de errores y confirmación de impacto.
+7. [ ] Añadir pruebas visuales en claro, oscuro, escritorio, tableta y móvil.
+
+Estos puntos son P0 del producto y deben completarse antes de ampliar la beta a un grupo mayor o declarar una versión pública.
+
 ## Prioridad 0 — operación segura
 
 - [ ] Aplicar y verificar en cada entorno todas las migraciones pendientes. Las migraciones de importación están aplicadas y verificadas en el proyecto Supabase conectado.
@@ -76,8 +92,9 @@ No se promoverá una candidata pública mientras exista cualquiera de estas cond
 2. Automatizar el recorrido administrativo autenticado de beta.
 3. Validar permisos y alcance con cuentas representativas.
 4. Cerrar protección de credenciales, respaldo y restauración.
-5. Abrir una ronda limitada de beta interna con registro formal de incidencias.
-6. Retomar operaciones `update` e iniciativas funcionales posteriores cuando los controles anteriores estén cerrados.
+5. Ejecutar en paralelo el Sprint UX 0.1 del Plan UX.
+6. Abrir una ronda limitada de beta interna con registro formal de incidencias.
+7. Retomar operaciones `update` e iniciativas funcionales posteriores cuando los controles anteriores estén cerrados.
 
 ## Prioridad 1 — importación controlada
 
@@ -143,6 +160,7 @@ Disponible actualmente:
 - [ ] Incorporar Lighthouse/Core Web Vitals en una compuerta medible.
 - [ ] Probar navegación móvil real y tablas adaptativas.
 - [ ] Optimizar imágenes remotas con una política explícita.
+- [ ] Completar los criterios P0 y P1 definidos en el Plan UX.
 
 ## Prioridad 3 — mantenibilidad y rendimiento
 
@@ -270,4 +288,5 @@ Trabajo:
 - Pruebas proporcionales al riesgo.
 - Typecheck y build correctos.
 - Documentación vigente actualizada.
+- Cumplimiento de los criterios UX aplicables.
 - Recorrido funcional verificado en el entorno objetivo.
