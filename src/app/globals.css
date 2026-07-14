@@ -195,3 +195,13 @@ label {
 .admin-import-reference-status .is-error::before {
   content: "× ";
 }
+
+.public-sidebar-link.active > span:nth-child(2),
+.public-sidebar-link[aria-current="page"] > span:nth-child(2) {
+  color: #ffffff;
+}
+
+#tab-territorial[aria-selected="true"] > span:nth-child(2),
+[role="tab"][aria-selected="true"] > span:nth-child(2) {
+  color: #5e1717;
+}
