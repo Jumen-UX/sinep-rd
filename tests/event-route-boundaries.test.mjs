@@ -7,6 +7,8 @@ const eventRoutes = [
   'src/app/(admin)/admin/eventos/nuevo/page.tsx',
   'src/app/(admin)/admin/eventos/pendientes/page.tsx',
   'src/app/(admin)/admin/eventos/[eventId]/page.tsx',
+  'src/app/(admin)/admin/eventos/[eventId]/plan/page.tsx',
+  'src/app/(admin)/admin/eventos/[eventId]/contrato/page.tsx',
 ]
 
 test('event administration routes delegate to the events feature', async () => {
@@ -51,4 +53,23 @@ test('event queue and review mutations stay behind the workflow service', async 
   assert.match(service, /get_event_registry_stream/)
   assert.match(service, /get_event_review/)
   assert.match(service, /admin_review_event/)
+})
+
+test('event plans and contracts stay behind the application service', async () => {
+  const planPage = await readFile('src/features/events/admin/EventActionPlanPage.tsx', 'utf8')
+  const contractPage = await readFile('src/features/events/admin/EventApplicationContractPage.tsx', 'utf8')
+  const service = await readFile('src/features/events/services/event-application-admin-service.ts', 'utf8')
+
+  assert.match(planPage, /loadEventApplicationPlan/)
+  assert.match(planPage, /generateEventActionPlan/)
+  assert.match(planPage, /configureEventAction/)
+  assert.match(contractPage, /loadEventApplicationContract/)
+  assert.match(contractPage, /applyOrganizationUnitEvent/)
+  assert.match(service, /get_event_application_plan/)
+  assert.match(service, /get_event_relationship_conflict_preview/)
+  assert.match(service, /admin_generate_event_action_plan/)
+  assert.match(service, /admin_update_event_action/)
+  assert.match(service, /admin_configure_event_action/)
+  assert.match(service, /get_event_application_contract/)
+  assert.match(service, /admin_apply_organization_unit_event/)
 })
