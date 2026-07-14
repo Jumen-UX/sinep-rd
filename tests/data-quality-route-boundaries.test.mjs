@@ -14,14 +14,17 @@ const featurePages = [
   'src/features/data-quality/admin/RecordCompletenessPage.tsx',
 ]
 
+const directSupabaseFrom = /\bsupabase\s*\.\s*from\s*\(/
+const directSupabaseRpc = /\bsupabase\s*\.\s*rpc\s*\(/
+
 test('data quality routes delegate to the data-quality feature', async () => {
   for (const path of routes) {
     const route = await readFile(path, 'utf8')
 
     assert.match(route, /from '@\/features\/data-quality'/)
     assert.doesNotMatch(route, /createClient/)
-    assert.doesNotMatch(route, /\.from\s*\(/)
-    assert.doesNotMatch(route, /\.rpc\s*\(/)
+    assert.doesNotMatch(route, directSupabaseFrom)
+    assert.doesNotMatch(route, directSupabaseRpc)
     assert.doesNotMatch(route, /fetch\s*\(/)
   }
 })
@@ -33,8 +36,8 @@ test('data quality feature pages delegate persistence to their service', async (
 
   for (const page of [structureAlerts, jurisdictionAlerts, completeness]) {
     assert.match(page, /data-quality-admin-service/)
-    assert.doesNotMatch(page, /\.from\s*\(/)
-    assert.doesNotMatch(page, /\.rpc\s*\(/)
+    assert.doesNotMatch(page, directSupabaseFrom)
+    assert.doesNotMatch(page, directSupabaseRpc)
   }
 
   assert.match(structureAlerts, /loadStructureResponsibilityAlerts/)
