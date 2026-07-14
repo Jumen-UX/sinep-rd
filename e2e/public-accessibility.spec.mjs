@@ -25,6 +25,13 @@ async function expectAccessiblePublicPage({ page, testInfo, path }) {
   await expectNoBlockingAccessibilityViolations({ page, expect, testInfo })
 }
 
+async function entityPathFromSitemap(request) {
+  const sitemapResponse = await request.get('/sitemap.xml')
+  expect(sitemapResponse.ok(), 'El sitemap público debe responder correctamente.').toBe(true)
+  const sitemap = await sitemapResponse.text()
+  return sitemap.match(/<loc>[^<]+(\/entidades\/[^<]+)<\/loc>/)?.[1] ?? null
+}
+
 for (const publicPage of publicPages) {
   test(`${publicPage.label} responde y conserva semántica accesible`, async ({ page }, testInfo) => {
     await expectAccessiblePublicPage({ page, testInfo, path: publicPage.path })
@@ -62,6 +69,43 @@ test('inicio territorial mantiene sus secciones en flujo vertical', async ({ pag
     await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
     'La vista territorial no debe producir desplazamiento horizontal en escritorio.',
   ).toBe(true)
+})
+
+test('ficha de entidad conserva la presentación pública completa', async ({ page, request }) => {
+  const entityPath = await entityPathFromSitemap(request)
+  expect(entityPath, 'El sitemap debe publicar al menos una ficha de entidad.').not.toBeNull()
+
+  await page.setViewportSize({ width: 1440, height: 1200 })
+  const response = await page.goto(entityPath, { waitUntil: 'domcontentloaded' })
+  expect(response).not.toBeNull()
+  expect(response.status()).toBeLessThan(400)
+
+  await expect(page.locator('.public-entity-detail')).toBeVisible()
+  await expect(page.locator('.public-entity-detail .dashboard-hero')).toBeVisible()
+  await expect(page.locator('.entity-facts-grid')).toBeVisible()
+
+  const presentation = await page.evaluate(() => {
+    const header = document.querySelector('.site-header-inner')
+    const hero = document.querySelector('.public-entity-detail .dashboard-hero')
+    const heading = document.querySelector('.public-entity-detail h1')
+    const facts = document.querySelector('.entity-facts-grid')
+
+    return {
+      headerDisplay: header ? getComputedStyle(header).display : null,
+      heroPaddingTop: hero ? Number.parseFloat(getComputedStyle(hero).paddingTop) : 0,
+      headingSize: heading ? Number.parseFloat(getComputedStyle(heading).fontSize) : 0,
+      factsDisplay: facts ? getComputedStyle(facts).display : null,
+      factsColumns: facts ? getComputedStyle(facts).gridTemplateColumns : '',
+      noHorizontalOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    }
+  })
+
+  expect(presentation.headerDisplay, 'El encabezado público debe conservar su distribución horizontal.').toBe('flex')
+  expect(presentation.heroPaddingTop, 'La ficha principal debe conservar relleno visual.').toBeGreaterThanOrEqual(20)
+  expect(presentation.headingSize, 'El título institucional no debe quedar reducido por el reset CSS.').toBeGreaterThanOrEqual(32)
+  expect(presentation.factsDisplay, 'Los datos básicos deben presentarse como cuadrícula.').toBe('grid')
+  expect(presentation.factsColumns.split(' ').filter(Boolean).length, 'La cuadrícula debe usar dos columnas en escritorio.').toBeGreaterThanOrEqual(2)
+  expect(presentation.noHorizontalOverflow, 'La ficha no debe producir desplazamiento horizontal.').toBe(true)
 })
 
 test('sitemap publica fichas navegables de personas y entidades', async ({ page, request }, testInfo) => {
