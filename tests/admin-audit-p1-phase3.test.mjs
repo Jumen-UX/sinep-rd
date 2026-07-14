@@ -231,7 +231,7 @@ test('P1.P3.4: admin_audit_log_by_jurisdiction RPC returns audit logs for jurisd
     assert.ok(Array.isArray(logs), 'Should return array')
     assert.ok(logs.length >= 2, 'Should return at least 2 audit logs')
 
-    const actions = (logs as { action: string }[]).map(l => l.action)
+    const actions = logs.map((log) => log.action)
     assert.ok(actions.includes('test.action1'), 'Should include action1')
     assert.ok(actions.includes('test.action2'), 'Should include action2')
   } finally {
