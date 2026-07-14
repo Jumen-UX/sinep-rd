@@ -127,35 +127,17 @@ export async function saveLevelOfficeConfiguration(
   supabase: SupabaseClient,
   levelId: string,
   selectedOfficeIds: string[],
-  existingRelationIds: string[],
+  _existingRelationIds: string[],
 ): Promise<LevelOfficeConfiguration[]> {
-  if (existingRelationIds.length > 0) {
-    const { error } = await supabase
-      .from('structure_level_office_configurations')
-      .delete()
-      .in('id', existingRelationIds)
-    throwIfError(error, 'No se pudo retirar la configuración anterior del nivel.')
-  }
-
-  if (selectedOfficeIds.length > 0) {
-    const rows = selectedOfficeIds.map((officeId, index) => ({
+  const uniqueOfficeIds = [...new Set(selectedOfficeIds)]
+  const { data, error } = await supabase.rpc('admin_save_structure_level_offices', {
+    payload: {
       level_id: levelId,
-      office_configuration_id: officeId,
-      is_default: index === 0,
-      sort_order: index + 1,
-      status: 'active',
-    }))
+      office_configuration_ids: uniqueOfficeIds,
+      default_office_configuration_id: uniqueOfficeIds[0] ?? null,
+    },
+  })
 
-    const { error } = await supabase.from('structure_level_office_configurations').insert(rows)
-    throwIfError(error, 'No se pudieron guardar los cargos permitidos del nivel.')
-  }
-
-  const { data, error } = await supabase
-    .from('structure_level_office_configurations')
-    .select('id,level_id,office_configuration_id,sort_order,status')
-    .eq('status', 'active')
-    .order('sort_order')
-
-  throwIfError(error, 'No se pudo actualizar la configuración visible.')
+  throwIfError(error, 'No se pudieron guardar los cargos permitidos del nivel.')
   return (data ?? []) as LevelOfficeConfiguration[]
 }
