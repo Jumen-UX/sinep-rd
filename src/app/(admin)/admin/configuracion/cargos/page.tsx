@@ -46,6 +46,12 @@ type OfficeConfiguration = {
   status: string
 }
 
+type CatalogTable =
+  | 'organization_charts'
+  | 'office_base_roles'
+  | 'office_scopes'
+  | 'office_categories'
+
 const initialCharts = [
   { key: 'ecclesial', name: 'Organigrama eclesial', description: 'Estructura canónica y eclesial.', sort_order: 10 },
   { key: 'pastoral', name: 'Organigrama pastoral', description: 'Estructura de pastorales, comisiones y equipos.', sort_order: 20 },
@@ -170,7 +176,7 @@ export default function AdminCargosPage() {
     setSaving(false)
   }
 
-  async function createCatalogItem(event: FormEvent<HTMLFormElement>, table: 'organization_charts' | 'office_base_roles' | 'office_scopes' | 'office_categories') {
+  async function createCatalogItem(event: FormEvent<HTMLFormElement>, table: CatalogTable) {
     event.preventDefault()
     setSaving(true)
     setError(null)
@@ -186,23 +192,52 @@ export default function AdminCargosPage() {
       return
     }
 
-    const payload: Record<string, string | null> = { name, key, status: 'active' }
+    let saveError: { message: string } | null = null
 
-    if (table === 'organization_charts' || table === 'office_categories') {
-      payload.description = String(form.get('description') ?? '').trim() || null
+    switch (table) {
+      case 'organization_charts': {
+        const result = await supabase.from('organization_charts').upsert({
+          name,
+          key,
+          status: 'active',
+          description: String(form.get('description') ?? '').trim() || null,
+        }, { onConflict: 'key' })
+        saveError = result.error
+        break
+      }
+      case 'office_base_roles': {
+        const result = await supabase.from('office_base_roles').upsert({
+          name,
+          key,
+          status: 'active',
+          feminine_name: String(form.get('feminine_name') ?? '').trim() || null,
+          plural_name: String(form.get('plural_name') ?? '').trim() || null,
+        }, { onConflict: 'key' })
+        saveError = result.error
+        break
+      }
+      case 'office_scopes': {
+        const result = await supabase.from('office_scopes').upsert({
+          name,
+          key,
+          status: 'active',
+          adjective_masculine: String(form.get('adjective_masculine') ?? '').trim() || null,
+          adjective_feminine: String(form.get('adjective_feminine') ?? '').trim() || null,
+        }, { onConflict: 'key' })
+        saveError = result.error
+        break
+      }
+      case 'office_categories': {
+        const result = await supabase.from('office_categories').upsert({
+          name,
+          key,
+          status: 'active',
+          description: String(form.get('description') ?? '').trim() || null,
+        }, { onConflict: 'key' })
+        saveError = result.error
+        break
+      }
     }
-
-    if (table === 'office_base_roles') {
-      payload.feminine_name = String(form.get('feminine_name') ?? '').trim() || null
-      payload.plural_name = String(form.get('plural_name') ?? '').trim() || null
-    }
-
-    if (table === 'office_scopes') {
-      payload.adjective_masculine = String(form.get('adjective_masculine') ?? '').trim() || null
-      payload.adjective_feminine = String(form.get('adjective_feminine') ?? '').trim() || null
-    }
-
-    const { error: saveError } = await supabase.from(table).upsert(payload, { onConflict: 'key' })
 
     if (saveError) {
       setError(saveError.message)
