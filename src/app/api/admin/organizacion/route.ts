@@ -16,9 +16,9 @@ const lifecyclePermissions: Record<string, string> = {
 export async function POST(request: NextRequest) {
   try {
     const payload = await parseJsonObjectBody(request, 'Solicitud inválida.')
-    if ('status' in payload || 'visibility' in payload) {
+    if ('status' in payload || 'visibility' in payload || 'is_current' in payload) {
       return NextResponse.json(
-        { error: 'El estado y la publicación se administran mediante acciones explícitas.' },
+        { error: 'El estado, la publicación y la vigencia se administran mediante acciones explícitas.' },
         { status: 400 },
       )
     }
