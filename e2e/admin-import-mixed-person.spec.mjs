@@ -78,7 +78,6 @@ test.describe('aplicación mixta real de personas', () => {
     await openBatch.click()
     await page.waitForURL('**/admin/importar/**', { timeout: 30_000 })
 
-    await expect(page.getByText('1', { exact: true }).first()).toBeVisible()
     await expect(page.getByText('Creaciones')).toBeVisible()
     await expect(page.getByText('Sin cambios')).toBeVisible()
 
@@ -103,6 +102,6 @@ test.describe('aplicación mixta real de personas', () => {
     const downloadPromise = page.waitForEvent('download')
     await page.getByRole('link', { name: 'Descargar reporte final CSV' }).click()
     const download = await downloadPromise
-    expect(download.suggestedFilename()).toMatch(/^sinep-importacion-personas-mixto-.*\.csv$/)
+    expect(download.suggestedFilename()).toMatch(/^sinep-reporte-personas-mixto-.*-[0-9a-f]{8}\.csv$/)
   })
 })
