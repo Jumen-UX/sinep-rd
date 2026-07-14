@@ -171,6 +171,8 @@ export type PublicPersonDetail = {
   episcopal_ordination: PublicEpiscopalOrdination | null
 }
 
+const publicHistoricalStatuses = 'in.(active,retired,emeritus,deceased,transferred)'
+
 const personColumns = [
   'id','display_name','slug','person_type','photo_url','biography_public','birth_date','age_text','birth_place',
   'death_date','status','created_at','updated_at',
@@ -227,7 +229,7 @@ const positionColumns = [
 async function fetchPublicPersonDetail(slug: string): Promise<PublicPersonDetail | null> {
   const people = await fetchSupabaseJson<PublicPerson[]>('persons', {
     slug: `eq.${slug}`,
-    status: 'eq.active',
+    status: publicHistoricalStatuses,
     visibility: 'eq.public',
     select: personColumns,
     limit: '1',
