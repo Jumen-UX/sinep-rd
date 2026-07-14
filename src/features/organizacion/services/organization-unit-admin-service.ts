@@ -66,8 +66,6 @@ export type SaveOrganizationUnitPayload = {
   name: string
   description: string | null
   sort_order: number
-  visibility: OrganizationUnit['visibility']
-  status: OrganizationUnit['status']
   valid_from: string | null
   valid_to: string | null
   is_current: boolean
@@ -122,6 +120,12 @@ export async function loadOrganizationUnitCatalogs(
   }
 }
 
+async function parseOrganizationResponse(response: Response, fallback: string): Promise<OrganizationUnit> {
+  const data = await response.json() as OrganizationUnit & { error?: string }
+  if (!response.ok) throw new Error(data.error ?? fallback)
+  return data
+}
+
 export async function saveOrganizationUnit(
   payload: SaveOrganizationUnitPayload,
 ): Promise<OrganizationUnit> {
@@ -130,9 +134,7 @@ export async function saveOrganizationUnit(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
-  const data = await response.json() as OrganizationUnit & { error?: string }
-  if (!response.ok) throw new Error(data.error ?? 'No se pudo guardar la unidad organizativa.')
-  return data
+  return parseOrganizationResponse(response, 'No se pudo guardar la unidad organizativa.')
 }
 
 export async function transitionOrganizationUnit(
@@ -144,7 +146,5 @@ export async function transitionOrganizationUnit(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id, action }),
   })
-  const data = await response.json() as OrganizationUnit & { error?: string }
-  if (!response.ok) throw new Error(data.error ?? 'No se pudo cambiar el estado de la unidad organizativa.')
-  return data
+  return parseOrganizationResponse(response, 'No se pudo cambiar el estado de la unidad organizativa.')
 }
