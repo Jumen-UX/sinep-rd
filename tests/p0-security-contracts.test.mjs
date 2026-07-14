@@ -43,12 +43,12 @@ test('critical admin routes enforce permission, validation, RPC and audit contra
     const source = await readRepoFile(path)
     assert.match(
       source,
-      new RegExp(`permissionKey:\\s*['\"]${escapeRegex(permissionKey)}['\"]`),
+      new RegExp(`permissionKey:\\s*['"]${escapeRegex(permissionKey)}['"]`),
       `${path} debe exigir ${permissionKey}`,
     )
     assert.match(
       source,
-      new RegExp(`\\.rpc\\(\\s*['\"]${escapeRegex(rpcName)}['\"]`),
+      new RegExp(`\\.rpc\\(\\s*['"]${escapeRegex(rpcName)}['"]`),
       `${path} debe llamar ${rpcName}`,
     )
     assert.match(source, /parseJsonObjectBody\(/, `${path} debe validar el cuerpo JSON`)
@@ -173,7 +173,9 @@ test('administrative audit uses the authenticated audit RPC and an RLS-aware vie
 
 test('the generic review center is scope-aware and supports every queue item type', async () => {
   const api = await readRepoFile('src/app/api/admin/revision/route.ts')
-  const page = await readRepoFile('src/app/(admin)/admin/revision/page.tsx')
+  const route = await readRepoFile('src/app/(admin)/admin/revision/page.tsx')
+  const featurePage = await readRepoFile('src/features/review/admin/ReviewQueuePage.tsx')
+  const service = await readRepoFile('src/features/review/services/review-admin-service.ts')
   const sql = await readRepoFile('supabase/migrations/20260710162911_complete_admin_review_center.sql')
 
   assert.match(api, /admin_review_queue/)
@@ -184,10 +186,11 @@ test('the generic review center is scope-aware and supports every queue item typ
   assert.match(api, /missing_field/)
   assert.match(api, /change_request/)
 
-  assert.match(page, /allowed_actions/)
-  assert.match(page, /Solicitud de cambio/)
-  assert.match(page, /Dato faltante/)
-  assert.match(page, /reviewItem\(/)
+  assert.match(route, /from '@\/features\/review'/)
+  assert.match(featurePage, /allowed_actions/)
+  assert.match(featurePage, /reviewItem\(/)
+  assert.match(service, /Solicitud de cambio/)
+  assert.match(service, /Dato faltante/)
 
   const queueBody = extractFunction(sql, 'app_private.admin_review_queue')
   const reviewBody = extractFunction(sql, 'app_private.admin_review_item')
