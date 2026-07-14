@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const lifecycleMigrationPath = 'supabase/migrations/20260714180000_add_organization_unit_lifecycle_contract.sql'
-const contentMigrationPath = 'supabase/migrations/20260714181500_separate_organization_unit_content_from_lifecycle.sql'
+const contentMigrationPath = 'supabase/migrations/20260714182000_protect_organization_unit_current_flag.sql'
 const apiPath = 'src/app/api/admin/organizacion/route.ts'
 const servicePath = 'src/features/organizacion/services/organization-unit-admin-service.ts'
 const pagePath = 'src/features/organizacion/admin/OrganizationUnitManagerPage.tsx'
@@ -31,12 +31,13 @@ test('ordinary organization saves cannot mutate lifecycle fields', async () => {
     read(servicePath),
   ])
 
-  assert.match(migration, /payload - 'status' - 'visibility'/)
+  assert.match(migration, /payload - 'status' - 'visibility' - 'is_current'/)
   assert.match(migration, /'status','draft'/)
   assert.match(migration, /'visibility','internal'/)
-  assert.match(api, /'status' in payload \|\| 'visibility' in payload/)
+  assert.match(api, /'status' in payload \|\| 'visibility' in payload \|\| 'is_current' in payload/)
   assert.doesNotMatch(service, /SaveOrganizationUnitPayload[\s\S]*status:/)
   assert.doesNotMatch(service, /SaveOrganizationUnitPayload[\s\S]*visibility:/)
+  assert.doesNotMatch(service, /SaveOrganizationUnitPayload[\s\S]*is_current:/)
 })
 
 test('organization API, service and manager expose explicit lifecycle actions', async () => {
@@ -53,7 +54,8 @@ test('organization API, service and manager expose explicit lifecycle actions', 
   assert.match(page, /handleLifecycle/)
   assert.match(page, /Aprobar unidad/)
   assert.match(page, /Publicar/)
-  assert.match(page, /El guardado modifica contenido y jerarquía\. No aprueba ni publica la unidad\./)
+  assert.match(page, /No aprueba, publica ni cambia la vigencia de la unidad/)
   assert.doesNotMatch(page, /<label>Estado/)
   assert.doesNotMatch(page, /<label>Visibilidad/)
+  assert.doesNotMatch(page, /Unidad vigente/)
 })
