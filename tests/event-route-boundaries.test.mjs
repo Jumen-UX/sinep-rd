@@ -2,13 +2,20 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-test('event draft route delegates to the events feature', async () => {
-  const route = await readFile('src/app/(admin)/admin/eventos/nuevo/page.tsx', 'utf8')
+const eventRoutes = [
+  'src/app/(admin)/admin/eventos/page.tsx',
+  'src/app/(admin)/admin/eventos/nuevo/page.tsx',
+]
 
-  assert.match(route, /from '@\/features\/events'/)
-  assert.doesNotMatch(route, /createClient/)
-  assert.doesNotMatch(route, /\.from\s*\(/)
-  assert.doesNotMatch(route, /\.rpc\s*\(/)
+test('event administration routes delegate to the events feature', async () => {
+  for (const routeFile of eventRoutes) {
+    const route = await readFile(routeFile, 'utf8')
+
+    assert.match(route, /from '@\/features\/events'/)
+    assert.doesNotMatch(route, /createClient/)
+    assert.doesNotMatch(route, /\.from\s*\(/)
+    assert.doesNotMatch(route, /\.rpc\s*\(/)
+  }
 })
 
 test('event draft catalogs and mutation stay behind the event service', async () => {
@@ -20,4 +27,13 @@ test('event draft catalogs and mutation stay behind the event service', async ()
   assert.match(service, /canonical_event_types/)
   assert.match(service, /ecclesiastical_entities/)
   assert.match(service, /admin_create_event_draft/)
+})
+
+test('event registry reads stay behind the event registry service', async () => {
+  const featurePage = await readFile('src/features/events/admin/EventRegistryPage.tsx', 'utf8')
+  const service = await readFile('src/features/events/services/event-registry-admin-service.ts', 'utf8')
+
+  assert.match(featurePage, /loadEventRegistry/)
+  assert.match(service, /get_event_registry_summary/)
+  assert.match(service, /get_event_registry_stream/)
 })
