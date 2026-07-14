@@ -1,0 +1,622 @@
+/* Shared presentation contract for administrative modules outside the main dashboard. */
+
+:is(
+  .admin-page,
+  .admin-organization-page,
+  .admin-countries-page,
+  .admin-review-page,
+  .admin-access-page,
+  .admin-assignments-page,
+  .events-page,
+  .admin-config-page,
+  .admin-workspace > div#top
+) {
+  display: grid;
+  gap: 1.375rem;
+  min-width: 0;
+  padding-bottom: 3rem;
+  width: 100%;
+}
+
+:is(
+  .admin-page,
+  .admin-organization-page,
+  .admin-countries-page,
+  .admin-review-page,
+  .admin-access-page,
+  .admin-assignments-page,
+  .events-page,
+  .admin-config-page,
+  .admin-workspace > div#top
+) > * {
+  min-width: 0;
+}
+
+.admin-page-header {
+  align-items: flex-start;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  gap: 1.25rem;
+  justify-content: space-between;
+  padding: clamp(1.25rem, 2.8vw, 2rem);
+}
+
+.admin-page-header > div {
+  min-width: 0;
+}
+
+.admin-page-header h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.035em;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.admin-page-header p {
+  margin: 0;
+  max-width: 76ch;
+}
+
+.admin-workspace .button {
+  align-items: center;
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 0.875rem;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  justify-content: center;
+  line-height: 1.2;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.admin-workspace .button-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--foreground);
+}
+
+.admin-workspace .button-primary:hover,
+.admin-workspace .button-primary:focus-visible {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.1);
+  transform: translateY(-1px);
+}
+
+.admin-workspace .button-secondary {
+  background: #fff;
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.admin-workspace .button-secondary:hover,
+.admin-workspace .button-secondary:focus-visible {
+  background: var(--gold-soft);
+  border-color: var(--primary);
+}
+
+.admin-workspace .dashboard-section,
+.admin-workspace .admin-section {
+  border-radius: 1.5rem;
+  min-width: 0;
+  padding: clamp(1.125rem, 2.5vw, 1.75rem);
+}
+
+.admin-workspace .section-heading {
+  align-items: flex-start;
+}
+
+.admin-workspace .section-heading > div {
+  min-width: 0;
+}
+
+.admin-workspace .section-heading h2,
+.admin-workspace .section-heading h3 {
+  margin: 0;
+}
+
+.admin-workspace .section-heading .meta {
+  margin: 0.45rem 0 0;
+}
+
+.admin-top-actions,
+.admin-card-actions,
+.admin-actions,
+.actions,
+.catalog-level-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.admin-workspace :is(.admin-form, .auth-form, .catalog-form) {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.admin-workspace :is(.admin-form, .auth-form, .catalog-form) label:not(.role-pill),
+.structure-toolbar label,
+.events-toolbar label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.admin-workspace :is(.admin-form, .auth-form, .catalog-form) :is(input, select, textarea),
+.structure-toolbar :is(input, select, textarea),
+.events-toolbar :is(input, select, textarea),
+.admin-review-page .admin-form-grid select,
+.admin-countries-page #country-catalog > .card > label input,
+.admin-config-page .section-heading select,
+.timeline-item textarea {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  color: var(--foreground);
+  min-height: 3rem;
+  padding: 0.75rem 0.875rem;
+  width: 100%;
+}
+
+.admin-workspace :is(.admin-form, .auth-form, .catalog-form) textarea,
+.timeline-item textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.admin-workspace :is(.admin-form, .auth-form, .catalog-form) :is(input, select, textarea):focus-visible,
+.structure-toolbar :is(input, select, textarea):focus-visible,
+.events-toolbar :is(input, select, textarea):focus-visible,
+.admin-review-page .admin-form-grid select:focus-visible,
+.admin-countries-page #country-catalog > .card > label input:focus-visible,
+.admin-config-page .section-heading select:focus-visible,
+.timeline-item textarea:focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(255 192 3 / 0.2);
+  outline: none;
+}
+
+.admin-form-grid,
+.events-toolbar {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+.admin-form.admin-config-form:not(#assignment-form form),
+.auth-form.access-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-form.admin-config-form > :is(.meta, .empty-state, .role-pill, textarea, button),
+.auth-form.access-form > button {
+  grid-column: 1 / -1;
+}
+
+.admin-workspace .role-pill {
+  align-items: center;
+  line-height: 1.25;
+}
+
+.admin-workspace label.role-pill {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 0.875rem 1rem;
+}
+
+.admin-workspace label.role-pill input {
+  height: 1.125rem;
+  min-height: 1.125rem;
+  padding: 0;
+  width: 1.125rem;
+}
+
+.grid.two-columns,
+.grid.two-panel-grid {
+  align-items: start;
+  display: grid;
+  gap: 1.125rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-workspace .table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 1.125rem;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-workspace :is(.data-table, .dashboard-list-table) {
+  border-collapse: collapse;
+  min-width: 48rem;
+  width: 100%;
+}
+
+.admin-workspace :is(.data-table, .dashboard-list-table) th {
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.admin-workspace :is(.data-table, .dashboard-list-table) td {
+  border-top: 1px solid var(--border);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  padding: 0.875rem 1rem;
+  vertical-align: top;
+}
+
+.admin-workspace :is(.data-table, .dashboard-list-table) td small {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.admin-workspace :is(.data-table, .dashboard-list-table) tbody tr:hover {
+  background: #fffaf0;
+}
+
+.dashboard-list,
+.timeline-list,
+.access-user-list {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.list-card,
+.timeline-item,
+.access-user-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 1.125rem;
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 0.875rem;
+  padding: 1rem;
+}
+
+.list-card {
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.admin-card-actions {
+  justify-content: flex-end;
+}
+
+.timeline-item > :is(strong, span, small) {
+  display: block;
+}
+
+.timeline-item small,
+.timeline-item span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* Structure configurator */
+.structure-catalog {
+  scroll-margin-top: 5rem;
+}
+
+.structure-toolbar {
+  align-items: end;
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 1rem;
+}
+
+.structure-catalog-summary {
+  align-items: center;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 1.125rem;
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 1rem 1.125rem;
+}
+
+.structure-catalog-summary span,
+.structure-catalog-summary small {
+  color: var(--muted);
+}
+
+.catalog-form-grid {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.catalog-layout {
+  align-items: start;
+  display: grid;
+  gap: 1.125rem;
+  grid-template-columns: minmax(0, 1.25fr) minmax(19rem, 0.75fr);
+}
+
+.catalog-column {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.catalog-preset-grid {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.catalog-preset-card,
+.catalog-level,
+.catalog-node {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.625rem;
+  min-width: 0;
+  padding: 0.875rem 1rem;
+}
+
+button.catalog-node {
+  appearance: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  width: 100%;
+}
+
+button.catalog-node:hover,
+button.catalog-node:focus-visible,
+button.catalog-node.active-filter {
+  background: var(--gold-soft);
+  border-color: var(--primary);
+}
+
+.catalog-preset-header,
+.catalog-level-header,
+.catalog-node-header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.catalog-preset-card h3 {
+  margin: 0;
+}
+
+.catalog-preset-card > small,
+.catalog-level > small,
+.catalog-node > small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.catalog-preset-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.catalog-preset-steps span,
+.catalog-badge {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 850;
+  padding: 0.35rem 0.55rem;
+}
+
+.catalog-mini-button {
+  appearance: none;
+  background: var(--gold-soft);
+  border: 1px solid var(--primary);
+  border-radius: 0.75rem;
+  color: var(--foreground);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 900;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.75rem;
+}
+
+.structure-node-detail {
+  align-self: start;
+  display: grid;
+  gap: 1rem;
+  max-height: calc(100vh - 7rem);
+  overflow: auto;
+  padding: 1.125rem;
+  position: sticky;
+  top: 5.5rem;
+}
+
+.catalog-tabs {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detail-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.detail-list > div {
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(8rem, 0.7fr) minmax(0, 1.3fr);
+  padding: 0.75rem 0;
+}
+
+.detail-list > div:first-child {
+  border-top: 0;
+}
+
+.detail-list dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.detail-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Country, access and review modules */
+.admin-country-grid {
+  align-items: stretch;
+}
+
+.admin-country-card {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.admin-country-card h2,
+.access-user-card h2 {
+  margin: 0;
+}
+
+.admin-check-list {
+  list-style: none;
+  padding: 0;
+}
+
+.access-flow {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.access-flow > div {
+  align-items: start;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  padding: 0.875rem;
+}
+
+.access-flow strong {
+  align-items: center;
+  background: var(--primary);
+  border-radius: 0.65rem;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.access-user-main {
+  align-items: start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.access-user-card .role-pill button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--danger);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 900;
+  margin-left: 0.5rem;
+  padding: 0;
+}
+
+.admin-access-page .admin-modules {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.admin-access-page .admin-module {
+  border-radius: 1.125rem;
+  padding: 1rem;
+}
+
+@media (max-width: 1180px) {
+  .catalog-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .structure-node-detail {
+    max-height: none;
+    position: static;
+  }
+
+  .structure-toolbar,
+  .catalog-form-grid,
+  .admin-form.admin-config-form:not(#assignment-form form),
+  .auth-form.access-form,
+  .grid.two-columns,
+  .grid.two-panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .structure-catalog-summary {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .list-card {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-page-header,
+  .access-user-main {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-page-header .button,
+  .admin-top-actions .button,
+  .admin-card-actions .button,
+  .actions .button {
+    width: 100%;
+  }
+
+  .catalog-tabs {
+    grid-template-columns: 1fr;
+  }
+}
