@@ -18,9 +18,9 @@ test('canonical person registration reviews duplicates before every new identity
 
 test('entity assistants review duplicates in their hierarchy before saving', async () => {
   const files = [
-    'src/app/(admin)/admin/nuevo/parroquia/page.tsx',
-    'src/app/(admin)/admin/nuevo/capilla/page.tsx',
-    'src/app/(admin)/admin/nuevo/jurisdiccion/page.tsx',
+    'src/features/entities/admin/NewParishPage.tsx',
+    'src/features/entities/admin/NewChapelPage.tsx',
+    'src/features/entities/admin/NewJurisdictionPage.tsx',
   ]
 
   for (const file of files) {
