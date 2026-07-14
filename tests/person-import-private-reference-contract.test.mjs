@@ -6,8 +6,12 @@ const migration = await readFile(
   new URL('../supabase/migrations/20260713234500_align_person_import_reference_with_private_identity.sql', import.meta.url),
   'utf8',
 )
-const importPage = await readFile(
+const importRoute = await readFile(
   new URL('../src/app/(admin)/admin/importar/page.tsx', import.meta.url),
+  'utf8',
+)
+const importPage = await readFile(
+  new URL('../src/features/importaciones/admin/AdminBatchImportPage.tsx', import.meta.url),
   'utf8',
 )
 
@@ -26,6 +30,7 @@ test('historical persons receive missing private reference rows without name-der
 })
 
 test('person CSV template exposes codigo_referencia as an optional idempotency key', () => {
+  assert.match(importRoute, /from '@\/features\/importaciones'/)
   assert.match(importPage, /columns: \['codigo_referencia', 'tipo_persona'/)
   assert.match(importPage, /codigo_referencia es opcional para altas nuevas/)
   assert.deepEqual(
