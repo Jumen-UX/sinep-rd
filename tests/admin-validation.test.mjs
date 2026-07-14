@@ -1,7 +1,21 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import ts from 'typescript'
 
-const validation = await import(new URL('../src/lib/admin/validation.ts', import.meta.url).href)
+async function importValidationModule() {
+  const source = await readFile(new URL('../src/lib/admin/validation.ts', import.meta.url), 'utf8')
+  const transpiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022,
+    },
+  })
+  const encoded = Buffer.from(transpiled.outputText, 'utf8').toString('base64')
+  return import(`data:text/javascript;base64,${encoded}`)
+}
+
+const validation = await importValidationModule()
 
 test('requiredEmail trims and normalizes valid email', () => {
   assert.equal(validation.requiredEmail('  PERSONA@EXAMPLE.ORG  '), 'persona@example.org')
