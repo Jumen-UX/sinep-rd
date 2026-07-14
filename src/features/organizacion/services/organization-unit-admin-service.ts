@@ -41,6 +41,14 @@ export type OrganizationUnit = {
   is_current: boolean
 }
 
+export type OrganizationUnitLifecycleAction =
+  | 'approve'
+  | 'publish'
+  | 'unpublish'
+  | 'deactivate'
+  | 'archive'
+  | 'restore_draft'
+
 export type OrganizationUnitCatalogs = {
   entities: OrganizationEntity[]
   charts: OrganizationChart[]
@@ -124,5 +132,19 @@ export async function saveOrganizationUnit(
   })
   const data = await response.json() as OrganizationUnit & { error?: string }
   if (!response.ok) throw new Error(data.error ?? 'No se pudo guardar la unidad organizativa.')
+  return data
+}
+
+export async function transitionOrganizationUnit(
+  id: string,
+  action: OrganizationUnitLifecycleAction,
+): Promise<OrganizationUnit> {
+  const response = await fetch('/api/admin/organizacion', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, action }),
+  })
+  const data = await response.json() as OrganizationUnit & { error?: string }
+  if (!response.ok) throw new Error(data.error ?? 'No se pudo cambiar el estado de la unidad organizativa.')
   return data
 }
