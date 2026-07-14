@@ -68,6 +68,38 @@ function clickMetricByLabel(labelText: string) {
   buttons.find((button) => normalize(button.textContent ?? '').includes(labelText))?.click()
 }
 
+function buildSectionTitle(eyebrowText: string, titleText: string, descriptionText: string) {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'public-section-title'
+
+  const eyebrow = document.createElement('p')
+  eyebrow.className = 'eyebrow'
+  eyebrow.textContent = eyebrowText
+
+  const title = document.createElement('h2')
+  title.textContent = titleText
+
+  const description = document.createElement('p')
+  description.textContent = descriptionText
+
+  wrapper.append(eyebrow, title, description)
+  return wrapper
+}
+
+function buildEmptyState(titleText: string, descriptionText: string) {
+  const empty = document.createElement('div')
+  empty.className = 'public-empty'
+
+  const title = document.createElement('strong')
+  title.textContent = titleText
+
+  const description = document.createElement('span')
+  description.textContent = descriptionText
+
+  empty.append(title, document.createElement('br'), description)
+  return empty
+}
+
 function buildCard(icon: string, title: string, subtitle: string, actionLabel: string, onClick: () => void) {
   const card = document.createElement('article')
   card.className = 'public-province-card'
@@ -157,7 +189,16 @@ function renderPastoralPanel(data: DashboardData) {
 
   const filterArticle = document.createElement('article')
   filterArticle.className = 'public-panel public-section-card'
-  filterArticle.innerHTML = `<div class="public-section-title"><p class="eyebrow">Filtros pastorales</p><h2>${mode === 'country' ? 'Provincias eclesiásticas' : mode === 'province' ? 'Jurisdicciones de la provincia' : 'Organigramas configurados'}</h2><p>Usa estas tarjetas para bajar el ámbito pastoral sin depender solo de los selectores superiores.</p></div>`
+  filterArticle.append(buildSectionTitle(
+    'Filtros pastorales',
+    mode === 'country'
+      ? 'Provincias eclesiásticas'
+      : mode === 'province'
+        ? 'Jurisdicciones de la provincia'
+        : 'Organigramas configurados',
+    'Usa estas tarjetas para bajar el ámbito pastoral sin depender solo de los selectores superiores.',
+  ))
+
   const filterList = document.createElement('div')
   filterList.className = 'public-province-list'
 
@@ -180,17 +221,22 @@ function renderPastoralPanel(data: DashboardData) {
   }
 
   if (filterList.children.length === 0) {
-    const empty = document.createElement('div')
-    empty.className = 'public-empty'
-    empty.innerHTML = '<strong>Sin organización publicada</strong><br /><span>Cuando existan unidades organizativas públicas para este ámbito, aparecerán aquí.</span>'
-    filterList.append(empty)
+    filterList.append(buildEmptyState(
+      'Sin organización publicada',
+      'Cuando existan unidades organizativas públicas para este ámbito, aparecerán aquí.',
+    ))
   }
 
   filterArticle.append(filterList)
 
   const summaryArticle = document.createElement('article')
   summaryArticle.className = 'public-panel public-section-card'
-  summaryArticle.innerHTML = `<div class="public-section-title"><p class="eyebrow">Estructura pastoral</p><h2>${scopeUnits.length} unidades publicadas</h2><p>${mode === 'country' ? country : mode === 'province' ? province : jurisdiction}</p></div>`
+  summaryArticle.append(buildSectionTitle(
+    'Estructura pastoral',
+    `${scopeUnits.length} unidades publicadas`,
+    mode === 'country' ? country : mode === 'province' ? province : jurisdiction,
+  ))
+
   const summaryGrid = document.createElement('div')
   summaryGrid.className = 'public-directory-grid'
 
@@ -199,15 +245,22 @@ function renderPastoralPanel(data: DashboardData) {
     item.className = 'public-directory-item public-directory-button'
     item.type = 'button'
     item.addEventListener('click', () => clickMetricByLabel(name))
-    item.innerHTML = `<strong>${name}</strong><span>${count} unidades · Organigrama</span>`
+
+    const title = document.createElement('strong')
+    title.textContent = name
+
+    const description = document.createElement('span')
+    description.textContent = `${count} unidades · Organigrama`
+
+    item.append(title, description)
     summaryGrid.append(item)
   }
 
   if (summaryGrid.children.length === 0) {
-    const empty = document.createElement('div')
-    empty.className = 'public-empty'
-    empty.innerHTML = '<strong>Vista pastoral en preparación</strong><br /><span>Falta publicar la organización para este ámbito.</span>'
-    summaryGrid.append(empty)
+    summaryGrid.append(buildEmptyState(
+      'Vista pastoral en preparación',
+      'Falta publicar la organización para este ámbito.',
+    ))
   }
 
   summaryArticle.append(summaryGrid)
