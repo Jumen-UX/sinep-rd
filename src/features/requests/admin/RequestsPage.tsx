@@ -1,47 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-
-type RequestRow = {
-  id: string
-  target_table: string | null
-  action_type: string | null
-  title: string
-  description: string | null
-  status: string
-  priority: string | null
-  scope_type: string | null
-  scope_entity_name: string | null
-  diocese_name: string | null
-  pastoral_area_name: string | null
-  submitted_by_name: string | null
-  submitted_by_email: string | null
-  submitted_at: string | null
-  created_at: string
-}
-
-type PublicSuggestion = {
-  id: string
-  target_table: string
-  target_slug: string | null
-  target_title: string | null
-  page_url: string | null
-  suggestion_type: string
-  title: string
-  description: string
-  proposed_data: Record<string, unknown> | null
-  source_name: string | null
-  source_url: string | null
-  submitter_name: string | null
-  submitter_email: string | null
-  submitter_country: string | null
-  status: string
-  priority: string
-  created_at: string
-}
+import {
+  hasRequestAdminSession,
+  loadRequestQueue,
+  type PublicSuggestion,
+  type RequestRow,
+} from '../services/request-admin-service'
 
 function formatDate(value: string | null) {
   if (!value) return 'Sin fecha'
@@ -60,47 +28,32 @@ function targetLink(item: PublicSuggestion) {
 
 export default function RequestsPage() {
   const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
   const [items, setItems] = useState<RequestRow[]>([])
   const [publicSuggestions, setPublicSuggestions] = useState<PublicSuggestion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const supabase = createClient()
-
     async function loadRequests() {
-      const { data: userData } = await supabase.auth.getUser()
+      try {
+        if (!await hasRequestAdminSession(supabase)) {
+          router.replace('/admin/login')
+          return
+        }
 
-      if (!userData.user) {
-        router.replace('/admin/login')
-        return
-      }
-
-      const [requestRes, publicRes] = await Promise.all([
-        supabase
-          .from('admin_pending_change_requests')
-          .select('id,target_table,action_type,title,description,status,priority,scope_type,scope_entity_name,diocese_name,pastoral_area_name,submitted_by_name,submitted_by_email,submitted_at,created_at')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('admin_public_change_suggestions')
-          .select('id,target_table,target_slug,target_title,page_url,suggestion_type,title,description,proposed_data,source_name,source_url,submitter_name,submitter_email,submitter_country,status,priority,created_at')
-          .eq('status', 'pending_review')
-          .order('created_at', { ascending: false }),
-      ])
-
-      if (requestRes.error || publicRes.error) {
-        setError(requestRes.error?.message ?? publicRes.error?.message ?? 'No se pudieron cargar las solicitudes')
+        const queue = await loadRequestQueue(supabase)
+        setItems(queue.requests)
+        setPublicSuggestions(queue.publicSuggestions)
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'No se pudieron cargar las solicitudes')
+      } finally {
         setLoading(false)
-        return
       }
-
-      setItems((requestRes.data ?? []) as RequestRow[])
-      setPublicSuggestions((publicRes.data ?? []) as PublicSuggestion[])
-      setLoading(false)
     }
 
-    loadRequests()
-  }, [router])
+    void loadRequests()
+  }, [router, supabase])
 
   return (
     <main className="container admin-dashboard">
