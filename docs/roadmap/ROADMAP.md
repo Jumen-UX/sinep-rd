@@ -1,7 +1,8 @@
 # Hoja de ruta de SINEP RD
 
 > Estado: vigente  
-> Actualizada: 2026-07-13  
+> Actualizada: 2026-07-14  
+> Rama operativa: `main`  
 > Regla: validar cada punto contra código, migraciones y pruebas antes de iniciarlo
 
 ## Estado consolidado
@@ -12,6 +13,54 @@ La importación controlada persiste lotes y filas, valida catálogos, alcance, d
 
 El piloto real de eventos ya verificó creación canónica, corrección en línea, revalidación, aprobación, aplicación y una segunda aplicación `noop` sin duplicar el evento. El dispatcher y el contrato mixto soportan lotes `create + noop` en una única operación transaccional. La interfaz distingue `create`, `update` y `noop`, usa acciones de aplicación según el dominio y separa columnas obligatorias de campos opcionales de plantilla.
 
+## Automatización canónica
+
+Los únicos workflows operativos permitidos en el repositorio son:
+
+- `CI`: typecheck, pruebas, build, CodeQL, auditoría crítica programada y E2E de producción bajo ejecución manual.
+- `E2E / Public accessibility`: Chromium, Playwright y Axe sobre las rutas públicas afectadas.
+
+El inventario queda protegido por una prueba contractual. GitHub puede conservar en la barra lateral referencias históricas a workflows eliminados; esas referencias no equivalen a archivos activos dentro de `.github/workflows`.
+
+El workflow público utiliza filtros de rutas. Por tanto, una modificación exclusiva de documentación, pruebas contractuales o configuración ajena al portal público no genera una nueva corrida E2E; la última corrida aplicable continúa siendo la evidencia válida hasta que cambie una ruta cubierta o se ejecute manualmente.
+
+## Hito actual — consolidación de la beta interna
+
+SINEP RD se considera **candidata a beta interna**, no versión pública. El propósito de esta etapa es permitir pruebas controladas por usuarios autorizados sin relajar seguridad, trazabilidad ni consistencia histórica.
+
+### Capacidades incluidas
+
+- Portal público y fichas navegables.
+- Portal administrativo autenticado.
+- Registro canónico de personas, estructuras, cargos y eventos.
+- Permisos y alcance jurisdiccional.
+- Auditoría administrativa.
+- Importación controlada, revisión editorial y aplicación idempotente.
+- Suite de calidad en CI y E2E público con accesibilidad.
+
+### Condiciones pendientes para abrir la beta a probadores internos
+
+- [ ] Aplicar y verificar todas las migraciones en el entorno objetivo de beta.
+- [ ] Ejecutar `pnpm test:integration` contra una instancia no productiva de Supabase.
+- [ ] Ejecutar un recorrido autenticado de login, persona, estructura, nombramiento, evento, importación y auditoría.
+- [ ] Preparar cuentas de prueba con alcances nacional, diocesano y restringido.
+- [ ] Confirmar que un usuario no puede operar fuera de su alcance.
+- [ ] Activar la protección contra contraseñas filtradas en Supabase Auth.
+- [ ] Verificar copias de seguridad y realizar al menos una prueba documentada de restauración.
+- [ ] Definir canal de incidencias, severidad y responsable de decisión durante la beta.
+- [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal antes de cualquier apertura pública.
+
+### Criterio de salida de beta interna
+
+No se promoverá una candidata pública mientras exista cualquiera de estas condiciones:
+
+- Incidencia P0 o P1 abierta.
+- Operación crítica sin auditoría o sin control de alcance.
+- Migración pendiente en el entorno público.
+- Flujo administrativo crítico sin prueba autenticada.
+- Incumplimiento de accesibilidad bloqueante.
+- Ausencia de procedimiento de respaldo, restauración o respuesta a incidentes.
+
 ## Prioridad 0 — operación segura
 
 - [ ] Aplicar y verificar en cada entorno todas las migraciones pendientes. Las migraciones de importación están aplicadas y verificadas en el proyecto Supabase conectado.
@@ -19,6 +68,16 @@ El piloto real de eventos ya verificó creación canónica, corrección en líne
 - [ ] Realizar smoke test autenticado de las rutas administrativas críticas. Preparación, corrección, revalidación, aprobación y aplicación de los cuatro dominios tienen smoke test autenticado por RPC. La aplicación `noop` también fue verificada con repetición idempotente.
 - [ ] Confirmar protección contra contraseñas filtradas y revisar asesores de seguridad de Supabase. Los asesores fueron revisados; la protección contra contraseñas filtradas continúa pendiente de activación.
 - [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal.
+- [x] Consolidar los workflows en `CI` y `E2E / Public accessibility` y proteger su inventario mediante prueba contractual.
+
+### Orden inmediato de ejecución
+
+1. Ejecutar integración sobre Supabase no productivo.
+2. Automatizar el recorrido administrativo autenticado de beta.
+3. Validar permisos y alcance con cuentas representativas.
+4. Cerrar protección de credenciales, respaldo y restauración.
+5. Abrir una ronda limitada de beta interna con registro formal de incidencias.
+6. Retomar operaciones `update` e iniciativas funcionales posteriores cuando los controles anteriores estén cerrados.
 
 ## Prioridad 1 — importación controlada
 
@@ -66,6 +125,7 @@ Disponible actualmente:
 - [x] Usar acciones de aplicación dinámicas según el dominio.
 - [x] Añadir reporte final descargable para lotes aplicados.
 - [x] Añadir suite E2E manual del portal público, accesibilidad y preparación administrativa de importaciones.
+- [x] Confirmar `pnpm check` y E2E público en GitHub Actions después de la depuración de workflows.
 
 ### Pendiente — orden de ejecución
 
@@ -73,7 +133,6 @@ Disponible actualmente:
 2. [ ] Añadir un identificador estable para habilitar `noop` seguro en personas.
 3. [ ] Añadir lectura XLSX después de evaluar dependencia, límites y seguridad.
 4. [ ] Ampliar E2E al recorrido autenticado preparar → corregir → aprobar → aplicar en un entorno no productivo.
-5. [ ] Ejecutar `pnpm check` y el navegador real cuando el entorno de CI/despliegue vuelva a estar disponible.
 
 ## Prioridad 2 — calidad del producto
 
@@ -100,6 +159,7 @@ Disponible actualmente:
 - Sustitución del motor canónico por modelos paralelos.
 - Aplicación automática de importaciones sin revisión.
 - Analítica no esencial antes de definir consentimiento y privacidad.
+- Declarar una versión pública antes de cerrar los controles de beta interna.
 
 ## Criterio de cierre de una iniciativa
 
