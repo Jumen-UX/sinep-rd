@@ -64,11 +64,17 @@ Criterio de cierre:
 - Existe una matriz archivo/consulta → modelo canónico → propósito.
 - No queda ningún modelo detectado por el auditor sin fuente canónica clasificada.
 
-### S2-02 — Consultas de paridad
+### S2-02 — Consultas de paridad — EN EJECUCIÓN
 
-- Crear consultas verificables para comparar entidades, nodos, unidades, relaciones y conteos actuales.
-- Comprobar raíces, padres vigentes, nodos sin entidad, entidades sin nodo cuando corresponda y unidades sin organigrama.
-- Separar diferencias válidas de inconsistencias reales.
+- [x] Crear consultas reproducibles para conteos de entidades, plantillas, niveles, nodos, organigramas y unidades.
+- [x] Comprobar catálogos sin raíz, nodos con múltiples padres vigentes y relaciones entre catálogos distintos.
+- [x] Comprobar nodos sin entidad, entidades esperadas sin nodo y duplicidad entidad/nodo por catálogo.
+- [x] Comprobar unidades sin organigrama activo, padres de otro organigrama y unidades sin entidad de alcance.
+- [x] Comprobar paridad entre nombramientos, cargos, organigramas y unidades.
+- [x] Añadir prueba contractual que garantiza que el diagnóstico permanezca completo y solo lectura.
+- [ ] Ejecutar el diagnóstico contra el entorno real y clasificar cada discrepancia como válida, migrable o bloqueante.
+
+Consultas disponibles en `supabase/diagnostics/sprint2_structural_parity.sql`.
 
 Criterio de cierre:
 
@@ -137,7 +143,7 @@ Criterio de cierre:
 ## Orden de ejecución
 
 1. S2-01 Inventario de correspondencias. — COMPLETADO
-2. S2-02 Consultas de paridad. — SIGUIENTE
+2. S2-02 Consultas de paridad. — EN EJECUCIÓN; pendiente resultado del entorno real
 3. S2-03 Contrato territorial.
 4. S2-04 Contrato organizativo.
 5. S2-05 Paridad de cargos y alcance.
