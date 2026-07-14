@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchSupabaseJson } from '@/lib/supabase/rest'
 
+const publicHistoricalStatuses = 'in.(active,retired,emeritus,deceased,transferred)'
+
 const listColumns = [
   'id',
   'display_name',
@@ -262,7 +264,7 @@ function buildListFilters(request: NextRequest) {
   const tipo = normalizePersonType(request.nextUrl.searchParams.get('tipo'))
   const limit = request.nextUrl.searchParams.get('limit')
   const filters: Record<string, string> = {
-    status: 'eq.active',
+    status: publicHistoricalStatuses,
     visibility: 'eq.public',
     select: listColumns,
     order: 'display_name.asc',
@@ -337,7 +339,7 @@ export async function GET(request: NextRequest) {
 
     const people = await fetchSupabaseJson<Record<string, unknown>[]>('persons', {
       slug: `eq.${slug}`,
-      status: 'eq.active',
+      status: publicHistoricalStatuses,
       visibility: 'eq.public',
       select: personColumns,
       limit: '1',
