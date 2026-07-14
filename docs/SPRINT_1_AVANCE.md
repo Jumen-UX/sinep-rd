@@ -21,11 +21,13 @@ Mantener las rutas de Next.js como puntos de entrada delgados y concentrar inter
 - `/admin/revision` delega en `features/review`.
 - La carga de la cola y las decisiones de revisión quedaron centralizadas en `review-admin-service.ts`, manteniendo el endpoint administrativo validado como frontera de escritura.
 - `/admin/estructura` delega en `features/structures` y `/admin/organizacion` delega en `features/organizacion`; ambos dominios ya usan servicios canónicos y RPC protegidas.
-- Todas las rutas operativas de eventos delegan en `features/events`: registro, asistente, cola, revisión, plan y contrato.
+- Todas las rutas operativas de eventos delegan en `features/events`: registro, asistente, cola, revisión, plan, contrato y verificación.
 - El registro histórico consume `get_event_registry_summary` y `get_event_registry_stream` exclusivamente mediante `event-registry-admin-service.ts`.
 - Los catálogos del asistente y la creación de borradores quedaron centralizados en `event-draft-admin-service.ts` mediante `admin_create_event_draft`.
-- La cola operativa, la ficha de revisión y las decisiones de aprobación, devolución o cancelación quedaron centralizadas en `event-workflow-admin-service.ts`.
+- La cola operativa, la ficha de revisión, las decisiones y la verificación de salud quedaron centralizadas en `event-workflow-admin-service.ts`.
 - La generación y configuración del plan, los conflictos relacionales, el contrato y la aplicación organizativa quedaron centralizados en `event-application-admin-service.ts`.
+- Las rutas heredadas de `/admin/estructura/eventos` funcionan como alias del dominio canónico y ya no ejecutan el motor paralelo de evolución estructural.
+- La verificación heredada redirige a `/admin/eventos/verificacion`; al momento del corte, `structure_events` y `structure_event_actions` no contienen registros, mientras `canonical_events` conserva el evento piloto.
 - `/admin/importar`, `/admin/importar/lotes` y `/admin/importar/[batchId]` delegan en `features/importaciones`.
 - Preparación, historial, corrección por fila, revalidación, revisión y aplicación de lotes permanecen detrás de `batch-import-admin-service.ts`.
 - `/admin/solicitudes` y `/admin/solicitudes/[id]` delegan en `features/requests`.
@@ -39,7 +41,7 @@ Las rutas bajo `src/app` pueden resolver parámetros, autenticación inicial y c
 
 ## Pendientes para cerrar Sprint 1
 
-1. Extraer las rutas restantes identificadas por `audit:routes`, priorizando estructura heredada, altas de entidades y paneles de calidad.
+1. Extraer las rutas restantes identificadas por `audit:routes`, priorizando altas de entidades, paneles de calidad y configuración.
 2. Confirmar que cada RPC crítica tenga un único servicio consumidor por dominio.
 3. Eliminar utilidades duplicadas de normalización, manejo de errores y alcance.
 4. Ampliar las pruebas contractuales de límites de ruta sobre cualquier ruta crítica detectada por el inventario.
