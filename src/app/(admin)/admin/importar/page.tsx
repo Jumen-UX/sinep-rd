@@ -41,8 +41,8 @@ const importOptions: ImportOption[] = [
     title: 'Personas y agentes',
     description: 'Carga inicial de obispos, sacerdotes, diáconos, religiosos y laicos con datos básicos y estado.',
     icon: '◉',
-    columns: ['tipo_persona', 'primer_nombre', 'primer_apellido', 'nombre_publico', 'estado', 'visibilidad', 'entidad_actual'],
-    notes: ['Usa catálogos para tipo de persona y estado.', 'El sistema debe validar posibles duplicados antes de publicar.', 'Los datos privados no deben ir en plantillas públicas.'],
+    columns: ['codigo_referencia', 'tipo_persona', 'primer_nombre', 'primer_apellido', 'nombre_publico', 'estado', 'visibilidad', 'entidad_actual'],
+    notes: ['codigo_referencia es opcional para altas nuevas; úsalo para enlazar de forma idempotente una persona ya registrada.', 'Usa catálogos para tipo de persona y estado.', 'El sistema valida coincidencias exactas por código interno antes de aplicar.', 'Los datos privados no deben ir en plantillas públicas.'],
   },
   {
     key: 'parroquias',
@@ -138,14 +138,7 @@ export default function AdminBatchImportPage() {
     }
 
     const typedExtension = extension as SelectedFile['extension']
-    setSelectedFile({
-      name: file.name,
-      size: file.size,
-      extension: typedExtension,
-      mimeType: file.type || null,
-      lastModified: file.lastModified,
-      sha256: null,
-    })
+    setSelectedFile({ name: file.name, size: file.size, extension: typedExtension, mimeType: file.type || null, lastModified: file.lastModified, sha256: null })
 
     if (typedExtension !== 'csv') {
       setError('La vista previa segura está disponible actualmente para CSV. Exporta este archivo de Excel como CSV UTF-8 para continuar.')
@@ -158,17 +151,11 @@ export default function AdminBatchImportPage() {
         Promise.resolve(parseCsvPreview(source, requiredColumnsByImportType[importType])),
         sha256Hex(fileBytes),
       ])
-
       setSelectedFile((current) => current ? { ...current, sha256: fileSha256 } : current)
       setPreview(result)
-
-      if (result.missingColumns.length > 0) {
-        setError(`Faltan columnas obligatorias: ${result.missingColumns.join(', ')}.`)
-      } else if (result.totalRows > 5000) {
-        setError(`El archivo contiene ${result.totalRows} filas y supera el límite inicial de 5,000.`)
-      } else {
-        setMessage(`CSV leído correctamente: ${result.totalRows} fila(s) listas para preparar y validar.`)
-      }
+      if (result.missingColumns.length > 0) setError(`Faltan columnas obligatorias: ${result.missingColumns.join(', ')}.`)
+      else if (result.totalRows > 5000) setError(`El archivo contiene ${result.totalRows} filas y supera el límite inicial de 5,000.`)
+      else setMessage(`CSV leído correctamente: ${result.totalRows} fila(s) listas para preparar y validar.`)
     } catch (readError) {
       setError(readError instanceof Error ? readError.message : 'No se pudo leer el archivo CSV.')
     }
@@ -195,39 +182,24 @@ export default function AdminBatchImportPage() {
 
   async function prepareBatch() {
     if (!selectedFile || !selectedFile.sha256 || !preview || !canPrepare) return
-
     setIsPreparing(true)
     setError(null)
     setMessage(null)
     setPreparedBatch(null)
-
     try {
       const summary = await prepareImportBatch({
         importType,
-        file: {
-          name: selectedFile.name,
-          extension: selectedFile.extension,
-          mimeType: selectedFile.mimeType,
-          sizeBytes: selectedFile.size,
-          sha256: selectedFile.sha256,
-          lastModifiedAt: selectedFile.lastModified ? new Date(selectedFile.lastModified).toISOString() : null,
-        },
+        file: { name: selectedFile.name, extension: selectedFile.extension, mimeType: selectedFile.mimeType, sizeBytes: selectedFile.size, sha256: selectedFile.sha256, lastModifiedAt: selectedFile.lastModified ? new Date(selectedFile.lastModified).toISOString() : null },
         headers: preview.headers,
         rows: preview.records,
-        sourceMetadata: {
-          client_preview_rows: Math.min(preview.totalRows, 25),
-          extra_columns: preview.extraColumns,
-        },
+        sourceMetadata: { client_preview_rows: Math.min(preview.totalRows, 25), extra_columns: preview.extraColumns },
       })
-
       setPreparedBatch(summary)
-      setMessage(
-        summary.status === 'validated'
-          ? summary.application_rpc_available
-            ? 'Lote persistido y validado. Ábrelo para aprobarlo y aplicar sus operaciones mediante el contrato canónico.'
-            : 'Lote persistido y validado. Puede aprobarse, pero este dominio todavía no tiene contrato de aplicación.'
-          : 'Lote persistido. Revisa errores, duplicados y relaciones no resueltas antes de aprobarlo.',
-      )
+      setMessage(summary.status === 'validated'
+        ? summary.application_rpc_available
+          ? 'Lote persistido y validado. Ábrelo para aprobarlo y aplicar sus operaciones mediante el contrato canónico.'
+          : 'Lote persistido y validado. Puede aprobarse, pero este dominio todavía no tiene contrato de aplicación.'
+        : 'Lote persistido. Revisa errores, duplicados y relaciones no resueltas antes de aprobarlo.')
     } catch (prepareError) {
       setError(prepareError instanceof Error ? prepareError.message : 'No se pudo preparar el lote de importación.')
     } finally {
@@ -238,10 +210,7 @@ export default function AdminBatchImportPage() {
   return (
     <div id="top">
       <header className="admin-top-header">
-        <div className="admin-top-title">
-          <span className="admin-mini-mark">IMPORTAR</span>
-          <strong>Carga por lotes</strong>
-        </div>
+        <div className="admin-top-title"><span className="admin-mini-mark">IMPORTAR</span><strong>Carga por lotes</strong></div>
         <div className="admin-top-actions">
           <a className="button button-secondary" href="/admin" onClick={(event) => forceNavigation(event, '/admin')}>Volver al panel</a>
           <a className="button button-secondary" href="/admin/importar/lotes" onClick={(event) => forceNavigation(event, '/admin/importar/lotes')}>Historial de lotes</a>
@@ -252,15 +221,9 @@ export default function AdminBatchImportPage() {
 
       <section className="admin-welcome-panel">
         <div>
-          <p className="eyebrow">Carga masiva controlada</p>
-          <h1>Importar registros por lotes</h1>
+          <p className="eyebrow">Carga masiva controlada</p><h1>Importar registros por lotes</h1>
           <p className="lead">Prepara archivos CSV para persistirlos, validarlos y enviarlos a revisión. Los lotes aprobados de personas, estructuras, asignaciones y eventos pueden aplicarse mediante contratos canónicos con auditoría e idempotencia.</p>
-          <div className="role-list admin-role-list">
-            <span className="role-pill">CSV seguro</span>
-            <span className="role-pill">Hash SHA-256</span>
-            <span className="role-pill">Revisión previa</span>
-            <span className="role-pill">Aplicación manual</span>
-          </div>
+          <div className="role-list admin-role-list"><span className="role-pill">CSV seguro</span><span className="role-pill">Hash SHA-256</span><span className="role-pill">Revisión previa</span><span className="role-pill">Aplicación manual</span></div>
         </div>
         <div className="admin-welcome-illustration" aria-hidden="true">⇪</div>
       </section>
@@ -269,29 +232,12 @@ export default function AdminBatchImportPage() {
       {message && <div className="success-box">{message}</div>}
 
       <section className="admin-module-group">
-        <div className="admin-group-heading">
-          <span>1</span>
-          <div>
-            <p className="eyebrow">Tipo de importación</p>
-            <h2>Selecciona qué datos vas a cargar</h2>
-            <p className="meta">Cada tipo tiene columnas mínimas y reglas de revisión diferentes.</p>
-          </div>
-          <a href="#plantilla">Ver plantilla</a>
-        </div>
-
+        <div className="admin-group-heading"><span>1</span><div><p className="eyebrow">Tipo de importación</p><h2>Selecciona qué datos vas a cargar</h2><p className="meta">Cada tipo tiene columnas mínimas y reglas de revisión diferentes.</p></div><a href="#plantilla">Ver plantilla</a></div>
         <div className="admin-module-grid">
           {importOptions.map((option) => (
             <button className={`admin-module-card is-active ${importType === option.key ? 'active-filter' : ''}`} key={option.key} onClick={() => selectImportType(option.key)} type="button">
-              <div className="admin-module-card-head">
-                <span className="admin-module-icon">{option.icon}</span>
-                <span className="admin-status-pill active">{importType === option.key ? 'Seleccionado' : 'Disponible'}</span>
-              </div>
-              <p className="entity-type">{option.eyebrow}</p>
-              <h3>{option.title}</h3>
-              <p className="meta">{option.description}</p>
-              <ul>
-                {option.columns.slice(0, 4).map((column) => <li key={column}>{column}</li>)}
-              </ul>
+              <div className="admin-module-card-head"><span className="admin-module-icon">{option.icon}</span><span className="admin-status-pill active">{importType === option.key ? 'Seleccionado' : 'Disponible'}</span></div>
+              <p className="entity-type">{option.eyebrow}</p><h3>{option.title}</h3><p className="meta">{option.description}</p><ul>{option.columns.slice(0, 4).map((column) => <li key={column}>{column}</li>)}</ul>
             </button>
           ))}
         </div>
@@ -299,119 +245,24 @@ export default function AdminBatchImportPage() {
 
       <section className="admin-bottom-grid">
         <article className="card dashboard-section" id="plantilla">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Plantilla sugerida</p>
-              <h2>{selectedOption.title}</h2>
-              <p className="meta">Columnas mínimas recomendadas para iniciar la importación.</p>
-            </div>
-            <button className="button button-secondary" onClick={downloadTemplate} type="button">Descargar plantilla CSV</button>
-          </div>
-
-          <div className="admin-module-grid">
-            {selectedOption.columns.map((column) => (
-              <div className="admin-module-card" key={column}>
-                <p className="entity-type">Columna</p>
-                <h3>{column}</h3>
-                <p className="meta">Debe venir normalizada antes de aplicar cambios definitivos.</p>
-              </div>
-            ))}
-          </div>
+          <div className="section-heading"><div><p className="eyebrow">Plantilla sugerida</p><h2>{selectedOption.title}</h2><p className="meta">Descarga la cabecera CSV oficial para este tipo de importación.</p></div><button className="button button-secondary" onClick={downloadTemplate} type="button">Descargar plantilla CSV</button></div>
+          <div className="admin-system-list">{selectedOption.columns.map((column) => <div key={column}><span>{requiredColumnsByImportType[importType].includes(column) ? 'Obligatoria' : 'Opcional'}</span><strong>{column}</strong></div>)}</div>
+          <ul>{selectedOption.notes.map((note) => <li key={note}>{note}</li>)}</ul>
         </article>
 
-        <aside className="card admin-system-card">
-          <p className="eyebrow">Reglas de seguridad</p>
-          <h2>Antes de aplicar</h2>
-          {selectedOption.notes.map((note) => (
-            <div key={note}><span>{note}</span><strong>Requerido</strong></div>
-          ))}
-        </aside>
+        <article className="card dashboard-section">
+          <div className="section-heading"><div><p className="eyebrow">Archivo fuente</p><h2>Selecciona el archivo</h2><p className="meta">CSV UTF-8, máximo 10 MB y 5,000 filas por lote.</p></div></div>
+          <div className="auth-form access-form"><label>Archivo<input accept={acceptedExtensions} onChange={(event) => void handleFileChange(event)} type="file" /></label></div>
+          {selectedFile && <div className="admin-system-list"><div><span>Nombre</span><strong>{selectedFile.name}</strong></div><div><span>Tamaño</span><strong>{formatBytes(selectedFile.size)}</strong></div><div><span>Formato</span><strong>{selectedFile.extension.toUpperCase()}</strong></div><div><span>SHA-256</span><strong>{selectedFile.sha256 ? `${selectedFile.sha256.slice(0, 20)}…` : 'Pendiente'}</strong></div></div>}
+        </article>
       </section>
 
+      {preview && <section className="card dashboard-section"><div className="section-heading"><div><p className="eyebrow">Vista previa</p><h2>{preview.totalRows} fila(s) detectadas</h2><p className="meta">{preview.headers.length} columnas · {preview.extraColumns.length} columnas adicionales.</p></div><span className="role-pill">{preview.missingColumns.length === 0 ? 'Cabecera válida' : 'Cabecera incompleta'}</span></div><div className="admin-system-list">{preview.headers.map((header) => <div key={header}><span>{requiredColumnsByImportType[importType].includes(header) ? 'Obligatoria' : selectedOption.columns.includes(header) ? 'Opcional' : 'Adicional'}</span><strong>{header}</strong></div>)}</div></section>}
+
       <section className="card dashboard-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Archivo</p>
-            <h2>Subir y preparar lote</h2>
-            <p className="meta">La preparación guarda el lote, valida cada fila y registra incidencias. No aplica datos definitivos.</p>
-          </div>
-          <span className="role-pill">Máx. 10 MB / 5,000 filas</span>
-        </div>
-
-        <form className="auth-form access-form" onSubmit={(event) => event.preventDefault()}>
-          <label>
-            Archivo CSV o Excel
-            <input accept={acceptedExtensions} onChange={handleFileChange} type="file" />
-          </label>
-        </form>
-
-        {selectedFile ? (
-          <div className="admin-stat-strip" aria-label="Archivo seleccionado">
-            <div><span>▤</span><strong>{selectedFile.extension.toUpperCase()}</strong><small>Formato</small></div>
-            <div><span>⇪</span><strong>{formatBytes(selectedFile.size)}</strong><small>Tamaño</small></div>
-            <div><span>◷</span><strong>{new Date(selectedFile.lastModified).toLocaleDateString('es-DO')}</strong><small>Modificado</small></div>
-            <div><span>✓</span><strong>{selectedFile.sha256 ? 'Calculado' : 'Pendiente'}</strong><small>Hash SHA-256</small></div>
-            <div><span>!</span><strong>{preparedBatch ? 'Persistido' : 'Pendiente'}</strong><small>Lote</small></div>
-          </div>
-        ) : (
-          <div className="empty-state">
-            <h3>Sin archivo seleccionado</h3>
-            <p>Elige un archivo para validar tipo y tamaño antes de enviarlo a preparación.</p>
-          </div>
-        )}
-
-        {preview && (
-          <section aria-labelledby="vista-previa-importacion">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Lectura real</p>
-                <h2 id="vista-previa-importacion">Vista previa del CSV</h2>
-                <p className="meta">Se muestran hasta 25 filas. Ningún registro definitivo ha sido guardado.</p>
-              </div>
-              <span className="role-pill">{preview.totalRows} filas</span>
-            </div>
-            {preview.extraColumns.length > 0 && <div className="admin-info-box"><span>Columnas adicionales conservadas para revisión: {preview.extraColumns.join(', ')}.</span></div>}
-            <div className="table-wrap">
-              <table>
-                <thead><tr>{preview.headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead>
-                <tbody>
-                  {preview.rows.map((row, rowIndex) => <tr key={`row-${rowIndex}`}>{row.map((value, columnIndex) => <td key={`${rowIndex}-${preview.headers[columnIndex]}`}>{value || '—'}</td>)}</tr>)}
-                </tbody>
-              </table>
-            </div>
-            {preview.truncated && <p className="meta">La vista previa fue limitada a 25 filas; el archivo contiene {preview.totalRows}.</p>}
-            <div className="admin-top-actions">
-              <button className="button button-primary" disabled={!canPrepare || isPreparing} onClick={prepareBatch} type="button">
-                {isPreparing ? 'Preparando lote…' : 'Preparar y validar lote'}
-              </button>
-              <span className="meta">Esta acción no crea ni modifica registros canónicos.</span>
-            </div>
-          </section>
-        )}
-
-        {preparedBatch && (
-          <section aria-labelledby="resultado-preparacion-lote">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Resultado persistido</p>
-                <h2 id="resultado-preparacion-lote">Lote {preparedBatch.batch_id}</h2>
-                <p className="meta">Estado: {preparedBatch.status}. {preparedBatch.application_rpc_available ? 'El contrato canónico estará disponible después de la aprobación editorial.' : 'La aplicación de este dominio todavía no está disponible.'}</p>
-              </div>
-              <span className="role-pill">{preparedBatch.application_rpc_available ? 'Aplicación manual disponible' : 'Solo revisión'}</span>
-            </div>
-            <div className="admin-stat-strip" aria-label="Resumen de validación del lote">
-              <div><span>✓</span><strong>{preparedBatch.valid_rows}</strong><small>Válidas</small></div>
-              <div><span>!</span><strong>{preparedBatch.warning_rows}</strong><small>Advertencias</small></div>
-              <div><span>×</span><strong>{preparedBatch.error_rows}</strong><small>Errores</small></div>
-              <div><span>≡</span><strong>{preparedBatch.duplicate_rows}</strong><small>Duplicadas</small></div>
-              <div><span>?</span><strong>{preparedBatch.unresolved_rows}</strong><small>No resueltas</small></div>
-            </div>
-            <div className="admin-top-actions">
-              <a className="button button-primary" href={`/admin/importar/${preparedBatch.batch_id}`}>Abrir lote y continuar</a>
-              <a className="button button-secondary" href="/admin/importar/lotes">Ver historial</a>
-            </div>
-          </section>
-        )}
+        <div className="section-heading"><div><p className="eyebrow">Preparación persistente</p><h2>Validar y guardar lote</h2><p className="meta">La preparación no modifica registros canónicos. Persiste el archivo lógico, sus filas, incidencias y trazabilidad.</p></div><span className="role-pill">Permiso: imports.prepare</span></div>
+        <div className="admin-top-actions"><button className="button button-primary" disabled={!canPrepare || isPreparing} onClick={() => void prepareBatch()} type="button">{isPreparing ? 'Preparando lote…' : 'Preparar y validar lote'}</button>{preparedBatch && <a className="button button-secondary" href={`/admin/importar/lotes/${preparedBatch.batch_id}`}>Abrir lote preparado</a>}</div>
+        {preparedBatch && <div className="admin-stat-strip" aria-label="Resumen del lote preparado"><div><span>✓</span><strong>{preparedBatch.valid_rows}</strong><small>Válidas</small></div><div><span>!</span><strong>{preparedBatch.warning_rows}</strong><small>Advertencias</small></div><div><span>×</span><strong>{preparedBatch.error_rows}</strong><small>Errores</small></div><div><span>≡</span><strong>{preparedBatch.duplicate_rows}</strong><small>Duplicadas</small></div><div><span>?</span><strong>{preparedBatch.unresolved_rows}</strong><small>No resueltas</small></div></div>}
       </section>
     </div>
   )
