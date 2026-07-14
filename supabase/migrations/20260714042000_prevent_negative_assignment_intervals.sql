@@ -26,18 +26,6 @@ on public.position_assignments
 for each row
 execute function app_private.normalize_position_assignment_date_order();
 
-update public.position_assignments
-set actual_end_date = start_date,
-    notes_internal = concat_ws(
-      E'\n',
-      notes_internal,
-      'Fecha real de finalización ajustada al inicio para corregir una sucesión importada el mismo día.'
-    ),
-    updated_at = now()
-where actual_end_date is not null
-  and start_date is not null
-  and actual_end_date < start_date;
-
 do $$
 begin
   if not exists (
@@ -52,9 +40,21 @@ begin
         actual_end_date is null
         or start_date is null
         or actual_end_date >= start_date
-      );
+      ) not valid;
   end if;
 end;
 $$;
+
+update public.position_assignments
+set actual_end_date = start_date,
+    notes_internal = concat_ws(
+      E'\n',
+      notes_internal,
+      'Fecha real de finalización ajustada al inicio para corregir una sucesión importada el mismo día.'
+    ),
+    updated_at = now()
+where actual_end_date is not null
+  and start_date is not null
+  and actual_end_date < start_date;
 
 commit;
