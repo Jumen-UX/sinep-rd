@@ -1,6 +1,6 @@
 'use client'
 
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import AdminWizardProgress from '@/components/admin/AdminWizardProgress'
@@ -48,6 +48,41 @@ function slugify(value: string) {
 
 function buildDisplayName(parts: Array<FormDataEntryValue | string | null | undefined>) {
   return parts.map((part) => String(part ?? '').trim()).filter(Boolean).join(' ')
+}
+
+
+type PriestSaveSuccessNoticeProps = {
+  message: string
+  internalCode: string | null
+  personId: string | null
+  slug: string | null
+}
+
+function PriestSaveSuccessNotice({ message, internalCode, personId, slug }: PriestSaveSuccessNoticeProps) {
+  const messageRef = useRef<HTMLElement>(null)
+  const internalCodeRef = useRef<HTMLSpanElement>(null)
+  const adminHref = personId ? `/admin/personas/${encodeURIComponent(personId)}` : null
+  const publicHref = slug ? `/personas/${encodeURIComponent(slug)}` : null
+
+  useEffect(() => {
+    if (messageRef.current) messageRef.current.textContent = message
+    if (internalCodeRef.current) {
+      internalCodeRef.current.textContent = internalCode ? `Código interno: ${internalCode}` : ''
+    }
+  }, [internalCode, message])
+
+  return (
+    <section className="success-box admin-wizard-success">
+      <div>
+        <strong ref={messageRef} />
+        <span hidden={!internalCode} ref={internalCodeRef} />
+      </div>
+      <div className="admin-actions">
+        {adminHref && <Link className="button button-primary" href={adminHref}>Abrir ficha administrativa</Link>}
+        {publicHref && <Link className="button button-secondary" href={publicHref}>Ver ficha pública</Link>}
+      </div>
+    </section>
+  )
 }
 
 export default function PriestWizardPage() {
@@ -312,7 +347,14 @@ export default function PriestWizardPage() {
       </section>
 
       {error && <div className="error-box">{error}</div>}
-      {message && <section className="success-box admin-wizard-success"><div><strong>{message}</strong>{savedInternalCode && <span>Código interno: {savedInternalCode}</span>}</div><div className="admin-actions">{savedPersonId && <Link className="button button-primary" href={`/admin/personas/${savedPersonId}`}>Abrir ficha administrativa</Link>}{savedSlug && <Link className="button button-secondary" href={`/personas/${savedSlug}`}>Ver ficha pública</Link>}</div></section>}
+      {message && (
+      <PriestSaveSuccessNotice
+        internalCode={savedInternalCode}
+        message={message}
+        personId={savedPersonId}
+        slug={savedSlug}
+      />
+    )}
 
       <div className="admin-wizard-layout">
         <AdminWizardProgress steps={wizardSteps} currentStep={step} onStepChange={setStep} />
