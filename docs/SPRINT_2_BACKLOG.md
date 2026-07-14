@@ -64,29 +64,38 @@ Criterio de cierre:
 - Existe una matriz archivo/consulta → modelo canónico → propósito.
 - No queda ningún modelo detectado por el auditor sin fuente canónica clasificada.
 
-### S2-02 — Consultas de paridad — EN EJECUCIÓN
+### S2-02 — Consultas de paridad — COMPLETADO
 
 - [x] Crear consultas reproducibles para conteos de entidades, plantillas, niveles, nodos, organigramas y unidades.
 - [x] Comprobar catálogos sin raíz, nodos con múltiples padres vigentes y relaciones entre catálogos distintos.
 - [x] Comprobar nodos sin entidad, entidades esperadas sin nodo y duplicidad entidad/nodo por catálogo.
-- [x] Comprobar unidades sin organigrama activo, padres de otro organigrama y unidades sin entidad de alcance.
+- [x] Comprobar unidades sin organigrama, padres de otro organigrama y unidades sin entidad de alcance.
 - [x] Comprobar paridad entre nombramientos, cargos, organigramas y unidades.
 - [x] Añadir prueba contractual que garantiza que el diagnóstico permanezca completo y solo lectura.
-- [ ] Ejecutar el diagnóstico contra el entorno real y clasificar cada discrepancia como válida, migrable o bloqueante.
+- [x] Ejecutar el diagnóstico contra el entorno real y clasificar cada discrepancia como válida, migrable o bloqueante.
+- [x] Añadir un diagnóstico separado del ciclo de vida para incluir unidades vigentes en estado `draft`.
 
-Consultas disponibles en `supabase/diagnostics/sprint2_structural_parity.sql`.
+Resultados documentados en `docs/SPRINT_2_STRUCTURAL_PARITY_RESULTS.md`.
+
+Resultado principal:
+
+- 12 plantillas activas, 61 niveles y 173 nodos activos/vigentes.
+- 5 organigramas activos y 181 unidades vigentes.
+- 0 discrepancias bloqueantes de jerarquía, alcance u organigrama.
+- Las 181 unidades vigentes permanecen en estado `draft`; su promoción controlada se resolverá en S2-04.
 
 Criterio de cierre:
 
 - Las discrepancias quedan clasificadas como válidas, migrables o bloqueantes.
 - Las consultas pueden ejecutarse nuevamente después de cada migración.
 
-### S2-03 — Contrato territorial
+### S2-03 — Contrato territorial — EN EJECUCIÓN
 
-- Confirmar que toda jerarquía territorial se lee desde plantillas, niveles, nodos y edges vigentes.
-- Confirmar que una entidad con ficha propia se enlaza al nodo, pero no se duplica dentro del nodo.
-- Revisar que las pantallas públicas y administrativas no reconstruyan jerarquías desde `parent_id` heredados cuando existe el edge canónico.
-- Mantener compatibilidad temporal únicamente donde exista un consumidor probado.
+- [ ] Confirmar que toda jerarquía territorial se lee desde plantillas, niveles, nodos y edges vigentes.
+- [ ] Confirmar que una entidad con ficha propia se enlaza al nodo, pero no se duplica dentro del nodo.
+- [ ] Revisar que las pantallas públicas y administrativas no reconstruyan jerarquías desde `parent_id` heredados cuando existe el edge canónico.
+- [ ] Verificar que `get_entity_descendants` resuelva la descendencia desde el motor territorial canónico.
+- [ ] Mantener compatibilidad temporal únicamente donde exista un consumidor probado.
 
 Criterio de cierre:
 
@@ -98,11 +107,13 @@ Criterio de cierre:
 - Verificar que pastoral, administración y colegialidad usan `organization_charts` y `organization_units`.
 - Revisar unidades sin organigrama, sin entidad de alcance o con padre incompatible.
 - Confirmar que vistas públicas, permisos, auditoría, cargos y eventos usan `organization_unit_id`.
+- Definir el flujo controlado de promoción `draft → active` para las 181 unidades vigentes.
 - Mantener bloqueada cualquier reintroducción de `pastoral_entities`.
 
 Criterio de cierre:
 
-- Toda unidad organizativa activa pertenece a un organigrama válido.
+- Toda unidad organizativa operativa pertenece a un organigrama válido.
+- El estado `active` se obtiene mediante un contrato explícito de aprobación/publicación.
 - No existen referencias activas al modelo pastoral eliminado.
 
 ### S2-05 — Paridad de cargos y alcance
@@ -143,8 +154,8 @@ Criterio de cierre:
 ## Orden de ejecución
 
 1. S2-01 Inventario de correspondencias. — COMPLETADO
-2. S2-02 Consultas de paridad. — EN EJECUCIÓN; pendiente resultado del entorno real
-3. S2-03 Contrato territorial.
+2. S2-02 Consultas de paridad. — COMPLETADO
+3. S2-03 Contrato territorial. — EN EJECUCIÓN
 4. S2-04 Contrato organizativo.
 5. S2-05 Paridad de cargos y alcance.
 6. S2-06 Compatibilidad y bloqueo de legados.
