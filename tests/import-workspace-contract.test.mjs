@@ -2,10 +2,20 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-const source = await readFile(
+const route = await readFile(
   new URL('../src/app/(admin)/admin/importar/page.tsx', import.meta.url),
   'utf8',
 )
+const source = await readFile(
+  new URL('../src/features/importaciones/admin/AdminBatchImportPage.tsx', import.meta.url),
+  'utf8',
+)
+
+test('import workspace route delegates to the import feature', () => {
+  assert.match(route, /from '@\/features\/importaciones'/)
+  assert.doesNotMatch(route, /requiredColumnsByImportType/)
+  assert.doesNotMatch(route, /prepareImportBatch/)
+})
 
 test('import workspace separates required CSV columns from optional template fields', () => {
   assert.match(source, /requiredColumnsByImportType: Record<ImportType, string\[]>/)
