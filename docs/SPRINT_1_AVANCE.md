@@ -15,7 +15,10 @@ Mantener las rutas de Next.js como puntos de entrada delgados y concentrar inter
 - `/admin/configuracion/cargos` fue movida desde una página monolítica a `features/appointments`.
 - El acceso a catálogos y configuraciones de cargos quedó encapsulado en `office-configuration-admin-service.ts`.
 - La creación de configuraciones de cargos dejó de escribir directamente en `office_configurations` y ahora usa `admin_save_office_configuration`, RPC atómica y auditada.
-- Se añadió una prueba contractual que impide devolver acceso directo a Supabase en las rutas administrativas de nombramientos y cargos.
+- `/admin/usuarios` y `/admin/usuarios/invitar` delegan en `features/access`.
+- La carga de usuarios, roles, permisos y alcances quedó centralizada en `user-access-admin-service.ts`.
+- La asignación y cierre de roles, los cambios de estado y el envío de invitaciones dejaron de ejecutarse desde las rutas.
+- Se añadieron pruebas contractuales para impedir que las rutas de nombramientos, cargos y acceso recuperen consultas, RPC o llamadas HTTP directas.
 
 ## Regla arquitectónica aplicada
 
@@ -24,7 +27,7 @@ Las rutas bajo `src/app` pueden resolver parámetros, autenticación inicial y c
 ## Pendientes para cerrar Sprint 1
 
 1. Inventariar las rutas restantes de `src/app` y clasificar cada una como delgada, transitoria o monolítica.
-2. Extraer las páginas monolíticas restantes por prioridad de riesgo: usuarios y permisos, revisión, estructuras, eventos e importaciones.
+2. Extraer las páginas monolíticas restantes por prioridad de riesgo: revisión, estructuras, eventos e importaciones.
 3. Confirmar que cada RPC crítica tenga un único servicio consumidor por dominio.
 4. Eliminar utilidades duplicadas de normalización, manejo de errores y alcance.
 5. Ampliar las pruebas contractuales de límites de ruta sin bloquear rutas todavía no migradas.
