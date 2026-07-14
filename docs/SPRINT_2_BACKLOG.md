@@ -115,18 +115,26 @@ Criterio de cierre:
 - Todas las jerarquías territoriales vigentes se reconstruyen desde `structure_node_edges`.
 - No existen dos fuentes activas de lectura para la relación padre/hijo.
 
-### S2-04 — Contrato organizativo — SIGUIENTE
+### S2-04 — Contrato organizativo — EN EJECUCIÓN
 
-- Verificar que pastoral, administración y colegialidad usan `organization_charts` y `organization_units`.
-- Revisar unidades sin organigrama, sin entidad de alcance o con padre incompatible.
-- Confirmar que vistas públicas, permisos, auditoría, cargos y eventos usan `organization_unit_id`.
-- Definir el flujo controlado de promoción `draft → active` para las 181 unidades vigentes.
-- Mantener bloqueada cualquier reintroducción de `pastoral_entities`.
+- [x] Verificar que pastoral, administración y colegialidad usan `organization_charts` y `organization_units`.
+- [x] Revisar unidades sin organigrama, sin entidad de alcance o con padre incompatible.
+- [x] Confirmar que vistas públicas, permisos, auditoría, cargos y eventos usan `organization_unit_id`.
+- [x] Crear el contrato explícito y auditado de aprobación, publicación, desactivación, archivo y restauración.
+- [x] Separar el guardado ordinario de las transiciones de estado y visibilidad.
+- [x] Sustituir en la interfaz los selectores genéricos por acciones válidas según el estado.
+- [x] Mantener bloqueada cualquier reintroducción de `pastoral_entities`.
+- [ ] Crear una cola de revisión por lotes para las 181 unidades vigentes en borrador.
+- [ ] Definir criterios funcionales de aprobación y publicación por organigrama.
+- [ ] Validar permisos con cuentas reales separadas para edición, aprobación y publicación.
+
+Resultados parciales documentados en `docs/SPRINT_2_ORGANIZATION_LIFECYCLE_RESULTS.md`.
 
 Criterio de cierre:
 
 - Toda unidad organizativa operativa pertenece a un organigrama válido.
 - El estado `active` se obtiene mediante un contrato explícito de aprobación/publicación.
+- Ninguna edición ordinaria puede aprobar o publicar una unidad.
 - No existen referencias activas al modelo pastoral eliminado.
 
 ### S2-05 — Paridad de cargos y alcance
@@ -169,7 +177,7 @@ Criterio de cierre:
 1. S2-01 Inventario de correspondencias. — COMPLETADO
 2. S2-02 Consultas de paridad. — COMPLETADO
 3. S2-03 Contrato territorial. — COMPLETADO
-4. S2-04 Contrato organizativo. — SIGUIENTE
+4. S2-04 Contrato organizativo. — EN EJECUCIÓN
 5. S2-05 Paridad de cargos y alcance.
 6. S2-06 Compatibilidad y bloqueo de legados.
 7. S2-07 Documentación canónica.
