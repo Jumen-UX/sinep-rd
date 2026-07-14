@@ -1,4 +1,7 @@
 export { default as EventDraftPage } from './admin/EventDraftPage'
 export { default as EventRegistryPage } from './admin/EventRegistryPage'
+export { default as EventReviewPage } from './admin/EventReviewPage'
+export { default as PendingEventsPage } from './admin/PendingEventsPage'
 export * from './services/event-draft-admin-service'
 export * from './services/event-registry-admin-service'
+export * from './services/event-workflow-admin-service'
