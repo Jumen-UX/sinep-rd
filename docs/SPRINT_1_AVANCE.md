@@ -26,7 +26,9 @@ Mantener las rutas de Next.js como puntos de entrada delgados y concentrar inter
 - Los catálogos del asistente y la creación de borradores quedaron centralizados en `event-draft-admin-service.ts` mediante `admin_create_event_draft`.
 - La cola operativa, la ficha de revisión y las decisiones de aprobación, devolución o cancelación quedaron centralizadas en `event-workflow-admin-service.ts`.
 - La generación y configuración del plan, los conflictos relacionales, el contrato y la aplicación organizativa quedaron centralizados en `event-application-admin-service.ts`.
-- Se añadieron pruebas contractuales para impedir que las rutas de nombramientos, cargos, acceso, revisión y eventos recuperen consultas, RPC o llamadas HTTP directas.
+- `/admin/importar`, `/admin/importar/lotes` y `/admin/importar/[batchId]` delegan en `features/importaciones`.
+- Preparación, historial, corrección por fila, revalidación, revisión y aplicación de lotes permanecen detrás de `batch-import-admin-service.ts`.
+- Se añadieron pruebas contractuales para impedir que las rutas de nombramientos, cargos, acceso, revisión, eventos e importaciones recuperen consultas, RPC o llamadas HTTP directas.
 
 ## Regla arquitectónica aplicada
 
@@ -35,10 +37,10 @@ Las rutas bajo `src/app` pueden resolver parámetros, autenticación inicial y c
 ## Pendientes para cerrar Sprint 1
 
 1. Inventariar las rutas restantes de `src/app` y clasificar cada una como delgada, transitoria o monolítica.
-2. Extraer las páginas monolíticas restantes del dominio de importaciones.
-3. Confirmar que cada RPC crítica tenga un único servicio consumidor por dominio.
-4. Eliminar utilidades duplicadas de normalización, manejo de errores y alcance.
-5. Ampliar las pruebas contractuales de límites de ruta sin bloquear rutas todavía no migradas.
+2. Confirmar que cada RPC crítica tenga un único servicio consumidor por dominio.
+3. Eliminar utilidades duplicadas de normalización, manejo de errores y alcance.
+4. Ampliar las pruebas contractuales de límites de ruta sobre cualquier ruta crítica detectada por el inventario.
+5. Ejecutar `pnpm check` y cerrar formalmente el sprint cuando no queden rutas críticas monolíticas.
 
 ## Criterio de cierre
 
