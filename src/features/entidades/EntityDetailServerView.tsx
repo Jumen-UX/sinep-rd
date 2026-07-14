@@ -53,7 +53,7 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
   const currentOrdinary = ordinaryAppointments.find((item) => item.is_current) ?? ordinaryAppointments[0] ?? null
 
   return (
-    <main className="container dashboard-page">
+    <main className="container dashboard-page public-entity-detail">
       <div className="dashboard-hero card dashboard-hero-split">
         <div>
           <p className="eyebrow">Ficha institucional</p>
@@ -71,7 +71,7 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
         </aside>
       </div>
 
-      <section className="dashboard-grid dashboard-summary">
+      <section className="dashboard-grid dashboard-summary" aria-label="Indicadores principales">
         <div className="metric-card"><strong>{entity.entity_type_name ?? 'Entidad'}</strong><span>Tipo</span></div>
         <div className="metric-card"><strong>{formatNumber(entity.population_total)}</strong><span>Población reportada</span></div>
         <div className="metric-card"><strong>{formatNumber(entity.catholics_total)}</strong><span>Católicos reportados</span></div>
@@ -80,7 +80,7 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
 
       <section className="card dashboard-section">
         <div className="section-heading"><div><p className="eyebrow">Datos básicos</p><h2>Información de la entidad</h2></div></div>
-        <div className="public-directory-list">
+        <div className="public-directory-list entity-facts-grid">
           <div className="public-directory-item"><div><strong>Nombre oficial</strong><span>{entity.official_name ?? '—'}</span></div><small>{entity.latin_name ?? '—'}</small></div>
           <div className="public-directory-item"><div><strong>Sede o catedral</strong><span>{entity.cathedral_name ?? '—'}</span></div><small>{entity.territory_summary ?? 'Territorio no descrito'}</small></div>
           <div className="public-directory-item"><div><strong>Ubicación</strong><span>{entity.municipality ?? '—'}</span></div><small>{entity.address ?? '—'}</small></div>
@@ -93,7 +93,7 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
       {currentOrdinary && (
         <section className="card dashboard-section">
           <div className="section-heading"><div><p className="eyebrow">Autoridad actual</p><h2>Ordinario o responsable</h2></div></div>
-          <div className="public-directory-list">
+          <div className="public-directory-list entity-authority-list">
             <div className="public-directory-item">
               <div>
                 <strong>{currentOrdinary.person_slug ? <Link href={`/personas/${currentOrdinary.person_slug}`}>{currentOrdinary.person_name ?? '—'}</Link> : currentOrdinary.person_name ?? '—'}</strong>
@@ -122,7 +122,7 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
       {statisticsSnapshots.length > 0 && (
         <section className="card dashboard-section">
           <div className="section-heading"><div><p className="eyebrow">Estadísticas</p><h2>Snapshots históricos</h2></div></div>
-          <div className="public-directory-list">
+          <div className="public-directory-list entity-snapshots-grid">
             {statisticsSnapshots.map((item) => (
               <div className="public-directory-item" key={item.id}>
                 <div><strong>Año {item.statistics_year}</strong><span>{formatNumber(item.population_total)} habitantes</span></div>
