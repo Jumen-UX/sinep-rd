@@ -71,6 +71,37 @@ export type EventReviewData = {
 
 export type EventReviewAction = 'approve' | 'cancel' | 'return_to_draft'
 
+export type EventWorkflowHealthCounts = {
+  canonical_events_total: number
+  pending_review_events: number
+  approved_events: number
+  event_action_types: number
+  event_actions_total: number
+  ready_actions: number
+  failed_actions: number
+  canonical_relationships_active: number
+}
+
+export type EventWorkflowHealthReadiness = {
+  backend_schema_ready: boolean
+  event_lifecycle_rpcs_ready: boolean
+  action_plan_ready: boolean
+  relationship_review_ready: boolean
+  application_contract_ready: boolean
+  workflow_does_not_apply_state: boolean
+  requires_functional_ui_test: boolean
+  has_testable_event: boolean
+}
+
+export type EventWorkflowHealth = {
+  workflow: string
+  status: string
+  counts: EventWorkflowHealthCounts
+  readiness: EventWorkflowHealthReadiness
+  required_manual_test: string[]
+  next_gate: string
+}
+
 function throwIfError(error: { message: string } | null, fallback: string) {
   if (error) throw new Error(error.message || fallback)
 }
@@ -116,4 +147,12 @@ export async function submitEventReview(
   })
 
   throwIfError(error, 'No se pudo completar la revisión del evento.')
+}
+
+export async function loadEventWorkflowHealth(
+  supabase: SupabaseClient,
+): Promise<EventWorkflowHealth | null> {
+  const { data, error } = await supabase.rpc('get_event_workflow_health')
+  throwIfError(error, 'No se pudo cargar la verificación del flujo.')
+  return (data ?? null) as EventWorkflowHealth | null
 }
