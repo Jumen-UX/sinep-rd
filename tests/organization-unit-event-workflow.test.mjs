@@ -13,11 +13,15 @@ const paths = {
   registry: 'supabase/migrations/20260714031000_include_organization_units_in_event_registry.sql',
   adminHardening: 'supabase/migrations/20260714032000_harden_canonical_event_admin_functions.sql',
   service: 'src/features/eventos/services/organization-unit-event-service.ts',
+  applicationService: 'src/features/events/services/event-application-admin-service.ts',
   page: 'src/features/eventos/admin/OrganizationUnitEventManagerPage.tsx',
   route: 'src/app/(admin)/admin/eventos/organizacion/page.tsx',
-  reviewPage: 'src/app/(admin)/admin/eventos/[eventId]/page.tsx',
-  planPage: 'src/app/(admin)/admin/eventos/[eventId]/plan/page.tsx',
-  contractPage: 'src/app/(admin)/admin/eventos/[eventId]/contrato/page.tsx',
+  reviewRoute: 'src/app/(admin)/admin/eventos/[eventId]/page.tsx',
+  planRoute: 'src/app/(admin)/admin/eventos/[eventId]/plan/page.tsx',
+  contractRoute: 'src/app/(admin)/admin/eventos/[eventId]/contrato/page.tsx',
+  reviewPage: 'src/features/events/admin/EventReviewPage.tsx',
+  planPage: 'src/features/events/admin/EventActionPlanPage.tsx',
+  contractPage: 'src/features/events/admin/EventApplicationContractPage.tsx',
 }
 
 async function read(path) {
@@ -106,21 +110,37 @@ test('public event registry keeps old columns and appends explicit organization 
 })
 
 test('admin UI exposes the complete organization event workflow', async () => {
-  const [service, page, route, reviewPage, planPage, contractPage] = await Promise.all([
+  const [
+    service,
+    applicationService,
+    page,
+    route,
+    reviewRoute,
+    planRoute,
+    contractRoute,
+    reviewPage,
+    planPage,
+    contractPage,
+  ] = await Promise.all([
     read(paths.service),
+    read(paths.applicationService),
     read(paths.page),
     read(paths.route),
+    read(paths.reviewRoute),
+    read(paths.planRoute),
+    read(paths.contractRoute),
     read(paths.reviewPage),
     read(paths.planPage),
     read(paths.contractPage),
   ])
+
   for (const rpc of [
     'admin_create_event_draft',
     'admin_generate_event_action_plan',
     'admin_review_event',
     'admin_apply_organization_unit_event',
     'get_event_application_plan',
-  ]) assert.match(service, new RegExp(rpc))
+  ]) assert.match(`${service}\n${applicationService}`, new RegExp(rpc))
 
   assert.match(page, /Crear borrador/)
   assert.match(page, /Generar plan/)
@@ -128,10 +148,16 @@ test('admin UI exposes the complete organization event workflow', async () => {
   assert.match(page, /Aplicar evento/)
   assert.match(page, /can_apply_now/)
   assert.match(route, /OrganizationUnitEventManagerPage/)
+  for (const thinRoute of [reviewRoute, planRoute, contractRoute]) {
+    assert.match(thinRoute, /from '@\/features\/events'/)
+    assert.doesNotMatch(thinRoute, /createClient/)
+    assert.doesNotMatch(thinRoute, /\.rpc\s*\(/)
+  }
   assert.match(reviewPage, /organization_unit_name/)
   assert.match(reviewPage, /has_action_plan/)
   assert.match(planPage, /subject_organization_unit_name/)
   assert.match(planPage, /aplicación automática jurisdiccional todavía no está habilitada/i)
   assert.match(contractPage, /summary\.can_apply/)
-  assert.match(contractPage, /admin_apply_organization_unit_event/)
+  assert.match(contractPage, /applyOrganizationUnitEvent/)
+  assert.match(applicationService, /admin_apply_organization_unit_event/)
 })
