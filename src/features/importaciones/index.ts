@@ -1,3 +1,5 @@
 export { default as AdminBatchImportPage } from './admin/AdminBatchImportPage'
+export { default as ImportBatchDetailPage } from './admin/ImportBatchDetailPage'
+export { default as ImportBatchHistoryPage } from './admin/ImportBatchHistoryPage'
 export * from './services/batch-import-admin-service'
 export * from './services/csv-preview'
