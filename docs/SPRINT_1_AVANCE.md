@@ -37,6 +37,7 @@ Mantener las rutas de Next.js como puntos de entrada delgados y concentrar inter
 - Los asistentes de alta conservaron la revisión de duplicados, los catálogos de países, la jerarquía territorial y los endpoints administrativos dentro del dominio de entidades, fuera de `src/app`.
 - `/admin/alertas`, `/admin/alertas/jurisdicciones` y `/admin/estado-fichas` delegan en `features/data-quality`.
 - Las alertas de responsabilidad estructural, sede vacante y completitud de fichas quedaron fuera de `src/app`, incluyendo la clasificación de datos no identificados o no aplicables.
+- Las consultas de alertas, completitud y clasificación de excepciones quedaron encapsuladas en `data-quality-admin-service.ts`; las pantallas del feature ya no conocen tablas o vistas de Supabase.
 - Se añadieron pruebas contractuales para impedir que las rutas de nombramientos, cargos, acceso, revisión, eventos, importaciones, solicitudes, altas de entidades y calidad de datos recuperen consultas, RPC o llamadas HTTP directas.
 
 ## Regla arquitectónica aplicada
@@ -47,11 +48,10 @@ Las rutas bajo `src/app` pueden resolver parámetros, autenticación inicial y c
 
 1. Extraer las rutas restantes identificadas por `audit:routes`, priorizando configuración y operaciones de cuenta.
 2. Separar en servicios compartidos los catálogos y la persistencia repetida de los asistentes de jurisdicción, parroquia y capilla.
-3. Encapsular en un servicio de calidad de datos las consultas y mutaciones que ahora residen en las pantallas del feature.
-4. Confirmar que cada RPC crítica tenga un único servicio consumidor por dominio.
-5. Eliminar utilidades duplicadas de normalización, manejo de errores y alcance.
-6. Ampliar las pruebas contractuales de límites de ruta sobre cualquier ruta crítica detectada por el inventario.
-7. Ejecutar `pnpm audit:routes:strict` y cerrar formalmente el sprint cuando no queden rutas críticas monolíticas.
+3. Confirmar que cada RPC crítica tenga un único servicio consumidor por dominio.
+4. Eliminar utilidades duplicadas de normalización, manejo de errores y alcance.
+5. Ampliar las pruebas contractuales de límites de ruta sobre cualquier ruta crítica detectada por el inventario.
+6. Ejecutar `pnpm audit:routes:strict` y cerrar formalmente el sprint cuando no queden rutas críticas monolíticas.
 
 ## Criterio de cierre
 
