@@ -21,6 +21,8 @@ Mantener las rutas de Next.js como puntos de entrada delgados y concentrar inter
 - `/admin/revision` delega en `features/review`.
 - La carga de la cola y las decisiones de revisión quedaron centralizadas en `review-admin-service.ts`, manteniendo el endpoint administrativo validado como frontera de escritura.
 - `/admin/estructura` delega en `features/structures` y `/admin/organizacion` delega en `features/organizacion`; ambos dominios ya usan servicios canónicos y RPC protegidas.
+- `/admin/estructura/cargos` delega en `features/structures`; jurisdicciones, plantillas, niveles, cargos permitidos y persistencia quedaron encapsulados en `level-office-admin-service.ts`.
+- La pantalla de cargos por nivel ya no conoce tablas ni RPC de Supabase y conserva la selección de diócesis, catálogo, nivel y cargo predeterminado.
 - Todas las rutas operativas de eventos delegan en `features/events`: registro, asistente, cola, revisión, plan, contrato y verificación.
 - El registro histórico consume `get_event_registry_summary` y `get_event_registry_stream` exclusivamente mediante `event-registry-admin-service.ts`.
 - Los catálogos del asistente y la creación de borradores quedaron centralizados en `event-draft-admin-service.ts` mediante `admin_create_event_draft`.
@@ -40,7 +42,7 @@ Mantener las rutas de Next.js como puntos de entrada delgados y concentrar inter
 - Las consultas de alertas, completitud y clasificación de excepciones quedaron encapsuladas en `data-quality-admin-service.ts`; las pantallas del feature ya no conocen tablas o vistas de Supabase.
 - `/admin/configuracion` delega en `features/configuration` y su verificación de sesión quedó encapsulada en `configuration-admin-service.ts`.
 - El centro de configuración enlaza el panel operativo de estado de fichas y mantiene los módulos futuros como tarjetas no interactivas, sin enlaces muertos.
-- Se añadieron pruebas contractuales para impedir que las rutas de nombramientos, cargos, acceso, revisión, eventos, importaciones, solicitudes, altas de entidades, calidad de datos y configuración recuperen consultas, RPC o llamadas HTTP directas.
+- Se añadieron pruebas contractuales para impedir que las rutas de nombramientos, cargos, acceso, revisión, eventos, importaciones, solicitudes, altas de entidades, calidad de datos, configuración y cargos estructurales recuperen consultas, RPC o llamadas HTTP directas.
 
 ## Regla arquitectónica aplicada
 
@@ -48,7 +50,7 @@ Las rutas bajo `src/app` pueden resolver parámetros, autenticación inicial y c
 
 ## Pendientes para cerrar Sprint 1
 
-1. Extraer las rutas restantes identificadas por `audit:routes`, priorizando cargos estructurales y operaciones de cuenta.
+1. Extraer las rutas restantes identificadas por `audit:routes`, priorizando operaciones de cuenta, actividad y organigramas.
 2. Separar en servicios compartidos los catálogos y la persistencia repetida de los asistentes de jurisdicción, parroquia y capilla.
 3. Confirmar que cada RPC crítica tenga un único servicio consumidor por dominio.
 4. Eliminar utilidades duplicadas de normalización, manejo de errores y alcance.
