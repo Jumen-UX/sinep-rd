@@ -198,7 +198,7 @@ label {
 
 .public-sidebar-link.active > span:nth-child(2),
 .public-sidebar-link[aria-current="page"] > span:nth-child(2) {
-  color: #ffffff;
+  color: #17202a;
 }
 
 #tab-territorial[aria-selected="true"] > span:nth-child(2),
