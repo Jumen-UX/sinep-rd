@@ -21,9 +21,10 @@ Mantener las rutas de Next.js como puntos de entrada delgados y concentrar inter
 - `/admin/revision` delega en `features/review`.
 - La carga de la cola y las decisiones de revisión quedaron centralizadas en `review-admin-service.ts`, manteniendo el endpoint administrativo validado como frontera de escritura.
 - `/admin/estructura` delega en `features/structures` y `/admin/organizacion` delega en `features/organizacion`; ambos dominios ya usan servicios canónicos y RPC protegidas.
-- `/admin/eventos/nuevo` delega en `features/events`.
+- `/admin/eventos` y `/admin/eventos/nuevo` delegan en `features/events`.
+- El registro histórico consume `get_event_registry_summary` y `get_event_registry_stream` exclusivamente mediante `event-registry-admin-service.ts`.
 - Los catálogos del asistente de eventos y la creación de borradores quedaron centralizados en `event-draft-admin-service.ts` mediante `admin_create_event_draft`.
-- Se añadieron pruebas contractuales para impedir que las rutas de nombramientos, cargos, acceso, revisión y creación de eventos recuperen consultas, RPC o llamadas HTTP directas.
+- Se añadieron pruebas contractuales para impedir que las rutas de nombramientos, cargos, acceso, revisión y eventos recuperen consultas, RPC o llamadas HTTP directas.
 
 ## Regla arquitectónica aplicada
 
@@ -32,7 +33,7 @@ Las rutas bajo `src/app` pueden resolver parámetros, autenticación inicial y c
 ## Pendientes para cerrar Sprint 1
 
 1. Inventariar las rutas restantes de `src/app` y clasificar cada una como delgada, transitoria o monolítica.
-2. Extraer las páginas monolíticas restantes por prioridad de riesgo: registro de eventos, revisión operativa de eventos e importaciones.
+2. Extraer las páginas monolíticas restantes por prioridad de riesgo: revisión operativa de eventos e importaciones.
 3. Confirmar que cada RPC crítica tenga un único servicio consumidor por dominio.
 4. Eliminar utilidades duplicadas de normalización, manejo de errores y alcance.
 5. Ampliar las pruebas contractuales de límites de ruta sin bloquear rutas todavía no migradas.
