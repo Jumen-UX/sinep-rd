@@ -4,28 +4,11 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-
-type StructureAlert = {
-  node_id: string
-  template_name: string | null
-  kind_key: string | null
-  level_name: string | null
-  level_key: string | null
-  diocese_name: string | null
-  entity_id: string
-  entity_name: string
-  entity_slug: string | null
-  entity_type_name: string | null
-  municipality: string | null
-  province: string | null
-  responsible_office_name: string | null
-  responsible_office_key: string | null
-  responsible_count: number
-  responsible_names: string | null
-  has_registered_vacancy: boolean
-  alert_status: 'vacante_registrada' | 'posible_vacancia' | 'con_responsable'
-  alert_label: string
-}
+import {
+  getAuthenticatedUserId,
+  loadStructureResponsibilityAlerts,
+  type StructureAlert,
+} from '../services/data-quality-admin-service'
 
 type AlertFilter = 'needs_action' | 'possible' | 'registered' | 'resolved' | 'all'
 
@@ -41,7 +24,7 @@ function locationLabel(alert: StructureAlert) {
   return parts.length > 0 ? parts.join(' · ') : 'Ubicación o nivel no indicado'
 }
 
-export default function AdminAlertasPage() {
+export default function StructureAlertsPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [loading, setLoading] = useState(true)
@@ -51,26 +34,21 @@ export default function AdminAlertasPage() {
 
   useEffect(() => {
     async function loadAlerts() {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) {
-        router.push('/admin/login')
-        return
-      }
+      setError(null)
 
-      const { data, error: alertsError } = await supabase
-        .from('admin_structure_responsibility_alerts')
-        .select('node_id,template_name,kind_key,level_name,level_key,diocese_name,entity_id,entity_name,entity_slug,entity_type_name,municipality,province,responsible_office_name,responsible_office_key,responsible_count,responsible_names,has_registered_vacancy,alert_status,alert_label')
-        .order('alert_status', { ascending: false })
-        .order('diocese_name')
-        .order('level_name')
-        .order('entity_name')
+      try {
+        const userId = await getAuthenticatedUserId(supabase)
+        if (!userId) {
+          router.push('/admin/login')
+          return
+        }
 
-      if (alertsError) {
-        setError(alertsError.message)
-      } else {
-        setAlerts((data ?? []) as StructureAlert[])
+        setAlerts(await loadStructureResponsibilityAlerts(supabase))
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'No se pudieron cargar las alertas.')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     loadAlerts()
