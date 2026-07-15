@@ -1,7 +1,9 @@
 {
   "version": 1,
   "canonical_documents": {
-    "active_sprint": "docs/sprints/active/sprint-4.md"
+    "active_sprint": "docs/sprints/active/sprint-4.md",
+    "documentation_automation": "docs/operations/AUTOMATIZACION_DOCUMENTAL.md",
+    "operations_recovery": "docs/OPERACION_Y_RECUPERACION.md"
   },
   "policies": {
     "strict_internal_links": true,
@@ -12,7 +14,7 @@
     "orphan_mode": "warning"
   },
   "metadata": {
-    "allowed_statuses": ["activo", "borrador", "archivado", "obsoleto", "completado"],
+    "allowed_statuses": ["activo", "backlog vigente", "borrador", "archivado", "obsoleto", "completado"],
     "archive_prefix": "docs/archive/"
   }
 }
