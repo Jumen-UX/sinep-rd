@@ -13,7 +13,7 @@ Hacer efectiva la regla de no editar silenciosamente la historia: todo cambio es
 
 1. [x] S5-01 — Auditar los modelos y flujos de eventos existentes y declarar una única fuente canónica.
 2. [x] S5-02 — Consolidar el catálogo de eventos institucionales: creación, división, fusión, desmembramiento, traslado, supresión y cambio de dependencia.
-3. [ ] S5-03 — Migrar y normalizar los eventos de evolución existentes sin aprobar ni aplicar datos dudosos.
+3. [x] S5-03 — Migrar y normalizar los eventos de evolución existentes sin aprobar ni aplicar datos dudosos.
 4. [ ] S5-04 — Unificar borrador, fuente documental, fecha efectiva, alcance y estado de verificación.
 5. [ ] S5-05 — Generar un plan de impacto determinista y de solo lectura antes de aprobar.
 6. [ ] S5-06 — Implementar revisión y aprobación separadas de la aplicación.
@@ -36,9 +36,11 @@ El sprint parte de la infraestructura existente de eventos canónicos y estructu
 
 ## Estado técnico
 
-S5-01 queda documentado en `sprint-5-event-model-audit.md` y protegido por `canonical-event-model-audit.test.mjs`. La fuente oficial del hecho histórico es `canonical_events`; `canonical_event_types` tipifica el hecho; participantes, planes, acciones y contratos son derivados; y las entidades, relaciones, nodos y unidades organizativas representan el estado aplicado. `/admin/eventos` es la ruta canónica y `/admin/estructura/eventos` queda clasificada como compatibilidad temporal. La auditoría asigna las brechas de catálogo, evidencia, impacto, aplicación, línea temporal y compensación a S5-02–S5-10.
+S5-01 queda documentado en la [auditoría del modelo canónico de eventos](./sprint-5-event-model-audit.md) y protegido por `canonical-event-model-audit.test.mjs`. La fuente oficial del hecho histórico es `canonical_events`; `canonical_event_types` tipifica el hecho; participantes, planes, acciones y contratos son derivados; y las entidades, relaciones, nodos y unidades organizativas representan el estado aplicado. `/admin/eventos` es la ruta canónica y `/admin/estructura/eventos` queda clasificada como compatibilidad temporal. La auditoría asigna las brechas de catálogo, evidencia, impacto, aplicación, línea temporal y compensación a S5-02–S5-10.
 
 S5-02 queda protegido por `canonical-event-catalog-classification.test.mjs`. La migración `20260715210000_classify_canonical_event_catalog.sql` conserva las claves históricas y el valor heredado `applies_to`, pero añade una clasificación institucional explícita: familia, destino canónico, estrategia de aplicación, revisión manual y compensabilidad. Los 18 tipos activos quedaron clasificados sin valores incompletos; creación, división, fusión, desmembramiento, traslado, supresión y cambio de dependencia disponen de familias estables, mientras identidad, límites, ciclo de vida y publicación permanecen como familias complementarias. El catálogo administrativo expone esta metadata sin introducir claves competidoras.
+
+S5-03 queda protegido por `legacy-entity-evolution-migration.test.mjs`. La migración `20260715214500_migrate_legacy_entity_evolution_events.sql` trasladó 23 registros de `entity_evolution_events` a `canonical_events` de forma idempotente, preservó el identificador y tipo heredados en `notes_json`, normalizó `erection_by_dismemberment` a `erection` y `territory_loss` a `boundary_change`, creó participantes para entidades conocidas y dejó todos los registros en `pending_review`, sin aprobación ni aplicación automática.
 
 ## Reglas del sprint
 
