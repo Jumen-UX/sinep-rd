@@ -7,5 +7,7 @@ export { default as EventWorkflowVerificationPage } from './admin/EventWorkflowV
 export { default as PendingEventsPage } from './admin/PendingEventsPage'
 export * from './services/event-application-admin-service'
 export * from './services/event-draft-admin-service'
+export * from './services/event-impact-admin-service'
+export * from './services/event-impact-plan'
 export * from './services/event-registry-admin-service'
 export * from './services/event-workflow-admin-service'
