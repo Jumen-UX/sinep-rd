@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation'
 import AdminWizardProgress from '@/components/admin/AdminWizardProgress'
 import SmartContextPanel from '@/components/admin/SmartContextPanel'
 import StructureEntityPicker from '@/components/admin/StructureEntityPicker'
+import type { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
 import { createClient } from '@/lib/supabase/client'
+import { PersonIdentityStep, type PersonIdentityMode } from '@/features/personas/shared/components/PersonIdentityStep'
 import {
   loadAllowedOfficeIds,
   loadPriestCatalogs,
@@ -16,11 +18,11 @@ import {
   type OfficeConfig,
   type SavePriestResponse,
 } from '../services/priest-admin-service'
-import type { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
 
 type DraftValue = string | string[]
 type DraftValues = Record<string, DraftValue>
 type MissingField = { key: string; label: string }
+type RegistrationMode = 'existing-deacon' | 'new-priest'
 
 const DRAFT_KEY = 'sinep:nuevo-sacerdote:draft'
 const wizardSteps = [
@@ -50,6 +52,13 @@ function buildDisplayName(parts: Array<FormDataEntryValue | string | null | unde
   return parts.map((part) => String(part ?? '').trim()).filter(Boolean).join(' ')
 }
 
+function toIdentityMode(mode: RegistrationMode): PersonIdentityMode {
+  return mode === 'existing-deacon' ? 'existing' : 'new'
+}
+
+function toRegistrationMode(mode: PersonIdentityMode): RegistrationMode {
+  return mode === 'existing' ? 'existing-deacon' : 'new-priest'
+}
 
 type PriestSaveSuccessNoticeProps = {
   message: string
@@ -66,17 +75,12 @@ function PriestSaveSuccessNotice({ message, internalCode, personId, slug }: Prie
 
   useEffect(() => {
     if (messageRef.current) messageRef.current.textContent = message
-    if (internalCodeRef.current) {
-      internalCodeRef.current.textContent = internalCode ? `Código interno: ${internalCode}` : ''
-    }
+    if (internalCodeRef.current) internalCodeRef.current.textContent = internalCode ? `Código interno: ${internalCode}` : ''
   }, [internalCode, message])
 
   return (
     <section className="success-box admin-wizard-success">
-      <div>
-        <strong ref={messageRef} />
-        <span hidden={!internalCode} ref={internalCodeRef} />
-      </div>
+      <div><strong ref={messageRef} /><span hidden={!internalCode} ref={internalCodeRef} /></div>
       <div className="admin-actions">
         {adminHref && <Link className="button button-primary" href={adminHref}>Abrir ficha administrativa</Link>}
         {publicHref && <Link className="button button-secondary" href={publicHref}>Ver ficha pública</Link>}
@@ -99,7 +103,7 @@ export default function PriestWizardPage() {
   const [deacons, setDeacons] = useState<DeaconOption[]>([])
   const [allowedOfficeIds, setAllowedOfficeIds] = useState<string[]>([])
   const [levelFilterMessage, setLevelFilterMessage] = useState('Selecciona una entidad para filtrar los cargos permitidos.')
-  const [mode, setMode] = useState<'existing-deacon' | 'new-priest'>('existing-deacon')
+  const [mode, setMode] = useState<RegistrationMode>('existing-deacon')
   const [priestType, setPriestType] = useState<'diocesan' | 'religious'>('diocesan')
   const [selectedDeaconId, setSelectedDeaconId] = useState('')
   const [incardinationId, setIncardinationId] = useState('')
@@ -115,9 +119,7 @@ export default function PriestWizardPage() {
   const incardination = entities.find((item) => item.direct_entity_id === incardinationId)
   const service = entities.find((item) => item.direct_entity_id === serviceId)
   const quickEntity = entities.find((item) => item.direct_entity_id === quickEntityId)
-  const filteredOfficeConfigs = quickEntityId
-    ? officeConfigs.filter((office) => allowedOfficeIds.includes(office.id))
-    : []
+  const filteredOfficeConfigs = quickEntityId ? officeConfigs.filter((office) => allowedOfficeIds.includes(office.id)) : []
   const notIdentifiedFields = Array.isArray(draftValues.not_identified_fields) ? draftValues.not_identified_fields : []
 
   function fieldValue(name: string, fallback = '') {
@@ -133,9 +135,25 @@ export default function PriestWizardPage() {
     })
   }
 
+  function handleIdentityModeChange(identityMode: PersonIdentityMode) {
+    const registrationMode = toRegistrationMode(identityMode)
+    setMode(registrationMode)
+    setDraftField('registration_mode', registrationMode)
+    if (registrationMode === 'new-priest') {
+      setSelectedDeaconId('')
+      setDraftField('existing_deacon_person_id', '')
+    }
+  }
+
+  function handleSelectedDeaconChange(personId: string) {
+    setSelectedDeaconId(personId)
+    setDraftField('existing_deacon_person_id', personId)
+  }
+
   function handleDraftChange(event: FormEvent<HTMLFormElement>) {
     const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     if (!target.name || (target instanceof HTMLInputElement && target.type === 'file')) return
+    if (target.name === 'registration_mode' || target.name === 'existing_deacon_person_id') return
 
     setDraftValues((current) => {
       const next = { ...current }
@@ -159,7 +177,6 @@ export default function PriestWizardPage() {
         router.push('/admin/login')
         return
       }
-
       try {
         const catalogs = await loadPriestCatalogs(supabase)
         setEntities(catalogs.entities)
@@ -172,7 +189,6 @@ export default function PriestWizardPage() {
         setLoading(false)
       }
     }
-
     load()
   }, [router, supabase])
 
@@ -204,21 +220,15 @@ export default function PriestWizardPage() {
         setLevelFilterMessage('Selecciona una entidad para filtrar los cargos permitidos.')
         return
       }
-
       try {
         const ids = await loadAllowedOfficeIds(supabase, quickEntityId)
         setAllowedOfficeIds(ids)
-        setLevelFilterMessage(
-          ids.length > 0
-            ? 'Cargos filtrados por el nivel estructural seleccionado.'
-            : 'Este nivel no tiene cargos configurados. Configúralos en Administración → Estructura antes de asignar uno.',
-        )
+        setLevelFilterMessage(ids.length > 0 ? 'Cargos filtrados por el nivel estructural seleccionado.' : 'Este nivel no tiene cargos configurados. Configúralos en Administración → Estructura antes de asignar uno.')
       } catch (officeError) {
         setAllowedOfficeIds([])
         setLevelFilterMessage(officeError instanceof Error ? officeError.message : 'No se pudieron filtrar los cargos.')
       }
     }
-
     loadOffices()
   }, [quickEntityId, supabase])
 
@@ -230,10 +240,7 @@ export default function PriestWizardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickOfficeConfigId, filteredOfficeConfigs])
 
-  const namePreview = selectedDeacon?.display_name || buildDisplayName([
-    fieldValue('first_name'), fieldValue('middle_name'), fieldValue('last_name'), fieldValue('second_last_name'),
-  ])
-
+  const namePreview = selectedDeacon?.display_name || buildDisplayName([fieldValue('first_name'), fieldValue('middle_name'), fieldValue('last_name'), fieldValue('second_last_name')])
   const completionItems = [
     { label: 'Persona identificada', complete: mode === 'existing-deacon' ? Boolean(selectedDeaconId) : Boolean(fieldValue('first_name') && fieldValue('last_name')) },
     { label: 'Tipo de sacerdote', complete: Boolean(priestType) },
@@ -266,7 +273,6 @@ export default function PriestWizardPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!validateCurrentStep()) return
-
     setSaving(true)
     setError(null)
     setMessage(null)
@@ -340,35 +346,29 @@ export default function PriestWizardPage() {
   return (
     <main className="container dashboard-page admin-priest-wizard" id="top">
       <div className="admin-entity-breadcrumbs"><Link href="/admin/personas">Personas</Link><span>›</span><Link href="/admin/nuevo">Agregar ficha</Link><span>›</span><strong>Sacerdote</strong></div>
-
-      <section className="card admin-wizard-header">
-        <div><p className="eyebrow">Asistente de creación</p><h1>Registrar sacerdote</h1><p className="lead">Busca primero una persona existente. Las actualizaciones posteriores se realizan desde la ficha administrativa.</p></div>
-        <div className="role-list admin-role-list"><span className="role-pill">Borrador automático</span><span className="role-pill">Catálogos guiados</span><span className="role-pill">5 etapas</span></div>
-      </section>
-
+      <section className="card admin-wizard-header"><div><p className="eyebrow">Asistente de creación</p><h1>Registrar sacerdote</h1><p className="lead">Busca primero una persona existente. Las actualizaciones posteriores se realizan desde la ficha administrativa.</p></div><div className="role-list admin-role-list"><span className="role-pill">Borrador automático</span><span className="role-pill">Catálogos guiados</span><span className="role-pill">5 etapas</span></div></section>
       {error && <div className="error-box">{error}</div>}
-      {message && (
-      <PriestSaveSuccessNotice
-        internalCode={savedInternalCode}
-        message={message}
-        personId={savedPersonId}
-        slug={savedSlug}
-      />
-    )}
+      {message && <PriestSaveSuccessNotice internalCode={savedInternalCode} message={message} personId={savedPersonId} slug={savedSlug} />}
 
       <div className="admin-wizard-layout">
         <AdminWizardProgress steps={wizardSteps} currentStep={step} onStepChange={setStep} />
-
         <form className="admin-form admin-config-form card dashboard-section admin-wizard-form" onChange={handleDraftChange} onSubmit={handleSubmit}>
-          <section hidden={step !== 0}>
-            <p className="eyebrow">Etapa 1</p><h2>Buscar o crear persona</h2><p className="meta">Evita duplicar una persona que ya tenga historial diaconal.</p>
-            <div className="admin-choice-grid">
-              <label className="role-pill"><input checked={mode === 'existing-deacon'} name="registration_mode" onChange={() => { setMode('existing-deacon'); setDraftField('registration_mode', 'existing-deacon') }} type="radio" value="existing-deacon" /><span><strong>Usar diácono existente</strong><small>Conservar identidad, código e historial.</small></span></label>
-              <label className="role-pill"><input checked={mode === 'new-priest'} name="registration_mode" onChange={() => { setMode('new-priest'); setSelectedDeaconId(''); setDraftField('registration_mode', 'new-priest') }} type="radio" value="new-priest" /><span><strong>Crear sacerdote nuevo</strong><small>Registrar una nueva ficha personal.</small></span></label>
-            </div>
-            {mode === 'existing-deacon' && <label>Diácono existente<select name="existing_deacon_person_id" value={selectedDeaconId} onChange={(event) => { setSelectedDeaconId(event.target.value); setDraftField('existing_deacon_person_id', event.target.value) }}><option value="">Selecciona un diácono</option>{deacons.map((deacon) => <option key={deacon.id} value={deacon.id}>{deacon.display_name}</option>)}</select></label>}
-            <div className="empty-state"><strong>Persona seleccionada</strong><span>{selectedDeacon?.display_name ?? (mode === 'new-priest' ? 'Se creará una ficha nueva.' : 'Selecciona una persona.')}</span></div>
-          </section>
+          <div hidden={step !== 0}>
+            <p className="eyebrow">Etapa 1</p>
+            <PersonIdentityStep
+              mode={toIdentityMode(mode)}
+              onModeChange={handleIdentityModeChange}
+              selectedPersonId={selectedDeaconId}
+              onSelectedPersonChange={handleSelectedDeaconChange}
+              people={deacons}
+              existingActionLabel="Continuar el historial de un diácono sin crear otra persona."
+              newActionLabel="Crear una identidad solo cuando la persona todavía no existe."
+              selectPlaceholder="Selecciona un diácono"
+              existingSummary="Se conservarán identidad, código interno, ordenación diaconal y demás historiales existentes."
+            />
+            <input type="hidden" name="registration_mode" value={mode} />
+            <input type="hidden" name="existing_deacon_person_id" value={selectedDeaconId} />
+          </div>
 
           <section hidden={step !== 1}>
             <p className="eyebrow">Etapa 2</p><h2>Identidad y contacto</h2>
