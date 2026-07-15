@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { VerificationStatus } from '@/features/shared/source-verification'
 
 export type PendingEvent = {
   source_kind: string
@@ -22,8 +23,10 @@ export type ReviewEvent = {
   status: string
   load_mode: string
   evidence_status: string
+  verification_status: VerificationStatus
   source_name: string | null
   source_url: string | null
+  source_checked_at: string | null
   notes: Record<string, unknown> | null
   event_type_key: string
   event_type_name: string
@@ -55,8 +58,10 @@ export type ReviewChecks = {
   has_title: boolean
   has_event_type: boolean
   has_date_or_initial_snapshot: boolean
+  has_effective_date: boolean
   has_participant: boolean
   has_source_reference: boolean
+  has_verification_contract: boolean
   has_action_plan: boolean
   has_blocking_action: boolean
   is_pending_review: boolean
