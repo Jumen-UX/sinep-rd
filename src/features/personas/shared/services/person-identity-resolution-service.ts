@@ -89,7 +89,7 @@ export function decidePersonIdentity(
 ): PersonIdentityResolution {
   if (decision.kind === 'reuse') {
     const selected = resolution.matches.find((match) => match.record_id === decision.personId)
-    if (!selected) throw new Error('La persona seleccionada no pertenece a las coincidencias revisadas.')
+    if (!selected) throw new Error('La persona seleccionada no forma parte de las coincidencias revisadas.')
 
     return {
       status: 'reuse',
