@@ -37,7 +37,15 @@ type RawUserRow = {
 export type UserRow = Omit<RawUserRow, 'active_roles' | 'active_permissions'> & {
   active_roles: RoleAssignment[]
   active_permissions: EffectivePermission[]
+  onboarding_step: 'profile' | 'access' | 'complete'
+  onboarding_completed_at: string | null
+  access_state: 'ready' | 'onboarding' | 'no_role' | 'blocked'
 }
+
+type UserOnboardingProgress = Pick<
+  UserRow,
+  'user_id' | 'onboarding_step' | 'onboarding_completed_at' | 'access_state'
+>
 
 type RawRoleMatrixRow = {
   role_id: string
@@ -89,6 +97,7 @@ export type InviteUserInput = {
 
 export type InviteUserResult = {
   warning: string | null
+  existingUser: boolean
 }
 
 export const userScopeTypes = [
@@ -132,6 +141,14 @@ export function getUserStatusLabel(status: string) {
   return statusLabels[status] ?? status
 }
 
+export function getUserOnboardingLabel(user: UserRow) {
+  if (user.access_state === 'blocked') return 'Acceso bloqueado'
+  if (user.access_state === 'no_role') return 'Perfil confirmado · sin rol activo'
+  if (user.access_state === 'ready') return 'Onboarding completo · acceso habilitado'
+  if (user.onboarding_step === 'access') return 'Perfil guardado · pendiente de rol'
+  return 'Invitación enviada · perfil pendiente'
+}
+
 export function scopeNeedsEntity(scopeType: string) {
   return !['national', 'global'].includes(scopeType)
 }
@@ -157,20 +174,30 @@ export async function hasUserAccessSession(supabase: SupabaseClient) {
 }
 
 export async function loadUserAccessData(supabase: SupabaseClient): Promise<UserAccessData> {
-  const [usersResponse, rolesResponse, scopesResponse] = await Promise.all([
+  const [usersResponse, progressResponse, rolesResponse, scopesResponse] = await Promise.all([
     supabase.rpc('admin_list_users'),
+    supabase.rpc('admin_list_user_onboarding_progress'),
     supabase.rpc('admin_list_roles_with_permissions'),
     supabase.rpc('admin_list_role_scope_options', { p_scope_type: null }),
   ])
 
-  const error = usersResponse.error ?? rolesResponse.error ?? scopesResponse.error
+  const error = usersResponse.error ?? progressResponse.error ?? rolesResponse.error ?? scopesResponse.error
   throwIfError(error, 'No pudimos cargar usuarios y permisos.')
 
-  const users = ((usersResponse.data ?? []) as RawUserRow[]).map((user) => ({
-    ...user,
-    active_roles: parseJsonArray<RoleAssignment>(user.active_roles),
-    active_permissions: parseJsonArray<EffectivePermission>(user.active_permissions),
-  }))
+  const progressByUser = new Map(
+    parseJsonArray<UserOnboardingProgress>(progressResponse.data).map((progress) => [progress.user_id, progress]),
+  )
+  const users = ((usersResponse.data ?? []) as RawUserRow[]).map((user) => {
+    const progress = progressByUser.get(user.user_id)
+    return {
+      ...user,
+      active_roles: parseJsonArray<RoleAssignment>(user.active_roles),
+      active_permissions: parseJsonArray<EffectivePermission>(user.active_permissions),
+      onboarding_step: progress?.onboarding_step ?? 'profile',
+      onboarding_completed_at: progress?.onboarding_completed_at ?? null,
+      access_state: progress?.access_state ?? 'onboarding',
+    }
+  })
 
   const roles = ((rolesResponse.data ?? []) as RawRoleMatrixRow[]).map((role) => ({
     ...role,
@@ -253,8 +280,8 @@ export async function inviteUser(input: InviteUserInput): Promise<InviteUserResu
     }),
   })
 
-  const result = await response.json().catch(() => ({})) as { error?: string; warning?: string }
+  const result = await response.json().catch(() => ({})) as { error?: string; warning?: string; existing_user?: boolean }
   if (!response.ok) throw new Error(result.error ?? 'No se pudo enviar la invitación.')
 
-  return { warning: result.warning ?? null }
+  return { warning: result.warning ?? null, existingUser: result.existing_user === true }
 }

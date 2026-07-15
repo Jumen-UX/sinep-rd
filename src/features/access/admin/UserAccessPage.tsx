@@ -9,6 +9,7 @@ import {
   endUserRole,
   formatUserAccessDate,
   getScopeLabel,
+  getUserOnboardingLabel,
   getUserStatusLabel,
   hasUserAccessSession,
   loadUserAccessData,
@@ -86,8 +87,8 @@ export default function UserAccessPage() {
   }, [selectedScopeType, visibleScopeOptions])
 
   const metrics = useMemo(() => {
-    const active = users.filter((user) => user.profile_status === 'active').length
-    const pending = users.filter((user) => ['pending', 'pending_invitation'].includes(user.profile_status)).length
+    const active = users.filter((user) => user.access_state === 'ready').length
+    const pending = users.filter((user) => ['onboarding', 'no_role'].includes(user.access_state)).length
     const assignments = users.reduce((total, user) => total + user.active_roles.length, 0)
 
     return { active, pending, assignments }
@@ -266,10 +267,10 @@ export default function UserAccessPage() {
           </div>
 
           <div className="access-flow">
-            <div><strong>1</strong><span>Invitar usuario desde el formulario administrativo.</span></div>
-            <div><strong>2</strong><span>Verificar que aparezca en esta pantalla como pendiente o activo.</span></div>
-            <div><strong>3</strong><span>Asignar rol, tipo de alcance y entidad concreta.</span></div>
-            <div><strong>4</strong><span>Auditar cambios de acceso desde los registros internos.</span></div>
+            <div><strong>1</strong><span>Invitar y confirmar el rol y alcance inicial cuando corresponda.</span></div>
+            <div><strong>2</strong><span>El usuario acepta la invitación y completa su perfil.</span></div>
+            <div><strong>3</strong><span>El acceso se activa solo con onboarding y rol vigentes.</span></div>
+            <div><strong>4</strong><span>Las asignaciones, cierres y cambios de estado quedan auditados.</span></div>
           </div>
         </article>
       </section>
@@ -290,6 +291,7 @@ export default function UserAccessPage() {
                   <p className="entity-type">{getUserStatusLabel(user.profile_status)}</p>
                   <h2>{user.full_name ?? user.email ?? 'Usuario sin nombre'}</h2>
                   <p className="meta">{user.email ?? 'Correo no registrado'} · Último acceso: {formatUserAccessDate(user.last_sign_in_at)}</p>
+                  <p className="meta">{getUserOnboardingLabel(user)}</p>
                 </div>
                 <div className="access-actions actions">
                   <button className="button button-secondary" disabled={saving || user.profile_status === 'active'} onClick={() => handleStatusChange(user.user_id, 'active')} type="button">Activar</button>

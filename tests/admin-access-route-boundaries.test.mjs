@@ -26,6 +26,7 @@ test('user access mutations stay behind the feature service and audited endpoint
   )
 
   assert.match(service, /admin_list_users/)
+  assert.match(service, /admin_list_user_onboarding_progress/)
   assert.match(service, /admin_list_roles_with_permissions/)
   assert.match(service, /admin_assign_user_role/)
   assert.match(service, /admin_update_user_profile_status/)
