@@ -9,6 +9,7 @@ import {
   parseJsonObjectBody,
   ValidationError,
 } from '@/lib/admin/validation'
+import { normalizeSourceVerification } from '@/features/shared/source-verification'
 
 const allowedFlows = ['layperson', 'religious', 'deacon', 'priest', 'bishop'] as const
 const allowedModes = ['existing', 'new'] as const
@@ -65,8 +66,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Debes seleccionar una persona existente.' }, { status: 400 })
     }
 
+    let sourceVerification
+    try {
+      sourceVerification = normalizeSourceVerification(payload)
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'La fuente o verificación no es válida.' },
+        { status: 400 },
+      )
+    }
+
     const normalizedPayload = {
       ...payload,
+      ...sourceVerification,
       flow,
       mode,
       selected_person_id: selectedPersonId,
@@ -98,6 +110,9 @@ export async function POST(request: NextRequest) {
         assignment_id: result.assignmentId,
         episcopal_role_id: result.episcopalRoleId,
         effective_person_type: result.effectivePersonType,
+        source_name: sourceVerification.source_name,
+        source_checked_at: sourceVerification.source_checked_at,
+        verification_status: sourceVerification.verification_status,
       },
     })
 
