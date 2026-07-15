@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import StructureEntityPicker from '@/components/admin/StructureEntityPicker'
 import { createClient } from '@/lib/supabase/client'
+import { AssignmentImpactPreview } from './AssignmentImpactPreview'
 import {
   checkAssignmentEligibility,
   loadAllowedOfficeIds,
@@ -95,6 +96,10 @@ function cardinalityLabel(config: AssignmentOfficeConfiguration | undefined) {
     : 'Cargo múltiple: admite varios titulares vigentes sin cerrar a los demás.'
 }
 
+function sameScopeValue(current: string | null, selected: string) {
+  return current === (selected || null)
+}
+
 export default function AssignmentManagerPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -113,6 +118,8 @@ export default function AssignmentManagerPage() {
   const [selectedUnitId, setSelectedUnitId] = useState('')
   const [selectedEntityId, setSelectedEntityId] = useState('')
   const [selectedStartDate, setSelectedStartDate] = useState('')
+  const [selectedPredecessorId, setSelectedPredecessorId] = useState('')
+  const [closePreviousCurrent, setClosePreviousCurrent] = useState(false)
   const [assignmentStatus, setAssignmentStatus] = useState('active')
 
   const selectedConfig = catalogs.configs.find((item) => item.id === selectedConfigId)
@@ -130,10 +137,31 @@ export default function AssignmentManagerPage() {
     ? addMonths(selectedStartDate, selectedConfig.default_term_months)
     : ''
   const requiresPerson = assignmentStatus !== 'vacant'
+
+  const currentScopeAssignments = catalogs.rawAssignments.filter((assignment) => (
+    assignment.record_status === 'active'
+    && assignment.is_current
+    && assignment.office_configuration_id === selectedConfigId
+    && sameScopeValue(assignment.organization_chart_id, selectedChartId)
+    && sameScopeValue(assignment.organization_unit_id, selectedUnitId)
+    && sameScopeValue(assignment.ecclesiastical_entity_id, selectedEntityId)
+  ))
+  const assignmentsToClose = selectedConfig?.holder_cardinality === 'single'
+    ? currentScopeAssignments
+    : closePreviousCurrent
+      ? currentScopeAssignments.filter((assignment) => assignment.person_id === selectedPersonId)
+      : []
+  const projectedCurrentCount = assignmentStatus === 'vacant'
+    ? currentScopeAssignments.length - assignmentsToClose.length
+    : currentScopeAssignments.length - assignmentsToClose.length + 1
+  const exceedsCapacity = selectedConfig?.holder_cardinality === 'multiple'
+    && selectedConfig.max_current_holders !== null
+    && projectedCurrentCount > selectedConfig.max_current_holders
   const canSubmit = !saving
     && !checkingEligibility
     && Boolean(selectedConfigId)
     && (!requiresPerson || Boolean(selectedPersonId && eligibility?.eligible))
+    && !exceedsCapacity
 
   const assignmentOptions = catalogs.rawAssignments
     .filter((assignment) => assignment.record_status === 'active')
@@ -220,6 +248,12 @@ export default function AssignmentManagerPage() {
   }, [filteredUnits, selectedUnitId])
 
   useEffect(() => {
+    if (selectedPredecessorId && !currentScopeAssignments.some((assignment) => assignment.id === selectedPredecessorId)) {
+      setSelectedPredecessorId('')
+    }
+  }, [currentScopeAssignments, selectedPredecessorId])
+
+  useEffect(() => {
     let cancelled = false
 
     async function validateSelection() {
@@ -266,6 +300,10 @@ export default function AssignmentManagerPage() {
       setError(eligibility?.message ?? 'La persona seleccionada no cumple las condiciones del cargo.')
       return
     }
+    if (exceedsCapacity) {
+      setError('La operación excedería la cantidad máxima de titulares vigentes para este cargo.')
+      return
+    }
 
     const formElement = event.currentTarget
     const form = new FormData(formElement)
@@ -291,14 +329,14 @@ export default function AssignmentManagerPage() {
       publication_status: String(form.get('publication_status') ?? 'published'),
       assignment_status: assignmentStatus,
       selection_method: String(form.get('selection_method') ?? 'appointment'),
-      predecessor_assignment_id: emptyToNull(form.get('predecessor_assignment_id')),
+      predecessor_assignment_id: selectedPredecessorId || null,
       successor_assignment_id: emptyToNull(form.get('successor_assignment_id')),
       notes_public: emptyToNull(form.get('notes_public')),
       notes_internal: emptyToNull(form.get('notes_internal')),
       source_name: emptyToNull(form.get('source_name')),
       source_url: emptyToNull(form.get('source_url')),
       source_checked_at: emptyToNull(form.get('source_checked_at')),
-      close_previous_current: selectedConfig?.holder_cardinality === 'multiple' && form.get('close_previous_current') === 'on',
+      close_previous_current: selectedConfig?.holder_cardinality === 'multiple' && closePreviousCurrent,
       verification_status: 'pending_review',
       visibility: String(form.get('visibility') ?? 'public'),
     }
@@ -316,6 +354,8 @@ export default function AssignmentManagerPage() {
       setSelectedUnitId('')
       setSelectedEntityId('')
       setSelectedStartDate('')
+      setSelectedPredecessorId('')
+      setClosePreviousCurrent(false)
       setAssignmentStatus('active')
       setEligibility(null)
       await loadData()
@@ -372,6 +412,8 @@ export default function AssignmentManagerPage() {
             onChange={(event) => {
               const configId = event.target.value
               setSelectedConfigId(configId)
+              setSelectedPredecessorId('')
+              setClosePreviousCurrent(false)
               const chartId = catalogs.configs.find((config) => config.id === configId)?.organization_chart_id
               if (chartId) setSelectedChartId(chartId)
             }}
@@ -417,6 +459,7 @@ export default function AssignmentManagerPage() {
             onChange={(event) => {
               setSelectedChartId(event.target.value)
               setSelectedUnitId('')
+              setSelectedPredecessorId('')
             }}
           >
             <option value="">Organigrama</option>
@@ -426,7 +469,10 @@ export default function AssignmentManagerPage() {
           <select
             name="organization_unit_id"
             value={selectedUnitId}
-            onChange={(event) => setSelectedUnitId(event.target.value)}
+            onChange={(event) => {
+              setSelectedUnitId(event.target.value)
+              setSelectedPredecessorId('')
+            }}
           >
             <option value="">Unidad organizativa</option>
             {filteredUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
@@ -442,6 +488,7 @@ export default function AssignmentManagerPage() {
             onChange={(entityId) => {
               setSelectedEntityId(entityId)
               setSelectedUnitId('')
+              setSelectedPredecessorId('')
             }}
           />
 
@@ -464,19 +511,45 @@ export default function AssignmentManagerPage() {
             {selectionOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
 
-          <select name="predecessor_assignment_id" defaultValue="">
+          <select
+            name="predecessor_assignment_id"
+            value={selectedPredecessorId}
+            onChange={(event) => setSelectedPredecessorId(event.target.value)}
+          >
             <option value="">Predecesor del mismo cargo y ámbito</option>
-            {assignmentOptions.map((assignment) => <option key={assignment.id} value={assignment.id}>{assignment.label}</option>)}
+            {currentScopeAssignments.map((assignment) => {
+              const person = catalogs.people.find((candidate) => candidate.id === assignment.person_id)
+              return <option key={assignment.id} value={assignment.id}>{person?.display_name ?? 'Vacante'} — {selectedConfig?.display_name ?? 'Cargo'}</option>
+            })}
           </select>
           <select name="successor_assignment_id" defaultValue="">
             <option value="">Sucesor del mismo cargo y ámbito</option>
             {assignmentOptions.map((assignment) => <option key={assignment.id} value={assignment.id}>{assignment.label}</option>)}
           </select>
 
-          {selectedConfig?.holder_cardinality === 'single' && <p className="meta">El titular anterior se cerrará automáticamente; no necesitas marcar ninguna opción adicional.</p>}
+          {selectedConfig?.holder_cardinality === 'single' && <p className="meta">El titular anterior se cerrará automáticamente; la vista previa muestra exactamente cuáles registros serán afectados.</p>}
           {selectedConfig?.holder_cardinality === 'multiple' && (
-            <label className="role-pill"><input name="close_previous_current" type="checkbox" /> Cerrar únicamente la asignación vigente de esta misma persona</label>
+            <label className="role-pill">
+              <input
+                name="close_previous_current"
+                type="checkbox"
+                checked={closePreviousCurrent}
+                onChange={(event) => setClosePreviousCurrent(event.target.checked)}
+              />
+              Cerrar únicamente la asignación vigente de esta misma persona
+            </label>
           )}
+
+          <AssignmentImpactPreview
+            config={selectedConfig}
+            person={selectedPerson}
+            currentAssignments={currentScopeAssignments}
+            startDate={selectedStartDate}
+            assignmentStatus={assignmentStatus}
+            predecessorAssignmentId={selectedPredecessorId}
+            closePreviousCurrent={closePreviousCurrent}
+            people={catalogs.people}
+          />
 
           <input name="source_name" placeholder="Fuente del nombramiento" />
           <input name="source_url" placeholder="URL de fuente" />
@@ -485,7 +558,7 @@ export default function AssignmentManagerPage() {
           <textarea name="notes_internal" placeholder="Notas internas" />
 
           <button className="button button-primary" disabled={!canSubmit}>
-            {saving ? 'Guardando…' : checkingEligibility ? 'Validando…' : 'Guardar asignación'}
+            {saving ? 'Guardando…' : checkingEligibility ? 'Validando…' : exceedsCapacity ? 'Capacidad excedida' : 'Guardar asignación'}
           </button>
         </form>
       </section>
