@@ -17,7 +17,7 @@ Unificar los historiales personales y ministeriales para que una persona conserv
 4. [x] S4-04 — Garantizar continuidad diácono → sacerdote → obispo sobre un único `person_id`.
 5. [x] S4-05 — Unificar sacerdotes diocesanos y religiosos sin duplicar personas.
 6. [x] S4-06 — Aplicar cargos compatibles con el nivel estructural seleccionado.
-7. [ ] S4-07 — Consolidar vacantes, sustituciones, renovaciones y suspensiones.
+7. [x] S4-07 — Consolidar vacantes, sustituciones, renovaciones y suspensiones.
 8. [ ] S4-08 — Mostrar sucesión e impacto antes de guardar nombramientos.
 9. [ ] S4-09 — Incorporar fuente y estado de verificación en los flujos unificados.
 10. [ ] S4-10 — Corregir y validar clérigos sin perfil canónico.
@@ -36,6 +36,8 @@ S4-04 queda protegido por `clerical-person-id-continuity.test.mjs`. Los adaptado
 S4-05 queda protegido por `religious-priest-identity-unification.test.mjs`. Sacerdotes diocesanos y religiosos usan el mismo flujo `priest`; la variante religiosa exige instituto, congregación u orden; reutiliza el diácono seleccionado mediante `selected_person_id`; registra el presbiterado sobre la misma persona; actualiza un único `clergy_profiles`; crea o actualiza `religious_profiles` mediante conflicto por `person_id`; y deriva la incardinación como `religious_institute`. El asistente de vida consagrada delega cualquier sacerdote religioso al asistente sacerdotal canónico y no mantiene un escritor paralelo.
 
 S4-06 queda protegido por `person-wizard-office-level-compatibility.test.mjs`. El servicio compartido resuelve el nivel desde el nodo estructural activo de la entidad y obtiene únicamente los cargos activos mapeados en `structure_level_office_configurations`; si falta entidad, nodo, nivel o mapeo, devuelve una lista vacía. Los cinco asistentes filtran sus catálogos por esos identificadores, deshabilitan el selector cuando no hay opciones y limpian cualquier cargo que deje de ser compatible al cambiar la entidad. No existe fallback a todos los cargos activos.
+
+S4-07 queda protegido por `assignment-lifecycle-contract.test.mjs`. El gestor distingue estados activos, período vencido con continuidad, renovación, sustitución, vacante, suspensión y cierre; una vacante no exige persona; conserva inicio, fin previsto, fin real y fecha efectiva; permite enlazar predecesor y sucesor; proyecta ambas relaciones en el historial; y diferencia la sustitución automática de cargos con titular único del cierre explícito en cargos con múltiples titulares. La persistencia conserva `is_current`, `actual_end_date`, relaciones de sucesión y `close_previous_current` para no sobrescribir el historial.
 
 Cada integración tiene una prueba contractual específica. La validación conjunta de TypeScript, pruebas y build permanece en S4-11.
 
