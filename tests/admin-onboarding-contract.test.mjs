@@ -50,10 +50,10 @@ test('login, invitations and middleware resume incomplete onboarding', async () 
     readFile(invitePath, 'utf8'),
   ])
 
-  assert.match(service, /onboarding_completed_at \? requestedPath : '\/admin\/onboarding'/)
+  assert.match(service, /context\.access_state === 'ready'/)
+  assert.match(service, /context\.access_state === 'onboarding'/)
   assert.match(invite, /new URL\('\/admin\/onboarding'/)
   assert.match(middleware, /ADMIN_ONBOARDING_PATH = '\/admin\/onboarding'/)
-  assert.match(middleware, /select\('onboarding_completed_at'\)/)
-  assert.match(middleware, /if \(needsOnboarding\) return redirectToOnboarding\(request\)/)
+  assert.match(middleware, /get_my_admin_entry_context/)
+  assert.match(middleware, /accessState === 'onboarding'/)
 })
-

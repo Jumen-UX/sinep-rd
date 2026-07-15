@@ -27,6 +27,15 @@ export type AdminOnboardingContext = {
   roles: OnboardingRole[]
 }
 
+export type AdminEntryContext = {
+  user_id: string
+  email: string
+  profile_status: 'pending_invitation' | 'active' | 'suspended' | 'inactive' | string
+  onboarding_completed_at: string | null
+  has_admin_role: boolean
+  access_state: 'ready' | 'onboarding' | 'no_role' | 'blocked'
+}
+
 function withTimeout<T>(promise: Promise<T>, timeoutMessage: string) {
   let timeoutId: ReturnType<typeof setTimeout> | undefined
 
@@ -41,8 +50,18 @@ function withTimeout<T>(promise: Promise<T>, timeoutMessage: string) {
 
 export function getSafeAdminNextPath(search: string) {
   const next = new URLSearchParams(search).get('next')
-  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/admin'
-  return next
+  if (!next || !next.startsWith('/admin') || next.startsWith('//') || next.includes('\\')) return '/admin'
+
+  try {
+    const base = 'https://sinep.local'
+    const parsed = new URL(next, base)
+    const reservedPaths = ['/admin/login', '/admin/onboarding', '/admin/recuperar', '/admin/acceso']
+    if (parsed.origin !== base || !parsed.pathname.startsWith('/admin')) return '/admin'
+    if (reservedPaths.some((path) => parsed.pathname === path || parsed.pathname.startsWith(`${path}/`))) return '/admin'
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return '/admin'
+  }
 }
 
 export function getAdminLoginErrorMessage(error: unknown) {
@@ -78,12 +97,26 @@ export async function loadAdminOnboardingContext(
   return data as AdminOnboardingContext
 }
 
+export async function loadAdminEntryContext(
+  supabase: SupabaseClient,
+): Promise<AdminEntryContext> {
+  const { data, error } = await supabase.rpc('get_my_admin_entry_context')
+  if (error) throw new Error(error.message || 'No se pudo validar el acceso administrativo.')
+  return data as AdminEntryContext
+}
+
 export async function resolveAdminEntryPath(
   supabase: SupabaseClient,
   requestedPath: string,
 ) {
-  const context = await loadAdminOnboardingContext(supabase)
-  return context.onboarding_completed_at ? requestedPath : '/admin/onboarding'
+  const context = await loadAdminEntryContext(supabase)
+  if (context.access_state === 'ready') return requestedPath
+  if (context.access_state === 'onboarding') return '/admin/onboarding'
+  return '/admin/acceso'
+}
+
+export async function signOutAdmin(supabase: SupabaseClient) {
+  await supabase.auth.signOut({ scope: 'local' })
 }
 
 export async function saveAdminOnboarding(
@@ -155,4 +188,3 @@ export async function updateRecoveredPassword(
   if (error) throw new Error(error.message || 'No se pudo actualizar la contraseña.')
   await supabase.auth.signOut({ scope: 'local' })
 }
-

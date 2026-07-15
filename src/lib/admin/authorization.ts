@@ -15,31 +15,6 @@ type AdminAccessResult =
   | { ok: true; supabase: SupabaseServerClient; user: User }
   | { ok: false; response: NextResponse }
 
-async function userHasActiveAdminRole(supabase: SupabaseServerClient, userId: string) {
-  const rpcResult = await supabase.rpc('current_user_has_admin_role')
-  if (!rpcResult.error && rpcResult.data === true) return true
-
-  const today = new Date().toISOString().slice(0, 10)
-  const { count, error } = await supabase
-    .from('user_role_assignments')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .or(`starts_at.is.null,starts_at.lte.${today}`)
-    .or(`ends_at.is.null,ends_at.gte.${today}`)
-
-  if (error) {
-    console.error('Failed to validate active admin assignment', {
-      userId,
-      rpcError: rpcResult.error?.message ?? null,
-      assignmentError: error.message,
-    })
-    return false
-  }
-
-  return (count ?? 0) > 0
-}
-
 export async function requireAdminAccess(options: RequireAdminAccessOptions = {}): Promise<AdminAccessResult> {
   const supabase = await createClient()
   const { data: userData, error: userError } = await supabase.auth.getUser()
@@ -54,13 +29,23 @@ export async function requireAdminAccess(options: RequireAdminAccessOptions = {}
     }
   }
 
-  const hasAdminRole = await userHasActiveAdminRole(supabase, userData.user.id)
+  const { data: entryContext, error: entryError } = await supabase.rpc('get_my_admin_entry_context')
+  if (entryError) {
+    console.error('Failed to validate administrative entry state', {
+      userId: userData.user.id,
+      entryError: entryError.message,
+    })
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'No se pudo validar el estado de acceso.' }, { status: 403 }),
+    }
+  }
 
-  if (!hasAdminRole) {
+  if (entryContext?.access_state !== 'ready') {
     return {
       ok: false,
       response: NextResponse.json(
-        { error: options.forbiddenMessage ?? 'No tienes un rol administrativo activo.' },
+        { error: options.forbiddenMessage ?? 'Tu cuenta no tiene acceso administrativo activo.' },
         { status: 403 },
       ),
     }

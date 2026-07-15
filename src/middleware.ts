@@ -7,6 +7,7 @@ const ADMIN_PREFIX = '/admin'
 const ADMIN_LOGIN_PATH = '/admin/login'
 const ADMIN_ONBOARDING_PATH = '/admin/onboarding'
 const ADMIN_RECOVERY_PREFIX = '/admin/recuperar'
+const ADMIN_ACCESS_PATH = '/admin/acceso'
 
 type SupabaseCookieToSet = {
   name: string
@@ -47,6 +48,13 @@ function redirectToOnboarding(request: NextRequest) {
   return decorateAdminResponse(NextResponse.redirect(url), request)
 }
 
+function redirectToAccessStatus(request: NextRequest) {
+  const url = request.nextUrl.clone()
+  url.pathname = ADMIN_ACCESS_PATH
+  url.search = ''
+  return decorateAdminResponse(NextResponse.redirect(url), request)
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   let response = NextResponse.next({ request })
@@ -67,22 +75,16 @@ export async function middleware(request: NextRequest) {
   const { data, error } = await supabase.auth.getUser()
   const user = error ? null : data.user
 
-  const profileResponse = user
-    ? await supabase
-        .from('profiles')
-        .select('onboarding_completed_at')
-        .eq('id', user.id)
-        .maybeSingle()
-    : null
-  const needsOnboarding = Boolean(
-    user
-    && !profileResponse?.error
-    && !profileResponse?.data?.onboarding_completed_at,
-  )
+  const entryResult = user ? await supabase.rpc('get_my_admin_entry_context') : null
+  const accessState = entryResult?.error
+    ? 'blocked'
+    : entryResult?.data?.access_state as 'ready' | 'onboarding' | 'no_role' | 'blocked' | undefined
 
   if (pathname === ADMIN_LOGIN_PATH) {
     if (!user) return decorateAdminResponse(response, request)
-    return needsOnboarding ? redirectToOnboarding(request) : redirectToAdmin(request)
+    if (accessState === 'ready') return redirectToAdmin(request)
+    if (accessState === 'onboarding') return redirectToOnboarding(request)
+    return redirectToAccessStatus(request)
   }
 
   if (pathname.startsWith(ADMIN_RECOVERY_PREFIX)) {
@@ -91,35 +93,15 @@ export async function middleware(request: NextRequest) {
 
   if (!pathname.startsWith(ADMIN_PREFIX)) return response
   if (!user) return redirectToLogin(request)
-  if (pathname === ADMIN_ONBOARDING_PATH) return decorateAdminResponse(response, request)
-  if (needsOnboarding) return redirectToOnboarding(request)
-
-  const rpcResult = await supabase.rpc('current_user_has_admin_role')
-  let hasAdminRole = rpcResult.data === true
-
-  if (rpcResult.error || !hasAdminRole) {
-    const { count, error: assignmentError } = await supabase
-      .from('user_role_assignments')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .or(`starts_at.is.null,starts_at.lte.${new Date().toISOString().slice(0, 10)}`)
-      .or(`ends_at.is.null,ends_at.gte.${new Date().toISOString().slice(0, 10)}`)
-
-    if (assignmentError) {
-      console.warn('[sinep-admin-role-check]', {
-        userId: user.id,
-        rpcError: rpcResult.error?.message ?? null,
-        assignmentError: assignmentError.message,
-      })
-    } else {
-      hasAdminRole = (count ?? 0) > 0
-    }
+  if (pathname === ADMIN_ACCESS_PATH) {
+    return accessState === 'ready' ? redirectToAdmin(request) : decorateAdminResponse(response, request)
   }
-
-  if (!hasAdminRole) {
-    return pathname === ADMIN_PREFIX ? decorateAdminResponse(response, request) : redirectToAdmin(request)
+  if (pathname === ADMIN_ONBOARDING_PATH) {
+    if (accessState === 'onboarding') return decorateAdminResponse(response, request)
+    return accessState === 'ready' ? redirectToAdmin(request) : redirectToAccessStatus(request)
   }
+  if (accessState === 'onboarding') return redirectToOnboarding(request)
+  if (accessState !== 'ready') return redirectToAccessStatus(request)
 
   return decorateAdminResponse(response, request)
 }
@@ -127,4 +109,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/admin', '/admin/:path*'],
 }
-
