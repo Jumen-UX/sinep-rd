@@ -1,4 +1,4 @@
-import { access, readFile, readdir, stat } from 'node:fs/promises'
+import { access, readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 
 const root = process.cwd()
