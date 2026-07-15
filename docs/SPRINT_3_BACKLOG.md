@@ -34,10 +34,10 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ### S3-02 — Recuperación completa de credenciales
 
-- [ ] Crear una ruta segura para establecer la nueva contraseña.
-- [ ] Validar el contexto de recuperación antes de mostrar el formulario.
-- [ ] Aplicar requisitos de contraseña y mensajes no enumerables.
-- [ ] Redirigir al destino administrativo correcto tras el cambio.
+- [x] Crear una ruta segura para establecer la nueva contraseña.
+- [x] Validar el contexto de recuperación antes de mostrar el formulario.
+- [x] Aplicar requisitos de contraseña y mensajes no enumerables.
+- [x] Redirigir al destino administrativo correcto tras el cambio.
 
 ### S3-03 — Protección de rutas y estado de cuenta
 
@@ -80,5 +80,5 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ## Primer bloque activo
 
-S3-01 está implementado en código y pendiente de validación CI. El próximo bloque es S3-02: recuperación completa de credenciales.
+S3-01 está validado por CI. S3-02 está implementado en código y pendiente de validación CI. El próximo bloque es S3-03: protección de rutas y estado de cuenta.
 

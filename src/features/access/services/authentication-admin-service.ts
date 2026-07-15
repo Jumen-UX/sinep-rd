@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const LOGIN_TIMEOUT_MS = 15_000
+const RECOVERY_SESSION_TIMEOUT_MS = 8_000
 
 type ResetAccessResponse = {
   error?: string
@@ -113,5 +114,45 @@ export async function requestAdminAccessReset(email: string): Promise<void> {
   })
   const result = await response.json().catch(() => ({})) as ResetAccessResponse
   if (!response.ok) throw new Error(result.error ?? 'No se pudo reenviar acceso.')
+}
+
+export async function requestOwnPasswordRecovery(
+  supabase: SupabaseClient,
+  email: string,
+  origin: string,
+): Promise<void> {
+  const redirectTo = new URL('/admin/recuperar', origin).toString()
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
+  if (error) throw new Error('No se pudo iniciar la recuperación. Intenta de nuevo más tarde.')
+}
+
+export async function waitForPasswordRecoverySession(
+  supabase: SupabaseClient,
+): Promise<void> {
+  const { data, error } = await supabase.auth.getSession()
+  if (!error && data.session) return
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      subscription.unsubscribe()
+      reject(new Error('recovery-session-missing'))
+    }, RECOVERY_SESSION_TIMEOUT_MS)
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session || !['PASSWORD_RECOVERY', 'SIGNED_IN'].includes(event)) return
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+      resolve()
+    })
+  })
+}
+
+export async function updateRecoveredPassword(
+  supabase: SupabaseClient,
+  password: string,
+): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) throw new Error(error.message || 'No se pudo actualizar la contraseña.')
+  await supabase.auth.signOut({ scope: 'local' })
 }
 

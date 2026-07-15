@@ -6,6 +6,7 @@ import { getSupabasePublishableKey, getSupabaseUrl } from './lib/supabase/config
 const ADMIN_PREFIX = '/admin'
 const ADMIN_LOGIN_PATH = '/admin/login'
 const ADMIN_ONBOARDING_PATH = '/admin/onboarding'
+const ADMIN_RECOVERY_PREFIX = '/admin/recuperar'
 
 type SupabaseCookieToSet = {
   name: string
@@ -82,6 +83,10 @@ export async function middleware(request: NextRequest) {
   if (pathname === ADMIN_LOGIN_PATH) {
     if (!user) return decorateAdminResponse(response, request)
     return needsOnboarding ? redirectToOnboarding(request) : redirectToAdmin(request)
+  }
+
+  if (pathname.startsWith(ADMIN_RECOVERY_PREFIX)) {
+    return decorateAdminResponse(response, request)
   }
 
   if (!pathname.startsWith(ADMIN_PREFIX)) return response

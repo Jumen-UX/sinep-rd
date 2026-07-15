@@ -63,6 +63,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
+        <p className="meta auth-note"><Link href="/admin/recuperar/solicitar">¿Olvidaste tu contraseña?</Link></p>
         <p className="meta auth-note"><Link href="/">Volver al portal público</Link></p>
       </section>
     </main>

@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const email = requiredEmail(payload.email)
 
     const admin = createAdminClient()
-    const redirectTo = new URL('/admin/login', getAppBaseUrl()).toString()
+    const redirectTo = new URL('/admin/recuperar', getAppBaseUrl()).toString()
     const { error } = await admin.auth.resetPasswordForEmail(email, { redirectTo })
 
     if (error) {
@@ -48,3 +48,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
+
