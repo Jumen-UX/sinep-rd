@@ -80,4 +80,4 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ## Primer bloque activo
 
-S3-01, S3-02 y S3-03 están validados por CI. S3-04 está implementado en código y pendiente de validación CI. El próximo bloque es S3-05: matriz automatizada por perfil.
+S3-01, S3-02, S3-03 y S3-04 están validados por CI. La ejecución CI #1144 aprobó typecheck, pruebas, build y CodeQL sobre el árbol completo de S3-04. El próximo bloque es S3-05: matriz automatizada por perfil.
