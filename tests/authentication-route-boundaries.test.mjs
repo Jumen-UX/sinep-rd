@@ -43,6 +43,9 @@ test('authentication service owns login and recovery boundaries', async () => {
 
   assert.match(service, /signInWithPassword/)
   assert.match(service, /\/api\/admin\/users\/reset-access/)
-  assert.match(service, /next\.startsWith\('\/'\)/)
+  assert.match(service, /next\.startsWith\('\/admin'\)/)
   assert.match(service, /next\.startsWith\('\/\/'\)/)
+  assert.match(service, /next\.includes\('\\\\'\)/)
+  assert.match(service, /reservedPaths/)
+  assert.match(service, /parsed\.origin !== base/)
 })
