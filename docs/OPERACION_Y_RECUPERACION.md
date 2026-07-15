@@ -1,5 +1,10 @@
 # Operación y recuperación de SINEP RD
 
+> Estado: activo
+> Documento canónico: sí
+> Última revisión: 2026-07-15
+> Responsable: operaciones y plataforma
+
 ## Objetivo
 
 Este documento define el procedimiento mínimo para verificar disponibilidad, responder a incidentes y recuperar el servicio sin improvisar cambios directos en producción.
