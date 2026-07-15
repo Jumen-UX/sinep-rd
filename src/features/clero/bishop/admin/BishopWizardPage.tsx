@@ -4,8 +4,9 @@ import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import AdminWizardProgress from '@/components/admin/AdminWizardProgress'
-import { createClient } from '@/lib/supabase/client'
 import type { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
+import { PersonIdentityStep } from '@/features/personas/shared/components/PersonIdentityStep'
+import { createClient } from '@/lib/supabase/client'
 import {
   loadAllowedOfficeIds,
   loadBishopCatalogs,
@@ -39,7 +40,12 @@ function emptyToNull(value: FormDataEntryValue | null) {
 }
 
 function slugify(value: string) {
-  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 function displayName(form: FormData) {
@@ -248,22 +254,21 @@ export default function BishopWizardPage() {
         />
 
         <form className="admin-form admin-config-form card dashboard-section admin-wizard-form" onSubmit={handleSubmit}>
-          <section hidden={step !== 0}>
+          <div hidden={step !== 0}>
             <p className="eyebrow">Paso 1</p>
-            <h2>¿Ya existe como sacerdote?</h2>
-            <p className="meta">El flujo normal es seleccionar una persona con presbiterado registrado y agregarle el episcopado. No se crea otra ficha.</p>
-            <div className="dashboard-grid dashboard-summary">
-              <button className={`metric-card metric-button ${mode === 'existing' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('existing')}><strong>Sí</strong><span>Seleccionar sacerdote registrado</span></button>
-              <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => { setMode('new'); setSelectedClergyId('') }}><strong>No</strong><span>Registrar obispo externo</span></button>
-            </div>
-            {mode === 'existing' && (
-              <select value={selectedClergyId} onChange={(event) => setSelectedClergyId(event.target.value)}>
-                <option value="">Selecciona sacerdote</option>
-                {priestRecords.map((record) => <option key={record.id} value={record.id}>{record.display_name}</option>)}
-              </select>
-            )}
+            <PersonIdentityStep
+              mode={mode}
+              onModeChange={setMode}
+              selectedPersonId={selectedClergyId}
+              onSelectedPersonChange={setSelectedClergyId}
+              people={priestRecords}
+              existingActionLabel="Agregar el episcopado a un sacerdote registrado."
+              newActionLabel="Registrar un obispo externo que todavía no existe en SINEP RD."
+              selectPlaceholder="Selecciona un sacerdote"
+              existingSummary="Se conservarán su identidad, ordenaciones, código interno y trayectoria previa."
+            />
             {mode === 'new' && <div className="empty-state"><strong>Obispo externo</strong><span>El sistema creará la identidad y añadirá los antecedentes sacramentales sin tratarlos como tipos independientes de persona.</span></div>}
-          </section>
+          </div>
 
           <section hidden={step !== 1}>
             <p className="eyebrow">Paso 2</p>
@@ -334,11 +339,7 @@ export default function BishopWizardPage() {
               <strong>Dignidades o tratamientos</strong>
               {dignityOptions.map((option) => (
                 <label key={option.value} className="role-pill">
-                  <input
-                    type="checkbox"
-                    checked={dignities.includes(option.value)}
-                    onChange={(event) => toggleDignity(option.value, event.target.checked)}
-                  /> {option.label}
+                  <input type="checkbox" checked={dignities.includes(option.value)} onChange={(event) => toggleDignity(option.value, event.target.checked)} /> {option.label}
                 </label>
               ))}
             </div>
