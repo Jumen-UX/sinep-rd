@@ -8,6 +8,8 @@ Este índice reúne únicamente documentación funcional y vigente. Antes de imp
 |---|---|
 | Entender el sistema | [Arquitectura](./architecture/ARQUITECTURA.md) |
 | Crear o mover módulos | [Convención de módulos](./architecture/CONVENCION_MODULOS.md) |
+| Implementar o modificar estructuras | [Modelo estructural canónico](./SPRINT_2_CANONICAL_STRUCTURE_MODEL.md) y [mapa de contratos](./architecture/CONTRATOS_MODELO_ESTRUCTURAL.md) |
+| Revisar compatibilidad estructural heredada | [Inventario de compatibilidad](./SPRINT_2_LEGACY_COMPATIBILITY_INVENTORY.md) |
 | Cambiar PostgreSQL o Supabase | [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md) |
 | Revisar permisos o privacidad | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
 | Confirmar tecnologías | [Stack oficial](./architecture/STACK_OFICIAL.md) |
@@ -22,6 +24,9 @@ Este índice reúne únicamente documentación funcional y vigente. Antes de imp
 
 - [Arquitectura](./architecture/ARQUITECTURA.md): capas, dominios y decisiones obligatorias.
 - [Convención de módulos](./architecture/CONVENCION_MODULOS.md): ubicación y responsabilidad de archivos.
+- [Modelo estructural canónico](./SPRINT_2_CANONICAL_STRUCTURE_MODEL.md): fuentes de verdad y separación entre identidad, territorio, organización y nombramientos.
+- [Contratos del modelo estructural](./architecture/CONTRATOS_MODELO_ESTRUCTURAL.md): lecturas, escrituras, auditoría, publicación, invalidación y pruebas obligatorias.
+- [Inventario de compatibilidad estructural](./SPRINT_2_LEGACY_COMPATIBILITY_INVENTORY.md): contratos retirados, compatibilidades temporales y condiciones para eliminación futura.
 - [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md): migraciones, integridad, historia y rendimiento.
 - [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md): clasificación, autorización, RLS y operación segura.
 - [Stack oficial](./architecture/STACK_OFICIAL.md): tecnologías y comandos aceptados.
