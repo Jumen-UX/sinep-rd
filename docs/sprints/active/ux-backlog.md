@@ -1,6 +1,6 @@
 # Backlog UX activo
 
-> Estado: activo
+> Estado: backlog vigente
 > Última revisión: 2026-07-15
 > Propietario: producto y frontend
 
