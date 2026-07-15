@@ -11,9 +11,13 @@ async function readRepoFile(path) {
 test('canonical person registration reviews duplicates before every new identity', async () => {
   const service = await readRepoFile('src/features/personas/shared/services/canonical-person-registration-service.ts')
 
-  assert.match(service, /reviewPotentialDuplicates\('person', payload\)/)
   assert.match(service, /mode === 'new'/)
-  assert.match(service, /duplicate_review_confirmed: duplicateMatchCount > 0/)
+  assert.match(service, /readIdentityDecision\(payload\.identity_decision\)/)
+  assert.match(service, /inspectPersonIdentity\(payload\)/)
+  assert.match(service, /decidePersonIdentity\(inspection, identityDecision\)/)
+  assert.match(service, /reviewPotentialDuplicates\('person', payload\)/)
+  assert.match(service, /duplicate_review_confirmed: duplicateReviewConfirmed/)
+  assert.match(service, /duplicate_match_count: duplicateMatchCount/)
 })
 
 test('entity assistants review duplicates in their hierarchy before saving', async () => {
@@ -33,9 +37,13 @@ test('entity assistants review duplicates in their hierarchy before saving', asy
 
 test('duplicate review uses authenticated APIs and requires an explicit decision', async () => {
   const helper = await readRepoFile('src/lib/admin/duplicateReview.ts')
+  const identityService = await readRepoFile('src/features/personas/shared/services/person-identity-resolution-service.ts')
 
   assert.match(helper, /\/api\/admin\/duplicados\/personas/)
   assert.match(helper, /\/api\/admin\/duplicados\/entidades/)
   assert.match(helper, /globalThis\.confirm/)
   assert.match(helper, /Creación cancelada/)
+  assert.match(identityService, /kind: 'reuse'/)
+  assert.match(identityService, /kind: 'create_new'/)
+  assert.match(identityService, /La persona seleccionada no forma parte de las coincidencias revisadas/)
 })
