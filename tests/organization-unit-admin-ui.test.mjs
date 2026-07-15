@@ -42,7 +42,8 @@ test('organization manager exposes filters tree parent selection and explicit li
   assert.match(page, /Área pastoral/)
   assert.match(page, /status === 'active' \? 'Activa'/)
   assert.match(page, /action: 'approve', label: 'Aprobar unidad'/)
-  assert.match(page, /permiso de publicación/)
+  assert.match(page, /action: 'publish', label: 'Publicar'/)
+  assert.match(page, /action: 'unpublish', label: 'Retirar publicación'/)
 })
 
 test('admin shell exposes organization management', async () => {
