@@ -45,13 +45,26 @@ La función de guardado aplicada en el entorno real:
 
 - elimina `status` y `visibility` del payload ordinario;
 - fuerza borrador interno al crear;
-- mantiene 181 unidades vigentes en `draft` e `internal` hasta revisión explícita.
+- mantiene las unidades vigentes en `draft` e `internal` hasta revisión explícita.
 
 No se promovieron unidades automáticamente.
 
-## Pendientes para cerrar S2-04
+La normalización posterior dejó 12 jerarquías pastorales diocesanas coherentes, con 12 cabeceras, 180 unidades hijas, 192 unidades alcanzables desde sus raíces y 0 ciclos. La cola `/admin/organizacion/revision` permite filtrar y aprobar unidades revisadas sin publicarlas.
 
-- Crear una cola de revisión por lotes para las 181 unidades en borrador.
-- Definir criterios funcionales de aprobación por organigrama y diócesis.
+## Estado de cierre técnico
+
+S2-04 está completado técnicamente:
+
+- existe una cola de revisión por lotes;
+- las jerarquías fueron normalizadas y verificadas;
+- la aprobación permanece separada de la publicación;
+- edición, transición y auditoría usan contratos explícitos.
+
+## Pendientes operativos de beta
+
 - Validar permisos con cuentas reales separadas para edición, aprobación y publicación.
-- Aprobar y publicar solo registros revisados.
+- Revisar funcionalmente las 192 unidades por jurisdicción.
+- Aprobar únicamente unidades revisadas.
+- Publicar, mediante una acción posterior separada, solo los registros autorizados.
+
+Estos controles operativos no reabren el cierre técnico de Sprint 2.
