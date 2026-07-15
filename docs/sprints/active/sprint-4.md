@@ -19,7 +19,7 @@ Unificar los historiales personales y ministeriales para que una persona conserv
 6. [x] S4-06 — Aplicar cargos compatibles con el nivel estructural seleccionado.
 7. [x] S4-07 — Consolidar vacantes, sustituciones, renovaciones y suspensiones.
 8. [x] S4-08 — Mostrar sucesión e impacto antes de guardar nombramientos.
-9. [ ] S4-09 — Incorporar fuente y estado de verificación en los flujos unificados.
+9. [x] S4-09 — Incorporar fuente y estado de verificación en los flujos unificados.
 10. [ ] S4-10 — Corregir y validar clérigos sin perfil canónico.
 11. [ ] S4-11 — Ejecutar `pnpm check`, pruebas funcionales y verificación del entorno desplegado.
 
@@ -40,6 +40,8 @@ S4-06 queda protegido por `person-wizard-office-level-compatibility.test.mjs`. E
 S4-07 queda protegido por `assignment-lifecycle-contract.test.mjs`. El gestor distingue estados activos, período vencido con continuidad, renovación, sustitución, vacante, suspensión y cierre; una vacante no exige persona; conserva inicio, fin previsto, fin real y fecha efectiva; permite enlazar predecesor y sucesor; proyecta ambas relaciones en el historial; y diferencia la sustitución automática de cargos con titular único del cierre explícito en cargos con múltiples titulares. La persistencia conserva `is_current`, `actual_end_date`, relaciones de sucesión y `close_previous_current` para no sobrescribir el historial.
 
 S4-08 queda protegido por `assignment-impact-preview.test.mjs`. El gestor calcula los titulares vigentes del mismo cargo y ámbito antes de guardar, muestra cuáles se cerrarán o conservarán, presenta el predecesor explícito, proyecta la cantidad de titulares resultante y bloquea operaciones que excedan la cardinalidad máxima. Para cargos de titular único, la vista previa refleja el cierre automático; para cargos múltiples, respeta la decisión explícita de cierre de la asignación vigente de la misma persona. El catálogo administrativo expone fechas y estado de ciclo de vida necesarios para explicar el impacto sin modificar datos.
+
+S4-09 queda protegido por `source-verification-contract.test.mjs`. Personas y nombramientos comparten `normalizeSourceVerification`, que normaliza nombre, URL HTTP/HTTPS, fecha de revisión y estado; rechaza estados desconocidos; y no permite confirmar una verificación sin nombre de fuente y fecha. Las APIs envían el contrato normalizado a los RPC y registran en auditoría únicamente nombre, fecha y estado, sin copiar la URL completa. El motor canónico conserva la procedencia en ordenaciones, estado clerical e incardinación, mientras los nombramientos mantienen los mismos campos de evidencia.
 
 Cada integración tiene una prueba contractual específica. La validación conjunta de TypeScript, pruebas y build permanece en S4-11.
 
