@@ -13,6 +13,7 @@ Este índice reúne únicamente documentación funcional y vigente. Antes de imp
 | Consultar el cierre técnico del Sprint 2 | [Acta de cierre del Sprint 2](./SPRINT_2_CIERRE.md) |
 | Consultar el trabajo activo del Sprint 3 | [Backlog de autenticación, acceso y onboarding](./SPRINT_3_BACKLOG.md) |
 | Operar invitación, recuperación y revocación de acceso | [Operación del acceso administrativo](./OPERACION_ACCESO_ADMINISTRATIVO.md) |
+| Consultar resultados operativos del Sprint 3 | [Resultados operativos de acceso](./SPRINT_3_OPERATIONAL_RESULTS.md) |
 | Cambiar PostgreSQL o Supabase | [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md) |
 | Revisar permisos o privacidad | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
 | Confirmar tecnologías | [Stack oficial](./architecture/STACK_OFICIAL.md) |

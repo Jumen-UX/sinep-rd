@@ -80,4 +80,4 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ## Primer bloque activo
 
-S3-01 a S3-05 están validados por CI. La ejecución CI #1146 aprobó typecheck, 311 pruebas, build y CodeQL sobre la política centralizada y la matriz completa de perfiles. El próximo bloque es S3-06: validación operativa y cierre.
+S3-01 a S3-05 están validados por CI. La ejecución CI #1146 aprobó typecheck, 311 pruebas, build y CodeQL sobre la política centralizada y la matriz completa de perfiles. En S3-06, las cuatro migraciones están aplicadas y la matriz transaccional de estados fue verificada en Supabase no productivo; quedan el recorrido web con cuentas diferenciadas, el aislamiento entre diócesis y las pruebas de integración/E2E del entorno.
