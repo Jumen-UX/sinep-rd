@@ -5,7 +5,7 @@
 
 Sistema Nacional de Información Eclesiástica y Pastoral de República Dominicana. Combina un portal público, herramientas administrativas y una base canónica e histórica respaldada por Supabase.
 
-> Estado del producto: candidata a beta interna. El sprint funcional activo es Sprint 4 — Personas, cargos y nombramientos.
+> Estado del producto: candidata a beta interna. El sprint funcional activo es Sprint 5 — Eventos y evolución institucional.
 
 ## Requisitos
 
