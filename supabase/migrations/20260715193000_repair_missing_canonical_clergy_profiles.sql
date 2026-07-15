@@ -16,7 +16,7 @@ select
   min(oe.ordination_date) filter (where oe.degree = 'presbyterate'),
   min(oe.ordination_date) filter (where oe.degree = 'episcopate'),
   'active',
-  'incomplete'
+  'pending'
 from public.ordination_events oe
 join public.persons p
   on p.id = oe.person_id
