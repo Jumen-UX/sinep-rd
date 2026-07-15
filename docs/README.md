@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.3 seconds
+Output:
 # Documentación de SINEP RD
 
 Este índice reúne únicamente documentación funcional y vigente. Antes de implementar un cambio, consulta la sección correspondiente.
@@ -11,6 +14,7 @@ Este índice reúne únicamente documentación funcional y vigente. Antes de imp
 | Implementar o modificar estructuras | [Modelo estructural canónico](./SPRINT_2_CANONICAL_STRUCTURE_MODEL.md) y [mapa de contratos](./architecture/CONTRATOS_MODELO_ESTRUCTURAL.md) |
 | Revisar compatibilidad estructural heredada | [Inventario de compatibilidad](./SPRINT_2_LEGACY_COMPATIBILITY_INVENTORY.md) |
 | Consultar el cierre técnico del Sprint 2 | [Acta de cierre del Sprint 2](./SPRINT_2_CIERRE.md) |
+| Consultar el trabajo activo del Sprint 3 | [Backlog de autenticación, acceso y onboarding](./SPRINT_3_BACKLOG.md) |
 | Cambiar PostgreSQL o Supabase | [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md) |
 | Revisar permisos o privacidad | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
 | Confirmar tecnologías | [Stack oficial](./architecture/STACK_OFICIAL.md) |
@@ -45,6 +49,7 @@ Este índice reúne únicamente documentación funcional y vigente. Antes de imp
 
 - [Hoja de ruta vigente](./roadmap/ROADMAP.md).
 - [Acta de cierre técnico del Sprint 2](./SPRINT_2_CIERRE.md): evidencia de CI, criterios cumplidos y pendientes operativos de beta.
+- [Sprint 3 — autenticación, acceso y onboarding](./SPRINT_3_BACKLOG.md): bloques activos, reglas y criterios de cierre.
 - [Plan UX vigente](./PLAN_UX.md).
 
 ## Jerarquía de autoridad
@@ -65,3 +70,4 @@ Una discrepancia entre código y norma vigente debe resolverse: no se considera 
 - No crear archivos `COMPLETE`, `FINAL` o `SUMMARY` en la raíz de `docs`.
 - Actualizar este índice al añadir una referencia vigente.
 - Usar enlaces relativos y comprobarlos antes de cerrar el cambio.
+

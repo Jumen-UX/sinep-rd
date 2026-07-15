@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.3 seconds
+Output:
 # Hoja de ruta de SINEP RD
 
 > Estado: vigente  
@@ -46,6 +49,8 @@ El cierre técnico no equivale a aprobar datos, abrir la beta ni certificar prod
 ## Próximo bloque técnico — Sprint 3
 
 El siguiente bloque de ingeniería es **autenticación, acceso y onboarding**, apoyado en los permisos y alcances consolidados por Sprint 2. Incluye invitación, primer acceso, recuperación, estado reanudable de onboarding, confirmación de rol y ámbito, protección de rutas y pruebas por perfil.
+
+Estado actual: **en ejecución**. S3-01 implementa el primer acceso reanudable, la contraseña inicial, la confirmación de perfil y la presentación de rol y alcance sin permitir autoasignación. El backlog y los criterios de cierre están en [Sprint 3 — autenticación, acceso y onboarding](../SPRINT_3_BACKLOG.md).
 
 Este bloque puede avanzar sin ocultar ni cerrar automáticamente los controles operativos de beta listados a continuación.
 
@@ -318,3 +323,4 @@ Trabajo:
 - Documentación vigente actualizada.
 - Cumplimiento de los criterios UX aplicables.
 - Recorrido funcional verificado en el entorno objetivo.
+
