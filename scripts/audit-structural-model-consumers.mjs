@@ -8,6 +8,8 @@ const modelPatterns = {
   structure_nodes: /\bstructure_nodes\b|\bstructure_node_edges\b|\bget_structure_tree\b|\bget_entity_descendants\b/g,
   organization_units: /\borganization_units\b|\bpublic_organization_units\b|\borganization_unit_id\b/g,
   organization_charts: /\borganization_charts\b|\borganization_chart_id\b/g,
+  legacy_diocese_structure: /\bdiocese_structure_templates\b|\bdiocese_structure_levels\b/g,
+  legacy_pastoral_structure: /\bpastoral_structure_templates\b|\bpastoral_structure_levels\b|\bpastoral_entities\b|\bpublic_pastoral_entities\b/g,
 }
 
 function classifyPurpose(path) {
@@ -25,6 +27,7 @@ function sourceProjection(model) {
   if (model === 'ecclesiastical_entities') return ['identidad institucional', 'fuente']
   if (model === 'structure_nodes') return ['jerarquía territorial', 'fuente']
   if (model === 'organization_units' || model === 'organization_charts') return ['organización interna', 'fuente']
+  if (model.startsWith('legacy_')) return ['compatibilidad heredada', 'retirar']
   return ['sin clasificar', 'ambiguo']
 }
 
@@ -70,6 +73,7 @@ for (const root of roots) await walk(root)
 rows.sort((a, b) => a.file.localeCompare(b.file) || a.model.localeCompare(b.model))
 
 const ambiguous = rows.filter((row) => row.role === 'ambiguo')
+const legacy = rows.filter((row) => row.role === 'retirar')
 const grouped = Object.keys(modelPatterns).map((model) => ({
   model,
   consumers: rows.filter((row) => row.model === model).length,
@@ -81,5 +85,6 @@ console.table(grouped)
 console.table(rows)
 console.log(`Consumidores inventariados: ${rows.length}`)
 console.log(`Consumidores con modelo fuente ambiguo: ${ambiguous.length}`)
+console.log(`Consumidores de modelos heredados: ${legacy.length}`)
 
-if (process.argv.includes('--strict') && ambiguous.length > 0) process.exit(1)
+if (process.argv.includes('--strict') && (ambiguous.length > 0 || legacy.length > 0)) process.exit(1)
