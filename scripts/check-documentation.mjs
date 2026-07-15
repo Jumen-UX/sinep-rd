@@ -32,13 +32,23 @@ async function exists(target) {
 
 function markdownTargets(content) {
   const targets = []
-  const pattern = /!?(?:\[[^\]]*\])\(([^)]+)\)/g
-  for (const match of content.matchAll(pattern)) {
-    const raw = match[1].trim().replace(/^<|>$/g, '')
-    if (!raw || raw.startsWith('#') || /^(?:https?:|mailto:|tel:|data:)/i.test(raw)) continue
-    targets.push(raw)
+  const anglePattern = /!?\[[^\]]*\]\(<([^>]+)>\)/g
+  const standardPattern = /!?\[[^\]]*\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g
+
+  for (const match of content.matchAll(anglePattern)) {
+    targets.push(match[1].trim())
   }
-  return targets
+
+  const contentWithoutAngleLinks = content.replace(anglePattern, '')
+  for (const match of contentWithoutAngleLinks.matchAll(standardPattern)) {
+    targets.push(match[1].trim())
+  }
+
+  return targets.filter((raw) => (
+    raw
+    && !raw.startsWith('#')
+    && !/^(?:https?:|mailto:|tel:|data:)/i.test(raw)
+  ))
 }
 
 function normalizedStem(file) {
