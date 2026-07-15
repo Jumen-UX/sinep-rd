@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.4 seconds
+Output:
 {
   "name": "sinep-rd",
   "version": "0.1.0",
@@ -21,6 +24,7 @@
     "test:e2e": "pnpm dlx --package=@playwright/test@1.61.0 --package=@axe-core/playwright@4.10.2 playwright test",
     "test:e2e:public": "pnpm dlx --package=@playwright/test@1.61.0 --package=@axe-core/playwright@4.10.2 playwright test e2e/public-accessibility.spec.mjs",
     "test:e2e:admin": "pnpm dlx --package=@playwright/test@1.61.0 --package=@axe-core/playwright@4.10.2 playwright test e2e/admin-import.spec.mjs",
+    "test:e2e:access": "pnpm dlx --package=@playwright/test@1.61.0 playwright test e2e/admin-access-matrix.spec.mjs",
     "test:e2e:admin:mutation": "pnpm dlx --package=@playwright/test@1.61.0 --package=@axe-core/playwright@4.10.2 playwright test e2e/admin-import-mixed-person.spec.mjs",
     "typecheck": "tsc --noEmit"
   },
@@ -53,3 +57,4 @@
     }
   }
 }
+

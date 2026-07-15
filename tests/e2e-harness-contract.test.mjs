@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.4 seconds
+Output:
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
@@ -16,6 +19,7 @@ test('Playwright commands are versioned and remain outside the default check', a
   assert.match(packageJson.scripts['test:e2e'], /@axe-core\/playwright@4\.10\.2/)
   assert.match(packageJson.scripts['test:e2e:public'], /public-accessibility\.spec\.mjs/)
   assert.match(packageJson.scripts['test:e2e:admin'], /admin-import\.spec\.mjs/)
+  assert.match(packageJson.scripts['test:e2e:access'], /admin-access-matrix\.spec\.mjs/)
   assert.match(packageJson.scripts['test:e2e:admin:mutation'], /admin-import-mixed-person\.spec\.mjs/)
   assert.doesNotMatch(packageJson.scripts.check, /e2e/)
 })
@@ -89,6 +93,25 @@ test('mixed person mutation E2E is explicit, non-production and verifies idempot
   assert.match(spec, /Descargar reporte final CSV/)
 })
 
+test('access matrix E2E keeps credentials external and verifies bidirectional scope isolation', async () => {
+  const [spec, workflow] = await Promise.all([
+    read('e2e/admin-access-matrix.spec.mjs'),
+    read('.github/workflows/ci.yml'),
+  ])
+
+  assert.match(spec, /E2E_ACCESS_PROFILES_JSON/)
+  assert.match(spec, /test\.skip\(profiles\.length === 0/)
+  assert.match(spec, /expectedState/)
+  assert.match(spec, /ownEntityId/)
+  assert.match(spec, /forbiddenEntityId/)
+  assert.match(spec, /api\/admin\/dioceses-filtered/)
+  assert.match(spec, /visibleIds\.has\(profile\.ownEntityId\)/)
+  assert.match(spec, /visibleIds\.has\(profile\.forbiddenEntityId\)/)
+  assert.doesNotMatch(spec, /console\.log\(profile/)
+  assert.match(workflow, /secrets\.E2E_ACCESS_PROFILES_JSON/)
+  assert.match(workflow, /pnpm test:e2e:access/)
+})
+
 test('Playwright artifacts and optional credentials are documented but not committed', async () => {
   const [gitignore, env, docs] = await Promise.all([
     read('.gitignore'),
@@ -102,12 +125,15 @@ test('Playwright artifacts and optional credentials are documented but not commi
   assert.match(env, /E2E_BASE_URL=/)
   assert.match(env, /E2E_ADMIN_EMAIL=/)
   assert.match(env, /E2E_ADMIN_PASSWORD=/)
+  assert.match(env, /E2E_ACCESS_PROFILES_JSON=/)
   assert.match(env, /E2E_ALLOW_MUTATIONS=false/)
   assert.match(env, /E2E_PERSON_REFERENCE_CODE=/)
   assert.match(docs, /pnpm test:e2e:install/)
   assert.match(docs, /pnpm test:e2e:public/)
   assert.match(docs, /pnpm test:e2e:admin/)
+  assert.match(docs, /pnpm test:e2e:access/)
   assert.match(docs, /pnpm test:e2e:admin:mutation/)
-  assert.match(docs, /Nunca habilites `E2E_ALLOW_MUTATIONS=true` contra producción/)
+  assert.match(docs, /Nunca habilites `E2E_ALLOW_MUTATIONS=true` contra producciÃ³n/)
   assert.match(docs, /No forma parte de `pnpm check`/)
 })
+
