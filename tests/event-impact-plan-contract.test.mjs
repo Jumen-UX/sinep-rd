@@ -32,3 +32,16 @@ test('impact projection exposes verification and remains a stable read contract'
   assert.match(migration, /revoke all on function public\.get_event_application_plan\(uuid\) from public, anon/)
   assert.match(service, /verification_status: string/)
 })
+
+test('event review renders deterministic impact and blocks blind approval', async () => {
+  const page = await readRepoFile('src/features/events/admin/EventReviewPage.tsx')
+  const impactService = await readRepoFile('src/features/events/services/event-impact-admin-service.ts')
+
+  assert.match(page, /loadDeterministicEventImpactPlan/)
+  assert.match(page, /ImpactPreview impact=\{impact\}/)
+  assert.match(page, /impact\?\.canApprove === true/)
+  assert.match(page, /El evento no puede aprobarse hasta que el plan de impacto esté completo y sin bloqueos/)
+  assert.match(page, /Dependencias:/)
+  assert.match(page, /derivedUpdates\.map/)
+  assert.match(impactService, /buildDeterministicImpactPlan/)
+})
