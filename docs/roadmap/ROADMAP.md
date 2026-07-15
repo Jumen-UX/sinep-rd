@@ -24,7 +24,32 @@ El inventario queda protegido por una prueba contractual. GitHub puede conservar
 
 El workflow público utiliza filtros de rutas. Por tanto, una modificación exclusiva de documentación, pruebas contractuales o configuración ajena al portal público no genera una nueva corrida E2E; la última corrida aplicable continúa siendo la evidencia válida hasta que cambie una ruta cubierta o se ejecute manualmente.
 
-## Hito actual — consolidación de la beta interna
+## Hito técnico completado — Sprint 2
+
+El Sprint 2 está **cerrado técnicamente** sobre `main`. La evidencia final es [CI #1129](https://github.com/Jumen-UX/sinep-rd/actions/runs/29383246693), asociado a `b528e827`, con auditorías, TypeScript, 294 pruebas, build y CodeQL aprobados.
+
+Resultados consolidados:
+
+- modelo estructural canónico documentado y protegido;
+- parentesco territorial derivado exclusivamente de `structure_node_edges`;
+- ciclo de vida organizativo separado del guardado ordinario;
+- 12 jerarquías pastorales normalizadas con 192 unidades alcanzables y sin ciclos;
+- cargos por nivel guardados mediante RPC transaccional y sin fallback silencioso;
+- compatibilidades heredadas bloqueadas en CI;
+- 56 rutas administrativas con 0 I/O directo;
+- mapa de contratos e inventario de compatibilidad enlazados desde la documentación oficial.
+
+Consulta [el cierre técnico del Sprint 2](../SPRINT_2_CIERRE.md).
+
+El cierre técnico no equivale a aprobar datos, abrir la beta ni certificar producción. Las pruebas con usuarios reales, la revisión de las unidades organizativas, la integración no productiva, la protección de credenciales y la restauración permanecen como controles operativos.
+
+## Próximo bloque técnico — Sprint 3
+
+El siguiente bloque de ingeniería es **autenticación, acceso y onboarding**, apoyado en los permisos y alcances consolidados por Sprint 2. Incluye invitación, primer acceso, recuperación, estado reanudable de onboarding, confirmación de rol y ámbito, protección de rutas y pruebas por perfil.
+
+Este bloque puede avanzar sin ocultar ni cerrar automáticamente los controles operativos de beta listados a continuación.
+
+## Hito operativo actual — consolidación de la beta interna
 
 SINEP RD se considera **candidata a beta interna**, no versión pública. El propósito de esta etapa es permitir pruebas controladas por usuarios autorizados sin relajar seguridad, trazabilidad ni consistencia histórica.
 
@@ -43,8 +68,9 @@ SINEP RD se considera **candidata a beta interna**, no versión pública. El pro
 - [ ] Aplicar y verificar todas las migraciones en el entorno objetivo de beta.
 - [ ] Ejecutar `pnpm test:integration` contra una instancia no productiva de Supabase.
 - [ ] Ejecutar un recorrido autenticado de login, persona, estructura, nombramiento, evento, importación y auditoría.
-- [ ] Preparar cuentas de prueba con alcances nacional, diocesano y restringido.
+- [ ] Preparar cuentas de prueba con alcances nacional, diocesano, restringido y sin privilegios.
 - [ ] Confirmar que un usuario no puede operar fuera de su alcance.
+- [ ] Revisar funcionalmente las 192 unidades organizativas antes de aprobarlas y mantener su publicación como acción posterior separada.
 - [ ] Activar la protección contra contraseñas filtradas en Supabase Auth.
 - [ ] Verificar copias de seguridad y realizar al menos una prueba documentada de restauración.
 - [ ] Definir canal de incidencias, severidad y responsable de decisión durante la beta.
@@ -91,10 +117,12 @@ Estos puntos son P0 del producto y deben completarse antes de ampliar la beta a 
 1. Ejecutar integración sobre Supabase no productivo.
 2. Automatizar el recorrido administrativo autenticado de beta.
 3. Validar permisos y alcance con cuentas representativas.
-4. Cerrar protección de credenciales, respaldo y restauración.
-5. Ejecutar en paralelo el Sprint UX 0.1 del Plan UX.
-6. Abrir una ronda limitada de beta interna con registro formal de incidencias.
-7. Retomar operaciones `update` e iniciativas funcionales posteriores cuando los controles anteriores estén cerrados.
+4. Revisar y aprobar de forma controlada las unidades organizativas; publicar solo después y por separado.
+5. Cerrar protección de credenciales, respaldo y restauración.
+6. Ejecutar en paralelo el Sprint UX 0.1 del Plan UX.
+7. Implementar Sprint 3 — autenticación, acceso y onboarding sobre los alcances consolidados.
+8. Abrir una ronda limitada de beta interna con registro formal de incidencias.
+9. Retomar operaciones `update` e iniciativas funcionales posteriores cuando los controles anteriores estén cerrados.
 
 ## Prioridad 1 — importación controlada
 
