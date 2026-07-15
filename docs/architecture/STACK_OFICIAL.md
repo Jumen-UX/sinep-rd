@@ -1,15 +1,18 @@
 # Stack oficial
 
-> Estado: vigente  
-> Fuente verificable: `package.json`, `Dockerfile` y `.github/workflows`
+> Estado: vigente
+> Última revisión: 2026-07-15
+> Fuente verificable: `package.json`, lockfile y `.github/workflows`
 
 ## Aplicación
 
 - Next.js 15 con App Router.
 - React 19.
 - TypeScript estricto.
-- Node.js 22.
+- Node.js 24, según `package.json#engines`.
 - pnpm 10.18.3 con lockfile versionado.
+
+Las versiones efectivas de paquetes se verifican en `package.json` y `pnpm-lock.yaml`; este documento describe la línea tecnológica y no sustituye esos archivos.
 
 ## Interfaz
 
@@ -18,7 +21,7 @@
 - Base de shadcn/ui inicializada mediante `components.json`.
 - Radix Slot, Class Variance Authority, `clsx` y `tailwind-merge` para primitivas reutilizables.
 
-La migración visual es gradual. No se debe reescribir una pantalla estable solo para cambiar de tecnología; las pantallas nuevas deben reutilizar los componentes oficiales antes de crear variantes.
+La migración visual es gradual. Las pantallas nuevas deben reutilizar componentes y tokens oficiales antes de crear variantes.
 
 ## Datos y backend
 
@@ -29,9 +32,10 @@ La migración visual es gradual. No se debe reescribir una pantalla estable solo
 
 ## Entrega
 
-- Docker.
-- GitHub Actions.
-- Render mediante hook de despliegue después de CI.
+- Vercel para despliegues de la aplicación y previews autorizados.
+- GitHub Actions para CI, CodeQL y E2E público.
+- Variables y secretos configurados fuera del repositorio.
+- Deployment Protection o controles equivalentes mientras el entorno no sea público.
 
 ## Comandos oficiales
 
@@ -42,9 +46,11 @@ pnpm test
 pnpm test:integration
 pnpm build
 pnpm check
+pnpm test:e2e:public
+pnpm test:e2e:access
 ```
 
-`pnpm check` es la compuerta local y de CI: typecheck, pruebas unitarias/contractuales y build.
+`pnpm check` ejecuta validación de legado, auditoría de rutas, auditoría estructural estricta, typecheck, pruebas unitarias/contractuales y build.
 
 ## Reglas
 
@@ -52,10 +58,11 @@ pnpm check
 - No usar la service role en el navegador.
 - No añadir dependencias cuando una capacidad pequeña puede resolverse de forma segura con la plataforma existente.
 - Mantener versiones y lockfile sincronizados.
-- Evaluar tamaño de bundle, mantenimiento y superficie de seguridad antes de incorporar paquetes.
+- Evaluar bundle, mantenimiento y superficie de seguridad antes de incorporar paquetes.
+- Las pruebas de integración y E2E mutantes no se ejecutan contra producción.
 
 ## Evolución pendiente
 
-- Consolidar componentes visuales repetidos.
-- Añadir pruebas E2E y accesibilidad automatizada.
-- Incorporar lectura XLSX solo con una dependencia evaluada y procesamiento seguro.
+- Consolidar componentes visuales repetidos mediante el sistema de diseño.
+- Ampliar regresión visual y E2E autenticado en entorno no productivo.
+- Incorporar lectura XLSX solo después de evaluar dependencia, límites y seguridad.
