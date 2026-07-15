@@ -27,7 +27,7 @@ test('shared identity resolver requires an explicit reuse or create decision', a
   assert.match(source, /status: 'review_required'/)
   assert.match(source, /status: 'reuse'/)
   assert.match(source, /status: 'create_confirmed'/)
-  assert.match(source, /La persona seleccionada no pertenece a las coincidencias revisadas/)
+  assert.match(source, /La persona seleccionada no forma parte de las coincidencias revisadas/)
   assert.match(source, /confidenceFor/)
 })
 
