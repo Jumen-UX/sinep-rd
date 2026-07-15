@@ -1,4 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { VerificationStatus } from '@/features/shared/source-verification'
+import {
+  eventEvidenceStatuses,
+  normalizeEventVerification,
+  type EventEvidenceStatus,
+} from './event-verification'
 
 export type EventLoadMode = 'carga_historica' | 'evento_nuevo' | 'foto_inicial'
 
@@ -22,7 +28,7 @@ export type EventEntityOption = {
 }
 
 export type EvidenceOption = {
-  key: string
+  key: EventEvidenceStatus
   name: string
   description: string
 }
@@ -38,7 +44,9 @@ export type EventDraftInput = {
   entityRole: string
   sourceName: string
   sourceUrl: string
-  evidenceStatus: string
+  sourceCheckedAt: string
+  verificationStatus: VerificationStatus
+  evidenceStatus: EventEvidenceStatus
   notes: string
 }
 
@@ -68,6 +76,10 @@ export const eventEvidenceOptions: EvidenceOption[] = [
   { key: 'contradictorio', name: 'Contradictorio', description: 'Existen fuentes que no coinciden y requiere revisión.' },
   { key: 'corregido', name: 'Corregido', description: 'Dato corregido por una fuente posterior o validación editorial.' },
 ]
+
+if (eventEvidenceOptions.some((option) => !eventEvidenceStatuses.includes(option.key))) {
+  throw new Error('El catálogo de evidencia contiene una opción no soportada.')
+}
 
 function throwIfError(error: { message: string } | null, fallback: string) {
   if (error) throw new Error(error.message || fallback)
@@ -104,19 +116,28 @@ export async function loadEventDraftOptions(supabase: SupabaseClient) {
 }
 
 export async function createEventDraft(supabase: SupabaseClient, input: EventDraftInput) {
+  const verification = normalizeEventVerification(input)
+  const effectiveDate = input.effectiveDate || input.eventDate
+
+  if (!effectiveDate) {
+    throw new Error('El evento debe indicar una fecha efectiva.')
+  }
+
   const { error } = await supabase.rpc('admin_create_event_draft', {
     payload: {
       load_mode: input.loadMode,
       event_type_key: input.eventTypeKey,
       event_date: input.eventDate || null,
-      effective_date: input.effectiveDate || null,
+      effective_date: effectiveDate,
       title: input.title,
       description: input.description || null,
       entity_id: input.entityId || null,
       entity_role: input.entityRole,
-      source_name: input.sourceName || null,
-      source_url: input.sourceUrl || null,
-      evidence_status: input.evidenceStatus,
+      source_name: verification.source_name,
+      source_url: verification.source_url,
+      source_checked_at: verification.source_checked_at,
+      verification_status: verification.verification_status,
+      evidence_status: verification.evidence_status,
       notes: input.notes || null,
     },
   })
