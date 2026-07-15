@@ -67,7 +67,7 @@ Completar el ciclo de acceso administrativo desde la invitaci처n hasta una sesi�
 
 - [ ] Ejecutar el recorrido autenticado en Supabase no productivo.
 - [ ] Confirmar aislamiento entre dos di처cesis.
-- [ ] Documentar recuperaci처n, revocaci처n y soporte de acceso.
+- [x] Documentar recuperaci처n, revocaci처n y soporte de acceso.
 - [ ] Mantener `pnpm check`, integraci처n y E2E aplicables en verde.
 
 ## Reglas del sprint

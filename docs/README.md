@@ -12,6 +12,7 @@ Este índice reúne únicamente documentación funcional y vigente. Antes de imp
 | Revisar compatibilidad estructural heredada | [Inventario de compatibilidad](./SPRINT_2_LEGACY_COMPATIBILITY_INVENTORY.md) |
 | Consultar el cierre técnico del Sprint 2 | [Acta de cierre del Sprint 2](./SPRINT_2_CIERRE.md) |
 | Consultar el trabajo activo del Sprint 3 | [Backlog de autenticación, acceso y onboarding](./SPRINT_3_BACKLOG.md) |
+| Operar invitación, recuperación y revocación de acceso | [Operación del acceso administrativo](./OPERACION_ACCESO_ADMINISTRATIVO.md) |
 | Cambiar PostgreSQL o Supabase | [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md) |
 | Revisar permisos o privacidad | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
 | Confirmar tecnologías | [Stack oficial](./architecture/STACK_OFICIAL.md) |
@@ -67,4 +68,3 @@ Una discrepancia entre código y norma vigente debe resolverse: no se considera 
 - No crear archivos `COMPLETE`, `FINAL` o `SUMMARY` en la raíz de `docs`.
 - Actualizar este índice al añadir una referencia vigente.
 - Usar enlaces relativos y comprobarlos antes de cerrar el cambio.
-
