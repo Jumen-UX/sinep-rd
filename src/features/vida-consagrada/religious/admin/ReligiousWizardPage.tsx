@@ -3,8 +3,9 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import type { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
+import { createClient } from '@/lib/supabase/client'
+import { PersonIdentityStep } from '@/features/personas/shared/components/PersonIdentityStep'
 import {
   loadAllowedOfficeIds,
   loadReligiousCatalogs,
@@ -280,23 +281,17 @@ export default function ReligiousWizardPage() {
 
         {lifeType !== 'priest' && (
           <>
-            <section>
-              <p className="eyebrow">Origen de la ficha</p>
-              <h2>¿La persona ya está registrada?</h2>
-              <div className="dashboard-grid dashboard-summary">
-                <button className={`metric-card metric-button ${mode === 'existing' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('existing')}><strong>Sí</strong><span>Añadir vida consagrada a una identidad existente.</span></button>
-                <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => { setMode('new'); setSelectedPersonId('') }}><strong>No</strong><span>Crear una sola identidad y su perfil religioso.</span></button>
-              </div>
-              {mode === 'existing' && (
-                <>
-                  <select value={selectedPersonId} onChange={(event) => setSelectedPersonId(event.target.value)}>
-                    <option value="">Selecciona una persona sin perfil de vida consagrada</option>
-                    {candidates.map((person) => <option key={person.id} value={person.id}>{person.display_name} · {person.effective_person_type ?? 'persona'}</option>)}
-                  </select>
-                  <div className="empty-state"><strong>{selectedPerson?.display_name ?? 'Sin persona seleccionada'}</strong><span>Se conservarán su identidad, ordenaciones, cargos y código interno.</span></div>
-                </>
-              )}
-            </section>
+            <PersonIdentityStep
+              mode={mode}
+              onModeChange={setMode}
+              selectedPersonId={selectedPersonId}
+              onSelectedPersonChange={setSelectedPersonId}
+              people={candidates}
+              existingActionLabel="Añadir vida consagrada a una identidad existente."
+              newActionLabel="Crear una sola identidad y su perfil de vida consagrada."
+              selectPlaceholder="Selecciona una persona sin perfil de vida consagrada"
+              existingSummary="Se conservarán su identidad, ordenaciones, cargos y código interno."
+            />
 
             {mode === 'new' && (
               <section>
@@ -307,55 +302,104 @@ export default function ReligiousWizardPage() {
                 <input name="last_name" placeholder="Primer apellido" required />
                 <input name="second_last_name" placeholder="Segundo apellido, si aplica" />
                 <select key={lifeType} name="gender" defaultValue={lifeType === 'sister' ? 'female' : lifeType === 'brother' ? 'male' : ''}>
-                  <option value="">Género no indicado</option><option value="male">Masculino</option><option value="female">Femenino</option><option value="unknown">No identificado</option>
+                  <option value="">Género no indicado</option>
+                  <option value="male">Masculino</option>
+                  <option value="female">Femenino</option>
+                  <option value="unknown">No identificado</option>
                 </select>
               </section>
             )}
 
             <section>
-              <p className="eyebrow">Comunidad</p><h2>Datos de vida religiosa</h2>
+              <p className="eyebrow">Comunidad</p>
+              <h2>Datos de vida religiosa</h2>
               <input name="community_name" placeholder="Congregación, orden, instituto o comunidad" />
               <input name="province_name" placeholder="Provincia religiosa, si aplica" />
               <label>Profesión religiosa<input name="profession_date" type="date" /></label>
-              <select name="canonical_status" defaultValue="active"><option value="active">Activo/a</option><option value="retired">Retirado/a</option><option value="transferred">Trasladado/a</option><option value="deceased">Fallecido/a</option><option value="unknown">No identificado</option></select>
+              <select name="canonical_status" defaultValue="active">
+                <option value="active">Activo/a</option>
+                <option value="retired">Retirado/a</option>
+                <option value="transferred">Trasladado/a</option>
+                <option value="deceased">Fallecido/a</option>
+                <option value="unknown">No identificado</option>
+              </select>
               <textarea name="religious_notes" placeholder="Notas internas de vida religiosa" />
             </section>
 
             <section>
-              <p className="eyebrow">Validación privada</p><h2>Documentos y contactos internos</h2>
-              <select name="validation_type" defaultValue=""><option value="">Sin documento por ahora</option><option value="cedula">Cédula</option><option value="passport">Pasaporte</option><option value="other">Otro documento</option></select>
+              <p className="eyebrow">Validación privada</p>
+              <h2>Documentos y contactos internos</h2>
+              <select name="validation_type" defaultValue="">
+                <option value="">Sin documento por ahora</option>
+                <option value="cedula">Cédula</option>
+                <option value="passport">Pasaporte</option>
+                <option value="other">Otro documento</option>
+              </select>
               <input name="validation_value" placeholder="Número del documento para validación interna" />
               <input name="validation_country" placeholder="País del documento" defaultValue="República Dominicana" />
-              <input name="primary_phone" placeholder="Teléfono principal" /><input name="secondary_phone" placeholder="Teléfono alterno" /><input name="contact_email" type="email" placeholder="Correo de contacto" />
+              <input name="primary_phone" placeholder="Teléfono principal" />
+              <input name="secondary_phone" placeholder="Teléfono alterno" />
+              <input name="contact_email" type="email" placeholder="Correo de contacto" />
             </section>
 
             {mode === 'new' && (
               <section>
-                <p className="eyebrow">Datos personales</p><h2>Nacimiento, familia y foto</h2>
-                <label>Fecha de nacimiento<input name="birth_date" type="date" /></label><input name="birth_place" placeholder="Lugar de nacimiento" />
-                <input name="father_name" placeholder="Nombre del padre" /><input name="mother_name" placeholder="Nombre de la madre" />
-                <textarea name="family_notes" placeholder="Notas familiares relevantes para la biografía" /><textarea name="biography_notes" placeholder="Apuntes internos para preparar la biografía" />
-                <textarea name="biography_public" placeholder="Biografía breve para mostrar en la ficha pública" /><input name="photo_file" type="file" accept="image/jpeg,image/png,image/webp" />
+                <p className="eyebrow">Datos personales</p>
+                <h2>Nacimiento, familia y foto</h2>
+                <label>Fecha de nacimiento<input name="birth_date" type="date" /></label>
+                <input name="birth_place" placeholder="Lugar de nacimiento" />
+                <input name="father_name" placeholder="Nombre del padre" />
+                <input name="mother_name" placeholder="Nombre de la madre" />
+                <textarea name="family_notes" placeholder="Notas familiares relevantes para la biografía" />
+                <textarea name="biography_notes" placeholder="Apuntes internos para preparar la biografía" />
+                <textarea name="biography_public" placeholder="Biografía breve para mostrar en la ficha pública" />
+                <input name="photo_file" type="file" accept="image/jpeg,image/png,image/webp" />
               </section>
             )}
 
             <section>
-              <p className="eyebrow">Servicio</p><h2>Servicio actual o responsabilidad</h2>
-              <select name="current_service_entity_id" value={serviceId} onChange={(event) => { const value = event.target.value; setServiceId(value); setQuickEntityId(value) }}><option value="">Sin servicio actual por ahora</option>{entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}</select>
+              <p className="eyebrow">Servicio</p>
+              <h2>Servicio actual o responsabilidad</h2>
+              <select name="current_service_entity_id" value={serviceId} onChange={(event) => { const value = event.target.value; setServiceId(value); setQuickEntityId(value) }}>
+                <option value="">Sin servicio actual por ahora</option>
+                {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
+              </select>
               <div className="empty-state"><strong>Servicio actual</strong><span>{service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona la entidad donde sirve.'}</span></div>
-              <select name="quick_entity_id" value={quickEntityId} onChange={(event) => setQuickEntityId(event.target.value)}><option value="">Usar entidad del servicio actual o dejar sin entidad</option>{entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}</select>
+              <select name="quick_entity_id" value={quickEntityId} onChange={(event) => setQuickEntityId(event.target.value)}>
+                <option value="">Usar entidad del servicio actual o dejar sin entidad</option>
+                {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
+              </select>
               <div className="empty-state"><strong>Entidad del cargo</strong><span>{quickEntity?.hierarchy_path ?? quickEntity?.direct_entity_name ?? service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona la entidad del cargo.'}</span></div>
-              <select name="quick_office_configuration_id" value={quickOfficeConfigId} onChange={(event) => setQuickOfficeConfigId(event.target.value)} disabled={!quickEntityId || filteredOfficeConfigs.length === 0}><option value="">Sin cargo actual por ahora</option>{filteredOfficeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}</select>
-              <p className="meta">{officeFilterMessage}</p><input name="quick_title_override" placeholder="Título para mostrar" /><label>Fecha de inicio<input name="quick_start_date" type="date" /></label>
-              <select value={assignmentVisibility} onChange={(event) => setAssignmentVisibility(event.target.value as 'internal' | 'public' | 'private')}><option value="internal">Interno: visible solo en administración</option><option value="public">Público: visible en directorios</option><option value="private">Privado: visible solo para control interno</option></select>
+              <select name="quick_office_configuration_id" value={quickOfficeConfigId} onChange={(event) => setQuickOfficeConfigId(event.target.value)} disabled={!quickEntityId || filteredOfficeConfigs.length === 0}>
+                <option value="">Sin cargo actual por ahora</option>
+                {filteredOfficeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
+              </select>
+              <p className="meta">{officeFilterMessage}</p>
+              <input name="quick_title_override" placeholder="Título para mostrar" />
+              <label>Fecha de inicio<input name="quick_start_date" type="date" /></label>
+              <select value={assignmentVisibility} onChange={(event) => setAssignmentVisibility(event.target.value as 'internal' | 'public' | 'private')}>
+                <option value="internal">Interno: visible solo en administración</option>
+                <option value="public">Público: visible en directorios</option>
+                <option value="private">Privado: visible solo para control interno</option>
+              </select>
               <textarea name="quick_notes_public" placeholder="Notas visibles del cargo si se publica" />
             </section>
 
             <section>
-              <p className="eyebrow">Completitud</p><h2>Datos buscados y no encontrados</h2>
+              <p className="eyebrow">Completitud</p>
+              <h2>Datos buscados y no encontrados</h2>
               <div className="card compact-section">
-                {mode === 'new' && <><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="gender" /> Género</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="birth_date" /> Fecha de nacimiento</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="birth_place" /> Lugar de nacimiento</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="biography_public" /> Biografía pública</label></>}
-                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="community_name" /> Comunidad religiosa</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="profession_date" /> Profesión religiosa</label><label className="role-pill"><input type="checkbox" name="not_identified_fields" value="current_service_entity_id" /> Servicio actual</label>
+                {mode === 'new' && (
+                  <>
+                    <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="gender" /> Género</label>
+                    <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="birth_date" /> Fecha de nacimiento</label>
+                    <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="birth_place" /> Lugar de nacimiento</label>
+                    <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="biography_public" /> Biografía pública</label>
+                  </>
+                )}
+                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="community_name" /> Comunidad religiosa</label>
+                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="profession_date" /> Profesión religiosa</label>
+                <label className="role-pill"><input type="checkbox" name="not_identified_fields" value="current_service_entity_id" /> Servicio actual</label>
               </div>
               <textarea name="notes_internal" placeholder="Notas internas de carga o verificación" />
             </section>
