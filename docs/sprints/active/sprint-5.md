@@ -11,7 +11,7 @@ Hacer efectiva la regla de no editar silenciosamente la historia: todo cambio es
 
 ## Cola de ejecución
 
-1. [ ] S5-01 — Auditar los modelos y flujos de eventos existentes y declarar una única fuente canónica.
+1. [x] S5-01 — Auditar los modelos y flujos de eventos existentes y declarar una única fuente canónica.
 2. [ ] S5-02 — Consolidar el catálogo de eventos institucionales: creación, división, fusión, desmembramiento, traslado, supresión y cambio de dependencia.
 3. [ ] S5-03 — Migrar y normalizar los eventos de evolución existentes sin aprobar ni aplicar datos dudosos.
 4. [ ] S5-04 — Unificar borrador, fuente documental, fecha efectiva, alcance y estado de verificación.
@@ -33,6 +33,10 @@ El sprint parte de la infraestructura existente de eventos canónicos y estructu
 - flujos de borrador, verificación, revisión, aprobación y aplicación;
 - funciones privilegiadas, fachadas públicas, permisos y auditoría;
 - modelos heredados o rutas duplicadas que todavía compitan por el mismo propósito.
+
+## Estado técnico
+
+S5-01 queda documentado en `sprint-5-event-model-audit.md` y protegido por `canonical-event-model-audit.test.mjs`. La fuente oficial del hecho histórico es `canonical_events`; `canonical_event_types` tipifica el hecho; participantes, planes, acciones y contratos son derivados; y las entidades, relaciones, nodos y unidades organizativas representan el estado aplicado. `/admin/eventos` es la ruta canónica y `/admin/estructura/eventos` queda clasificada como compatibilidad temporal. La auditoría asigna las brechas de catálogo, evidencia, impacto, aplicación, línea temporal y compensación a S5-02–S5-10.
 
 ## Reglas del sprint
 
