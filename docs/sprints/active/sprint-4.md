@@ -13,7 +13,7 @@ Unificar los historiales personales y ministeriales para que una persona conserv
 
 1. [x] S4-01 — Auditar los flujos actuales y definir el contrato del asistente común.
 2. [x] S4-02 — Implementar detección de duplicados y resolución explícita de identidad.
-3. [ ] S4-03 — Aplicar el asistente común a obispos, sacerdotes, diáconos, religiosos y laicos.
+3. [ ] S4-03 — Aplicar el asistente común a obispos, sacerdotes, diáconos, religiosos y laicos. **En progreso:** componente común de selección de identidad creado y protegido por pruebas.
 4. [ ] S4-04 — Garantizar continuidad diácono → sacerdote → obispo sobre un único `person_id`.
 5. [ ] S4-05 — Unificar sacerdotes diocesanos y religiosos sin duplicar personas.
 6. [ ] S4-06 — Aplicar cargos compatibles con el nivel estructural seleccionado.
@@ -27,7 +27,9 @@ Unificar los historiales personales y ministeriales para que una persona conserv
 
 S4-01 y S4-02 están completados. La búsqueda autenticada se expone mediante `findPotentialDuplicates`; el servicio de resolución de identidad exige una decisión explícita `reuse` o `create_new`; una reutilización solo acepta identificadores presentes entre las coincidencias revisadas; y el contrato está protegido por pruebas.
 
-Los asistentes actuales conservan temporalmente compatibilidad heredada hasta adoptar la interfaz común en S4-03.
+S4-03 comenzó con `PersonIdentityStep`, un componente compartido que normaliza la decisión entre reutilizar una persona existente o crear una identidad nueva. El componente conserva semántica accesible, limpia la selección al cambiar a identidad nueva y queda protegido por una prueba contractual. El siguiente paso es integrarlo primero en el asistente de diácono y después migrar sacerdote, obispo, vida consagrada y laico.
+
+Los asistentes actuales conservan temporalmente compatibilidad heredada hasta completar esa migración.
 
 ## Criterios de cierre
 
