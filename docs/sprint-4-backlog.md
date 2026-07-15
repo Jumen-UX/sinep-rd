@@ -1,6 +1,6 @@
 # Sprint 4 — Personas, cargos y nombramientos
 
-Estado: iniciado
+Estado: en progreso — S4-01 y S4-02 completados
 Fecha de inicio: 2026-07-15
 Rama operativa: main
 
@@ -10,8 +10,8 @@ Unificar los historiales personales y ministeriales para que una persona conserv
 
 ## Cola de ejecución
 
-1. S4-01 — Auditar los flujos actuales de creación de personas y definir el contrato del asistente común.
-2. S4-02 — Implementar detección de duplicados antes de crear una persona.
+1. S4-01 — Completado: auditar los flujos actuales de creación de personas y definir el contrato del asistente común.
+2. S4-02 — Completado: implementar detección de duplicados y resolución explícita de identidad antes de crear una persona.
 3. S4-03 — Aplicar el asistente común a obispos, sacerdotes, diáconos, religiosos y laicos.
 4. S4-04 — Garantizar continuidad diácono → sacerdote → obispo sobre un único person_id.
 5. S4-05 — Unificar sacerdotes diocesanos y religiosos sin duplicar personas.
@@ -21,6 +21,15 @@ Unificar los historiales personales y ministeriales para que una persona conserv
 9. S4-09 — Incorporar fuente y estado de verificación en los flujos unificados.
 10. S4-10 — Corregir y validar los clérigos sin perfil canónico.
 11. S4-11 — Ejecutar pnpm check, pruebas funcionales y verificación del entorno desplegado.
+
+## Avance técnico de S4-02
+
+- La búsqueda autenticada existente se expuso como contrato reutilizable mediante `findPotentialDuplicates`.
+- Se añadió `person-identity-resolution-service` para clasificar coincidencias y exigir una decisión `reuse` o `create_new`.
+- Una reutilización solo acepta identificadores presentes en las coincidencias revisadas.
+- El registro canónico admite `identity_decision` y cambia a modo `existing` cuando se reutiliza una ficha.
+- Los asistentes actuales conservan temporalmente la confirmación heredada hasta adoptar la interfaz común en S4-03.
+- El contrato quedó protegido por `tests/person-identity-resolution.test.mjs`.
 
 ## Criterios de cierre
 
