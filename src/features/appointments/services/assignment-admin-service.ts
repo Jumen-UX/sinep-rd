@@ -64,6 +64,10 @@ export type RawAssignment = {
   organization_unit_id: string | null
   ecclesiastical_entity_id: string | null
   title_override: string | null
+  start_date: string | null
+  term_end_date: string | null
+  actual_end_date: string | null
+  assignment_status: string | null
   is_current: boolean
   record_status: string
 }
@@ -126,7 +130,7 @@ export async function loadAssignmentCatalogs(supabase: SupabaseClient): Promise<
       .limit(100),
     supabase
       .from('position_assignments')
-      .select('id,person_id,office_configuration_id,organization_chart_id,organization_unit_id,ecclesiastical_entity_id,title_override,is_current,record_status')
+      .select('id,person_id,office_configuration_id,organization_chart_id,organization_unit_id,ecclesiastical_entity_id,title_override,start_date,term_end_date,actual_end_date,assignment_status,is_current,record_status')
       .order('created_at', { ascending: false })
       .limit(500),
   ])
