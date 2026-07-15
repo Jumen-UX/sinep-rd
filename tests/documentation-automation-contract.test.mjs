@@ -20,8 +20,11 @@ test('documentation integrity is part of affected and complete checks', async ()
 test('documentation checker protects canonical paths links tests and active sprint state', async () => {
   const checker = await readRepoFile('scripts/check-documentation.mjs')
   const manifest = JSON.parse(await readRepoFile('docs/DOCUMENTATION_MANIFEST.json'))
+  const activeSprintPath = manifest.canonical_documents.active_sprint
+  const activeSprint = await readRepoFile(activeSprintPath)
 
-  assert.equal(manifest.canonical_documents.active_sprint, 'docs/sprints/active/sprint-4.md')
+  assert.match(activeSprintPath, /^docs\/sprints\/active\/sprint-\d+\.md$/)
+  assert.match(activeSprint, /^> Estado: activo$/m)
   assert.equal(manifest.policies.strict_internal_links, true)
   assert.equal(manifest.policies.strict_test_document_paths, true)
   assert.equal(manifest.policies.single_active_sprint, true)
