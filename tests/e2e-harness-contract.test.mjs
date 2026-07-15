@@ -113,7 +113,7 @@ test('Playwright artifacts and optional credentials are documented but not commi
   const [gitignore, env, docs] = await Promise.all([
     read('.gitignore'),
     read('.env.example'),
-    read('docs/PRUEBAS_E2E.md'),
+    read('docs/testing/E2E_Y_ACCESIBILIDAD.md'),
   ])
 
   assert.match(gitignore, /playwright-report\//)
@@ -130,7 +130,6 @@ test('Playwright artifacts and optional credentials are documented but not commi
   assert.match(docs, /pnpm test:e2e:admin/)
   assert.match(docs, /pnpm test:e2e:access/)
   assert.match(docs, /pnpm test:e2e:admin:mutation/)
-  assert.match(docs, /Nunca habilites `E2E_ALLOW_MUTATIONS=true` contra producciÃ³n/)
-  assert.match(docs, /No forma parte de `pnpm check`/)
+  assert.match(docs, /Nunca habilites `E2E_ALLOW_MUTATIONS=true` contra producción/)
+  assert.match(docs, /no forma parte de `pnpm check`/i)
 })
-
