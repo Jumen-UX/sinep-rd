@@ -75,6 +75,7 @@ export type EventReviewData = {
 }
 
 export type EventReviewAction = 'approve' | 'cancel' | 'return_to_draft'
+export type EventNonApprovalReviewAction = Exclude<EventReviewAction, 'approve'>
 
 export type EventWorkflowHealthCounts = {
   canonical_events_total: number
@@ -137,12 +138,32 @@ export async function loadEventReview(
   return (data ?? null) as EventReviewData | null
 }
 
+export async function approveEvent(
+  supabase: SupabaseClient,
+  eventId: string,
+  reviewNote: string,
+) {
+  const { error } = await supabase.rpc('admin_approve_event', {
+    payload: {
+      event_id: eventId,
+      review_note: reviewNote || null,
+    },
+  })
+
+  throwIfError(error, 'No se pudo aprobar el evento.')
+}
+
 export async function submitEventReview(
   supabase: SupabaseClient,
   eventId: string,
   action: EventReviewAction,
   reviewNote: string,
 ) {
+  if (action === 'approve') {
+    await approveEvent(supabase, eventId, reviewNote)
+    return
+  }
+
   const { error } = await supabase.rpc('admin_review_event', {
     payload: {
       event_id: eventId,
