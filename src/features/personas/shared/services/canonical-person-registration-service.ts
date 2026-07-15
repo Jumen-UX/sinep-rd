@@ -1,5 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { reviewPotentialDuplicates } from '@/lib/admin/duplicateReview'
+import {
+  decidePersonIdentity,
+  inspectPersonIdentity,
+  type PersonIdentityDecision,
+} from './person-identity-resolution-service'
 
 export type CanonicalRegistrationFlow = 'layperson' | 'religious' | 'deacon' | 'priest' | 'bishop'
 export type CanonicalRegistrationMode = 'existing' | 'new'
@@ -52,20 +57,49 @@ export async function loadCanonicalRegistrationCandidates(
   return (data ?? []) as CanonicalRegistrationCandidate[]
 }
 
+function readIdentityDecision(value: unknown): PersonIdentityDecision | null {
+  if (!value || typeof value !== 'object') return null
+  const candidate = value as Record<string, unknown>
+
+  if (candidate.kind === 'create_new') return { kind: 'create_new' }
+  if (candidate.kind === 'reuse' && typeof candidate.personId === 'string' && candidate.personId) {
+    return { kind: 'reuse', personId: candidate.personId }
+  }
+
+  return null
+}
+
 export async function saveCanonicalPersonRegistration(
   flow: CanonicalRegistrationFlow,
   payload: Record<string, unknown>,
 ): Promise<CanonicalRegistrationResponse> {
-  const selectedPersonId = typeof payload.selected_person_id === 'string'
+  let selectedPersonId = typeof payload.selected_person_id === 'string'
     ? payload.selected_person_id
     : null
-  const mode: CanonicalRegistrationMode = payload.mode === 'existing' || selectedPersonId
+  let mode: CanonicalRegistrationMode = payload.mode === 'existing' || selectedPersonId
     ? 'existing'
     : 'new'
+  let duplicateMatchCount = 0
+  let duplicateReviewConfirmed = false
 
-  const duplicateMatchCount = mode === 'new'
-    ? await reviewPotentialDuplicates('person', payload)
-    : 0
+  if (mode === 'new') {
+    const identityDecision = readIdentityDecision(payload.identity_decision)
+
+    if (identityDecision) {
+      const inspection = await inspectPersonIdentity(payload)
+      const resolution = decidePersonIdentity(inspection, identityDecision)
+      duplicateMatchCount = resolution.matches.length
+      duplicateReviewConfirmed = resolution.duplicateReviewConfirmed
+
+      if (resolution.status === 'reuse') {
+        selectedPersonId = resolution.selectedPersonId
+        mode = 'existing'
+      }
+    } else {
+      duplicateMatchCount = await reviewPotentialDuplicates('person', payload)
+      duplicateReviewConfirmed = duplicateMatchCount > 0
+    }
+  }
 
   const response = await fetch('/api/admin/persona-canonica', {
     method: 'POST',
@@ -75,7 +109,7 @@ export async function saveCanonicalPersonRegistration(
       flow,
       mode,
       selected_person_id: selectedPersonId,
-      duplicate_review_confirmed: duplicateMatchCount > 0,
+      duplicate_review_confirmed: duplicateReviewConfirmed,
       duplicate_match_count: duplicateMatchCount,
     }),
   })
