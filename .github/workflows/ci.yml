@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: URL pÃºblica para ejecutar Playwright y Axe (opcional)
+        description: URL pública para ejecutar Playwright y Axe (opcional)
         required: false
         type: string
   schedule:
@@ -152,4 +152,3 @@ jobs:
             test-results/
           if-no-files-found: ignore
           retention-days: 14
-
