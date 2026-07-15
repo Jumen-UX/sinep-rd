@@ -4,6 +4,7 @@ import test from 'node:test'
 
 const migrationPath = 'supabase/migrations/20260714052000_admin_entry_access_contract.sql'
 const middlewarePath = 'src/middleware.ts'
+const policyPath = 'src/lib/admin/accessPolicy.ts'
 const authorizationPath = 'src/lib/admin/authorization.ts'
 const servicePath = 'src/features/access/services/authentication-admin-service.ts'
 const routePath = 'src/app/(admin)/admin/acceso/page.tsx'
@@ -21,14 +22,17 @@ test('administrative entry state is resolved by one authenticated database contr
 })
 
 test('middleware and APIs fail closed for every state except ready', async () => {
-  const [middleware, authorization] = await Promise.all([
+  const [middleware, policy, authorization] = await Promise.all([
     readFile(middlewarePath, 'utf8'),
+    readFile(policyPath, 'utf8'),
     readFile(authorizationPath, 'utf8'),
   ])
   assert.match(middleware, /get_my_admin_entry_context/)
-  assert.match(middleware, /accessState !== 'ready'/)
+  assert.match(middleware, /resolveAdminRouteDecision/)
   assert.match(middleware, /redirectToAccessStatus/)
   assert.doesNotMatch(middleware, /from\('user_role_assignments'\)/)
+  assert.match(policy, /accessState !== 'ready'/)
+  assert.match(policy, /destination: '\/admin\/acceso'/)
   assert.match(authorization, /get_my_admin_entry_context/)
   assert.match(authorization, /entryContext\?\.access_state !== 'ready'/)
 })

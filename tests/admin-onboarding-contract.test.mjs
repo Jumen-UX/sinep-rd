@@ -7,6 +7,7 @@ const routePath = 'src/app/(admin)/admin/onboarding/page.tsx'
 const pagePath = 'src/features/access/admin/AdminOnboardingPage.tsx'
 const servicePath = 'src/features/access/services/authentication-admin-service.ts'
 const middlewarePath = 'src/middleware.ts'
+const policyPath = 'src/lib/admin/accessPolicy.ts'
 const invitePath = 'src/app/api/admin/users/create-invite/route.ts'
 
 test('onboarding state is durable, scoped to the authenticated user and audited', async () => {
@@ -44,16 +45,18 @@ test('first access route delegates UI and I/O to the access feature', async () =
 })
 
 test('login, invitations and middleware resume incomplete onboarding', async () => {
-  const [service, middleware, invite] = await Promise.all([
+  const [service, middleware, policy, invite] = await Promise.all([
     readFile(servicePath, 'utf8'),
     readFile(middlewarePath, 'utf8'),
+    readFile(policyPath, 'utf8'),
     readFile(invitePath, 'utf8'),
   ])
 
-  assert.match(service, /context\.access_state === 'ready'/)
-  assert.match(service, /context\.access_state === 'onboarding'/)
+  assert.match(service, /resolveAdminRouteDecision/)
   assert.match(invite, /new URL\('\/admin\/onboarding'/)
   assert.match(middleware, /ADMIN_ONBOARDING_PATH = '\/admin\/onboarding'/)
   assert.match(middleware, /get_my_admin_entry_context/)
-  assert.match(middleware, /accessState === 'onboarding'/)
+  assert.match(middleware, /resolveAdminRouteDecision/)
+  assert.match(policy, /accessState === 'onboarding'/)
+  assert.match(policy, /destination: '\/admin\/onboarding'/)
 })

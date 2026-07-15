@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { resolveAdminRouteDecision } from '@/lib/admin/accessPolicy'
 
 const LOGIN_TIMEOUT_MS = 15_000
 const RECOVERY_SESSION_TIMEOUT_MS = 8_000
@@ -110,9 +111,12 @@ export async function resolveAdminEntryPath(
   requestedPath: string,
 ) {
   const context = await loadAdminEntryContext(supabase)
-  if (context.access_state === 'ready') return requestedPath
-  if (context.access_state === 'onboarding') return '/admin/onboarding'
-  return '/admin/acceso'
+  const decision = resolveAdminRouteDecision({
+    pathname: requestedPath,
+    authenticated: true,
+    accessState: context.access_state,
+  })
+  return decision.action === 'continue' ? requestedPath : decision.destination
 }
 
 export async function signOutAdmin(supabase: SupabaseClient) {

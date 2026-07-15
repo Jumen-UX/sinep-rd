@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import type { CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSupabasePublishableKey, getSupabaseUrl } from './lib/supabase/config'
+import { resolveAdminRouteDecision, type AdminAccessState } from './lib/admin/accessPolicy'
 
 const ADMIN_PREFIX = '/admin'
 const ADMIN_LOGIN_PATH = '/admin/login'
@@ -76,32 +77,22 @@ export async function middleware(request: NextRequest) {
   const user = error ? null : data.user
 
   const entryResult = user ? await supabase.rpc('get_my_admin_entry_context') : null
-  const accessState = entryResult?.error
+  const accessState: AdminAccessState = entryResult?.error
     ? 'blocked'
-    : entryResult?.data?.access_state as 'ready' | 'onboarding' | 'no_role' | 'blocked' | undefined
+    : entryResult?.data?.access_state as AdminAccessState
 
-  if (pathname === ADMIN_LOGIN_PATH) {
-    if (!user) return decorateAdminResponse(response, request)
-    if (accessState === 'ready') return redirectToAdmin(request)
-    if (accessState === 'onboarding') return redirectToOnboarding(request)
-    return redirectToAccessStatus(request)
-  }
+  const decision = resolveAdminRouteDecision({
+    pathname,
+    authenticated: Boolean(user),
+    accessState,
+  })
 
-  if (pathname.startsWith(ADMIN_RECOVERY_PREFIX)) {
-    return decorateAdminResponse(response, request)
+  if (decision.action === 'redirect') {
+    if (decision.destination === ADMIN_LOGIN_PATH) return redirectToLogin(request)
+    if (decision.destination === ADMIN_ONBOARDING_PATH) return redirectToOnboarding(request)
+    if (decision.destination === ADMIN_ACCESS_PATH) return redirectToAccessStatus(request)
+    return redirectToAdmin(request)
   }
-
-  if (!pathname.startsWith(ADMIN_PREFIX)) return response
-  if (!user) return redirectToLogin(request)
-  if (pathname === ADMIN_ACCESS_PATH) {
-    return accessState === 'ready' ? redirectToAdmin(request) : decorateAdminResponse(response, request)
-  }
-  if (pathname === ADMIN_ONBOARDING_PATH) {
-    if (accessState === 'onboarding') return decorateAdminResponse(response, request)
-    return accessState === 'ready' ? redirectToAdmin(request) : redirectToAccessStatus(request)
-  }
-  if (accessState === 'onboarding') return redirectToOnboarding(request)
-  if (accessState !== 'ready') return redirectToAccessStatus(request)
 
   return decorateAdminResponse(response, request)
 }

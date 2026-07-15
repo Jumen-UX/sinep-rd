@@ -8,6 +8,7 @@ const requestPagePath = 'src/features/access/admin/RequestPasswordRecoveryPage.t
 const updatePagePath = 'src/features/access/admin/UpdateRecoveredPasswordPage.tsx'
 const servicePath = 'src/features/access/services/authentication-admin-service.ts'
 const middlewarePath = 'src/middleware.ts'
+const policyPath = 'src/lib/admin/accessPolicy.ts'
 const adminResetPath = 'src/app/api/admin/users/reset-access/route.ts'
 
 test('password recovery routes delegate to the access feature', async () => {
@@ -45,14 +46,15 @@ test('recovery service owns session validation and password mutation', async () 
 })
 
 test('recovery links remain reachable before session establishment', async () => {
-  const [middleware, adminReset] = await Promise.all([
+  const [middleware, policy, adminReset] = await Promise.all([
     readFile(middlewarePath, 'utf8'),
+    readFile(policyPath, 'utf8'),
     readFile(adminResetPath, 'utf8'),
   ])
 
   assert.match(middleware, /ADMIN_RECOVERY_PREFIX = '\/admin\/recuperar'/)
-  assert.match(middleware, /pathname\.startsWith\(ADMIN_RECOVERY_PREFIX\)/)
+  assert.match(middleware, /resolveAdminRouteDecision/)
+  assert.match(policy, /pathname\.startsWith\('\/admin\/recuperar'\)/)
   assert.match(adminReset, /new URL\('\/admin\/recuperar'/)
   assert.doesNotMatch(adminReset, /new URL\('\/admin\/login'/)
 })
-
