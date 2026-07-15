@@ -15,7 +15,7 @@ Hacer efectiva la regla de no editar silenciosamente la historia: todo cambio es
 2. [x] S5-02 — Consolidar el catálogo de eventos institucionales: creación, división, fusión, desmembramiento, traslado, supresión y cambio de dependencia.
 3. [x] S5-03 — Migrar y normalizar los eventos de evolución existentes sin aprobar ni aplicar datos dudosos.
 4. [x] S5-04 — Unificar borrador, fuente documental, fecha efectiva, alcance y estado de verificación.
-5. [ ] S5-05 — Generar un plan de impacto determinista y de solo lectura antes de aprobar.
+5. [x] S5-05 — Generar un plan de impacto determinista y de solo lectura antes de aprobar.
 6. [ ] S5-06 — Implementar revisión y aprobación separadas de la aplicación.
 7. [ ] S5-07 — Aplicar eventos aprobados mediante transacciones idempotentes y auditadas.
 8. [ ] S5-08 — Proyectar la línea temporal institucional y reconstruir el estado vigente desde la historia.
@@ -43,6 +43,8 @@ S5-02 queda protegido por `canonical-event-catalog-classification.test.mjs`. La 
 S5-03 queda protegido por `legacy-entity-evolution-migration.test.mjs`. La migración `20260715214500_migrate_legacy_entity_evolution_events.sql` trasladó 23 registros de `entity_evolution_events` a `canonical_events` de forma idempotente, preservó el identificador y tipo heredados en `notes_json`, normalizó `erection_by_dismemberment` a `erection` y `territory_loss` a `boundary_change`, creó participantes para entidades conocidas y dejó todos los registros en `pending_review`, sin aprobación ni aplicación automática.
 
 S5-04 queda protegido por `event-verification-contract.test.mjs`. La migración `20260715223000_unify_canonical_event_verification.sql` conserva `evidence_status` como clasificación documental y añade `verification_status` y `source_checked_at` conforme al contrato común. El asistente exige fecha efectiva, deriva alcance desde la entidad o unidad seleccionada, valida URL HTTP/HTTPS y no permite marcar un evento como verificado sin nombre de fuente y fecha de revisión. La revisión administrativa muestra evidencia, verificación, fecha efectiva, alcance y fecha de revisión antes de aprobar. Los 24 eventos existentes permanecen en `pending_review`, sin verificaciones inválidas ni aplicación automática.
+
+S5-05 queda protegido por `event-impact-plan-contract.test.mjs`. El constructor `buildDeterministicImpactPlan` ordena acciones de forma estable, interpreta dependencias explícitas, detecta referencias inexistentes y ciclos, integra conflictos relacionales, separa errores y advertencias y proyecta las fichas, relaciones, cronología, estadísticas, índices y cachés afectados. La proyección `get_event_application_plan` permanece `STABLE` y de solo lectura. La revisión administrativa consume el mismo contrato y bloquea la aprobación cuando el plan no existe, contiene un ciclo, tiene errores o incluye acciones bloqueantes.
 
 ## Reglas del sprint
 
