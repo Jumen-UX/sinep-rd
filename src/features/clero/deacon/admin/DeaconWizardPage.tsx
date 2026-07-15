@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
+import { PersonIdentityStep } from '@/features/personas/shared/components/PersonIdentityStep'
 import {
   loadAllowedOfficeIds,
   loadDeaconCatalogs,
@@ -168,7 +169,6 @@ export default function DeaconWizardPage() {
     try {
       const photoFile = mode === 'new' && form.get('photo_file') instanceof File ? form.get('photo_file') as File : null
       uploadedPhoto = photoFile ? await uploadDeaconPhoto(supabase, photoFile, slug) : { photo_url: null, photo_path: null }
-
       const payload = {
         mode,
         selected_person_id: mode === 'existing' ? selectedPersonId : null,
@@ -257,23 +257,17 @@ export default function DeaconWizardPage() {
       )}
 
       <form className="admin-form admin-config-form card dashboard-section" onSubmit={handleSubmit}>
-        <section>
-          <p className="eyebrow">Origen de la ficha</p>
-          <h2>¿La persona ya está registrada?</h2>
-          <div className="dashboard-grid dashboard-summary">
-            <button className={`metric-card metric-button ${mode === 'existing' ? 'active-filter' : ''}`} type="button" onClick={() => setMode('existing')}><strong>Sí</strong><span>Añadir el diaconado a una persona existente.</span></button>
-            <button className={`metric-card metric-button ${mode === 'new' ? 'active-filter' : ''}`} type="button" onClick={() => { setMode('new'); setSelectedPersonId('') }}><strong>No</strong><span>Crear la identidad y registrar el diaconado.</span></button>
-          </div>
-          {mode === 'existing' && (
-            <>
-              <select value={selectedPersonId} onChange={(event) => setSelectedPersonId(event.target.value)}>
-                <option value="">Selecciona una persona sin ordenaciones</option>
-                {unordainedPeople.map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}
-              </select>
-              <div className="empty-state"><strong>{selectedPerson?.display_name ?? 'Sin persona seleccionada'}</strong><span>Se conservarán su ficha, slug, código interno, vida consagrada y demás datos existentes.</span></div>
-            </>
-          )}
-        </section>
+        <PersonIdentityStep
+          mode={mode}
+          onModeChange={setMode}
+          selectedPersonId={selectedPersonId}
+          onSelectedPersonChange={setSelectedPersonId}
+          people={unordainedPeople}
+          existingActionLabel="Añadir el diaconado a una persona existente."
+          newActionLabel="Crear la identidad y registrar el diaconado."
+          selectPlaceholder="Selecciona una persona sin ordenaciones"
+          existingSummary="Se conservarán su ficha, slug, código interno, vida consagrada y demás datos existentes."
+        />
 
         <section>
           <p className="eyebrow">Tipo de diácono</p>
