@@ -7,6 +7,11 @@ export type EventTypeOption = {
   name: string
   description: string | null
   applies_to: string
+  institutional_family: string
+  canonical_target: 'entity' | 'relationship' | 'organization_unit'
+  application_strategy: 'entity_mutation' | 'relationship_mutation' | 'organization_unit_mutation'
+  requires_manual_review: boolean
+  is_compensable: boolean
 }
 
 export type EventEntityOption = {
@@ -77,7 +82,7 @@ export async function loadEventDraftOptions(supabase: SupabaseClient) {
   const [eventTypeResult, entityResult] = await Promise.all([
     supabase
       .from('canonical_event_types')
-      .select('key,name,description,applies_to')
+      .select('key,name,description,applies_to,institutional_family,canonical_target,application_strategy,requires_manual_review,is_compensable')
       .eq('is_active', true)
       .order('name'),
     supabase
