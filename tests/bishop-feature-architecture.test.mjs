@@ -32,7 +32,7 @@ test('bishop wizard delegates persistence and scoped catalogs to typed services'
 
 test('bishop wizard keeps every step mounted so final FormData contains prior fields', async () => {
   const page = await readRepoFile('src/features/clero/bishop/admin/BishopWizardPage.tsx')
-  const mountedSteps = page.match(/<section hidden=\{step !== [0-4]\}>/g) ?? []
+  const mountedSteps = page.match(/<(?:div|section) hidden=\{step !== [0-4]\}>/g) ?? []
 
   assert.equal(mountedSteps.length, 5)
   assert.doesNotMatch(page, /\{step === [0-4] && \(/)
