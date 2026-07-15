@@ -29,7 +29,15 @@ Las migraciones históricas pueden conservar menciones a estos nombres mientras 
 
 ## Compatibilidades conservadas temporalmente
 
-No se clasifica `parent_node_id` como modelo heredado. En el contrato TypeScript del árbol representa la proyección del padre resuelto para navegación y selección jerárquica. Su retirada solo procede si el contrato de lectura se sustituye explícitamente por una proyección basada exclusivamente en edges sin degradar consumidores.
+`parent_node_id` no se clasifica como modelo heredado. En `get_structure_tree` es una **proyección de lectura** calculada desde `structure_node_edges`; no constituye una fuente alternativa de jerarquía ni autoriza lecturas de `structure_nodes.parent_node_id`.
+
+La compatibilidad queda protegida por `tests/structure-parent-projection-contract.test.mjs`, que verifica:
+
+- raíces resueltas por ausencia de edges entrantes;
+- descendientes resueltos por `eligible_edges`;
+- `parent_node_id` proyectado desde `edge.parent_node_id`;
+- ausencia de `n.parent_node_id as parent_node_id`;
+- declaración explícita de que `structure_nodes.parent_node_id` no es fuente jerárquica.
 
 Las vistas públicas canónicas también pueden proyectar nombres o identificadores derivados por compatibilidad de payload cuando la fuente real sea canónica. Esa compatibilidad debe permanecer de solo lectura y no puede habilitar escrituras a modelos retirados.
 
@@ -44,7 +52,7 @@ La auditoría forma parte de `pnpm check`, por lo que una regresión vuelve rojo
 
 ## Evidencia de línea base
 
-La ejecución verde de CI previa a S2-06 reportó:
+La ejecución verde de CI confirmada para S2-06 reportó:
 
 - `ecclesiastical_entities`: 27 consumidores, 51 referencias.
 - `structure_nodes`: 7 consumidores, 9 referencias.
@@ -52,17 +60,20 @@ La ejecución verde de CI previa a S2-06 reportó:
 - `organization_charts`: 15 consumidores, 55 referencias.
 - 0 consumidores con fuente estructural ambigua.
 - `check:legacy` sin referencias al modelo pastoral eliminado.
+- 0 consumidores bajo `src/` de los seis contratos heredados bloqueados.
 
-Con la ampliación de la auditoría, los seis contratos heredados de este documento quedan además bloqueados explícitamente para consumidores bajo `src/`.
+## Estado S2-06
 
-## Criterio de cierre S2-06
+**Cierre técnico completado.**
 
-S2-06 puede cerrarse cuando:
+Se cumplen las condiciones de aplicación:
 
 - CI confirma cero consumidores de modelos heredados.
 - La auditoría estricta permanece integrada en `pnpm check`.
-- Toda compatibilidad temporal conservada tiene propósito explícito y no habilita escrituras heredadas.
-- La documentación canónica de S2-07 enlaza esta matriz como política de retirada.
+- La compatibilidad `parent_node_id` tiene propósito explícito, fuente canónica y contrato automatizado.
+- Las compatibilidades de payload permitidas son exclusivamente de lectura.
+
+La documentación canónica de S2-07 debe enlazar esta matriz como política de retirada.
 
 ## Riesgo y deuda pendiente
 
