@@ -8,6 +8,7 @@ export type PlanEvent = {
   status: string
   load_mode: string
   evidence_status: string
+  verification_status: string
   event_date: string | null
   effective_date: string | null
   event_type_key: string
