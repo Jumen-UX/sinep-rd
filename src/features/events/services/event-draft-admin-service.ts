@@ -6,6 +6,8 @@ import {
   type EventEvidenceStatus,
 } from './event-verification'
 
+export type { EventEvidenceStatus } from './event-verification'
+
 export type EventLoadMode = 'carga_historica' | 'evento_nuevo' | 'foto_inicial'
 
 export type EventTypeOption = {
