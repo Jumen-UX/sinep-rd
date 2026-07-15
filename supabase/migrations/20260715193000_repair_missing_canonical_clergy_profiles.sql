@@ -1,5 +1,6 @@
 -- Repara personas con ordenaciones canónicas activas que no poseen clergy_profiles.
--- La operación es idempotente y no altera perfiles ya existentes.
+-- La operación es idempotente, no altera perfiles existentes y no infiere
+-- clasificaciones (tipo de diácono o sacerdote) que las fuentes no demuestran.
 
 insert into public.clergy_profiles (
   person_id,
@@ -7,9 +8,7 @@ insert into public.clergy_profiles (
   priestly_ordination_date,
   episcopal_ordination_date,
   canonical_status,
-  clerical_history_status,
-  deacon_type,
-  priest_type
+  clerical_history_status
 )
 select
   oe.person_id,
@@ -17,15 +16,7 @@ select
   min(oe.ordination_date) filter (where oe.degree = 'presbyterate'),
   min(oe.ordination_date) filter (where oe.degree = 'episcopate'),
   'active',
-  'complete',
-  case
-    when bool_or(oe.degree = 'diaconate') then 'permanent'
-    else null
-  end,
-  case
-    when bool_or(oe.degree in ('presbyterate', 'episcopate')) then 'diocesan'
-    else null
-  end
+  'incomplete'
 from public.ordination_events oe
 join public.persons p
   on p.id = oe.person_id
