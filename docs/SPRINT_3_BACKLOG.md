@@ -48,10 +48,10 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ### S3-04 — Invitación y administración de acceso
 
-- [ ] Hacer explícito el estado invitado → onboarding → activo.
-- [ ] Confirmar rol y alcance antes de enviar la invitación cuando corresponda.
-- [ ] Mostrar avance de onboarding en la lista de usuarios.
-- [ ] Mantener asignación, cierre de rol y cambios de estado auditados.
+- [x] Hacer explícito el estado invitado → onboarding → activo.
+- [x] Confirmar rol y alcance antes de enviar la invitación cuando corresponda.
+- [x] Mostrar avance de onboarding en la lista de usuarios.
+- [x] Mantener asignación, cierre de rol y cambios de estado auditados.
 
 ### S3-05 — Matriz automatizada por perfil
 
@@ -80,4 +80,4 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ## Primer bloque activo
 
-S3-01 y S3-02 están validados por CI. S3-03 está implementado en código y pendiente de validación CI. El próximo bloque es S3-04: invitación y administración de acceso.
+S3-01, S3-02 y S3-03 están validados por CI. S3-04 está implementado en código y pendiente de validación CI. El próximo bloque es S3-05: matriz automatizada por perfil.
