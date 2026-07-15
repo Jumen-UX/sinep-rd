@@ -1,71 +1,92 @@
 # Documentación de SINEP RD
 
-Este índice reúne únicamente documentación funcional y vigente. Antes de implementar un cambio, consulta la sección correspondiente.
+> Estado: vigente
+> Última revisión: 2026-07-15
+
+Este índice apunta a documentación canónica y activa. Los cierres y resultados históricos se conservan bajo `archive` y no definen el estado actual.
 
 ## Inicio rápido
 
 | Necesidad | Documento |
 |---|---|
-| Entender el sistema | [Arquitectura](./architecture/ARQUITECTURA.md) |
+| Entender el propósito del sistema | [Plan Maestro](./product/PLAN_MAESTRO.md) |
+| Consultar prioridades y estado | [Hoja de ruta](./product/ROADMAP.md) |
+| Continuar el sprint activo | [Sprint 4](./sprints/active/sprint-4.md) |
+| Entender la arquitectura | [Arquitectura](./architecture/ARQUITECTURA.md) |
 | Crear o mover módulos | [Convención de módulos](./architecture/CONVENCION_MODULOS.md) |
-| Implementar o modificar estructuras | [Modelo estructural canónico](./SPRINT_2_CANONICAL_STRUCTURE_MODEL.md) y [mapa de contratos](./architecture/CONTRATOS_MODELO_ESTRUCTURAL.md) |
-| Revisar compatibilidad estructural heredada | [Inventario de compatibilidad](./SPRINT_2_LEGACY_COMPATIBILITY_INVENTORY.md) |
-| Consultar el cierre técnico del Sprint 2 | [Acta de cierre del Sprint 2](./SPRINT_2_CIERRE.md) |
-| Consultar el trabajo activo del Sprint 3 | [Backlog de autenticación, acceso y onboarding](./SPRINT_3_BACKLOG.md) |
-| Operar invitación, recuperación y revocación de acceso | [Operación del acceso administrativo](./OPERACION_ACCESO_ADMINISTRATIVO.md) |
-| Consultar resultados operativos del Sprint 3 | [Resultados operativos de acceso](./SPRINT_3_OPERATIONAL_RESULTS.md) |
+| Implementar estructuras | [Modelo estructural canónico](./architecture/MODELO_ESTRUCTURAL_CANONICO.md) |
+| Revisar compatibilidad estructural | [Deprecaciones estructurales](./architecture/DEPRECACIONES_ESTRUCTURALES.md) |
 | Cambiar PostgreSQL o Supabase | [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md) |
-| Revisar permisos o privacidad | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
+| Revisar privacidad o RLS | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
+| Revisar permisos, alcance o auditoría | [Autorización y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md) |
 | Confirmar tecnologías | [Stack oficial](./architecture/STACK_OFICIAL.md) |
-| Crear una pantalla | [Estándares web](./standards/ESTANDARES_WEB_SINEP_RD.md), [guía de interfaz](./design/SINEP_UI_SKILL.md) y [Plan UX](./PLAN_UX.md) |
-| Planificar o validar experiencia de usuario | [Plan UX](./PLAN_UX.md) |
+| Crear o rediseñar una pantalla | [Sistema de diseño](./design/SISTEMA_DE_DISENO.md) y [Estándares web](./standards/ESTANDARES_WEB_SINEP_RD.md) |
+| Planificar UX | [UX](./product/UX.md) y [backlog UX activo](./sprints/active/ux-backlog.md) |
 | Registrar o validar una fuente | [Fuentes del proyecto](./standards/FUENTES_DEL_PROYECTO.md) |
-| Consultar prioridades | [Hoja de ruta](./roadmap/ROADMAP.md) |
+| Operar acceso administrativo | [Acceso administrativo](./operations/ACCESO_ADMINISTRATIVO.md) |
+| Ejecutar E2E o accesibilidad | [E2E y accesibilidad](./testing/E2E_Y_ACCESIBILIDAD.md) |
 
 ## Documentación vigente
 
-### Arquitectura y desarrollo
+### Producto
 
-- [Arquitectura](./architecture/ARQUITECTURA.md): capas, dominios y decisiones obligatorias.
-- [Convención de módulos](./architecture/CONVENCION_MODULOS.md): ubicación y responsabilidad de archivos.
-- [Modelo estructural canónico](./SPRINT_2_CANONICAL_STRUCTURE_MODEL.md): fuentes de verdad y separación entre identidad, territorio, organización y nombramientos.
-- [Contratos del modelo estructural](./architecture/CONTRATOS_MODELO_ESTRUCTURAL.md): lecturas, escrituras, auditoría, publicación, invalidación y pruebas obligatorias.
-- [Inventario de compatibilidad estructural](./SPRINT_2_LEGACY_COMPATIBILITY_INVENTORY.md): contratos retirados, compatibilidades temporales y condiciones para eliminación futura.
-- [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md): migraciones, integridad, historia y rendimiento.
-- [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md): clasificación, autorización, RLS y operación segura.
-- [Stack oficial](./architecture/STACK_OFICIAL.md): tecnologías y comandos aceptados.
+- [Plan Maestro](./product/PLAN_MAESTRO.md).
+- [Hoja de ruta](./product/ROADMAP.md).
+- [UX](./product/UX.md).
 
-### Interfaz, experiencia y marca
+### Arquitectura y seguridad
 
-- [Plan UX](./PLAN_UX.md): fases, prioridades, criterios de aceptación, modo oscuro, accesibilidad y validación con usuarios.
-- [Guía de interfaz](./design/SINEP_UI_SKILL.md).
+- [Arquitectura](./architecture/ARQUITECTURA.md).
+- [Convención de módulos](./architecture/CONVENCION_MODULOS.md).
+- [Modelo estructural canónico](./architecture/MODELO_ESTRUCTURAL_CANONICO.md).
+- [Deprecaciones estructurales](./architecture/DEPRECACIONES_ESTRUCTURALES.md).
+- [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md).
+- [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md).
+- [Autorización y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md).
+- [Stack oficial](./architecture/STACK_OFICIAL.md).
+
+### Interfaz y estándares
+
+- [Sistema de diseño](./design/SISTEMA_DE_DISENO.md).
 - [Parámetros de interfaz](./design/SINEP_UI_PARAMETERS.json).
-- [Perfil visual institucional](./design/PERFIL_VISUAL_ARQUIDIOCESIS_SANTO_DOMINGO.md).
-- [Estándares web obligatorios](./standards/ESTANDARES_WEB_SINEP_RD.md).
-- [Fuentes del proyecto](./standards/FUENTES_DEL_PROYECTO.md): autoridad, trazabilidad, discrepancias y publicación.
+- [Estándares web](./standards/ESTANDARES_WEB_SINEP_RD.md).
+- [Fuentes del proyecto](./standards/FUENTES_DEL_PROYECTO.md).
 
-### Planificación
+### Operación y pruebas
 
-- [Hoja de ruta vigente](./roadmap/ROADMAP.md).
-- [Acta de cierre técnico del Sprint 2](./SPRINT_2_CIERRE.md): evidencia de CI, criterios cumplidos y pendientes operativos de beta.
-- [Sprint 3 — autenticación, acceso y onboarding](./SPRINT_3_BACKLOG.md): bloques activos, reglas y criterios de cierre.
-- [Plan UX vigente](./PLAN_UX.md).
+- [Acceso administrativo](./operations/ACCESO_ADMINISTRATIVO.md).
+- [Operación y recuperación](./OPERACION_Y_RECUPERACION.md).
+- [E2E y accesibilidad](./testing/E2E_Y_ACCESIBILIDAD.md).
+
+### Trabajo activo
+
+- [Sprint 4](./sprints/active/sprint-4.md).
+- [Auditoría de flujos de personas](./sprints/active/sprint-4-person-flows-audit.md).
+- [Backlog UX](./sprints/active/ux-backlog.md).
+
+## Archivo histórico
+
+Los cierres y evidencias de sprints terminados están en [`archive/sprints`](./archive/sprints/). Su contenido puede incluir conteos o estados superados posteriormente y debe interpretarse según su fecha.
 
 ## Jerarquía de autoridad
 
-Cuando dos documentos discrepen, aplicar este orden:
+Cuando dos documentos discrepen:
 
-1. Migraciones, código y pruebas actuales.
-2. Normas vigentes bajo `architecture` y `standards`.
-3. Hoja de ruta vigente.
-4. Plan UX y documentación de diseño.
+1. migraciones, código y pruebas actuales;
+2. normas vigentes bajo `architecture` y `standards`;
+3. Plan Maestro y hoja de ruta vigente;
+4. UX y sistema de diseño;
+5. documentación activa del sprint;
+6. archivo histórico.
 
-Una discrepancia entre código y norma vigente debe resolverse: no se considera automáticamente válida por estar implementada.
+Una discrepancia entre código y norma vigente debe resolverse; no se considera automáticamente válida por estar implementada.
 
 ## Mantenimiento
 
-- Añadir estado y fecha de revisión a documentos normativos.
-- Eliminar planes completados o sustituidos después de trasladar cualquier decisión todavía vigente.
+- Todo documento normativo o activo debe declarar estado y fecha de revisión.
+- Solo existe una hoja de ruta vigente.
+- Solo un sprint funcional aparece como activo.
+- Los resultados puntuales se archivan al cerrar el sprint.
 - No crear archivos `COMPLETE`, `FINAL` o `SUMMARY` en la raíz de `docs`.
-- Actualizar este índice al añadir una referencia vigente.
+- Actualizar este índice al añadir o sustituir una referencia vigente.
 - Usar enlaces relativos y comprobarlos antes de cerrar el cambio.
