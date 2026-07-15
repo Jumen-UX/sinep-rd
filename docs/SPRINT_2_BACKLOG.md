@@ -1,6 +1,8 @@
 # Sprint 2 — Consolidar el motor de estructuras
 
-Fecha de inicio: 14 de julio de 2026.
+Fecha de inicio: 14 de julio de 2026.  
+Cierre técnico: 14 de julio de 2026.  
+Estado: **completado técnicamente**; validaciones operativas de beta separadas.
 
 ## Objetivo
 
@@ -115,7 +117,7 @@ Criterio de cierre:
 - Todas las jerarquías territoriales vigentes se reconstruyen desde `structure_node_edges`.
 - No existen dos fuentes activas de lectura para la relación padre/hijo.
 
-### S2-04 — Contrato organizativo — EN EJECUCIÓN
+### S2-04 — Contrato organizativo — CIERRE TÉCNICO COMPLETADO
 
 - [x] Verificar que pastoral, administración y colegialidad usan `organization_charts` y `organization_units`.
 - [x] Revisar unidades sin organigrama, sin entidad de alcance o con padre incompatible.
@@ -124,9 +126,16 @@ Criterio de cierre:
 - [x] Separar el guardado ordinario de las transiciones de estado y visibilidad.
 - [x] Sustituir en la interfaz los selectores genéricos por acciones válidas según el estado.
 - [x] Mantener bloqueada cualquier reintroducción de `pastoral_entities`.
-- [ ] Crear una cola de revisión por lotes para las 181 unidades vigentes en borrador.
-- [ ] Definir criterios funcionales de aprobación y publicación por organigrama.
+- [x] Crear una cola de revisión por lotes para las unidades vigentes en borrador.
+- [x] Definir criterios técnicos de preparación por organigrama y jurisdicción.
+- [x] Normalizar las 12 jerarquías pastorales diocesanas: 12 cabeceras, 180 unidades hijas y 192 unidades alcanzables sin ciclos.
+- [x] Mantener aprobación y publicación como acciones separadas, explícitas y auditadas.
+
+Pendientes operativos trasladados a la beta:
+
 - [ ] Validar permisos con cuentas reales separadas para edición, aprobación y publicación.
+- [ ] Revisar funcionalmente las unidades por jurisdicción antes de aprobarlas.
+- [ ] Publicar únicamente registros aprobados mediante el permiso correspondiente.
 
 Resultados parciales documentados en `docs/SPRINT_2_ORGANIZATION_LIFECYCLE_RESULTS.md`.
 
@@ -137,36 +146,39 @@ Criterio de cierre:
 - Ninguna edición ordinaria puede aprobar o publicar una unidad.
 - No existen referencias activas al modelo pastoral eliminado.
 
-### S2-05 — Paridad de cargos y alcance
+### S2-05 — Paridad de cargos y alcance — COMPLETADO
 
-- Verificar que los cargos por nivel provienen de `structure_level_office_configurations`.
-- Verificar que cargos organizativos respetan el organigrama configurado.
-- Revisar que nombramientos, auditoría y permisos resuelvan correctamente entidad, nodo o unidad.
-- Sustituir la actualización destructiva de cargos por nivel por una RPC transaccional, idempotente y auditada.
+- [x] Verificar que los cargos por nivel provienen de `structure_level_office_configurations`.
+- [x] Verificar que cargos organizativos respetan el organigrama configurado.
+- [x] Revisar que nombramientos, auditoría y permisos resuelvan correctamente entidad, nodo o unidad.
+- [x] Sustituir la actualización destructiva de cargos por nivel por una RPC transaccional, idempotente y auditada.
+- [x] Eliminar el fallback silencioso a todos los cargos y validar 187 nombramientos vigentes sin incompatibilidades.
 
 Criterio de cierre:
 
 - No existe fallback silencioso a todos los cargos.
 - La actualización de cargos por nivel no puede dejar un estado parcial.
 
-### S2-06 — Compatibilidad y bloqueo de legados
+### S2-06 — Compatibilidad y bloqueo de legados — COMPLETADO
 
-- Inventariar tablas, columnas, vistas y funciones heredadas restantes.
-- Mantener solo adaptadores con consumidor identificado y prueba de paridad.
-- Bloquear escrituras directas a modelos heredados.
-- Documentar rollback y condición de eliminación futura.
+- [x] Inventariar tablas, columnas, vistas y funciones heredadas restantes.
+- [x] Mantener solo adaptadores con consumidor identificado y prueba de paridad.
+- [x] Bloquear consumidores de aplicación de los seis modelos heredados identificados.
+- [x] Formalizar `parent_node_id` exclusivamente como proyección de lectura desde `structure_node_edges`.
+- [x] Documentar rollback y condición de eliminación física futura.
 
 Criterio de cierre:
 
 - Cada compatibilidad restante tiene propietario, consumidor y fecha de retiro.
 - Ninguna tabla heredada recibe escrituras nuevas.
 
-### S2-07 — Documentación canónica
+### S2-07 — Documentación canónica — COMPLETADO
 
-- Crear un diagrama lógico de los cuatro modelos.
-- Documentar identidad, jerarquía, vigencia, alcance, historia y enlaces públicos.
-- Añadir ejemplos territoriales simples y complejos.
-- Registrar reglas de selección de padre, nivel y cargo.
+- [x] Documentar el modelo lógico y las responsabilidades de las cuatro dimensiones.
+- [x] Documentar identidad, jerarquía, vigencia, alcance, historia y enlaces públicos.
+- [x] Registrar contratos autorizados de lectura, escritura, auditoría e invalidación pública.
+- [x] Registrar reglas de selección de padre, nivel y cargo.
+- [x] Enlazar el modelo canónico, el mapa de contratos y el inventario de compatibilidad desde `docs/README.md`.
 
 Criterio de cierre:
 
@@ -177,14 +189,16 @@ Criterio de cierre:
 1. S2-01 Inventario de correspondencias. — COMPLETADO
 2. S2-02 Consultas de paridad. — COMPLETADO
 3. S2-03 Contrato territorial. — COMPLETADO
-4. S2-04 Contrato organizativo. — EN EJECUCIÓN
-5. S2-05 Paridad de cargos y alcance.
-6. S2-06 Compatibilidad y bloqueo de legados.
-7. S2-07 Documentación canónica.
+4. S2-04 Contrato organizativo. — CIERRE TÉCNICO COMPLETADO; VALIDACIÓN OPERATIVA PENDIENTE
+5. S2-05 Paridad de cargos y alcance. — COMPLETADO
+6. S2-06 Compatibilidad y bloqueo de legados. — COMPLETADO
+7. S2-07 Documentación canónica. — COMPLETADO
 
 Este orden es obligatorio porque las migraciones y bloqueos dependen del inventario y de las consultas de paridad. No se eliminará ninguna compatibilidad antes de identificar consumidores y verificar conteos.
 
 ## Criterio de cierre del sprint
+
+Estado: **cumplido técnicamente** y validado por CI #1129 sobre `b528e827`.
 
 - Todas las pantallas leen de modelos canónicos explícitos.
 - Todas las escrituras llegan a un único contrato por dominio.
@@ -202,3 +216,16 @@ Este orden es obligatorio porque las migraciones y bloqueos dependen del inventa
 - Revisión de utilidades duplicadas de normalización, errores y alcance.
 
 Estas tareas no deben desplazar el inventario y la paridad estructural, salvo que bloqueen una migración concreta.
+
+## Separación de pendientes operativos
+
+El cierre técnico del Sprint 2 no aprueba datos ni sustituye las pruebas de beta. Permanecen fuera del cierre de ingeniería:
+
+- matriz real de permisos nacional, diocesana, restringida y sin privilegios;
+- revisión funcional de las 192 unidades organizativas antes de su aprobación;
+- publicación selectiva posterior a la aprobación;
+- protección contra contraseñas filtradas en Supabase Auth;
+- integración y recorrido administrativo autenticado en un entorno no productivo;
+- respaldo, restauración y respuesta a incidentes.
+
+Estos controles se gestionan en la hoja de ruta como **pendientes operativos de beta**.
