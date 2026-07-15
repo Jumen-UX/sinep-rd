@@ -15,7 +15,7 @@ function loadProfiles() {
     const expectedState = profile.expectedState
 
     if (!label || !email || !password || !['ready', 'onboarding', 'no_role', 'blocked'].includes(expectedState)) {
-      throw new Error(`El perfil operativo ${index + 1} estÃ¡ incompleto o tiene un estado no vÃ¡lido.`)
+      throw new Error(`El perfil operativo ${index + 1} está incompleto o tiene un estado no válido.`)
     }
 
     return {
@@ -50,8 +50,8 @@ test.describe('matriz operativa de acceso administrativo', () => {
 
       try {
         await page.goto('/admin/login?next=/admin', { waitUntil: 'domcontentloaded' })
-        await page.getByLabel('Correo electrÃ³nico').fill(profile.email)
-        await page.getByLabel('ContraseÃ±a').fill(profile.password)
+        await page.getByLabel('Correo electrónico').fill(profile.email)
+        await page.getByLabel('Contraseña').fill(profile.password)
         await page.getByRole('button', { name: 'Entrar' }).click()
         await expect(page).toHaveURL(destinationByState[profile.expectedState], { timeout: 30_000 })
 
@@ -73,4 +73,3 @@ test.describe('matriz operativa de acceso administrativo', () => {
     })
   }
 })
-
