@@ -41,10 +41,10 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ### S3-03 — Protección de rutas y estado de cuenta
 
-- [ ] Centralizar la resolución de entrada administrativa.
-- [ ] Bloquear perfiles suspendidos o inactivos aunque conserven una sesión.
-- [ ] Evitar que usuarios sin rol naveguen fuera de su estado de acceso.
-- [ ] Mantener `next` limitado a rutas locales seguras.
+- [x] Centralizar la resolución de entrada administrativa.
+- [x] Bloquear perfiles suspendidos o inactivos aunque conserven una sesión.
+- [x] Evitar que usuarios sin rol naveguen fuera de su estado de acceso.
+- [x] Mantener `next` limitado a rutas locales seguras.
 
 ### S3-04 — Invitación y administración de acceso
 
@@ -80,5 +80,4 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ## Primer bloque activo
 
-S3-01 está validado por CI. S3-02 está implementado en código y pendiente de validación CI. El próximo bloque es S3-03: protección de rutas y estado de cuenta.
-
+S3-01 y S3-02 están validados por CI. S3-03 está implementado en código y pendiente de validación CI. El próximo bloque es S3-04: invitación y administración de acceso.
