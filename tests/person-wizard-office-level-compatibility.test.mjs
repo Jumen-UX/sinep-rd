@@ -8,6 +8,43 @@ async function readRepoFile(path) {
   return readFile(new URL(path, repoRoot), 'utf8')
 }
 
+const wizardContracts = [
+  {
+    path: 'src/features/clero/deacon/admin/DeaconWizardPage.tsx',
+    filteredCollection: 'filteredOfficeConfigs',
+    selectedOfficeId: 'quickOfficeConfigId',
+    clearSelection: "setQuickOfficeConfigId('')",
+  },
+  {
+    path: 'src/features/clero/priest/admin/PriestWizardPage.tsx',
+    filteredCollection: 'filteredOfficeConfigs',
+    selectedOfficeId: 'quickOfficeConfigId',
+    clearSelection: "setQuickOfficeConfigId('')",
+  },
+  {
+    path: 'src/features/clero/bishop/admin/BishopWizardPage.tsx',
+    filteredCollection: 'filteredOffices',
+    selectedOfficeId: 'officeConfigurationId',
+    clearSelection: "setOfficeConfigurationId('')",
+  },
+  {
+    path: 'src/features/vida-consagrada/religious/admin/ReligiousWizardPage.tsx',
+    filteredCollection: 'filteredOfficeConfigs',
+    selectedOfficeId: 'quickOfficeConfigId',
+    clearSelection: "setQuickOfficeConfigId('')",
+  },
+  {
+    path: 'src/features/personas/lay/admin/LayPersonWizardPage.tsx',
+    filteredCollection: 'filteredOfficeConfigs',
+    selectedOfficeId: 'quickOfficeConfigId',
+    clearSelection: "setQuickOfficeConfigId('')",
+  },
+]
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 test('shared placement service resolves offices only from the selected structural level', async () => {
   const service = await readRepoFile(
     'src/features/personas/shared/services/person-placement-service.ts',
@@ -25,39 +62,32 @@ test('shared placement service resolves offices only from the selected structura
 })
 
 test('every person wizard filters office catalogs with the shared allowed id contract', async () => {
-  const pages = [
-    'src/features/clero/deacon/admin/DeaconWizardPage.tsx',
-    'src/features/clero/priest/admin/PriestWizardPage.tsx',
-    'src/features/clero/bishop/admin/BishopWizardPage.tsx',
-    'src/features/vida-consagrada/religious/admin/ReligiousWizardPage.tsx',
-    'src/features/personas/lay/admin/LayPersonWizardPage.tsx',
-  ]
-
-  for (const path of pages) {
-    const page = await readRepoFile(path)
+  for (const contract of wizardContracts) {
+    const page = await readRepoFile(contract.path)
+    const filteredCollection = escapeRegExp(contract.filteredCollection)
 
     assert.match(page, /loadAllowedOfficeIds/)
     assert.match(page, /allowedOfficeIds\.includes\(office\.id\)/)
-    assert.match(page, /filteredOfficeConfigs/)
-    assert.match(page, /filteredOfficeConfigs\.length === 0/)
+    assert.match(page, new RegExp(`const ${filteredCollection} =`))
+    assert.match(page, new RegExp(`${filteredCollection}\\.length === 0`))
     assert.match(page, /setAllowedOfficeIds\(\[\]\)/)
-    assert.doesNotMatch(page, /filteredOfficeConfigs\s*=\s*[^\n]*\?[^\n]*officeConfigs\s*:/)
+    assert.doesNotMatch(
+      page,
+      new RegExp(`${filteredCollection}\\s*=\\s*[^\\n]*\\?[^\\n]*(?:officeConfigs|offices)\\s*:`),
+    )
   }
 })
 
 test('person wizards clear an office that becomes incompatible after changing entity', async () => {
-  const pages = [
-    'src/features/clero/deacon/admin/DeaconWizardPage.tsx',
-    'src/features/clero/priest/admin/PriestWizardPage.tsx',
-    'src/features/clero/bishop/admin/BishopWizardPage.tsx',
-    'src/features/vida-consagrada/religious/admin/ReligiousWizardPage.tsx',
-    'src/features/personas/lay/admin/LayPersonWizardPage.tsx',
-  ]
+  for (const contract of wizardContracts) {
+    const page = await readRepoFile(contract.path)
+    const filteredCollection = escapeRegExp(contract.filteredCollection)
+    const selectedOfficeId = escapeRegExp(contract.selectedOfficeId)
 
-  for (const path of pages) {
-    const page = await readRepoFile(path)
-
-    assert.match(page, /!filteredOfficeConfigs\.some\(\(office\) => office\.id === quickOfficeConfigId\)/)
-    assert.match(page, /setQuickOfficeConfigId\(''\)/)
+    assert.match(
+      page,
+      new RegExp(`!${filteredCollection}\\.some\\(\\(office\\) => office\\.id === ${selectedOfficeId}\\)`),
+    )
+    assert.match(page, new RegExp(escapeRegExp(contract.clearSelection)))
   }
 })
