@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 0.4 seconds
-Output:
 alter table public.profiles
   add column if not exists onboarding_step text not null default 'profile',
   add column if not exists onboarding_completed_at timestamptz,

@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 0.4 seconds
-Output:
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const LOGIN_TIMEOUT_MS = 15_000

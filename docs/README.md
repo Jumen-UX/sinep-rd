@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 0.3 seconds
-Output:
 # Documentación de SINEP RD
 
 Este índice reúne únicamente documentación funcional y vigente. Antes de implementar un cambio, consulta la sección correspondiente.
