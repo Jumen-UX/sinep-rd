@@ -13,7 +13,7 @@ Unificar los historiales personales y ministeriales para que una persona conserv
 
 1. [x] S4-01 — Auditar los flujos actuales y definir el contrato del asistente común.
 2. [x] S4-02 — Implementar detección de duplicados y resolución explícita de identidad.
-3. [ ] S4-03 — Aplicar el asistente común a obispos, sacerdotes, diáconos, religiosos y laicos. **En progreso:** componente común creado; asistentes de diácono, sacerdote, obispo y vida consagrada migrados y protegidos por pruebas contractuales.
+3. [x] S4-03 — Aplicar el asistente común a obispos, sacerdotes, diáconos, religiosos y laicos.
 4. [ ] S4-04 — Garantizar continuidad diácono → sacerdote → obispo sobre un único `person_id`.
 5. [ ] S4-05 — Unificar sacerdotes diocesanos y religiosos sin duplicar personas.
 6. [ ] S4-06 — Aplicar cargos compatibles con el nivel estructural seleccionado.
@@ -29,9 +29,9 @@ S4-01 y S4-02 están completados. La búsqueda autenticada se expone mediante `f
 
 S4-03 utiliza `PersonIdentityStep` como componente compartido para normalizar la decisión entre reutilizar una persona existente o crear una identidad nueva. El componente conserva semántica accesible, limpia la selección al cambiar a identidad nueva y queda protegido por una prueba contractual.
 
-Los asistentes de diácono, sacerdote, obispo y vida consagrada ya consumen el componente común sin modificar sus contratos de persistencia. Sacerdote conserva la continuidad desde `existing_deacon_person_id`; obispo conserva `selected_clergy_id` y mantiene separados ordenación episcopal, función, estado, dignidades, nombramiento y fuente; vida consagrada conserva `selected_person_id`, profesión, pertenencia institucional, servicio y cargo sobre la misma identidad. El caso de sacerdote religioso sigue delegado al flujo canónico de sacerdote para no duplicar presbiterado ni persona.
+Los asistentes de diácono, sacerdote, obispo, vida consagrada y laico ya consumen el componente común sin modificar sus contratos de persistencia. Sacerdote conserva la continuidad desde `existing_deacon_person_id`; obispo conserva `selected_clergy_id` y mantiene separados ordenación episcopal, función, estado, dignidades, nombramiento y fuente; vida consagrada conserva `selected_person_id`, profesión, pertenencia institucional, servicio y cargo sobre la misma identidad; laico conserva `selected_person_id`, datos privados y responsabilidad opcional sin convertir la condición laical en un tipo permanente. El caso de sacerdote religioso sigue delegado al flujo canónico de sacerdote para no duplicar presbiterado ni persona.
 
-El siguiente flujo a migrar es laico. Ese asistente conserva temporalmente compatibilidad heredada hasta completar S4-03.
+Cada integración tiene una prueba contractual específica. La validación conjunta de TypeScript, pruebas y build permanece en S4-11.
 
 ## Criterios de cierre
 
