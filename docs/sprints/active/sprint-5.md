@@ -48,6 +48,8 @@ S5-05 queda protegido por `event-impact-plan-contract.test.mjs`. El constructor 
 
 S5-06 queda protegido por `event-approval-separation-contract.test.mjs`. La migración `20260715234500_separate_event_approval_from_application.sql` introduce `admin_approve_event` como contrato explícito, con permiso `events.approve`, validación de preparación y auditoría propia. `admin_review_event` solo devuelve a borrador o cancela y rechaza la acción `approve`. Aprobar únicamente modifica metadatos del flujo y prepara acciones; devuelve `state_applied=false` y nunca invoca contratos de aplicación ni modifica entidades, relaciones, nodos o unidades organizativas. La aplicación conserva su RPC independiente y exige permiso `events.apply` y estado `approved`.
 
+S5-07 está en validación mediante `idempotent-event-application-contract.test.mjs`. La migración `20260716003000_harden_idempotent_event_application.sql` serializa la aplicación con bloqueo de fila, devuelve el resultado aplicado en reintentos sin repetir mutaciones, valida dependencias entre acciones, conserva orden estable, restringe los tipos organizativos soportados y audita por separado una aplicación nueva y un reintento idempotente. La migración está versionada, pero su aplicación remota permanece pendiente porque el conector de Supabase bloqueó la llamada antes de enviarla a PostgreSQL.
+
 ## Reglas del sprint
 
 - No se introduce un segundo motor de eventos.
