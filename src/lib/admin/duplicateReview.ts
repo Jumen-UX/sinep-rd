@@ -26,10 +26,10 @@ function duplicateDetail(item: DuplicateMatch) {
   return `• ${item.display_name ?? 'Registro sin nombre'}${context ? ` — ${context}` : ''} (${reason})`
 }
 
-export async function reviewPotentialDuplicates(
+export async function findPotentialDuplicates(
   kind: DuplicateReviewKind,
   payload: Record<string, unknown>,
-): Promise<number> {
+): Promise<DuplicateMatch[]> {
   const response = await fetch(duplicateEndpoints[kind], {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -41,7 +41,14 @@ export async function reviewPotentialDuplicates(
     throw new Error(data?.error ?? 'No se pudo completar la revisión de duplicados.')
   }
 
-  const matches = data?.items ?? []
+  return data?.items ?? []
+}
+
+export async function reviewPotentialDuplicates(
+  kind: DuplicateReviewKind,
+  payload: Record<string, unknown>,
+): Promise<number> {
+  const matches = await findPotentialDuplicates(kind, payload)
   if (matches.length === 0) return 0
 
   const noun = kind === 'person' ? 'persona' : 'entidad'
