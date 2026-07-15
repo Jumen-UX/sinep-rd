@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 0.4 seconds
-Output:
 # Pruebas E2E y accesibilidad
 
 La suite de navegador es manual para evitar descargar Chromium y consumir minutos en cada `push`. No forma parte de `pnpm check`.

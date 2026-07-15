@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 0.4 seconds
-Output:
 # Sprint 3 â€” resultados operativos de acceso
 
 > Entorno autorizado: Supabase no productivo `hrvgpceqaxujlttpimdz`  

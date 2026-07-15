@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 0.4 seconds
-Output:
 import { expect, test } from '@playwright/test'
 
 const rawProfiles = process.env.E2E_ACCESS_PROFILES_JSON
