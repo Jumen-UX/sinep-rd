@@ -29,6 +29,7 @@ export default function InviteUserPage() {
   const [roleId, setRoleId] = useState('')
   const [scopeType, setScopeType] = useState('national')
   const [scopeEntityId, setScopeEntityId] = useState('')
+  const [accessConfirmed, setAccessConfirmed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,6 +39,8 @@ export default function InviteUserPage() {
     () => scopeOptions.filter((option) => option.scope_type === scopeType),
     [scopeOptions, scopeType],
   )
+  const selectedRole = roles.find((role) => role.role_id === roleId) ?? null
+  const selectedScope = visibleScopes.find((option) => option.scope_entity_id === scopeEntityId) ?? null
 
   useEffect(() => {
     let cancelled = false
@@ -67,6 +70,7 @@ export default function InviteUserPage() {
   }, [router, supabase])
 
   useEffect(() => {
+    setAccessConfirmed(false)
     if (!scopeNeedsEntity(scopeType)) {
       setScopeEntityId('')
       return
@@ -84,6 +88,12 @@ export default function InviteUserPage() {
     setError(null)
     setNotice(null)
 
+    if (roleId && !accessConfirmed) {
+      setSaving(false)
+      setError('Confirma el rol y el alcance antes de enviar la invitación.')
+      return
+    }
+
     try {
       const result = await inviteUser({
         email,
@@ -95,11 +105,14 @@ export default function InviteUserPage() {
       })
 
       setNotice(result.warning
-        ? `Usuario invitado, pero falta revisar el rol: ${result.warning}`
-        : 'Invitación enviada correctamente.')
+        ? `El acceso requiere revisión: ${result.warning}`
+        : result.existingUser
+          ? 'El usuario ya existía; sus datos y acceso inicial fueron revisados.'
+          : 'Invitación enviada correctamente. El usuario continuará por onboarding.')
       setEmail('')
       setFullName('')
       setPhone('')
+      setAccessConfirmed(false)
     } catch (inviteError) {
       setError(errorMessage(inviteError, 'No se pudo enviar la invitación.'))
     } finally {
@@ -144,7 +157,10 @@ export default function InviteUserPage() {
 
           <label>
             Rol inicial opcional
-            <select value={roleId} onChange={(event) => setRoleId(event.target.value)}>
+            <select value={roleId} onChange={(event) => {
+              setRoleId(event.target.value)
+              setAccessConfirmed(false)
+            }}>
               <option value="">Invitar sin rol inicial</option>
               {roles.map((role) => (
                 <option key={role.role_id} value={role.role_id}>{role.role_name} · {role.role_key}</option>
@@ -155,7 +171,10 @@ export default function InviteUserPage() {
           {roleId && (
             <label>
               Tipo de alcance
-              <select value={scopeType} onChange={(event) => setScopeType(event.target.value)} required>
+              <select value={scopeType} onChange={(event) => {
+                setScopeType(event.target.value)
+                setAccessConfirmed(false)
+              }} required>
                 {userScopeTypes.map((scope) => (
                   <option key={scope.value} value={scope.value}>{scope.label}</option>
                 ))}
@@ -166,7 +185,10 @@ export default function InviteUserPage() {
           {roleId && scopeNeedsEntity(scopeType) && (
             <label>
               Entidad del alcance
-              <select value={scopeEntityId} onChange={(event) => setScopeEntityId(event.target.value)} required>
+              <select value={scopeEntityId} onChange={(event) => {
+                setScopeEntityId(event.target.value)
+                setAccessConfirmed(false)
+              }} required>
                 {visibleScopes.length === 0 ? (
                   <option value="">No hay opciones activas</option>
                 ) : visibleScopes.map((option) => (
@@ -176,7 +198,27 @@ export default function InviteUserPage() {
             </label>
           )}
 
-          <button className="button button-primary" disabled={saving} type="submit">
+          {roleId && (
+            <div className="empty-state" role="group" aria-label="Confirmación del acceso inicial">
+              <strong>Acceso inicial por confirmar</strong>
+              <p className="meta">
+                {selectedRole?.role_name ?? 'Rol seleccionado'} · {scopeNeedsEntity(scopeType)
+                  ? selectedScope?.label ?? 'Selecciona una entidad válida'
+                  : userScopeTypes.find((scope) => scope.value === scopeType)?.label ?? scopeType}
+              </p>
+              <label>
+                <input
+                  checked={accessConfirmed}
+                  onChange={(event) => setAccessConfirmed(event.target.checked)}
+                  required
+                  type="checkbox"
+                />
+                Confirmo que este rol y alcance corresponden al usuario invitado.
+              </label>
+            </div>
+          )}
+
+          <button className="button button-primary" disabled={saving || Boolean(roleId && !accessConfirmed)} type="submit">
             {saving ? 'Enviando...' : 'Enviar invitación'}
           </button>
         </form>

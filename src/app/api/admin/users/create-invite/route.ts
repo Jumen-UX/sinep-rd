@@ -15,6 +15,15 @@ type Payload = {
   scope_entity_id?: string
 }
 
+type ValidatedAccess = {
+  role_id: string
+  role_key: string
+  role_name: string
+  scope_type: string
+  scope_entity_id: string | null
+  scope_label: string
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdminAccess({
     permissionKey: 'users.manage',
@@ -33,6 +42,23 @@ export async function POST(request: Request) {
     const roleKey = optionalText(payload.role_key, 80)
     const scopeType = optionalText(payload.scope_type, 80) || 'national'
     const scopeEntityId = optionalText(payload.scope_entity_id, 36)
+
+    let validatedAccess: ValidatedAccess | null = null
+    if (roleId || roleKey) {
+      const { data, error } = await auth.supabase.rpc('validate_admin_role_scope', {
+        payload: {
+          role_id: roleId || undefined,
+          role_key: roleKey || undefined,
+          scope_type: scopeType,
+          scope_entity_id: scopeEntityId || undefined,
+        },
+      })
+
+      if (error) {
+        return NextResponse.json({ error: error.message || 'El rol o alcance seleccionado no es válido.' }, { status: 400 })
+      }
+      validatedAccess = data as ValidatedAccess
+    }
 
     const admin = createAdminClient()
     const redirectTo = new URL('/admin/onboarding', getAppBaseUrl()).toString()
@@ -73,20 +99,21 @@ export async function POST(request: Request) {
         email,
         full_name: fullName || email,
         phone: phone || null,
-        status: 'pending',
+        status: 'pending_invitation',
+        onboarding_step: 'profile',
+        onboarding_completed_at: null,
       })
     }
 
     let assignment = null
 
-    if (roleId || roleKey) {
+    if (validatedAccess) {
       const { data, error } = await auth.supabase.rpc('admin_assign_user_role', {
         payload: {
           user_id: userId,
-          role_id: roleId || undefined,
-          role_key: roleKey || undefined,
-          scope_type: scopeType,
-          scope_entity_id: scopeEntityId || undefined,
+          role_id: validatedAccess.role_id,
+          scope_type: validatedAccess.scope_type,
+          scope_entity_id: validatedAccess.scope_entity_id || undefined,
         },
       })
 
@@ -99,6 +126,9 @@ export async function POST(request: Request) {
             email_domain: emailDomain(email),
             existing_user: existingUser,
             role_assignment_warning: error.message,
+            role_id: validatedAccess.role_id,
+            scope_type: validatedAccess.scope_type,
+            scope_entity_id: validatedAccess.scope_entity_id,
           },
         })
 
@@ -115,12 +145,21 @@ export async function POST(request: Request) {
       metadata: {
         email_domain: emailDomain(email),
         existing_user: existingUser,
-        role_assigned: Boolean(roleId || roleKey),
-        scope_type: scopeType,
+        onboarding_state: existingUser ? 'existing_user' : 'pending_invitation',
+        role_assigned: Boolean(validatedAccess),
+        role_id: validatedAccess?.role_id ?? null,
+        scope_type: validatedAccess?.scope_type ?? null,
+        scope_entity_id: validatedAccess?.scope_entity_id ?? null,
       },
     })
 
-    return NextResponse.json({ user_id: userId, email, existing_user: existingUser, assignment }, { status: 201 })
+    return NextResponse.json({
+      user_id: userId,
+      email,
+      existing_user: existingUser,
+      assignment,
+      access_preview: validatedAccess,
+    }, { status: 201 })
   } catch (error) {
     if (error instanceof ValidationError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
@@ -130,4 +169,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-
