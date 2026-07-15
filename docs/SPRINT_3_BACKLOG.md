@@ -55,13 +55,13 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ### S3-05 — Matriz automatizada por perfil
 
-- [ ] Superadministrador.
-- [ ] Administrador nacional.
-- [ ] Administrador diocesano.
-- [ ] Usuario restringido a parroquia o unidad.
-- [ ] Usuario autenticado sin rol.
-- [ ] Usuario suspendido o inactivo.
-- [ ] Invitado con onboarding incompleto.
+- [x] Superadministrador.
+- [x] Administrador nacional.
+- [x] Administrador diocesano.
+- [x] Usuario restringido a parroquia o unidad.
+- [x] Usuario autenticado sin rol.
+- [x] Usuario suspendido o inactivo.
+- [x] Invitado con onboarding incompleto.
 
 ### S3-06 — Validación operativa y cierre
 
@@ -80,4 +80,4 @@ Completar el ciclo de acceso administrativo desde la invitación hasta una sesi�
 
 ## Primer bloque activo
 
-S3-01, S3-02, S3-03 y S3-04 están validados por CI. La ejecución CI #1144 aprobó typecheck, pruebas, build y CodeQL sobre el árbol completo de S3-04. El próximo bloque es S3-05: matriz automatizada por perfil.
+S3-01 a S3-05 están validados por CI. La ejecución CI #1146 aprobó typecheck, 311 pruebas, build y CodeQL sobre la política centralizada y la matriz completa de perfiles. El próximo bloque es S3-06: validación operativa y cierre.
