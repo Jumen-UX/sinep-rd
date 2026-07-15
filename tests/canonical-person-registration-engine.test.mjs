@@ -80,9 +80,11 @@ test('religious and lay wizards can reuse an existing person', async () => {
   const lay = await readRepoFile('src/features/personas/lay/admin/LayPersonWizardPage.tsx')
 
   for (const page of [religious, lay]) {
+    assert.match(page, /PersonIdentityStep/)
     assert.match(page, /mode, setMode/)
+    assert.match(page, /selectedPersonId=\{selectedPersonId\}/)
+    assert.match(page, /onSelectedPersonChange=\{setSelectedPersonId\}/)
     assert.match(page, /selected_person_id/)
-    assert.match(page, /¿La persona ya está registrada\?/)
     assert.match(page, /mode === 'existing'/)
   }
 
