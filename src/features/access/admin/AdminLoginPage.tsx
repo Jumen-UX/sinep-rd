@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.3 seconds
+Output:
 'use client'
 
 import { FormEvent, useState } from 'react'
@@ -7,6 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   getAdminLoginErrorMessage,
   getSafeAdminNextPath,
+  resolveAdminEntryPath,
   signInAdmin,
 } from '../services/authentication-admin-service'
 
@@ -23,9 +27,11 @@ export default function AdminLoginPage() {
     setError(null)
 
     try {
-      await signInAdmin(createClient(), email, password)
+      const supabase = createClient()
+      await signInAdmin(supabase, email, password)
       const search = typeof window === 'undefined' ? '' : window.location.search
-      router.push(getSafeAdminNextPath(search))
+      const requestedPath = getSafeAdminNextPath(search)
+      router.push(await resolveAdminEntryPath(supabase, requestedPath))
       router.refresh()
     } catch (loginError) {
       if (loginError instanceof Error && loginError.message === 'invalid-admin-credentials') {
@@ -65,3 +71,4 @@ export default function AdminLoginPage() {
     </main>
   )
 }
+

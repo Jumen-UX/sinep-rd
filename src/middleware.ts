@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.4 seconds
+Output:
 import { createServerClient } from '@supabase/ssr'
 import type { CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
@@ -5,6 +8,7 @@ import { getSupabasePublishableKey, getSupabaseUrl } from './lib/supabase/config
 
 const ADMIN_PREFIX = '/admin'
 const ADMIN_LOGIN_PATH = '/admin/login'
+const ADMIN_ONBOARDING_PATH = '/admin/onboarding'
 
 type SupabaseCookieToSet = {
   name: string
@@ -38,6 +42,13 @@ function redirectToAdmin(request: NextRequest) {
   return decorateAdminResponse(NextResponse.redirect(url), request)
 }
 
+function redirectToOnboarding(request: NextRequest) {
+  const url = request.nextUrl.clone()
+  url.pathname = ADMIN_ONBOARDING_PATH
+  url.search = ''
+  return decorateAdminResponse(NextResponse.redirect(url), request)
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   let response = NextResponse.next({ request })
@@ -58,12 +69,28 @@ export async function middleware(request: NextRequest) {
   const { data, error } = await supabase.auth.getUser()
   const user = error ? null : data.user
 
+  const profileResponse = user
+    ? await supabase
+        .from('profiles')
+        .select('onboarding_completed_at')
+        .eq('id', user.id)
+        .maybeSingle()
+    : null
+  const needsOnboarding = Boolean(
+    user
+    && !profileResponse?.error
+    && !profileResponse?.data?.onboarding_completed_at,
+  )
+
   if (pathname === ADMIN_LOGIN_PATH) {
-    return user ? redirectToAdmin(request) : decorateAdminResponse(response, request)
+    if (!user) return decorateAdminResponse(response, request)
+    return needsOnboarding ? redirectToOnboarding(request) : redirectToAdmin(request)
   }
 
   if (!pathname.startsWith(ADMIN_PREFIX)) return response
   if (!user) return redirectToLogin(request)
+  if (pathname === ADMIN_ONBOARDING_PATH) return decorateAdminResponse(response, request)
+  if (needsOnboarding) return redirectToOnboarding(request)
 
   const rpcResult = await supabase.rpc('current_user_has_admin_role')
   let hasAdminRole = rpcResult.data === true
@@ -98,3 +125,4 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/admin', '/admin/:path*'],
 }
+

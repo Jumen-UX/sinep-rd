@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.4 seconds
+Output:
 import { NextResponse } from 'next/server'
 import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
     const scopeEntityId = optionalText(payload.scope_entity_id, 36)
 
     const admin = createAdminClient()
-    const redirectTo = new URL('/admin/login', getAppBaseUrl()).toString()
+    const redirectTo = new URL('/admin/onboarding', getAppBaseUrl()).toString()
     const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
       data: {
         full_name: fullName || email,
@@ -130,3 +133,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
+
