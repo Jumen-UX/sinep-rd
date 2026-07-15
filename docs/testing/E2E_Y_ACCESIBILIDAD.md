@@ -1,12 +1,14 @@
 # E2E y accesibilidad
 
-> Estado: vigente
-> Última revisión: 2026-07-15
+> Estado: vigente  
+> Última revisión: 2026-07-15  
 > Propietario: ingeniería y frontend
 
 ## Objetivo
 
 Documentar los modos de ejecución de Playwright y Axe sin mezclar pruebas públicas automáticas, recorridos administrativos de solo lectura y escenarios mutantes.
+
+La suite de navegador no forma parte de `pnpm check`; se ejecuta mediante comandos y workflows específicos para evitar mezclar la compuerta rápida con recorridos que requieren Chromium, credenciales opcionales o un entorno desplegado.
 
 ## Preparación local
 
@@ -53,7 +55,7 @@ Requiere `E2E_ACCESS_PROFILES_JSON`. La matriz verifica perfiles representativos
 pnpm test:e2e:admin:mutation
 ```
 
-Las pruebas mutantes solo pueden ejecutarse contra entornos no productivos, recuperables y explícitamente autorizados. Deben tener datos de prueba identificables y un procedimiento de limpieza o restauración.
+Las pruebas mutantes solo pueden ejecutarse contra entornos no productivos, recuperables y explícitamente autorizados. Nunca habilites `E2E_ALLOW_MUTATIONS=true` contra producción. Deben tener datos de prueba identificables y un procedimiento de limpieza o restauración.
 
 ## GitHub Actions
 
