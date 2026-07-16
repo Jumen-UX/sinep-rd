@@ -67,6 +67,7 @@ const statusLabels: Record<string, string> = {
   published: 'Publicado',
   internal: 'Uso interno',
   not_applicable: 'No aplica',
+  failed: 'Aplicación fallida',
 }
 
 export function formatReviewDate(value: string | null) {
@@ -81,7 +82,15 @@ export function getReviewItemTypeLabel(value: string) {
   if (value === 'position_assignment') return 'Cargo por verificar'
   if (value === 'person_candidate') return 'Persona por revisar'
   if (value === 'change_request') return 'Solicitud de cambio'
+  if (value === 'import_batch') return 'Lote de importación'
   return value
+}
+
+export function getReviewItemHref(item: ReviewItem): string | null {
+  if (item.item_type === 'import_batch' && item.record_id) {
+    return `/admin/importar/${encodeURIComponent(item.record_id)}`
+  }
+  return null
 }
 
 export function getReviewStatusLabel(value: string | null) {
