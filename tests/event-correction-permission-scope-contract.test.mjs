@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import test from 'node:test'
 
 const revisionMigration = fs.readFileSync(
-  new URL('../supabase/migrations/20260716030000_replace_compensation_with_event_revisions.sql', import.meta.url),
+  new URL('../supabase/migrations/20260716032000_replace_compensation_with_event_revisions.sql', import.meta.url),
   'utf8',
 )
 
