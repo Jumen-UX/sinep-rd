@@ -1,9 +1,16 @@
+import type { ReactNode } from 'react'
 import { evaluatePassword } from '../services/password-policy'
 
 type PasswordSecurityPanelProps = {
   password: string
   confirmation?: string
   id?: string
+}
+
+type PasswordRuleProps = {
+  valid: boolean
+  children: ReactNode
+  detail?: string
 }
 
 const strengthLabels = {
@@ -14,14 +21,40 @@ const strengthLabels = {
   strong: 'Fuerte',
 } as const
 
+function PasswordRule({ valid, children, detail }: PasswordRuleProps) {
+  return (
+    <li data-valid={valid}>
+      <span aria-hidden="true" className="password-rule-icon">{valid ? '✓' : '·'}</span>
+      <span className="password-rule-copy">
+        <span>{children}</span>
+        {detail && <small>{detail}</small>}
+        <strong>{valid ? 'Cumplido' : 'Pendiente'}</strong>
+      </span>
+    </li>
+  )
+}
+
+function CharacterType({ valid, children }: { valid: boolean; children: ReactNode }) {
+  return (
+    <span className="password-character-type" data-valid={valid}>
+      <span aria-hidden="true">{valid ? '✓' : '·'}</span>
+      {children}
+    </span>
+  )
+}
+
 export default function PasswordSecurityPanel({
   password,
   confirmation,
   id = 'password-security-guidance',
 }: PasswordSecurityPanelProps) {
   const evaluation = evaluatePassword(password)
+  const hasValue = password.length > 0
   const confirmationStarted = typeof confirmation === 'string' && confirmation.length > 0
   const confirmationMatches = confirmationStarted && password === confirmation
+  const varietyDetail = evaluation.hasLongPassphrase
+    ? 'La frase larga de 20 caracteres ya cumple la alternativa de variedad.'
+    : `${evaluation.categoryCount} de 4 tipos de caracteres detectados.`
 
   return (
     <section
@@ -47,16 +80,33 @@ export default function PasswordSecurityPanel({
         <span style={{ width: `${evaluation.percentage}%` }} />
       </div>
 
+      <p className="password-rule-intro">
+        Los requisitos se actualizan mientras escribes. Para la variedad, basta una frase de 20 caracteres o tres tipos de caracteres.
+      </p>
+
       <ul className="password-rule-list">
-        <li data-valid={evaluation.hasMinimumLength}>12 caracteres como mínimo.</li>
-        <li data-valid={evaluation.hasSafeWhitespace}>Sin espacios al inicio ni al final.</li>
-        <li data-valid={evaluation.hasRequiredVariety}>
-          Usa 20 caracteres o más, o combina al menos tres tipos: mayúsculas, minúsculas, números y símbolos.
-        </li>
+        <PasswordRule valid={hasValue && evaluation.hasMinimumLength}>
+          12 caracteres como mínimo.
+        </PasswordRule>
+        <PasswordRule valid={hasValue && evaluation.hasSafeWhitespace}>
+          Sin espacios al inicio ni al final.
+        </PasswordRule>
+        <PasswordRule valid={hasValue && evaluation.hasRequiredVariety} detail={varietyDetail}>
+          Variedad suficiente de caracteres.
+        </PasswordRule>
         {typeof confirmation === 'string' && (
-          <li data-valid={confirmationMatches}>La confirmación coincide con la contraseña.</li>
+          <PasswordRule valid={confirmationMatches}>
+            La confirmación coincide con la contraseña.
+          </PasswordRule>
         )}
       </ul>
+
+      <div aria-label="Tipos de caracteres detectados" className="password-character-grid">
+        <CharacterType valid={hasValue && evaluation.hasLowercase}>Minúsculas</CharacterType>
+        <CharacterType valid={hasValue && evaluation.hasUppercase}>Mayúsculas</CharacterType>
+        <CharacterType valid={hasValue && evaluation.hasNumber}>Números</CharacterType>
+        <CharacterType valid={hasValue && evaluation.hasSymbol}>Símbolos</CharacterType>
+      </div>
 
       <p className="meta password-security-note">
         Una frase larga y difícil de adivinar puede ser más segura y fácil de recordar que una contraseña corta y compleja.
