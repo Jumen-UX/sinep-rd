@@ -253,9 +253,7 @@ function AdminShellContent({ children }: { children: ReactNode }) {
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
-  if (pathname === '/admin/login') {
-    return <div className="admin-area admin-login-shell">{children}</div>
-  }
+  if (pathname === '/admin/login') return <div className="admin-area admin-login-shell">{children}</div>
 
   return (
     <AdminNavigationProvider>
