@@ -44,7 +44,11 @@ jobs:
         run: |
           if [[ -z "${E2E_ACCESS_PROFILES_JSON}" ]]; then
             echo "enabled=false" >> "${GITHUB_OUTPUT}"
-            echo "Authenticated matrix skipped: configure E2E_ACCESS_PROFILES_JSON as a repository secret."
+            if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+              echo "::error::Configure the protected E2E_ACCESS_PROFILES_JSON secret before running the authenticated matrix manually."
+              exit 1
+            fi
+            echo "Authenticated matrix skipped on push: configure E2E_ACCESS_PROFILES_JSON as a repository secret."
           else
             echo "enabled=true" >> "${GITHUB_OUTPUT}"
           fi
