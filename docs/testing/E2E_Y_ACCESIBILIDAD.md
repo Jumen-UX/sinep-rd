@@ -129,7 +129,7 @@ Los workflows canónicos son:
 - `E2E / Public accessibility`: Playwright, Chromium y Axe sobre rutas públicas cubiertas;
 - `E2E / Admin access matrix`: navegación autenticada y aislamiento de alcance para perfiles protegidos.
 
-`E2E / Admin access matrix` levanta la aplicación localmente cuando cambian el shell, la navegación, el acceso o la propia matriz. Si el secreto `E2E_ACCESS_PROFILES_JSON` no está configurado, el workflow registra la omisión sin instalar Chromium ni exponer datos sensibles.
+`E2E / Admin access matrix` levanta la aplicación localmente cuando cambian el shell, la navegación, el acceso o la propia matriz. En ejecuciones automáticas por `push`, la ausencia de `E2E_ACCESS_PROFILES_JSON` registra una omisión controlada sin instalar Chromium. En una ejecución manual, la ausencia del secreto falla explícitamente para impedir que un resultado verde se interprete como una validación autenticada real.
 
 La matriz también puede ejecutarse manualmente desde `CI` indicando `base_url`. Ese job usa el mismo secreto protegido y permite validar un despliegue específico.
 
