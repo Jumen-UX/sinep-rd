@@ -17,7 +17,7 @@ Hacer efectiva la regla de no editar silenciosamente la historia: todo cambio es
 4. [x] S5-04 — Unificar borrador, fuente documental, fecha efectiva, alcance y estado de verificación.
 5. [x] S5-05 — Generar un plan de impacto determinista y de solo lectura antes de aprobar.
 6. [x] S5-06 — Implementar revisión y aprobación separadas de la aplicación.
-7. [ ] S5-07 — Aplicar eventos aprobados mediante transacciones idempotentes y auditadas.
+7. [x] S5-07 — Aplicar eventos aprobados mediante transacciones idempotentes y auditadas.
 8. [ ] S5-08 — Proyectar la línea temporal institucional y reconstruir el estado vigente desde la historia.
 9. [ ] S5-09 — Implementar correcciones mediante eventos compensatorios, sin borrado destructivo.
 10. [ ] S5-10 — Validar permisos, alcance, conflictos, concurrencia y reversibilidad.
@@ -48,7 +48,7 @@ S5-05 queda protegido por `event-impact-plan-contract.test.mjs`. El constructor 
 
 S5-06 queda protegido por `event-approval-separation-contract.test.mjs`. La migración `20260715234500_separate_event_approval_from_application.sql` introduce `admin_approve_event` como contrato explícito, con permiso `events.approve`, validación de preparación y auditoría propia. `admin_review_event` solo devuelve a borrador o cancela y rechaza la acción `approve`. Aprobar únicamente modifica metadatos del flujo y prepara acciones; devuelve `state_applied=false` y nunca invoca contratos de aplicación ni modifica entidades, relaciones, nodos o unidades organizativas. La aplicación conserva su RPC independiente y exige permiso `events.apply` y estado `approved`.
 
-S5-07 está en validación mediante `idempotent-event-application-contract.test.mjs`. La migración `20260716003000_harden_idempotent_event_application.sql` serializa la aplicación con bloqueo de fila, devuelve el resultado aplicado en reintentos sin repetir mutaciones, valida dependencias entre acciones, conserva orden estable, restringe los tipos organizativos soportados y audita por separado una aplicación nueva y un reintento idempotente. La migración está versionada, pero su aplicación remota permanece pendiente porque el conector de Supabase bloqueó la llamada antes de enviarla a PostgreSQL.
+S5-07 queda protegido por `idempotent-event-application-contract.test.mjs` y por `supabase/verification/verify_idempotent_event_application.sql`. La migración `20260716003000_harden_idempotent_event_application.sql` está aplicada en Supabase como `20260716005641_harden_idempotent_event_application`; serializa la aplicación con bloqueo de fila, reconoce el estado terminal, devuelve `idempotent_replay=true` en reintentos, valida dependencias inexistentes o no aplicadas, conserva el orden `sort_order, id` y audita separadamente aplicación y repetición. La prueba funcional utilizó un evento organizativo aislado con acción `no_state_change`: la primera llamada aplicó una única acción con `idempotent_replay=false`; la segunda devolvió `idempotent_replay=true`, mantuvo las mismas marcas temporales y no creó ni modificó unidades organizativas. El evento, la acción y sus auditorías de prueba fueron eliminados al finalizar, dejando cero registros residuales.
 
 ## Reglas del sprint
 
