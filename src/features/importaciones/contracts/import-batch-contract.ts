@@ -1,13 +1,17 @@
 export const IMPORT_BATCH_TYPES = ['personas', 'parroquias', 'asignaciones', 'eventos'] as const
 export const IMPORT_FILE_EXTENSIONS = ['csv', 'xlsx', 'xls'] as const
+export const PROCESSABLE_IMPORT_FILE_EXTENSIONS = ['csv'] as const
 
 export type ImportBatchType = (typeof IMPORT_BATCH_TYPES)[number]
 export type ImportFileExtension = (typeof IMPORT_FILE_EXTENSIONS)[number]
+export type ProcessableImportFileExtension = (typeof PROCESSABLE_IMPORT_FILE_EXTENSIONS)[number]
 
 export const IMPORT_BATCH_LIMITS = {
   maxFileSizeBytes: 10 * 1024 * 1024,
   maxRows: 5000,
   previewRows: 25,
+  maxColumns: 100,
+  maxCellCharacters: 10_000,
 } as const
 
 export const IMPORT_TEMPLATE_VERSION = 1
@@ -84,7 +88,7 @@ export const IMPORT_DOMAIN_CONTRACTS: Record<ImportBatchType, ImportDomainContra
 }
 
 export const IMPORT_DOMAIN_OPTIONS = IMPORT_BATCH_TYPES.map((type) => IMPORT_DOMAIN_CONTRACTS[type])
-export const IMPORT_FILE_ACCEPT = IMPORT_FILE_EXTENSIONS.map((extension) => `.${extension}`).join(',')
+export const IMPORT_FILE_ACCEPT = PROCESSABLE_IMPORT_FILE_EXTENSIONS.map((extension) => `.${extension}`).join(',')
 
 export function isImportBatchType(value: unknown): value is ImportBatchType {
   return typeof value === 'string' && (IMPORT_BATCH_TYPES as readonly string[]).includes(value)
@@ -92,6 +96,10 @@ export function isImportBatchType(value: unknown): value is ImportBatchType {
 
 export function isImportFileExtension(value: unknown): value is ImportFileExtension {
   return typeof value === 'string' && (IMPORT_FILE_EXTENSIONS as readonly string[]).includes(value)
+}
+
+export function isProcessableImportFileExtension(value: unknown): value is ProcessableImportFileExtension {
+  return typeof value === 'string' && (PROCESSABLE_IMPORT_FILE_EXTENSIONS as readonly string[]).includes(value)
 }
 
 export function getImportDomainContract(type: ImportBatchType): ImportDomainContract {
