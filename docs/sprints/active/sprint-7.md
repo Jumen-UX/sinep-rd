@@ -12,7 +12,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 ## Cola inicial
 
 1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
-2. [ ] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **En progreso:** contrato, registro y política implementados; servicio de contexto, shell y pruebas E2E pendientes.
+2. [ ] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **En validación:** contrato, registro, política, servicio, proveedor y shell implementados; CI y prueba E2E autenticada pendientes.
 3. [ ] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias.
 4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial.
 5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual.
@@ -28,7 +28,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 
 Se contrastó el plan UX vigente con la implementación actual. El levantamiento identificó fundamentos existentes y brechas en navegación por permisos, alcance visible, modo oscuro, accesibilidad, búsqueda, navegación móvil y regresión visual.
 
-### S7-02 — En progreso
+### S7-02 — En validación
 
 Se creó `docs/product/ADMIN_NAVIGATION_ARCHITECTURE.md` como contrato canónico para:
 
@@ -37,18 +37,24 @@ Se creó `docs/product/ADMIN_NAVIGATION_ARCHITECTURE.md` como contrato canónico
 - registro único de rutas;
 - selector de alcance;
 - navegación móvil priorizada;
-- integración del dashboard;
+- integración posterior del dashboard;
 - responsabilidades técnicas y pruebas obligatorias.
 
-También quedaron implementados:
+Quedaron implementados:
 
 - `src/features/admin/navigation/admin-navigation-contract.ts`, con un único registro de secciones, destinos, permisos, restricciones de alcance y prioridades móviles;
 - `src/features/admin/navigation/admin-navigation-policy.ts`, con reglas puras para visibilidad, lectura, operación, secciones, navegación móvil y rutas activas;
-- `tests/admin-navigation-policy.test.mjs`, con nueve escenarios de permisos, alcance, estados de acceso y navegación móvil.
+- `src/features/admin/navigation/admin-navigation-service.ts`, que centraliza sesión, asignaciones activas, permisos, módulos y resolución de nombres de alcance;
+- `src/features/admin/navigation/AdminNavigationProvider.tsx`, que comparte el contexto y conserva el ámbito activo en URL y almacenamiento local;
+- `src/features/appointments/services/canonical-incompatibility-queue.ts`, que retira la consulta RPC del componente visual;
+- `src/app/(admin)/admin/AdminShell.tsx`, conectado al registro autorizado y sin listas paralelas de escritorio/móvil;
+- `src/styles/admin-navigation.css`, con selector de ámbito, estados de carga/error y panel móvil `Más`;
+- `tests/admin-navigation-policy.test.mjs`, con nueve escenarios de permisos, alcance, estados de acceso y prioridad móvil;
+- `tests/admin-navigation-context.test.mjs`, con normalización de contexto, asignaciones vencidas y límites arquitectónicos del shell.
 
-La validación aislada confirmó las nueve pruebas aprobadas y TypeScript sin errores para esta capa. El estado externo visible de Vercel está bloqueado por límite de compilaciones, no por un error de aplicación. GitHub Actions debe confirmarse antes de integrar el contrato en el shell.
+La capa pura confirmó nueve pruebas aprobadas y TypeScript sin errores en validación aislada. El estado externo visible de Vercel permanece bloqueado por límite de compilaciones, no por un error de aplicación. El conector no expone todavía un resultado separado de GitHub Actions para el commit final.
 
-La siguiente actividad es implementar el servicio de contexto y sustituir las listas estáticas de `AdminShell` sin introducir consultas directas adicionales en la UI.
+S7-02 no se marca completada hasta confirmar `pnpm check` en CI y realizar una prueba autenticada representativa de navegación para, al menos, un administrador y un perfil de consulta.
 
 ## Reglas del sprint
 
@@ -71,4 +77,4 @@ La siguiente actividad es implementar el servicio de contexto y sustituir las li
 
 ## Punto de continuación
 
-Continuar S7-02 implementando `admin-navigation-service.ts` y un proveedor compartido de contexto. Después, conectar `AdminShell` al registro canónico, mostrar el alcance activo y eliminar las listas paralelas de navegación de escritorio y móvil.
+Confirmar `pnpm check` para el commit de S7-02 y ejecutar una prueba autenticada de visibilidad por perfil. Si ambas validaciones pasan, cerrar S7-02 e iniciar S7-03 conectando el dashboard y sus acciones al mismo contexto de navegación.
