@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import PasswordInput from '../components/PasswordInput'
 import PasswordSecurityPanel from '../components/PasswordSecurityPanel'
 import {
   updateRecoveredPassword,
@@ -78,38 +79,30 @@ export default function UpdateRecoveredPasswordPage() {
 
         {ready && (
           <form className="auth-form" onSubmit={handleSubmit}>
-            <label>
-              Nueva contraseña
-              <input
-                aria-describedby="password-security-guidance"
-                aria-invalid={password.length > 0 && !passwordEvaluation.isAcceptable}
-                autoComplete="new-password"
-                minLength={PASSWORD_MIN_LENGTH}
-                required
-                type="password"
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value)
-                  setError(null)
-                }}
-              />
-            </label>
-            <label>
-              Confirmar contraseña
-              <input
-                aria-describedby="password-security-guidance"
-                aria-invalid={confirmation.length > 0 && !confirmationMatches}
-                autoComplete="new-password"
-                minLength={PASSWORD_MIN_LENGTH}
-                required
-                type="password"
-                value={confirmation}
-                onChange={(event) => {
-                  setConfirmation(event.target.value)
-                  setError(null)
-                }}
-              />
-            </label>
+            <PasswordInput
+              describedBy="password-security-guidance"
+              id="recovery-password"
+              invalid={password.length > 0 && !passwordEvaluation.isAcceptable}
+              label="Nueva contraseña"
+              minLength={PASSWORD_MIN_LENGTH}
+              value={password}
+              onChange={(value) => {
+                setPassword(value)
+                setError(null)
+              }}
+            />
+            <PasswordInput
+              describedBy="password-security-guidance"
+              id="recovery-password-confirmation"
+              invalid={confirmation.length > 0 && !confirmationMatches}
+              label="Confirmar contraseña"
+              minLength={PASSWORD_MIN_LENGTH}
+              value={confirmation}
+              onChange={(value) => {
+                setConfirmation(value)
+                setError(null)
+              }}
+            />
 
             <PasswordSecurityPanel password={password} confirmation={confirmation} />
 
