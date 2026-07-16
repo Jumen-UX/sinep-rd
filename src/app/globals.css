@@ -196,6 +196,116 @@ label {
   content: "× ";
 }
 
+.password-security-panel {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+
+.password-security-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.password-security-heading span {
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.password-strength-meter {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surface-muted);
+}
+
+.password-strength-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--text-subtle);
+  transition: width 180ms ease, background-color 180ms ease;
+}
+
+.password-security-panel[data-strength="weak"] .password-strength-meter span,
+.password-security-panel[data-strength="weak"] .password-security-heading span {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.password-security-panel[data-strength="fair"] .password-strength-meter span,
+.password-security-panel[data-strength="fair"] .password-security-heading span {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.password-security-panel[data-strength="good"] .password-strength-meter span,
+.password-security-panel[data-strength="good"] .password-security-heading span,
+.password-security-panel[data-strength="strong"] .password-strength-meter span,
+.password-security-panel[data-strength="strong"] .password-security-heading span {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.password-security-panel[data-strength="weak"] .password-strength-meter span {
+  background: var(--danger);
+}
+
+.password-security-panel[data-strength="fair"] .password-strength-meter span {
+  background: var(--warning);
+}
+
+.password-security-panel[data-strength="good"] .password-strength-meter span,
+.password-security-panel[data-strength="strong"] .password-strength-meter span {
+  background: var(--success);
+}
+
+.password-rule-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.password-rule-list li {
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr);
+  gap: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.password-rule-list li::before {
+  content: "○";
+  color: var(--text-subtle);
+  font-weight: 700;
+}
+
+.password-rule-list li[data-valid="true"] {
+  color: var(--success);
+}
+
+.password-rule-list li[data-valid="true"]::before {
+  content: "✓";
+  color: var(--success);
+}
+
+.password-security-note {
+  margin: 0;
+}
+
 .public-sidebar-link.active > span:nth-child(2),
 .public-sidebar-link[aria-current="page"] > span:nth-child(2) {
   color: #17202a;
