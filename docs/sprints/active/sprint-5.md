@@ -20,7 +20,7 @@ Hacer efectiva la regla de no editar silenciosamente la historia: todo cambio es
 7. [x] S5-07 — Aplicar eventos aprobados mediante transacciones idempotentes y auditadas.
 8. [x] S5-08 — Proyectar la línea temporal institucional y reconstruir el estado vigente desde la historia.
 9. [x] S5-09 — Implementar correcciones versionadas del mismo evento, sin crear hechos históricos artificiales.
-10. [ ] S5-10 — Validar permisos, alcance, conflictos, concurrencia, correcciones y compatibilidad heredada.
+10. [x] S5-10 — Validar permisos, alcance, conflictos, concurrencia, correcciones y compatibilidad heredada.
 11. [ ] S5-11 — Ejecutar `pnpm check`, pruebas funcionales y verificación del entorno desplegado.
 
 ## Alcance inicial
@@ -53,6 +53,8 @@ S5-07 queda protegido por `idempotent-event-application-contract.test.mjs` y `ve
 S5-08 queda protegido por `canonical-institutional-timeline-contract.test.mjs`. Las vistas canónicas separan la cronología administrativa de la pública y `get_institutional_state_reconstruction` compara el último `after_state` aplicado con el registro vigente sin modificar datos.
 
 S5-09 queda protegido por `canonical-event-revision-contract.test.mjs`. La migración `20260716032000_replace_compensation_with_event_revisions.sql` elimina el contrato descartado de compensación y crea `canonical_event_revisions`. `admin_correct_canonical_event` bloquea el evento, acepta únicamente campos autorizados, exige motivo, conserva `before_state`, `after_state`, campos modificados, fuente, usuario y fecha, y registra auditoría `events.corrected`. La cronología pública muestra el evento corregido; el historial anterior queda disponible solo en administración y auditoría. Los cambios institucionales reales continúan registrándose como eventos nuevos. Actualmente existen cero revisiones reales.
+
+S5-10 queda protegido por `event-security-consistency-matrix.test.mjs`, `event-correction-permission-scope-contract.test.mjs`, `event-correction-ui-contract.test.mjs` y `legacy-public-evolution-compatibility.test.mjs`. La creación de revisiones y su historial requieren `events.approve`, aplican alcance territorial y serializan las modificaciones por bloqueo de fila. La prueba funcional reversible confirmó tres escenarios: rechazo sin permiso, rechazo fuera de jurisdicción y autorización dentro de alcance; el `ROLLBACK` dejó cero revisiones y cero títulos temporales. La vista `public_entity_evolution_events` conserva sus 27 columnas, pero ahora deriva exclusivamente del modelo canónico, publica solo eventos aplicados y ya no depende de `entity_evolution_events`.
 
 ## Reglas del sprint
 
