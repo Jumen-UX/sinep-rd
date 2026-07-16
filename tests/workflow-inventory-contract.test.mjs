@@ -4,9 +4,13 @@ import test from 'node:test'
 
 const workflowsDirectory = new URL('../.github/workflows/', import.meta.url)
 
-const expectedWorkflows = ['ci.yml', 'e2e-public.yml']
+const expectedWorkflows = [
+  'ci.yml',
+  'e2e-admin-access.yml',
+  'e2e-public.yml',
+]
 
-test('the repository keeps only the canonical CI and public E2E workflows', async () => {
+test('the repository keeps only the canonical CI and E2E workflows', async () => {
   const workflowFiles = (await readdir(workflowsDirectory))
     .filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
     .sort()
@@ -15,10 +19,14 @@ test('the repository keeps only the canonical CI and public E2E workflows', asyn
 })
 
 test('canonical workflow display names remain stable', async () => {
-  const [ciWorkflow, e2eWorkflow] = await Promise.all(
-    expectedWorkflows.map((file) => readFile(new URL(file, workflowsDirectory), 'utf8')),
-  )
+  const workflowContents = Object.fromEntries(await Promise.all(
+    expectedWorkflows.map(async (file) => [
+      file,
+      await readFile(new URL(file, workflowsDirectory), 'utf8'),
+    ]),
+  ))
 
-  assert.match(ciWorkflow, /^name: CI$/m)
-  assert.match(e2eWorkflow, /^name: E2E \/ Public accessibility$/m)
+  assert.match(workflowContents['ci.yml'], /^name: CI$/m)
+  assert.match(workflowContents['e2e-admin-access.yml'], /^name: E2E \/ Admin access matrix$/m)
+  assert.match(workflowContents['e2e-public.yml'], /^name: E2E \/ Public accessibility$/m)
 })
