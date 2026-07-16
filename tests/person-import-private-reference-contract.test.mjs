@@ -14,6 +14,10 @@ const importPage = await readFile(
   new URL('../src/features/importaciones/admin/AdminBatchImportPage.tsx', import.meta.url),
   'utf8',
 )
+const importContract = await readFile(
+  new URL('../src/features/importaciones/contracts/import-batch-contract.ts', import.meta.url),
+  'utf8',
+)
 
 test('person noop matching uses the canonical private internal reference contract', () => {
   assert.match(migration, /from public\.person_private_validation ppv/)
@@ -31,10 +35,10 @@ test('historical persons receive missing private reference rows without name-der
 
 test('person CSV template exposes codigo_referencia as an optional idempotency key', () => {
   assert.match(importRoute, /from '@\/features\/importaciones'/)
-  assert.match(importPage, /columns: \['codigo_referencia', 'tipo_persona'/)
-  assert.match(importPage, /codigo_referencia es opcional para altas nuevas/)
-  assert.deepEqual(
-    importPage.match(/personas: \['tipo_persona', 'primer_nombre', 'primer_apellido'\]/)?.[0],
-    "personas: ['tipo_persona', 'primer_nombre', 'primer_apellido']",
-  )
+  assert.match(importPage, /IMPORT_DOMAIN_OPTIONS/)
+  assert.match(importPage, /getImportDomainContract\(importType\)/)
+  assert.match(importContract, /personas:\s*\{/)
+  assert.match(importContract, /columns:\s*\['codigo_referencia', 'tipo_persona'/)
+  assert.match(importContract, /codigo_referencia es opcional para altas nuevas/)
+  assert.match(importContract, /requiredColumns:\s*\['tipo_persona', 'primer_nombre', 'primer_apellido'\]/)
 })
