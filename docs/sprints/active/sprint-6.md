@@ -14,7 +14,7 @@ Convertir las cargas específicas existentes en un sistema reutilizable, seguro 
 1. [x] S6-01 — Auditar el flujo actual de importaciones, plantillas, lotes, filas, incidencias, referencias y aplicación.
 2. [x] S6-02 — Declarar un contrato único para archivos, plantillas versionadas y dominios soportados.
 3. [x] S6-03 — Completar lectura robusta de CSV y definir la estrategia XLSX sin duplicar validadores.
-4. [ ] S6-04 — Consolidar staging común, normalización y validación por fila.
+4. [x] S6-04 — Consolidar staging común, normalización y validación por fila.
 5. [ ] S6-05 — Unificar detección de duplicados, coincidencias exactas y referencias ambiguas.
 6. [ ] S6-06 — Completar el editor de filas fallidas sin exigir recargar el archivo completo.
 7. [ ] S6-07 — Generar una vista previa determinista con operaciones `create`, `update`, `noop`, `blocked` y `unresolved`.
@@ -45,7 +45,9 @@ S6-02 queda protegido por `import-batch-shared-contract.test.mjs`. `import-batch
 
 S6-03 queda documentado en la [estrategia CSV y XLSX](./sprint-6-csv-xlsx-strategy.md) y protegido por `import-csv-robustness-contract.test.mjs`. El parser admite UTF-8 con o sin BOM, coma, punto y coma o tabulación, campos citados, comillas escapadas y saltos de línea internos. Rechaza delimitadores ambiguos, caracteres nulos, comillas sin cerrar, encabezados inválidos, filas desalineadas y límites de columnas o celdas. XLSX y XLS permanecen reconocidos como formatos de origen, pero no son procesables: deben exportarse a CSV UTF-8 y la API rechaza su preparación directa.
 
-Los vacíos principales restantes son: representación uniforme de `blocked` y `unresolved`, reversión lógica y validación integral de alcance.
+S6-04 queda protegido por `import-staging-contract.test.mjs`. La migración `20260716050000_consolidate_import_staging_contract.sql` crea un contrato SQL común por dominio con campos requeridos y relaciones, una normalización determinista por dominio y una prioridad única de estados por incidencias abiertas. La preparación inicial y la corrección individual reutilizan el mismo normalizador; país, claves de catálogo, visibilidad y booleanos quedan canonicalizados antes de calcular el hash y revalidar. La función interna de preparación acepta únicamente CSV como defensa adicional.
+
+Los vacíos principales restantes son: unificación de coincidencias exactas y ambiguas, representación uniforme de `blocked` y `unresolved`, reversión lógica y validación integral de alcance.
 
 ## Reglas del sprint
 
