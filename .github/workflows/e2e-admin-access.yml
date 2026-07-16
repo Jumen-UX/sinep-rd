@@ -1,0 +1,86 @@
+name: E2E / Admin access matrix
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/e2e-admin-access.yml'
+      - 'e2e/admin-access-matrix.spec.mjs'
+      - 'playwright.config.mjs'
+      - 'src/app/(admin)/admin/AdminShell.tsx'
+      - 'src/features/admin/navigation/**'
+      - 'src/features/access/**'
+      - 'src/middleware.ts'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-admin-access-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  access-matrix:
+    name: Authenticated navigation and scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://hrvgpceqaxujlttpimdz.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
+      APP_BASE_URL: http://127.0.0.1:3000
+      E2E_ACCESS_PROFILES_JSON: ${{ secrets.E2E_ACCESS_PROFILES_JSON }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Check protected profile matrix
+        id: profile-matrix
+        shell: bash
+        run: |
+          if [[ -z "${E2E_ACCESS_PROFILES_JSON}" ]]; then
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+            echo "Authenticated matrix skipped: configure E2E_ACCESS_PROFILES_JSON as a repository secret."
+          else
+            echo "enabled=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Setup pnpm
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        run: pnpm test:e2e:install
+
+      - name: Test authenticated navigation and scope
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        run: pnpm test:e2e:access
+
+      - name: Upload Playwright diagnostics
+        if: always() && steps.profile-matrix.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-admin-access-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
