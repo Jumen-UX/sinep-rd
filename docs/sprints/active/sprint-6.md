@@ -15,7 +15,7 @@ Convertir las cargas específicas existentes en un sistema reutilizable, seguro 
 2. [x] S6-02 — Declarar un contrato único para archivos, plantillas versionadas y dominios soportados.
 3. [x] S6-03 — Completar lectura robusta de CSV y definir la estrategia XLSX sin duplicar validadores.
 4. [x] S6-04 — Consolidar staging común, normalización y validación por fila.
-5. [ ] S6-05 — Unificar detección de duplicados, coincidencias exactas y referencias ambiguas.
+5. [x] S6-05 — Unificar detección de duplicados, coincidencias exactas y referencias ambiguas.
 6. [ ] S6-06 — Completar el editor de filas fallidas sin exigir recargar el archivo completo.
 7. [ ] S6-07 — Generar una vista previa determinista con operaciones `create`, `update`, `noop`, `blocked` y `unresolved`.
 8. [ ] S6-08 — Aplicar lotes mediante RPC transaccionales, idempotentes y auditadas.
@@ -47,7 +47,9 @@ S6-03 queda documentado en la [estrategia CSV y XLSX](./sprint-6-csv-xlsx-strate
 
 S6-04 queda protegido por `import-staging-contract.test.mjs`. La migración `20260716050000_consolidate_import_staging_contract.sql` crea un contrato SQL común por dominio con campos requeridos y relaciones, una normalización determinista por dominio y una prioridad única de estados por incidencias abiertas. La preparación inicial y la corrección individual reutilizan el mismo normalizador; país, claves de catálogo, visibilidad y booleanos quedan canonicalizados antes de calcular el hash y revalidar. La función interna de preparación acepta únicamente CSV como defensa adicional.
 
-Los vacíos principales restantes son: unificación de coincidencias exactas y ambiguas, representación uniforme de `blocked` y `unresolved`, reversión lógica y validación integral de alcance.
+S6-05 queda protegido por `import-match-classification-contract.test.mjs`. La migración `20260716053000_unify_import_match_classification.sql` declara un resultado uniforme `not_found`, `exact` o `ambiguous`, conserva candidatos ordenados y solo expone `selected_id` cuando existe una coincidencia única. Personas, estructuras, asignaciones y eventos reutilizan el clasificador para promover coincidencias exactas a `noop`; las coincidencias múltiples eliminan cualquier destino automático y generan una incidencia de revisión manual.
+
+Los vacíos principales restantes son: representación uniforme de `blocked` y `unresolved`, reversión lógica y validación integral de alcance.
 
 ## Reglas del sprint
 
