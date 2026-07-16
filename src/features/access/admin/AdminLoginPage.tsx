@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   getAdminLoginErrorMessage,
@@ -12,7 +11,6 @@ import {
 } from '../services/authentication-admin-service'
 
 export default function AdminLoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,10 +24,12 @@ export default function AdminLoginPage() {
     try {
       const supabase = createClient()
       await signInAdmin(supabase, email, password)
-      const search = typeof window === 'undefined' ? '' : window.location.search
-      const requestedPath = getSafeAdminNextPath(search)
-      router.push(await resolveAdminEntryPath(supabase, requestedPath))
-      router.refresh()
+      const requestedPath = getSafeAdminNextPath(window.location.search)
+      const destination = await resolveAdminEntryPath(supabase, requestedPath)
+
+      // Use a complete navigation so middleware, Supabase cookies and the
+      // protected administrative layout are resolved in the same request.
+      window.location.assign(destination)
     } catch (loginError) {
       if (loginError instanceof Error && loginError.message === 'invalid-admin-credentials') {
         setError('No pudimos validar esas credenciales.')
@@ -69,4 +69,3 @@ export default function AdminLoginPage() {
     </main>
   )
 }
-
