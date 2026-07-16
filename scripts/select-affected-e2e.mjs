@@ -15,7 +15,7 @@ const suites = new Set()
 for (const file of files) {
   if (/^(?:src\/app\/(?!\(admin\))|src\/features\/public\/|src\/lib\/public\/|src\/components\/Public)/.test(file)) suites.add('public')
   if (/^(?:src\/features\/importaciones\/|src\/app\/\(admin\)\/admin\/importar\/|src\/app\/api\/admin\/import)/.test(file)) suites.add('admin')
-  if (/^(?:src\/features\/access\/|src\/app\/\(admin\)\/admin\/(?:login|acceso|usuarios|onboarding|recuperar)\/|src\/middleware)/.test(file)) suites.add('access')
+  if (/^(?:src\/features\/(?:access|admin\/navigation)\/|src\/app\/\(admin\)\/admin\/(?:AdminShell\.tsx|login|acceso|usuarios|onboarding|recuperar)(?:\/|$)|src\/middleware)/.test(file)) suites.add('access')
   if (/^(?:supabase\/migrations\/|src\/features\/(?:clero|personas|vida-consagrada)\/)/.test(file)) suites.add('admin:mutation')
   if (/^(?:playwright\.config|e2e\/|package\.json)/.test(file)) {
     suites.add('public')
