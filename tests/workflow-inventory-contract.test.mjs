@@ -41,3 +41,12 @@ test('manual authenticated access validation fails closed without protected prof
   assert.match(accessWorkflow, /exit 1/)
   assert.match(accessWorkflow, /Authenticated matrix skipped on push/)
 })
+
+test('authenticated access workflow installs Playwright in the project before running tests', async () => {
+  const accessWorkflow = await readWorkflow('e2e-admin-access.yml')
+
+  assert.match(accessWorkflow, /pnpm add --save-dev --lockfile=false @playwright\/test@1\.61\.0/)
+  assert.match(accessWorkflow, /pnpm exec playwright install chromium --with-deps/)
+  assert.match(accessWorkflow, /pnpm exec playwright test e2e\/admin-access-matrix\.spec\.mjs/)
+  assert.doesNotMatch(accessWorkflow, /pnpm test:e2e:access/)
+})
