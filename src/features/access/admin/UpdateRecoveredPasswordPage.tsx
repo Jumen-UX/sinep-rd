@@ -15,6 +15,11 @@ import {
   PASSWORD_MIN_LENGTH,
 } from '../services/password-policy'
 
+function clearRecoveryCredentialsFromUrl() {
+  if (typeof window === 'undefined' || !window.location.hash) return
+  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
+}
+
 export default function UpdateRecoveredPasswordPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -31,7 +36,11 @@ export default function UpdateRecoveredPasswordPage() {
   useEffect(() => {
     let cancelled = false
     void waitForPasswordRecoverySession(supabase)
-      .then(() => { if (!cancelled) setReady(true) })
+      .then(() => {
+        if (cancelled) return
+        clearRecoveryCredentialsFromUrl()
+        setReady(true)
+      })
       .catch(() => { if (!cancelled) setError('El enlace es inválido, expiró o ya fue utilizado.') })
       .finally(() => { if (!cancelled) setChecking(false) })
     return () => { cancelled = true }
