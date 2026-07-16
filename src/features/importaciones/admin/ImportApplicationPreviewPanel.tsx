@@ -1,9 +1,18 @@
-import { buildImportApplicationPreview } from '@/features/importaciones/domain/import-application-preview'
+import { buildImportApplicationPreview, type ImportProjectedOperation } from '@/features/importaciones/domain/import-application-preview'
 import type { ImportBatchRowDetail } from '@/features/importaciones/services/batch-import-admin-service'
 
 type Props = {
   rows: ImportBatchRowDetail[]
   serverCanApply: boolean
+}
+
+const operationLabels: Record<ImportProjectedOperation, string> = {
+  create: 'Crear',
+  update: 'Actualizar',
+  noop: 'Sin cambios',
+  blocked: 'Bloqueada',
+  unresolved: 'No resuelta',
+  completed: 'Completada',
 }
 
 function formatTableName(value: string) {
@@ -22,7 +31,7 @@ export default function ImportApplicationPreviewPanel({ rows, serverCanApply }: 
           <p className="eyebrow">Vista previa antes de aplicar</p>
           <h3>{preview.isCompleted ? 'Aplicación completada' : ready ? 'Operaciones resueltas' : 'La aplicación todavía está bloqueada'}</h3>
           <p className="meta">
-            Esta vista no modifica datos. Resume las operaciones determinadas durante la validación vigente.
+            Esta vista no modifica datos. Cada fila recibe una única operación determinista según la validación vigente.
           </p>
         </div>
         <span className="role-pill">{preview.isCompleted ? 'Lote finalizado' : ready ? 'Lista para aplicar' : 'Requiere atención'}</span>
@@ -34,7 +43,18 @@ export default function ImportApplicationPreviewPanel({ rows, serverCanApply }: 
         <div><span>＝</span><strong>{preview.noopRows}</strong><small>Sin cambios</small></div>
         <div><span>✓</span><strong>{preview.completedRows}</strong><small>Completadas</small></div>
         <div><span>×</span><strong>{preview.blockedRows}</strong><small>Bloqueadas</small></div>
-        <div><span>?</span><strong>{preview.unresolvedTargets}</strong><small>Sin objetivo</small></div>
+        <div><span>?</span><strong>{preview.unresolvedRows}</strong><small>No resueltas</small></div>
+      </div>
+
+      <div className="admin-system-list" aria-label="Operación prevista por fila">
+        {preview.rows.map((row, index) => (
+          <div key={row.id ?? `${row.rowNumber ?? index}-${row.operation}`}>
+            <span>Fila {row.rowNumber ?? index + 1} · {operationLabels[row.operation]}</span>
+            <strong>
+              {row.targetTable ? `${formatTableName(row.targetTable)} · ` : ''}{row.reason}
+            </strong>
+          </div>
+        ))}
       </div>
 
       {preview.targetTables.length > 0 && (
@@ -69,7 +89,7 @@ export default function ImportApplicationPreviewPanel({ rows, serverCanApply }: 
       {!preview.isCompleted && !preview.canApply && (
         <div className="admin-info-box">
           <span>
-            Corrige las filas bloqueadas y vuelve a validar hasta que cada fila tenga una operación y un objetivo canónico resueltos.
+            Corrige las filas bloqueadas o no resueltas y vuelve a validar hasta que cada fila tenga una operación y un objetivo canónico resueltos.
           </span>
         </div>
       )}
