@@ -17,7 +17,7 @@ Convertir las cargas específicas existentes en un sistema reutilizable, seguro 
 4. [x] S6-04 — Consolidar staging común, normalización y validación por fila.
 5. [x] S6-05 — Unificar detección de duplicados, coincidencias exactas y referencias ambiguas.
 6. [x] S6-06 — Completar el editor de filas fallidas sin exigir recargar el archivo completo.
-7. [ ] S6-07 — Generar una vista previa determinista con operaciones `create`, `update`, `noop`, `blocked` y `unresolved`.
+7. [x] S6-07 — Generar una vista previa determinista con operaciones `create`, `update`, `noop`, `blocked` y `unresolved`.
 8. [ ] S6-08 — Aplicar lotes mediante RPC transaccionales, idempotentes y auditadas.
 9. [ ] S6-09 — Implementar reversión lógica y trazabilidad de cambios aplicados por lote.
 10. [ ] S6-10 — Completar reportes descargables, errores y resultados por fila.
@@ -51,7 +51,9 @@ S6-05 queda protegido por `import-match-classification-contract.test.mjs`. La mi
 
 S6-06 queda protegido por `import-row-correction-contract.test.mjs`. La pantalla de detalle edita una fila persistida sin recargar el archivo, usa controles tipados y bloquea el guardado mientras una referencia siga provisional. La migración `20260716054500_resolve_import_reference_uuid_selections.sql` permite que una selección canónica por UUID se resuelva en entidades, personas y cargos, siempre respetando estado activo y alcance administrativo. La corrección modifica una sola fila; después se recalcula el lote completo porque duplicados, referencias y operaciones pueden depender de otras filas.
 
-Los vacíos principales restantes son: representación uniforme de `blocked` y `unresolved`, reversión lógica y validación integral de alcance.
+S6-07 queda protegido por `import-deterministic-preview-contract.test.mjs`. `projectImportRowOperation` asigna a cada fila exactamente una proyección: `unresolved` tiene precedencia para referencias pendientes, `blocked` representa errores o duplicados, y `create`, `update` o `noop` solo aparecen cuando tabla y objetivo cumplen el contrato. Los contadores se derivan de esta proyección sin doble conteo y la interfaz muestra la operación y la razón de cada fila antes de aplicar.
+
+Los vacíos principales restantes son: validación integral de los RPC de aplicación, reversión lógica y cobertura completa de reportes y revisión.
 
 ## Reglas del sprint
 
