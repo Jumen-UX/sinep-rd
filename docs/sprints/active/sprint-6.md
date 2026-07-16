@@ -21,7 +21,7 @@ Convertir las cargas específicas existentes en un sistema reutilizable, seguro 
 8. [x] S6-08 — Aplicar lotes mediante RPC transaccionales, idempotentes y auditadas.
 9. [x] S6-09 — Implementar reversión lógica y trazabilidad de cambios aplicados por lote.
 10. [x] S6-10 — Completar reportes descargables, errores y resultados por fila.
-11. [ ] S6-11 — Integrar todos los tipos pendientes en la cola de revisión y calidad de datos.
+11. [x] S6-11 — Integrar todos los tipos pendientes en la cola de revisión y calidad de datos.
 12. [ ] S6-12 — Ejecutar pruebas funcionales, `pnpm check` y cierre del sprint.
 
 ## Alcance inicial
@@ -59,7 +59,9 @@ S6-09 queda protegido por `import-logical-reversal-contract.test.mjs`. `import_b
 
 S6-10 queda protegido por `import-report-reversal-ui-contract.test.mjs`. El reporte CSV puede descargarse durante cualquier estado del lote e incluye operación proyectada, resultado aplicado, identificadores de cambio y auditoría, incidencias históricas, datos normalizados y el último estado de reversión. La pantalla de detalle compone un panel de trazabilidad con descarga directa y, para lotes aplicados, un formulario de reversión lógica con motivo mínimo, confirmación explícita y mensajes diferenciados para reversión completada o bloqueo por resolución canónica manual.
 
-El vacío principal restante es la integración final de importaciones con las colas transversales de revisión y calidad de datos.
+S6-11 queda protegido por `import-review-quality-integration-contract.test.mjs`. La migración `20260716064000_add_import_batches_to_review_queue.sql` incorpora lotes `needs_review`, fallidos y validados pendientes de aprobación a la cola transversal, respetando permisos y alcance. Estos elementos no exponen decisiones genéricas: enlazan a `/admin/importar/[batchId]`, donde se conservan la corrección por fila, la aprobación, la vista previa y la aplicación canónica. El panel de calidad muestra el conteo de lotes pendientes y accesos a la cola y al historial sin duplicar resolutores.
+
+El único bloque restante es la validación integral y el cierre del sprint.
 
 ## Reglas del sprint
 
