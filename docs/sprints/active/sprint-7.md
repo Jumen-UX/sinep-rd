@@ -12,7 +12,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 ## Cola inicial
 
 1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
-2. [ ] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **En validación:** contrato, registro, política, servicio, proveedor y shell implementados; CI verde y prueba E2E autenticada pendiente.
+2. [ ] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **En validación final:** CI verde; matriz autenticada y workflow dedicados implementados; ejecución con perfiles protegidos pendiente de confirmación.
 3. [ ] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias.
 4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial.
 5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual.
@@ -28,7 +28,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 
 Se contrastó el plan UX vigente con la implementación actual. El levantamiento identificó fundamentos existentes y brechas en navegación por permisos, alcance visible, modo oscuro, accesibilidad, búsqueda, navegación móvil y regresión visual.
 
-### S7-02 — En validación
+### S7-02 — En validación final
 
 Se creó `docs/product/ADMIN_NAVIGATION_ARCHITECTURE.md` como contrato canónico para:
 
@@ -50,11 +50,14 @@ Quedaron implementados:
 - `src/app/(admin)/admin/AdminShell.tsx`, conectado al registro autorizado y sin listas paralelas de escritorio/móvil;
 - `src/styles/admin-navigation.css`, con selector de ámbito, estados de carga/error y panel móvil `Más`;
 - `tests/admin-navigation-policy.test.mjs`, con nueve escenarios de permisos, alcance, estados de acceso y prioridad móvil;
-- `tests/admin-navigation-context.test.mjs`, con normalización de contexto, asignaciones vencidas y límites arquitectónicos del shell.
+- `tests/admin-navigation-context.test.mjs`, con normalización de contexto, asignaciones vencidas y límites arquitectónicos del shell;
+- `e2e/admin-access-matrix.spec.mjs`, ampliado para exigir perfiles `administrator` y `viewer`, validar rutas visibles, ocultas y de consulta, y comprobar el alcance mostrado;
+- `.github/workflows/e2e-admin-access.yml`, que levanta la aplicación localmente y ejecuta la matriz cuando cambian navegación, acceso o shell;
+- `scripts/select-affected-e2e.mjs`, actualizado para seleccionar la suite de acceso ante cambios de navegación administrativa.
 
-La capa pura confirmó nueve pruebas aprobadas y TypeScript sin errores en validación aislada. El `pnpm check` de GitHub Actions quedó confirmado en verde el 2026-07-16 después de alinear las pruebas antiguas con el registro canónico y los límites de servicio. El estado externo de Vercel continúa separado y condicionado por su límite de compilaciones.
+La capa pura confirmó nueve pruebas aprobadas y TypeScript sin errores en validación aislada. El `pnpm check` de GitHub Actions quedó confirmado en verde el 2026-07-16 después de alinear las pruebas antiguas con el registro canónico y los límites de servicio. La nueva matriz E2E pasó validación sintáctica local y su workflow quedó publicado en `main`.
 
-S7-02 no se marca completada hasta realizar una prueba autenticada representativa de navegación para, al menos, un administrador y un perfil de consulta.
+S7-02 no se marca completada hasta confirmar que `E2E / Admin access matrix` encontró el secreto protegido `E2E_ACCESS_PROFILES_JSON` y ejecutó correctamente un administrador y un perfil de consulta. Si el secreto no existe o conserva el formato anterior, debe actualizarse con el contrato documentado en `docs/testing/E2E_Y_ACCESIBILIDAD.md`.
 
 ## Reglas del sprint
 
@@ -77,4 +80,4 @@ S7-02 no se marca completada hasta realizar una prueba autenticada representativ
 
 ## Punto de continuación
 
-Ejecutar una prueba autenticada de visibilidad por perfil. Si la navegación responde correctamente para un administrador y un perfil de consulta, cerrar S7-02 e iniciar S7-03 conectando el dashboard y sus acciones al mismo contexto de navegación.
+Confirmar el resultado de `E2E / Admin access matrix`. Si ejecutó los perfiles `administrator` y `viewer` en verde, cerrar S7-02 e iniciar S7-03 conectando el dashboard y sus acciones al mismo contexto de navegación. Si el job informó omisión, configurar o actualizar el secreto `E2E_ACCESS_PROFILES_JSON` y volver a ejecutar el workflow.
