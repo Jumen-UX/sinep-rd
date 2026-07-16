@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
 
-const compensationMigration = fs.readFileSync(
-  new URL('../supabase/migrations/20260716024500_harden_compensation_concurrency_and_grants.sql', import.meta.url),
+const revisionMigration = fs.readFileSync(
+  new URL('../supabase/migrations/20260716032000_replace_compensation_with_event_revisions.sql', import.meta.url),
   'utf8',
 )
 
@@ -17,12 +17,13 @@ const timelineMigration = fs.readFileSync(
   'utf8',
 )
 
-test('compensation RPC is restricted and concurrency-safe', () => {
-  assert.match(compensationMigration, /revoke all on function public\.admin_create_compensating_event\(jsonb\) from public, anon/i)
-  assert.match(compensationMigration, /grant execute on function public\.admin_create_compensating_event\(jsonb\) to authenticated/i)
-  assert.match(compensationMigration, /for update of ce/i)
-  assert.match(compensationMigration, /unique_violation/i)
-  assert.match(compensationMigration, /active_compensation_already_exists/i)
+test('event correction RPC is restricted, serialized and audited', () => {
+  assert.match(revisionMigration, /revoke all on function public\.admin_correct_canonical_event\(jsonb\) from public,anon/i)
+  assert.match(revisionMigration, /grant execute on function public\.admin_correct_canonical_event\(jsonb\) to authenticated/i)
+  assert.match(revisionMigration, /where id = v_event_id\s+for update/i)
+  assert.match(revisionMigration, /canonical_event_revisions_unique_number unique/)
+  assert.match(revisionMigration, /events\.corrected/)
+  assert.match(revisionMigration, /unsupported_event_correction_field/)
 })
 
 test('application remains serialized and idempotent', () => {
