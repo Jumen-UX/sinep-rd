@@ -70,13 +70,17 @@ jobs:
         if: steps.profile-matrix.outputs.enabled == 'true'
         run: pnpm install --frozen-lockfile
 
+      - name: Install E2E runtime
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        run: pnpm add --save-dev --lockfile=false @playwright/test@1.61.0
+
       - name: Install Chromium
         if: steps.profile-matrix.outputs.enabled == 'true'
-        run: pnpm test:e2e:install
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: Test authenticated navigation and scope
         if: steps.profile-matrix.outputs.enabled == 'true'
-        run: pnpm test:e2e:access
+        run: pnpm exec playwright test e2e/admin-access-matrix.spec.mjs
 
       - name: Upload Playwright diagnostics
         if: always() && steps.profile-matrix.outputs.enabled == 'true'
