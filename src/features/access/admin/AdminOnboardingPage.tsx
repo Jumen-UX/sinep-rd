@@ -3,11 +3,17 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import PasswordSecurityPanel from '../components/PasswordSecurityPanel'
 import {
   loadAdminOnboardingContext,
   saveAdminOnboarding,
   type AdminOnboardingContext,
 } from '../services/authentication-admin-service'
+import {
+  evaluatePassword,
+  getPasswordValidationError,
+  PASSWORD_MIN_LENGTH,
+} from '../services/password-policy'
 import { getScopeLabel } from '../services/user-access-admin-service'
 
 export default function AdminOnboardingPage() {
@@ -22,6 +28,10 @@ export default function AdminOnboardingPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const needsPassword = context?.profile_status === 'pending_invitation'
+  const passwordEvaluation = evaluatePassword(password)
+  const passwordConfirmationMatches = passwordConfirmation.length > 0 && password === passwordConfirmation
+  const canSubmit = !saving && (!needsPassword || (passwordEvaluation.isAcceptable && passwordConfirmationMatches))
 
   useEffect(() => {
     let cancelled = false
@@ -49,9 +59,12 @@ export default function AdminOnboardingPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!fullName.trim()) return setError('Confirma tu nombre completo.')
-    const needsPassword = context?.profile_status === 'pending_invitation'
-    if (needsPassword && password.length < 12) return setError('La contraseña debe tener al menos 12 caracteres.')
-    if (needsPassword && password !== passwordConfirmation) return setError('Las contraseñas no coinciden.')
+
+    if (needsPassword) {
+      const validationError = getPasswordValidationError(password)
+      if (validationError) return setError(validationError)
+      if (!passwordConfirmationMatches) return setError('Las contraseñas no coinciden.')
+    }
 
     setSaving(true)
     setError(null)
@@ -109,19 +122,44 @@ export default function AdminOnboardingPage() {
               Teléfono
               <input autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} />
             </label>
-            {context?.profile_status === 'pending_invitation' && (
+            {needsPassword && (
               <>
                 <label>
                   Nueva contraseña
-                  <input autoComplete="new-password" minLength={12} required type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+                  <input
+                    aria-describedby="password-security-guidance"
+                    aria-invalid={password.length > 0 && !passwordEvaluation.isAcceptable}
+                    autoComplete="new-password"
+                    minLength={PASSWORD_MIN_LENGTH}
+                    required
+                    type="password"
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      setError(null)
+                    }}
+                  />
                 </label>
                 <label>
                   Confirmar contraseña
-                  <input autoComplete="new-password" minLength={12} required type="password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} />
+                  <input
+                    aria-describedby="password-security-guidance"
+                    aria-invalid={passwordConfirmation.length > 0 && !passwordConfirmationMatches}
+                    autoComplete="new-password"
+                    minLength={PASSWORD_MIN_LENGTH}
+                    required
+                    type="password"
+                    value={passwordConfirmation}
+                    onChange={(event) => {
+                      setPasswordConfirmation(event.target.value)
+                      setError(null)
+                    }}
+                  />
                 </label>
+                <PasswordSecurityPanel password={password} confirmation={passwordConfirmation} />
               </>
             )}
-            <button className="button button-primary" disabled={saving} type="submit">
+            <button className="button button-primary" disabled={!canSubmit} type="submit">
               {saving ? 'Guardando...' : context?.roles.length ? 'Confirmar y entrar' : 'Guardar perfil'}
             </button>
           </form>
@@ -149,4 +187,3 @@ export default function AdminOnboardingPage() {
     </main>
   )
 }
-
