@@ -110,10 +110,22 @@ function loadProfiles() {
   return normalizedProfiles
 }
 
-async function validateNavigation(page, expectation) {
+async function validateNavigation(page, expectation, profileLabel) {
   const sidebar = page.locator('.admin-sidebar')
-  const navigation = sidebar.locator('.admin-sidebar-nav')
 
+  try {
+    await expect(sidebar, `El shell administrativo debe estar visible para ${profileLabel}.`).toBeVisible({ timeout: 30_000 })
+  } catch (shellError) {
+    const title = await page.title().catch(() => 'Título no disponible')
+    const body = await page.locator('body').innerText().catch(() => 'Contenido no disponible')
+    const excerpt = body.replace(/\s+/g, ' ').trim().slice(0, 800)
+    throw new Error(
+      `No se renderizó el shell administrativo para ${profileLabel}. URL final: ${page.url()}. Título: ${title}. Contenido: ${excerpt}`,
+      { cause: shellError },
+    )
+  }
+
+  const navigation = sidebar.locator('.admin-sidebar-nav')
   await expect(sidebar.locator('.admin-navigation-status')).toHaveCount(0, { timeout: 30_000 })
   await expect(sidebar.locator('.admin-navigation-error')).toHaveCount(0)
   await expect(navigation).toBeVisible()
@@ -165,10 +177,11 @@ test.describe('matriz operativa de acceso administrativo', () => {
         await page.getByLabel('Contraseña').fill(profile.password)
         await page.getByRole('button', { name: 'Entrar' }).click()
         await expect(page).toHaveURL(destinationByState[profile.expectedState], { timeout: 30_000 })
+        await page.waitForLoadState('domcontentloaded')
 
         if (profile.expectedState !== 'ready') return
 
-        await validateNavigation(page, profile.navigation)
+        await validateNavigation(page, profile.navigation, profile.label)
 
         const response = await context.request.get('/api/admin/dioceses-filtered?include_children=true&limit=500')
         expect(response.ok()).toBeTruthy()
