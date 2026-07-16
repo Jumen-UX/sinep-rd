@@ -37,7 +37,7 @@ test('import workspace describes canonical application for every supported domai
   assert.match(contract, /IMPORT_BATCH_TYPES = \['personas', 'parroquias', 'asignaciones', 'eventos'\]/)
   assert.match(source, /aplicar sus operaciones mediante el contrato canónico/)
   assert.match(source, /La preparación no modifica registros canónicos/)
-  assert.match(source, /Revisión previa/)
+  assert.match(source, /Revisa errores, duplicados y relaciones no resueltas antes de aprobarlo/)
   assert.match(source, /Aplicación manual/)
   assert.doesNotMatch(source, /aplicar sus personas/)
   assert.doesNotMatch(source, /Los lotes de personas aprobados pueden aplicarse/)
