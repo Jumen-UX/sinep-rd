@@ -3,6 +3,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import PasswordInput from '../components/PasswordInput'
 import PasswordSecurityPanel from '../components/PasswordSecurityPanel'
 import {
   loadAdminOnboardingContext,
@@ -124,38 +125,30 @@ export default function AdminOnboardingPage() {
             </label>
             {needsPassword && (
               <>
-                <label>
-                  Nueva contraseña
-                  <input
-                    aria-describedby="password-security-guidance"
-                    aria-invalid={password.length > 0 && !passwordEvaluation.isAcceptable}
-                    autoComplete="new-password"
-                    minLength={PASSWORD_MIN_LENGTH}
-                    required
-                    type="password"
-                    value={password}
-                    onChange={(event) => {
-                      setPassword(event.target.value)
-                      setError(null)
-                    }}
-                  />
-                </label>
-                <label>
-                  Confirmar contraseña
-                  <input
-                    aria-describedby="password-security-guidance"
-                    aria-invalid={passwordConfirmation.length > 0 && !passwordConfirmationMatches}
-                    autoComplete="new-password"
-                    minLength={PASSWORD_MIN_LENGTH}
-                    required
-                    type="password"
-                    value={passwordConfirmation}
-                    onChange={(event) => {
-                      setPasswordConfirmation(event.target.value)
-                      setError(null)
-                    }}
-                  />
-                </label>
+                <PasswordInput
+                  describedBy="password-security-guidance"
+                  id="onboarding-password"
+                  invalid={password.length > 0 && !passwordEvaluation.isAcceptable}
+                  label="Nueva contraseña"
+                  minLength={PASSWORD_MIN_LENGTH}
+                  value={password}
+                  onChange={(value) => {
+                    setPassword(value)
+                    setError(null)
+                  }}
+                />
+                <PasswordInput
+                  describedBy="password-security-guidance"
+                  id="onboarding-password-confirmation"
+                  invalid={passwordConfirmation.length > 0 && !passwordConfirmationMatches}
+                  label="Confirmar contraseña"
+                  minLength={PASSWORD_MIN_LENGTH}
+                  value={passwordConfirmation}
+                  onChange={(value) => {
+                    setPasswordConfirmation(value)
+                    setError(null)
+                  }}
+                />
                 <PasswordSecurityPanel password={password} confirmation={passwordConfirmation} />
               </>
             )}
