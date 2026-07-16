@@ -29,6 +29,20 @@ export type CorrectCanonicalEventResult = {
   after_state: Record<string, unknown>
 }
 
+export type CanonicalEventRevision = {
+  id: string
+  event_id: string
+  revision_number: number
+  before_state: Record<string, unknown>
+  after_state: Record<string, unknown>
+  changed_fields: string[]
+  change_reason: string
+  source_name: string | null
+  source_url: string | null
+  changed_by: string | null
+  changed_at: string
+}
+
 export async function correctCanonicalEvent(
   supabase: SupabaseClient,
   input: CorrectCanonicalEventInput,
@@ -55,4 +69,18 @@ export async function correctCanonicalEvent(
   if (!data || typeof data !== 'object') throw new Error('Supabase no devolvió la revisión del evento.')
 
   return data as CorrectCanonicalEventResult
+}
+
+export async function loadCanonicalEventRevisions(
+  supabase: SupabaseClient,
+  eventId: string,
+): Promise<CanonicalEventRevision[]> {
+  if (!eventId) return []
+
+  const { data, error } = await supabase.rpc('get_event_revision_history', {
+    p_event_id: eventId,
+  })
+
+  if (error) throw new Error(error.message || 'No se pudo cargar el historial de correcciones.')
+  return (Array.isArray(data) ? data : []) as CanonicalEventRevision[]
 }
