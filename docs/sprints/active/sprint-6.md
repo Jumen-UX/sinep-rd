@@ -11,7 +11,7 @@ Convertir las cargas específicas existentes en un sistema reutilizable, seguro 
 
 ## Cola de ejecución
 
-1. [ ] S6-01 — Auditar el flujo actual de importaciones, plantillas, lotes, filas, incidencias, referencias y aplicación.
+1. [x] S6-01 — Auditar el flujo actual de importaciones, plantillas, lotes, filas, incidencias, referencias y aplicación.
 2. [ ] S6-02 — Declarar un contrato único para archivos, plantillas versionadas y dominios soportados.
 3. [ ] S6-03 — Completar lectura robusta de CSV y definir la estrategia XLSX sin duplicar validadores.
 4. [ ] S6-04 — Consolidar staging común, normalización y validación por fila.
@@ -36,6 +36,12 @@ Antes de modificar el modelo se debe inventariar:
 - flujos de candidatos de persona, referencias ambiguas y campos faltantes;
 - reportes finales y contratos de auditoría;
 - dependencias necesarias para XLSX y su impacto en seguridad, tamaño y mantenimiento.
+
+## Estado técnico
+
+S6-01 queda documentado en la [auditoría del flujo actual de importaciones](./sprint-6-import-audit.md). La infraestructura existente ya cubre cuatro dominios, plantillas CSV, hash SHA-256, límites de tamaño y filas, persistencia de lotes y filas, incidencias, corrección individual, revalidación, revisión, aplicación manual e idempotencia. La API de preparación exige `imports.prepare` y delega en `admin_prepare_import_batch`; ningún archivo escribe directamente en tablas canónicas.
+
+Los vacíos principales son: catálogo compartido de dominios y plantillas, XLSX todavía no procesable, representación uniforme de `blocked` y `unresolved`, reversión lógica, consolidación de límites y validación integral de alcance.
 
 ## Reglas del sprint
 
