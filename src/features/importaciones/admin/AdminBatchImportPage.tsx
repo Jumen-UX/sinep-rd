@@ -8,8 +8,9 @@ import {
   IMPORT_TEMPLATE_VERSION,
   getImportDomainContract,
   isImportFileExtension,
+  isProcessableImportFileExtension,
   type ImportBatchType,
-  type ImportFileExtension,
+  type ProcessableImportFileExtension,
 } from '../contracts/import-batch-contract'
 import {
   prepareImportBatch,
@@ -25,7 +26,7 @@ import {
 type SelectedFile = {
   name: string
   size: number
-  extension: ImportFileExtension
+  extension: ProcessableImportFileExtension
   mimeType: string | null
   lastModified: number
   sha256: string | null
@@ -35,6 +36,12 @@ function formatBytes(value: number) {
   if (value < 1024) return `${value} B`
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
   return `${(value / 1024 / 1024).toFixed(1)} MB`
+}
+
+function delimiterLabel(delimiter: CsvPreview['delimiter']) {
+  if (delimiter === ';') return 'punto y coma'
+  if (delimiter === '\t') return 'tabulación'
+  return 'coma'
 }
 
 function forceNavigation(event: MouseEvent<HTMLAnchorElement>, href: string) {
@@ -77,7 +84,13 @@ export default function AdminBatchImportPage() {
     const extension = file.name.split('.').pop()?.toLowerCase() ?? ''
     if (!isImportFileExtension(extension)) {
       setSelectedFile(null)
-      setError('El archivo debe estar en formato CSV, XLSX o XLS.')
+      setError('El archivo debe estar en formato CSV.')
+      return
+    }
+
+    if (!isProcessableImportFileExtension(extension)) {
+      setSelectedFile(null)
+      setError('XLSX y XLS todavía no se procesan directamente. Exporta el archivo como CSV UTF-8 para continuar.')
       return
     }
 
@@ -96,11 +109,6 @@ export default function AdminBatchImportPage() {
       sha256: null,
     })
 
-    if (extension !== 'csv') {
-      setError('La vista previa segura está disponible actualmente para CSV. Exporta este archivo de Excel como CSV UTF-8 para continuar.')
-      return
-    }
-
     try {
       const [source, fileBytes] = await Promise.all([file.text(), file.arrayBuffer()])
       const [result, fileSha256] = await Promise.all([
@@ -111,7 +119,7 @@ export default function AdminBatchImportPage() {
       setPreview(result)
       if (result.missingColumns.length > 0) setError(`Faltan columnas obligatorias: ${result.missingColumns.join(', ')}.`)
       else if (result.totalRows > IMPORT_BATCH_LIMITS.maxRows) setError(`El archivo contiene ${result.totalRows} filas y supera el límite de ${IMPORT_BATCH_LIMITS.maxRows.toLocaleString('es-DO')}.`)
-      else setMessage(`CSV leído correctamente: ${result.totalRows} fila(s) listas para preparar y validar.`)
+      else setMessage(`CSV leído correctamente con delimitador de ${delimiterLabel(result.delimiter)}: ${result.totalRows} fila(s) listas para preparar y validar.`)
     } catch (readError) {
       setError(readError instanceof Error ? readError.message : 'No se pudo leer el archivo CSV.')
     }
@@ -159,6 +167,7 @@ export default function AdminBatchImportPage() {
         sourceMetadata: {
           client_preview_rows: Math.min(preview.totalRows, IMPORT_BATCH_LIMITS.previewRows),
           extra_columns: preview.extraColumns,
+          csv_delimiter: preview.delimiter,
         },
       })
       setPreparedBatch(summary)
@@ -218,13 +227,14 @@ export default function AdminBatchImportPage() {
         </article>
 
         <article className="card dashboard-section">
-          <div className="section-heading"><div><p className="eyebrow">Archivo fuente</p><h2>Selecciona el archivo</h2><p className="meta">CSV UTF-8, máximo {formatBytes(IMPORT_BATCH_LIMITS.maxFileSizeBytes)} y {IMPORT_BATCH_LIMITS.maxRows.toLocaleString('es-DO')} filas por lote.</p></div></div>
-          <div className="auth-form access-form"><label>Archivo<input accept={IMPORT_FILE_ACCEPT} onChange={(event) => void handleFileChange(event)} type="file" /></label></div>
+          <div className="section-heading"><div><p className="eyebrow">Archivo fuente</p><h2>Selecciona el archivo</h2><p className="meta">CSV UTF-8 delimitado por coma, punto y coma o tabulación; máximo {formatBytes(IMPORT_BATCH_LIMITS.maxFileSizeBytes)} y {IMPORT_BATCH_LIMITS.maxRows.toLocaleString('es-DO')} filas por lote.</p></div></div>
+          <div className="auth-form access-form"><label>Archivo CSV<input accept={IMPORT_FILE_ACCEPT} onChange={(event) => void handleFileChange(event)} type="file" /></label></div>
+          <p className="meta">Los archivos XLSX y XLS deben exportarse como CSV UTF-8 antes de cargarse.</p>
           {selectedFile && <div className="admin-system-list"><div><span>Nombre</span><strong>{selectedFile.name}</strong></div><div><span>Tamaño</span><strong>{formatBytes(selectedFile.size)}</strong></div><div><span>Formato</span><strong>{selectedFile.extension.toUpperCase()}</strong></div><div><span>SHA-256</span><strong>{selectedFile.sha256 ? `${selectedFile.sha256.slice(0, 20)}…` : 'Pendiente'}</strong></div></div>}
         </article>
       </section>
 
-      {preview && <section className="card dashboard-section"><div className="section-heading"><div><p className="eyebrow">Vista previa</p><h2>{preview.totalRows} fila(s) detectadas</h2><p className="meta">{preview.headers.length} columnas · {preview.extraColumns.length} columnas adicionales.</p></div><span className="role-pill">{preview.missingColumns.length === 0 ? 'Cabecera válida' : 'Cabecera incompleta'}</span></div><div className="admin-system-list">{preview.headers.map((header) => <div key={header}><span>{selectedOption.requiredColumns.includes(header) ? 'Obligatoria' : selectedOption.columns.includes(header) ? 'Opcional' : 'Adicional'}</span><strong>{header}</strong></div>)}</div></section>}
+      {preview && <section className="card dashboard-section"><div className="section-heading"><div><p className="eyebrow">Vista previa</p><h2>{preview.totalRows} fila(s) detectadas</h2><p className="meta">{preview.headers.length} columnas · delimitador: {delimiterLabel(preview.delimiter)} · {preview.extraColumns.length} columnas adicionales.</p></div><span className="role-pill">{preview.missingColumns.length === 0 ? 'Cabecera válida' : 'Cabecera incompleta'}</span></div><div className="admin-system-list">{preview.headers.map((header) => <div key={header}><span>{selectedOption.requiredColumns.includes(header) ? 'Obligatoria' : selectedOption.columns.includes(header) ? 'Opcional' : 'Adicional'}</span><strong>{header}</strong></div>)}</div></section>}
 
       <section className="card dashboard-section">
         <div className="section-heading"><div><p className="eyebrow">Preparación persistente</p><h2>Validar y guardar lote</h2><p className="meta">La preparación no modifica registros canónicos. Persiste el archivo lógico, sus filas, incidencias y trazabilidad.</p></div><span className="role-pill">Permiso: imports.prepare</span></div>
