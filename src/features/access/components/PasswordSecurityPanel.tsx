@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { evaluatePassword } from '../services/password-policy'
+import styles from './PasswordSecurity.module.css'
 
 type PasswordSecurityPanelProps = {
   password: string
@@ -23,9 +24,9 @@ const strengthLabels = {
 
 function PasswordRule({ valid, children, detail }: PasswordRuleProps) {
   return (
-    <li data-valid={valid}>
-      <span aria-hidden="true" className="password-rule-icon">{valid ? '✓' : '·'}</span>
-      <span className="password-rule-copy">
+    <li className={styles.rule} data-valid={valid}>
+      <span aria-hidden="true" className={styles.ruleIcon}>{valid ? '✓' : '·'}</span>
+      <span className={styles.ruleCopy}>
         <span>{children}</span>
         {detail && <small>{detail}</small>}
         <strong>{valid ? 'Cumplido' : 'Pendiente'}</strong>
@@ -36,7 +37,7 @@ function PasswordRule({ valid, children, detail }: PasswordRuleProps) {
 
 function CharacterType({ valid, children }: { valid: boolean; children: ReactNode }) {
   return (
-    <span className="password-character-type" data-valid={valid}>
+    <span className={styles.characterType} data-valid={valid}>
       <span aria-hidden="true">{valid ? '✓' : '·'}</span>
       {children}
     </span>
@@ -59,13 +60,13 @@ export default function PasswordSecurityPanel({
   return (
     <section
       aria-live="polite"
-      className="password-security-panel"
+      className={styles.panel}
       data-strength={evaluation.level}
       id={id}
     >
-      <div className="password-security-heading">
+      <div className={styles.heading}>
         <strong>Seguridad de la contraseña</strong>
-        <span>{strengthLabels[evaluation.level]}</span>
+        <span className={styles.strengthLabel}>{strengthLabels[evaluation.level]}</span>
       </div>
 
       <div
@@ -74,17 +75,17 @@ export default function PasswordSecurityPanel({
         aria-valuemin={0}
         aria-valuenow={evaluation.percentage}
         aria-valuetext={strengthLabels[evaluation.level]}
-        className="password-strength-meter"
+        className={styles.meter}
         role="progressbar"
       >
-        <span style={{ width: `${evaluation.percentage}%` }} />
+        <span className={styles.meterFill} style={{ width: `${evaluation.percentage}%` }} />
       </div>
 
-      <p className="password-rule-intro">
+      <p className={styles.intro}>
         Los requisitos se actualizan mientras escribes. Para la variedad, basta una frase de 20 caracteres o tres tipos de caracteres.
       </p>
 
-      <ul className="password-rule-list">
+      <ul className={styles.ruleList}>
         <PasswordRule valid={hasValue && evaluation.hasMinimumLength}>
           12 caracteres como mínimo.
         </PasswordRule>
@@ -101,14 +102,14 @@ export default function PasswordSecurityPanel({
         )}
       </ul>
 
-      <div aria-label="Tipos de caracteres detectados" className="password-character-grid">
+      <div aria-label="Tipos de caracteres detectados" className={styles.characterGrid}>
         <CharacterType valid={hasValue && evaluation.hasLowercase}>Minúsculas</CharacterType>
         <CharacterType valid={hasValue && evaluation.hasUppercase}>Mayúsculas</CharacterType>
         <CharacterType valid={hasValue && evaluation.hasNumber}>Números</CharacterType>
         <CharacterType valid={hasValue && evaluation.hasSymbol}>Símbolos</CharacterType>
       </div>
 
-      <p className="meta password-security-note">
+      <p className={`meta ${styles.note}`}>
         Una frase larga y difícil de adivinar puede ser más segura y fácil de recordar que una contraseña corta y compleja.
       </p>
     </section>
