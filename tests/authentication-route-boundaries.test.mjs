@@ -32,6 +32,9 @@ test('authentication pages delegate I/O to their service', async () => {
 
   assert.match(loginPage, /signInAdmin/)
   assert.match(loginPage, /getSafeAdminNextPath/)
+  assert.match(loginPage, /resolveAdminEntryPath/)
+  assert.match(loginPage, /window\.location\.assign\(destination\)/)
+  assert.doesNotMatch(loginPage, /router\.(?:push|replace|refresh)/)
   assert.doesNotMatch(loginPage, /signInWithPassword/)
 
   assert.match(resetPage, /requestAdminAccessReset/)
