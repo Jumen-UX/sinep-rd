@@ -12,7 +12,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 ## Cola inicial
 
 1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
-2. [ ] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **En validación:** contrato, registro, política, servicio, proveedor y shell implementados; CI y prueba E2E autenticada pendientes.
+2. [ ] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **En validación:** contrato, registro, política, servicio, proveedor y shell implementados; CI verde y prueba E2E autenticada pendiente.
 3. [ ] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias.
 4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial.
 5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual.
@@ -52,9 +52,9 @@ Quedaron implementados:
 - `tests/admin-navigation-policy.test.mjs`, con nueve escenarios de permisos, alcance, estados de acceso y prioridad móvil;
 - `tests/admin-navigation-context.test.mjs`, con normalización de contexto, asignaciones vencidas y límites arquitectónicos del shell.
 
-La capa pura confirmó nueve pruebas aprobadas y TypeScript sin errores en validación aislada. El estado externo visible de Vercel permanece bloqueado por límite de compilaciones, no por un error de aplicación. El conector no expone todavía un resultado separado de GitHub Actions para el commit final.
+La capa pura confirmó nueve pruebas aprobadas y TypeScript sin errores en validación aislada. El `pnpm check` de GitHub Actions quedó confirmado en verde el 2026-07-16 después de alinear las pruebas antiguas con el registro canónico y los límites de servicio. El estado externo de Vercel continúa separado y condicionado por su límite de compilaciones.
 
-S7-02 no se marca completada hasta confirmar `pnpm check` en CI y realizar una prueba autenticada representativa de navegación para, al menos, un administrador y un perfil de consulta.
+S7-02 no se marca completada hasta realizar una prueba autenticada representativa de navegación para, al menos, un administrador y un perfil de consulta.
 
 ## Reglas del sprint
 
@@ -77,4 +77,4 @@ S7-02 no se marca completada hasta confirmar `pnpm check` en CI y realizar una p
 
 ## Punto de continuación
 
-Confirmar `pnpm check` para el commit de S7-02 y ejecutar una prueba autenticada de visibilidad por perfil. Si ambas validaciones pasan, cerrar S7-02 e iniciar S7-03 conectando el dashboard y sus acciones al mismo contexto de navegación.
+Ejecutar una prueba autenticada de visibilidad por perfil. Si la navegación responde correctamente para un administrador y un perfil de consulta, cerrar S7-02 e iniciar S7-03 conectando el dashboard y sus acciones al mismo contexto de navegación.
