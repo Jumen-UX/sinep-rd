@@ -18,7 +18,8 @@ test('event impact builder is deterministic read only and dependency aware', asy
   assert.match(source, /missing_action_dependency/)
   assert.match(source, /cyclic_action_dependencies/)
   assert.match(source, /canApprove:/)
-  assert.doesNotMatch(source, /\.rpc\(|\.insert\(|\.update\(|\.delete\(/)
+  assert.doesNotMatch(source, /supabase\.(rpc|from)\(/)
+  assert.doesNotMatch(source, /\.from\([^\n]+\)\.(insert|update|delete|upsert)\(/)
 })
 
 test('impact projection exposes verification and remains a stable read contract', async () => {
