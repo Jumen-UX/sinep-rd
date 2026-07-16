@@ -17,8 +17,8 @@ contract_checks as (
     position('event_action_dependency_missing' in definition) > 0 as validates_missing_dependencies,
     position('event_action_dependency_not_applied' in definition) > 0 as validates_dependency_order,
     position('order by sort_order, id' in definition) > 0 as has_deterministic_order,
-    position("status = 'applied'" in definition) > 0 as recognizes_terminal_state,
-    position("for update" in lower(definition)) > 0 as locks_rows
+    position('status = ''applied''' in definition) > 0 as recognizes_terminal_state,
+    position('for update' in lower(definition)) > 0 as locks_rows
   from function_contract
 ),
 readiness as (
