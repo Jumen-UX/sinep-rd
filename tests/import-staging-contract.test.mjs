@@ -23,9 +23,11 @@ test('staging normalization is deterministic and domain aware', () => {
 })
 
 test('validator consumes shared required fields and relation mappings', () => {
-  assert.match(validationMigration, /jsonb_array_elements_text\([\s\S]*import_domain_staging_contract/i)
-  assert.match(validationMigration, /jsonb_each_text\([\s\S]*import_domain_staging_contract/i)
-  assert.doesNotMatch(validationMigration, /when 'personas' then array\[/i)
+  assert.match(validationMigration, /v_shared_required text :=[\s\S]*jsonb_array_elements_text\([\s\S]*import_domain_staging_contract/i)
+  assert.match(validationMigration, /v_shared_relations text :=[\s\S]*jsonb_each_text\([\s\S]*import_domain_staging_contract/i)
+  assert.match(validationMigration, /replace\(v_definition, v_original_required, v_shared_required\)/i)
+  assert.match(validationMigration, /replace\(v_definition, v_original_relations, v_shared_relations\)/i)
+  assert.match(validationMigration, /execute v_definition/i)
 })
 
 test('row status precedence and internal csv boundary remain explicit', () => {
