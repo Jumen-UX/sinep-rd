@@ -10,6 +10,10 @@ const expectedWorkflows = [
   'e2e-public.yml',
 ]
 
+async function readWorkflow(file) {
+  return readFile(new URL(file, workflowsDirectory), 'utf8')
+}
+
 test('the repository keeps only the canonical CI and E2E workflows', async () => {
   const workflowFiles = (await readdir(workflowsDirectory))
     .filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
@@ -20,13 +24,20 @@ test('the repository keeps only the canonical CI and E2E workflows', async () =>
 
 test('canonical workflow display names remain stable', async () => {
   const workflowContents = Object.fromEntries(await Promise.all(
-    expectedWorkflows.map(async (file) => [
-      file,
-      await readFile(new URL(file, workflowsDirectory), 'utf8'),
-    ]),
+    expectedWorkflows.map(async (file) => [file, await readWorkflow(file)]),
   ))
 
   assert.match(workflowContents['ci.yml'], /^name: CI$/m)
   assert.match(workflowContents['e2e-admin-access.yml'], /^name: E2E \/ Admin access matrix$/m)
   assert.match(workflowContents['e2e-public.yml'], /^name: E2E \/ Public accessibility$/m)
+})
+
+test('manual authenticated access validation fails closed without protected profiles', async () => {
+  const accessWorkflow = await readWorkflow('e2e-admin-access.yml')
+
+  assert.match(accessWorkflow, /E2E_ACCESS_PROFILES_JSON: \$\{\{ secrets\.E2E_ACCESS_PROFILES_JSON \}\}/)
+  assert.match(accessWorkflow, /GITHUB_EVENT_NAME.*workflow_dispatch/)
+  assert.match(accessWorkflow, /::error::Configure the protected E2E_ACCESS_PROFILES_JSON secret/)
+  assert.match(accessWorkflow, /exit 1/)
+  assert.match(accessWorkflow, /Authenticated matrix skipped on push/)
 })
