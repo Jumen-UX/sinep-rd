@@ -3,7 +3,7 @@ import {
   IMPORT_BATCH_LIMITS,
   IMPORT_TEMPLATE_VERSION,
   isImportBatchType,
-  isImportFileExtension,
+  isProcessableImportFileExtension,
 } from '@/features/importaciones/contracts/import-batch-contract'
 import { requireAdminAccess } from '@/lib/admin/authorization'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
@@ -55,10 +55,13 @@ export async function POST(request: NextRequest) {
     const sizeBytes = typeof file.size_bytes === 'number' ? file.size_bytes : Number.NaN
     const sha256 = typeof file.sha256 === 'string' ? file.sha256.toLowerCase() : ''
 
+    if (!isProcessableImportFileExtension(extension)) {
+      return NextResponse.json({ error: 'Actualmente solo se pueden preparar archivos CSV UTF-8.' }, { status: 400 })
+    }
+
     if (
       typeof file.name !== 'string'
       || !file.name.trim()
-      || !isImportFileExtension(extension)
       || !Number.isSafeInteger(sizeBytes)
       || sizeBytes < 0
       || sizeBytes > IMPORT_BATCH_LIMITS.maxFileSizeBytes
@@ -71,6 +74,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El encabezado del archivo no es válido.' }, { status: 400 })
     }
 
+    if (headers.length > IMPORT_BATCH_LIMITS.maxColumns) {
+      return NextResponse.json({ error: `El archivo supera el límite de ${IMPORT_BATCH_LIMITS.maxColumns} columnas.` }, { status: 400 })
+    }
+
     if (!Array.isArray(rows) || rows.length === 0) {
       return NextResponse.json({ error: 'El archivo no contiene filas para preparar.' }, { status: 400 })
     }
@@ -81,6 +88,10 @@ export async function POST(request: NextRequest) {
 
     if (!rows.every(isStringRecord)) {
       return NextResponse.json({ error: 'Todas las filas deben contener únicamente columnas y valores de texto.' }, { status: 400 })
+    }
+
+    if (rows.some((row) => Object.values(row).some((value) => value.length > IMPORT_BATCH_LIMITS.maxCellCharacters))) {
+      return NextResponse.json({ error: `Una celda supera el límite de ${IMPORT_BATCH_LIMITS.maxCellCharacters.toLocaleString('es-DO')} caracteres.` }, { status: 400 })
     }
 
     const rpcPayload = {
