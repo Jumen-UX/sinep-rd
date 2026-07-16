@@ -6,6 +6,8 @@ const requestRoutePath = 'src/app/(admin)/admin/recuperar/solicitar/page.tsx'
 const updateRoutePath = 'src/app/(admin)/admin/recuperar/page.tsx'
 const requestPagePath = 'src/features/access/admin/RequestPasswordRecoveryPage.tsx'
 const updatePagePath = 'src/features/access/admin/UpdateRecoveredPasswordPage.tsx'
+const passwordPanelPath = 'src/features/access/components/PasswordSecurityPanel.tsx'
+const passwordPolicyPath = 'src/features/access/services/password-policy.ts'
 const servicePath = 'src/features/access/services/authentication-admin-service.ts'
 const middlewarePath = 'src/middleware.ts'
 const policyPath = 'src/lib/admin/accessPolicy.ts'
@@ -37,12 +39,33 @@ test('recovery service owns session validation and password mutation', async () 
   assert.doesNotMatch(requestPage, /resetPasswordForEmail/)
   assert.match(updatePage, /waitForPasswordRecoverySession/)
   assert.match(updatePage, /updateRecoveredPassword/)
-  assert.match(updatePage, /password\.length < 12/)
+  assert.match(updatePage, /getPasswordValidationError/)
+  assert.match(updatePage, /passwordEvaluation\.isAcceptable/)
+  assert.match(updatePage, /PasswordSecurityPanel/)
   assert.doesNotMatch(updatePage, /auth\.updateUser/)
   assert.match(service, /resetPasswordForEmail/)
   assert.match(service, /PASSWORD_RECOVERY/)
   assert.match(service, /auth\.updateUser\(\{ password \}\)/)
   assert.match(service, /signOut\(\{ scope: 'local' \}\)/)
+})
+
+test('password recovery explains and enforces a measurable password policy', async () => {
+  const [updatePage, passwordPanel, passwordPolicy] = await Promise.all([
+    readFile(updatePagePath, 'utf8'),
+    readFile(passwordPanelPath, 'utf8'),
+    readFile(passwordPolicyPath, 'utf8'),
+  ])
+
+  assert.match(passwordPolicy, /PASSWORD_MIN_LENGTH = 12/)
+  assert.match(passwordPolicy, /PASSWORD_LONG_PASSPHRASE_LENGTH = 20/)
+  assert.match(passwordPolicy, /categoryCount >= 3/)
+  assert.match(passwordPolicy, /isAcceptable:/)
+  assert.match(updatePage, /disabled=\{!canSubmit\}/)
+  assert.match(updatePage, /aria-describedby="password-security-guidance"/)
+  assert.match(passwordPanel, /role="progressbar"/)
+  assert.match(passwordPanel, /aria-live="polite"/)
+  assert.match(passwordPanel, /12 caracteres como mínimo/)
+  assert.match(passwordPanel, /La confirmación coincide/)
 })
 
 test('recovery links remain reachable before session establishment', async () => {
