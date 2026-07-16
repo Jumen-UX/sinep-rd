@@ -18,7 +18,7 @@ Convertir las cargas específicas existentes en un sistema reutilizable, seguro 
 5. [x] S6-05 — Unificar detección de duplicados, coincidencias exactas y referencias ambiguas.
 6. [x] S6-06 — Completar el editor de filas fallidas sin exigir recargar el archivo completo.
 7. [x] S6-07 — Generar una vista previa determinista con operaciones `create`, `update`, `noop`, `blocked` y `unresolved`.
-8. [ ] S6-08 — Aplicar lotes mediante RPC transaccionales, idempotentes y auditadas.
+8. [x] S6-08 — Aplicar lotes mediante RPC transaccionales, idempotentes y auditadas.
 9. [ ] S6-09 — Implementar reversión lógica y trazabilidad de cambios aplicados por lote.
 10. [ ] S6-10 — Completar reportes descargables, errores y resultados por fila.
 11. [ ] S6-11 — Integrar todos los tipos pendientes en la cola de revisión y calidad de datos.
@@ -53,7 +53,9 @@ S6-06 queda protegido por `import-row-correction-contract.test.mjs`. La pantalla
 
 S6-07 queda protegido por `import-deterministic-preview-contract.test.mjs`. `projectImportRowOperation` asigna a cada fila exactamente una proyección: `unresolved` tiene precedencia para referencias pendientes, `blocked` representa errores o duplicados, y `create`, `update` o `noop` solo aparecen cuando tabla y objetivo cumplen el contrato. Los contadores se derivan de esta proyección sin doble conteo y la interfaz muestra la operación y la razón de cada fila antes de aplicar.
 
-Los vacíos principales restantes son: validación integral de los RPC de aplicación, reversión lógica y cobertura completa de reportes y revisión.
+S6-08 queda protegido por `import-application-preflight-contract.test.mjs`. `import_application_preflight` bloquea cantidades inconsistentes, incidencias abiertas, estados no aplicables y objetivos incompletos antes de seleccionar cualquier RPC de dominio. El despachador usa exclusivamente ese resultado para enrutar lotes `create`, `noop`, mixtos y actualizaciones de eventos. La aplicación `noop` reutiliza un helper único y ahora admite `persons`, además de entidades, asignaciones y eventos. Cada fila conserva `import_batch_changes`, auditoría y estado final; el lote bloqueado con `FOR UPDATE` devuelve replay idempotente cuando ya fue aplicado.
+
+Los vacíos principales restantes son: reversión lógica y cobertura completa de reportes y revisión.
 
 ## Reglas del sprint
 
