@@ -7,7 +7,7 @@
 
 ## Objetivo
 
-Hacer efectiva la regla de no editar silenciosamente la historia: todo cambio estructural importante debe originarse en un evento verificable, revisable, aplicable de forma transaccional y compensable sin borrar hechos históricos.
+Hacer efectiva la regla de no editar silenciosamente la historia: todo cambio estructural importante debe originarse en un evento verificable, revisable y aplicable de forma transaccional; los errores de registro se corrigen sobre el mismo evento mediante revisiones auditadas.
 
 ## Cola de ejecución
 
@@ -19,8 +19,8 @@ Hacer efectiva la regla de no editar silenciosamente la historia: todo cambio es
 6. [x] S5-06 — Implementar revisión y aprobación separadas de la aplicación.
 7. [x] S5-07 — Aplicar eventos aprobados mediante transacciones idempotentes y auditadas.
 8. [x] S5-08 — Proyectar la línea temporal institucional y reconstruir el estado vigente desde la historia.
-9. [x] S5-09 — Implementar correcciones mediante eventos compensatorios, sin borrado destructivo.
-10. [ ] S5-10 — Validar permisos, alcance, conflictos, concurrencia y reversibilidad.
+9. [x] S5-09 — Implementar correcciones versionadas del mismo evento, sin crear hechos históricos artificiales.
+10. [ ] S5-10 — Validar permisos, alcance, conflictos, concurrencia, correcciones y compatibilidad heredada.
 11. [ ] S5-11 — Ejecutar `pnpm check`, pruebas funcionales y verificación del entorno desplegado.
 
 ## Alcance inicial
@@ -36,23 +36,23 @@ El sprint parte de la infraestructura existente de eventos canónicos y estructu
 
 ## Estado técnico
 
-S5-01 queda documentado en la [auditoría del modelo canónico de eventos](./sprint-5-event-model-audit.md) y protegido por `canonical-event-model-audit.test.mjs`. La fuente oficial del hecho histórico es `canonical_events`; `canonical_event_types` tipifica el hecho; participantes, planes, acciones y contratos son derivados; y las entidades, relaciones, nodos y unidades organizativas representan el estado aplicado. `/admin/eventos` es la ruta canónica y `/admin/estructura/eventos` queda clasificada como compatibilidad temporal. La auditoría asigna las brechas de catálogo, evidencia, impacto, aplicación, línea temporal y compensación a S5-02–S5-10.
+S5-01 queda documentado en la [auditoría del modelo canónico de eventos](./sprint-5-event-model-audit.md) y protegido por `canonical-event-model-audit.test.mjs`. La fuente oficial del hecho histórico es `canonical_events`; `canonical_event_types` tipifica el hecho; participantes, planes, acciones y contratos son derivados; y las entidades, relaciones, nodos y unidades organizativas representan el estado aplicado. `/admin/eventos` es la ruta canónica y `/admin/estructura/eventos` queda clasificada como compatibilidad temporal.
 
-S5-02 queda protegido por `canonical-event-catalog-classification.test.mjs`. La migración `20260715210000_classify_canonical_event_catalog.sql` conserva las claves históricas y el valor heredado `applies_to`, pero añade una clasificación institucional explícita: familia, destino canónico, estrategia de aplicación, revisión manual y compensabilidad. Los 18 tipos activos quedaron clasificados sin valores incompletos; creación, división, fusión, desmembramiento, traslado, supresión y cambio de dependencia disponen de familias estables, mientras identidad, límites, ciclo de vida y publicación permanecen como familias complementarias. El catálogo administrativo expone esta metadata sin introducir claves competidoras.
+S5-02 queda protegido por `canonical-event-catalog-classification.test.mjs`. La migración `20260715210000_classify_canonical_event_catalog.sql` conserva las claves históricas y añade clasificación institucional explícita: familia, destino canónico, estrategia de aplicación, revisión manual y capacidad de corrección.
 
-S5-03 queda protegido por `legacy-entity-evolution-migration.test.mjs`. La migración `20260715214500_migrate_legacy_entity_evolution_events.sql` trasladó 23 registros de `entity_evolution_events` a `canonical_events` de forma idempotente, preservó el identificador y tipo heredados en `notes_json`, normalizó `erection_by_dismemberment` a `erection` y `territory_loss` a `boundary_change`, creó participantes para entidades conocidas y dejó todos los registros en `pending_review`, sin aprobación ni aplicación automática.
+S5-03 queda protegido por `legacy-entity-evolution-migration.test.mjs`. La migración `20260715214500_migrate_legacy_entity_evolution_events.sql` trasladó 23 registros de `entity_evolution_events` a `canonical_events` de forma idempotente y dejó todos los registros en `pending_review`, sin aprobación ni aplicación automática.
 
-S5-04 queda protegido por `event-verification-contract.test.mjs`. La migración `20260715223000_unify_canonical_event_verification.sql` conserva `evidence_status` como clasificación documental y añade `verification_status` y `source_checked_at` conforme al contrato común. El asistente exige fecha efectiva, deriva alcance desde la entidad o unidad seleccionada, valida URL HTTP/HTTPS y no permite marcar un evento como verificado sin nombre de fuente y fecha de revisión. La revisión administrativa muestra evidencia, verificación, fecha efectiva, alcance y fecha de revisión antes de aprobar. Los 24 eventos existentes permanecen en `pending_review`, sin verificaciones inválidas ni aplicación automática.
+S5-04 queda protegido por `event-verification-contract.test.mjs`. La migración `20260715223000_unify_canonical_event_verification.sql` conserva `evidence_status` y añade `verification_status` y `source_checked_at` conforme al contrato común. Los 24 eventos existentes permanecen en `pending_review`.
 
-S5-05 queda protegido por `event-impact-plan-contract.test.mjs`. El constructor `buildDeterministicImpactPlan` ordena acciones de forma estable, interpreta dependencias explícitas, detecta referencias inexistentes y ciclos, integra conflictos relacionales, separa errores y advertencias y proyecta las fichas, relaciones, cronología, estadísticas, índices y cachés afectados. La proyección `get_event_application_plan` permanece `STABLE` y de solo lectura. La revisión administrativa consume el mismo contrato y bloquea la aprobación cuando el plan no existe, contiene un ciclo, tiene errores o incluye acciones bloqueantes.
+S5-05 queda protegido por `event-impact-plan-contract.test.mjs`. El constructor `buildDeterministicImpactPlan` ordena acciones de forma estable, interpreta dependencias explícitas, detecta referencias inexistentes y ciclos, integra conflictos y proyecta los elementos afectados antes de aprobar.
 
-S5-06 queda protegido por `event-approval-separation-contract.test.mjs`. La migración `20260715234500_separate_event_approval_from_application.sql` introduce `admin_approve_event` como contrato explícito, con permiso `events.approve`, validación de preparación y auditoría propia. `admin_review_event` solo devuelve a borrador o cancela y rechaza la acción `approve`. Aprobar únicamente modifica metadatos del flujo y prepara acciones; devuelve `state_applied=false` y nunca invoca contratos de aplicación ni modifica entidades, relaciones, nodos o unidades organizativas. La aplicación conserva su RPC independiente y exige permiso `events.apply` y estado `approved`.
+S5-06 queda protegido por `event-approval-separation-contract.test.mjs`. La migración `20260715234500_separate_event_approval_from_application.sql` introduce `admin_approve_event`; aprobar modifica únicamente metadatos del flujo y nunca aplica estado institucional.
 
-S5-07 queda protegido por `idempotent-event-application-contract.test.mjs` y por `supabase/verification/verify_idempotent_event_application.sql`. La migración `20260716003000_harden_idempotent_event_application.sql` está aplicada en Supabase como `20260716005641_harden_idempotent_event_application`; serializa la aplicación con bloqueo de fila, reconoce el estado terminal, devuelve `idempotent_replay=true` en reintentos, valida dependencias inexistentes o no aplicadas, conserva el orden `sort_order, id` y audita separadamente aplicación y repetición. La prueba funcional utilizó un evento organizativo aislado con acción `no_state_change`: la primera llamada aplicó una única acción con `idempotent_replay=false`; la segunda devolvió `idempotent_replay=true`, mantuvo las mismas marcas temporales y no creó ni modificó unidades organizativas. El evento, la acción y sus auditorías de prueba fueron eliminados al finalizar, dejando cero registros residuales.
+S5-07 queda protegido por `idempotent-event-application-contract.test.mjs` y `verify_idempotent_event_application.sql`. La aplicación remota serializa por bloqueo de fila, valida dependencias, conserva orden determinista y devuelve `idempotent_replay=true` en reintentos sin repetir mutaciones.
 
-S5-08 queda protegido por `canonical-institutional-timeline-contract.test.mjs`. Las migraciones `20260716013000_project_canonical_institutional_timeline.sql` y `20260716014500_fix_public_canonical_timeline_access.sql` introducen una cronología administrativa derivada de `canonical_events` y `canonical_event_participants`, una cronología pública filtrada exclusivamente a eventos `applied` con destinos públicos y el lector estable `get_institutional_state_reconstruction`. Este lector toma el último `after_state` aplicado, devuelve la secuencia histórica y compara la proyección con el registro vigente sin modificar datos. La cronología administrativa contiene 39 participaciones asociadas a los 24 eventos pendientes; la pública contiene cero registros porque todavía no existe ningún evento institucional aplicado, evitando publicar historia no aprobada. La consulta anónima fue validada y no obtiene acceso a la vista administrativa ni a las tablas canónicas privadas.
+S5-08 queda protegido por `canonical-institutional-timeline-contract.test.mjs`. Las vistas canónicas separan la cronología administrativa de la pública y `get_institutional_state_reconstruction` compara el último `after_state` aplicado con el registro vigente sin modificar datos.
 
-S5-09 queda protegido por `compensating-event-contract.test.mjs`. La migración `20260716021500_add_compensating_event_contract.sql` añade `compensates_event_id`, `compensation_reason` y `correction_kind`, limita cada hecho aplicado a una compensación activa directa y crea `admin_create_compensating_event`. El contrato exige un evento original `applied` y compensable, crea un nuevo evento en `draft`, conserva fuente y motivo, copia los participantes e invierte `before_state` y `after_state` como propuesta revisable. Un trigger impide editar campos históricos o eliminar eventos aplicados y obliga a corregirlos mediante un evento enlazado. La creación queda acotada por `events.approve`, alcance administrativo y auditoría `events.compensation.created`. El servicio `event-compensation-admin-service.ts` valida los datos antes de invocar el RPC. La migración está aplicada; actualmente existen cero compensaciones reales.
+S5-09 queda protegido por `canonical-event-revision-contract.test.mjs`. La migración `20260716032000_replace_compensation_with_event_revisions.sql` elimina el contrato descartado de compensación y crea `canonical_event_revisions`. `admin_correct_canonical_event` bloquea el evento, acepta únicamente campos autorizados, exige motivo, conserva `before_state`, `after_state`, campos modificados, fuente, usuario y fecha, y registra auditoría `events.corrected`. La cronología pública muestra el evento corregido; el historial anterior queda disponible solo en administración y auditoría. Los cambios institucionales reales continúan registrándose como eventos nuevos. Actualmente existen cero revisiones reales.
 
 ## Reglas del sprint
 
@@ -61,9 +61,10 @@ S5-09 queda protegido por `compensating-event-contract.test.mjs`. La migración 
 - Verificación, aprobación y aplicación son estados distintos.
 - Todo plan de impacto es de solo lectura hasta la aplicación confirmada.
 - La aplicación debe ser transaccional, idempotente, acotada por permisos y auditada.
-- Un hecho histórico aplicado no se elimina para corregirlo; se crea un evento compensatorio.
+- Un cambio institucional real siempre se registra como un evento nuevo.
+- Un error de registro se corrige sobre el mismo evento mediante una revisión inmutable y auditada.
 - Las fuentes y fechas efectivas se validan mediante el contrato común de verificación.
-- Las vistas públicas solo exponen eventos aprobados y publicables.
+- Las vistas públicas solo exponen el estado histórico corregido y publicable.
 
 ## Criterios de cierre
 
@@ -71,8 +72,8 @@ S5-09 queda protegido por `compensating-event-contract.test.mjs`. La migración 
 - El estado vigente se puede reconstruir desde la historia aplicada.
 - Los usuarios ven el impacto y los conflictos antes de aprobar o aplicar.
 - La revisión, aprobación y aplicación conservan separación de responsabilidades.
-- Las correcciones no eliminan hechos históricos.
-- Cada operación crítica conserva fuente, permiso, alcance, transacción, auditoría y prueba.
+- Cada corrección conserva antes, después, motivo, fuente, actor y fecha.
+- Cada operación crítica conserva permiso, alcance, transacción, auditoría y prueba.
 
 ## Dependencias operativas heredadas
 
