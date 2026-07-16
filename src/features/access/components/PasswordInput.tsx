@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import styles from './PasswordSecurity.module.css'
 
 type PasswordInputProps = {
   id: string
@@ -40,9 +41,9 @@ export default function PasswordInput({
   const actionLabel = visible ? 'Ocultar' : 'Mostrar'
 
   return (
-    <div className="password-field">
+    <div className={styles.field}>
       <label htmlFor={id}>{label}</label>
-      <div className="password-input-shell">
+      <div className={styles.inputShell}>
         <input
           aria-describedby={describedBy}
           aria-invalid={invalid}
@@ -59,7 +60,7 @@ export default function PasswordInput({
           aria-controls={id}
           aria-label={`${actionLabel} ${label.toLowerCase()}`}
           aria-pressed={visible}
-          className="password-visibility-toggle"
+          className={styles.visibilityToggle}
           disabled={disabled}
           type="button"
           onClick={() => setVisible((current) => !current)}
