@@ -46,8 +46,17 @@ test('organization manager exposes filters tree parent selection and explicit li
   assert.match(page, /action: 'unpublish', label: 'Retirar publicación'/)
 })
 
-test('admin shell exposes organization management', async () => {
-  const shell = await read('src/app/(admin)/admin/AdminShell.tsx')
-  assert.match(shell, /href: '\/admin\/organizacion'/)
-  assert.match(shell, /label: 'Organización'/)
+test('canonical admin navigation exposes authorized organization management', async () => {
+  const [contract, shell] = await Promise.all([
+    read('src/features/admin/navigation/admin-navigation-contract.ts'),
+    read('src/app/(admin)/admin/AdminShell.tsx'),
+  ])
+
+  assert.match(contract, /id: 'organization'/)
+  assert.match(contract, /href: '\/admin\/organizacion'/)
+  assert.match(contract, /label: 'Organización'/)
+  assert.match(contract, /entryPermissions: \['pastorals\.view', 'entities\.view'\]/)
+  assert.match(shell, /AdminNavigationProvider/)
+  assert.match(shell, /useAdminNavigation\(\)/)
+  assert.doesNotMatch(shell, /const adminNavSections/)
 })
