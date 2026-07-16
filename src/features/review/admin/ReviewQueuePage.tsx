@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   formatReviewDate,
   getReviewDecisionPrompt,
+  getReviewItemHref,
   getReviewItemTypeLabel,
   getReviewStatusLabel,
   isPrimaryReviewAction,
@@ -92,6 +93,7 @@ export default function ReviewQueuePage() {
       missingFields: items.filter((item) => item.item_type === 'missing_field').length,
       assignments: items.filter((item) => item.item_type === 'position_assignment').length,
       personCandidates: items.filter((item) => item.item_type === 'person_candidate').length,
+      importBatches: items.filter((item) => item.item_type === 'import_batch').length,
       changeRequests: items.filter((item) => item.item_type === 'change_request').length,
     }
   }, [items])
@@ -106,6 +108,7 @@ export default function ReviewQueuePage() {
         <div className="admin-top-actions">
           <Link className="button button-secondary" href="/admin">Volver al panel</Link>
           <Link className="button button-secondary" href="/admin/eventos/pendientes">Eventos pendientes</Link>
+          <Link className="button button-secondary" href="/admin/importar/lotes">Lotes de importación</Link>
         </div>
       </header>
 
@@ -113,7 +116,7 @@ export default function ReviewQueuePage() {
         <div>
           <p className="eyebrow">Auditoría y trazabilidad</p>
           <h1>Cola de revisión</h1>
-          <p className="lead">Centraliza nombramientos, candidatos, solicitudes de cambio y datos pendientes de verificación. Las acciones disponibles dependen del rol y del alcance territorial del usuario.</p>
+          <p className="lead">Centraliza nombramientos, candidatos, solicitudes de cambio, lotes de importación y datos pendientes de verificación. Las acciones disponibles dependen del rol y del alcance territorial del usuario.</p>
           <div className="role-list admin-role-list">
             <span className="role-pill">Validación editorial</span>
             <span className="role-pill">Publicación controlada</span>
@@ -131,6 +134,7 @@ export default function ReviewQueuePage() {
         <a href="#review-results"><span>▤</span><strong>{counts.missingFields}</strong><small>Datos faltantes</small></a>
         <a href="#review-results"><span>▣</span><strong>{counts.assignments}</strong><small>Cargos por verificar</small></a>
         <a href="#review-results"><span>◉</span><strong>{counts.personCandidates}</strong><small>Personas por revisar</small></a>
+        <a href="#review-results"><span>⇩</span><strong>{counts.importBatches}</strong><small>Lotes por resolver</small></a>
         <a href="#review-results"><span>↻</span><strong>{counts.changeRequests}</strong><small>Solicitudes de cambio</small></a>
       </section>
 
@@ -172,6 +176,7 @@ export default function ReviewQueuePage() {
             {filteredItems.map((item) => {
               const busy = actionBusy === item.item_key
               const actions = item.allowed_actions ?? []
+              const directHref = getReviewItemHref(item)
 
               return (
                 <article className="list-card" key={item.item_key}>
@@ -185,9 +190,12 @@ export default function ReviewQueuePage() {
                   </div>
                   <div className="admin-card-actions">
                     <span className="role-pill">{item.issue_count ?? 1} pendiente</span>
-                    {actions.length === 0 ? (
+                    {directHref && (
+                      <Link className="button button-primary" href={directHref}>Abrir y resolver</Link>
+                    )}
+                    {!directHref && actions.length === 0 ? (
                       <span className="role-pill">Solo lectura</span>
-                    ) : actions.map((decision) => (
+                    ) : !directHref && actions.map((decision) => (
                       <button
                         className={`button ${isPrimaryReviewAction(decision) ? 'button-primary' : 'button-secondary'}`}
                         disabled={busy}
