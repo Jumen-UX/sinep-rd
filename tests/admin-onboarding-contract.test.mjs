@@ -5,6 +5,7 @@ import test from 'node:test'
 const migrationPath = 'supabase/migrations/20260714051000_user_onboarding_contract.sql'
 const routePath = 'src/app/(admin)/admin/onboarding/page.tsx'
 const pagePath = 'src/features/access/admin/AdminOnboardingPage.tsx'
+const passwordInputPath = 'src/features/access/components/PasswordInput.tsx'
 const passwordPanelPath = 'src/features/access/components/PasswordSecurityPanel.tsx'
 const passwordPolicyPath = 'src/features/access/services/password-policy.ts'
 const servicePath = 'src/features/access/services/authentication-admin-service.ts'
@@ -27,10 +28,11 @@ test('onboarding state is durable, scoped to the authenticated user and audited'
 })
 
 test('first access route delegates UI and I/O to the access feature', async () => {
-  const [route, page, service, passwordPanel, passwordPolicy] = await Promise.all([
+  const [route, page, service, passwordInput, passwordPanel, passwordPolicy] = await Promise.all([
     readFile(routePath, 'utf8'),
     readFile(pagePath, 'utf8'),
     readFile(servicePath, 'utf8'),
+    readFile(passwordInputPath, 'utf8'),
     readFile(passwordPanelPath, 'utf8'),
     readFile(passwordPolicyPath, 'utf8'),
   ])
@@ -46,8 +48,13 @@ test('first access route delegates UI and I/O to the access feature', async () =
   assert.match(page, /profile_status === 'pending_invitation'/)
   assert.match(page, /getPasswordValidationError/)
   assert.match(page, /passwordEvaluation\.isAcceptable/)
+  assert.match(page, /PasswordInput/)
   assert.match(page, /PasswordSecurityPanel/)
+  assert.match(passwordInput, /aria-pressed=\{visible\}/)
+  assert.match(passwordInput, /type=\{visible \? 'text' : 'password'\}/)
   assert.match(passwordPanel, /Seguridad de la contraseña/)
+  assert.match(passwordPanel, /Cumplido/)
+  assert.match(passwordPanel, /Pendiente/)
   assert.match(passwordPolicy, /PASSWORD_MIN_LENGTH = 12/)
   assert.match(page, /no puedes asignarte permisos ni elegir un ámbito/)
 })
