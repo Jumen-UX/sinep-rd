@@ -1,7 +1,8 @@
 # Sprint 6 — Importaciones y calidad de datos
 
-> Estado: activo
+> Estado: completado
 > Inicio: 2026-07-16
+> Cierre: 2026-07-16
 > Rama operativa: `main`
 > Propietario: dominios de importaciones, revisión y calidad de datos
 
@@ -22,7 +23,7 @@ Convertir las cargas específicas existentes en un sistema reutilizable, seguro 
 9. [x] S6-09 — Implementar reversión lógica y trazabilidad de cambios aplicados por lote.
 10. [x] S6-10 — Completar reportes descargables, errores y resultados por fila.
 11. [x] S6-11 — Integrar todos los tipos pendientes en la cola de revisión y calidad de datos.
-12. [ ] S6-12 — Ejecutar pruebas funcionales, `pnpm check` y cierre del sprint.
+12. [x] S6-12 — Ejecutar pruebas funcionales, `pnpm check` y cierre del sprint.
 
 ## Alcance inicial
 
@@ -61,7 +62,7 @@ S6-10 queda protegido por `import-report-reversal-ui-contract.test.mjs`. El repo
 
 S6-11 queda protegido por `import-review-quality-integration-contract.test.mjs`. La migración `20260716064000_add_import_batches_to_review_queue.sql` incorpora lotes `needs_review`, fallidos y validados pendientes de aprobación a la cola transversal, respetando permisos y alcance. Estos elementos no exponen decisiones genéricas: enlazan a `/admin/importar/[batchId]`, donde se conservan la corrección por fila, la aprobación, la vista previa y la aplicación canónica. El panel de calidad muestra el conteo de lotes pendientes y accesos a la cola y al historial sin duplicar resolutores.
 
-El único bloque restante es la validación integral y el cierre del sprint.
+S6-12 quedó validado con `pnpm check` y CI en verde: documentación, terminología, auditoría de rutas, auditoría estructural, TypeScript, pruebas y build de producción aprobados. Los contratos de prueba obsoletos fueron alineados con las fuentes canónicas compartidas sin cambiar el comportamiento funcional.
 
 ## Reglas del sprint
 
@@ -77,18 +78,17 @@ El único bloque restante es la validación integral y el cierre del sprint.
 
 ## Criterios de cierre
 
-- Ningún archivo modifica datos definitivos directamente.
-- Todo lote tiene estado, usuario, fecha, origen, hash y reporte.
-- Las filas fallidas se corrigen y revalidan individualmente.
-- Las coincidencias exactas producen `noop` auditables y las ambiguas permanecen bloqueadas.
-- La vista previa coincide con las operaciones aplicadas.
-- La aplicación puede reintentarse sin duplicar registros.
-- La cola de revisión permite resolver todos los tipos que muestra.
-- CI valida contratos, TypeScript, pruebas y build.
+- [x] Ningún archivo modifica datos definitivos directamente.
+- [x] Todo lote tiene estado, usuario, fecha, origen, hash y reporte.
+- [x] Las filas fallidas se corrigen y revalidan individualmente.
+- [x] Las coincidencias exactas producen `noop` auditables y las ambiguas permanecen bloqueadas.
+- [x] La vista previa coincide con las operaciones aplicadas.
+- [x] La aplicación puede reintentarse sin duplicar registros.
+- [x] La cola de revisión permite resolver todos los tipos que muestra.
+- [x] CI valida contratos, TypeScript, pruebas y build.
 
-## Riesgos iniciales
+## Riesgos residuales
 
-- Las importaciones ya contienen funcionalidad avanzada distribuida entre migraciones, servicios y pruebas; duplicarla produciría un segundo motor.
-- La lectura XLSX puede aumentar superficie de dependencias y consumo de memoria.
-- Una reversión física de datos aplicados puede destruir historia; la estrategia debe ser lógica y auditada.
-- Los catálogos y permisos deben respetar el alcance del usuario que cargó y del usuario que aplica el lote.
+- XLSX sigue fuera del alcance hasta evaluar una dependencia mantenida y segura.
+- La reversión automática permanece deliberadamente bloqueada para creaciones cuya retirada exige semántica canónica específica.
+- El panel de reporte y reversión realiza una consulta adicional del lote; puede optimizarse después sin afectar el contrato.
