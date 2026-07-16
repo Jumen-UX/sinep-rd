@@ -20,7 +20,7 @@ Convertir las cargas específicas existentes en un sistema reutilizable, seguro 
 7. [x] S6-07 — Generar una vista previa determinista con operaciones `create`, `update`, `noop`, `blocked` y `unresolved`.
 8. [x] S6-08 — Aplicar lotes mediante RPC transaccionales, idempotentes y auditadas.
 9. [x] S6-09 — Implementar reversión lógica y trazabilidad de cambios aplicados por lote.
-10. [ ] S6-10 — Completar reportes descargables, errores y resultados por fila.
+10. [x] S6-10 — Completar reportes descargables, errores y resultados por fila.
 11. [ ] S6-11 — Integrar todos los tipos pendientes en la cola de revisión y calidad de datos.
 12. [ ] S6-12 — Ejecutar pruebas funcionales, `pnpm check` y cierre del sprint.
 
@@ -57,7 +57,9 @@ S6-08 queda protegido por `import-application-preflight-contract.test.mjs`. `imp
 
 S6-09 queda protegido por `import-logical-reversal-contract.test.mjs`. `import_batch_reversals` conserva motivo, actor, fecha, plan, resultado y auditoría. El plan se calcula desde `import_batch_changes`: los `noop` solo revierten el registro de aplicación, las actualizaciones registrales de eventos restauran `before_data` mediante la corrección auditada y los eventos importados todavía no aplicados se retiran lógicamente. Creaciones de personas, entidades, asignaciones o eventos ya aplicados quedan bloqueadas para resolución canónica manual; nunca se eliminan físicamente registros ni historia.
 
-Los vacíos principales restantes son la cobertura completa de reportes descargables y la integración final con revisión y calidad de datos.
+S6-10 queda protegido por `import-report-reversal-ui-contract.test.mjs`. El reporte CSV puede descargarse durante cualquier estado del lote e incluye operación proyectada, resultado aplicado, identificadores de cambio y auditoría, incidencias históricas, datos normalizados y el último estado de reversión. La pantalla de detalle compone un panel de trazabilidad con descarga directa y, para lotes aplicados, un formulario de reversión lógica con motivo mínimo, confirmación explícita y mensajes diferenciados para reversión completada o bloqueo por resolución canónica manual.
+
+El vacío principal restante es la integración final de importaciones con las colas transversales de revisión y calidad de datos.
 
 ## Reglas del sprint
 
