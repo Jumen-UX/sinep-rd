@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  IMPORT_BATCH_LIMITS,
+  IMPORT_TEMPLATE_VERSION,
+  isImportBatchType,
+  isImportFileExtension,
+} from '@/features/importaciones/contracts/import-batch-contract'
 import { requireAdminAccess } from '@/lib/admin/authorization'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
 
-const allowedImportTypes = new Set(['personas', 'parroquias', 'asignaciones', 'eventos'])
-const allowedExtensions = new Set(['csv', 'xlsx', 'xls'])
 const sha256Pattern = /^[0-9a-f]{64}$/
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -27,13 +31,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'La solicitud de importación es inválida.' }, { status: 400 })
     }
 
-    const importType = typeof payload.import_type === 'string' ? payload.import_type : ''
+    const importType = payload.import_type
     const file = payload.file
     const rows = payload.rows
     const headers = payload.headers
+    const templateVersion = typeof payload.template_version === 'number'
+      ? payload.template_version
+      : IMPORT_TEMPLATE_VERSION
 
-    if (!allowedImportTypes.has(importType)) {
+    if (!isImportBatchType(importType)) {
       return NextResponse.json({ error: 'El tipo de importación no está permitido.' }, { status: 400 })
+    }
+
+    if (!Number.isSafeInteger(templateVersion) || templateVersion !== IMPORT_TEMPLATE_VERSION) {
+      return NextResponse.json({ error: 'La versión de plantilla no está soportada.' }, { status: 400 })
     }
 
     if (!isRecord(file)) {
@@ -47,10 +58,10 @@ export async function POST(request: NextRequest) {
     if (
       typeof file.name !== 'string'
       || !file.name.trim()
-      || !allowedExtensions.has(extension)
+      || !isImportFileExtension(extension)
       || !Number.isSafeInteger(sizeBytes)
       || sizeBytes < 0
-      || sizeBytes > 10 * 1024 * 1024
+      || sizeBytes > IMPORT_BATCH_LIMITS.maxFileSizeBytes
       || !sha256Pattern.test(sha256)
     ) {
       return NextResponse.json({ error: 'Los metadatos del archivo no son válidos.' }, { status: 400 })
@@ -64,8 +75,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El archivo no contiene filas para preparar.' }, { status: 400 })
     }
 
-    if (rows.length > 5000) {
-      return NextResponse.json({ error: 'El lote supera el límite inicial de 5,000 filas.' }, { status: 400 })
+    if (rows.length > IMPORT_BATCH_LIMITS.maxRows) {
+      return NextResponse.json({ error: `El lote supera el límite de ${IMPORT_BATCH_LIMITS.maxRows.toLocaleString('es-DO')} filas.` }, { status: 400 })
     }
 
     if (!rows.every(isStringRecord)) {
@@ -75,6 +86,7 @@ export async function POST(request: NextRequest) {
     const rpcPayload = {
       ...payload,
       import_type: importType,
+      template_version: templateVersion,
       file: {
         ...file,
         extension,
