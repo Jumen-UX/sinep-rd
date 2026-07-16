@@ -1,7 +1,7 @@
 # E2E y accesibilidad
 
 > Estado: vigente  
-> Última revisión: 2026-07-15  
+> Última revisión: 2026-07-16  
 > Propietario: ingeniería y frontend
 
 ## Objetivo
@@ -47,7 +47,71 @@ Se usa para recorridos administrativos preparados para pruebas. Debe ejecutarse 
 pnpm test:e2e:access
 ```
 
-Requiere `E2E_ACCESS_PROFILES_JSON`. La matriz verifica perfiles representativos y aislamiento de alcance sin escribir secretos en el repositorio.
+Requiere `E2E_ACCESS_PROFILES_JSON`. La matriz verifica estado de acceso, navegación autorizada y aislamiento de alcance sin escribir secretos en el repositorio.
+
+Cuando la variable está configurada debe incluir, como mínimo, dos perfiles `ready` no productivos:
+
+- un administrador representativo con `navigationRole: "administrator"`;
+- un perfil de consulta con `navigationRole: "viewer"`.
+
+Cada perfil `ready` debe declarar `expectedNavigation` con estas listas:
+
+- `visible`: rutas que deben aparecer en la navegación lateral;
+- `hidden`: rutas que no deben renderizarse;
+- `readOnly`: rutas visibles que deben mostrar el estado `Consulta`.
+
+`readOnly` debe ser subconjunto de `visible`, y una ruta no puede aparecer simultáneamente en `visible` y `hidden`. `expectedScopeLabel` permite comprobar el alcance activo mostrado al usuario.
+
+Ejemplo estructural sin credenciales reales:
+
+```json
+[
+  {
+    "label": "Administrador nacional E2E",
+    "email": "admin-e2e@example.invalid",
+    "password": "REEMPLAZAR_EN_SECRETO",
+    "expectedState": "ready",
+    "navigationRole": "administrator",
+    "expectedScopeLabel": "Ámbito nacional",
+    "expectedNavigation": {
+      "visible": [
+        "/admin/nuevo",
+        "/admin/personas",
+        "/admin/usuarios",
+        "/admin/configuracion"
+      ],
+      "hidden": [],
+      "readOnly": []
+    },
+    "minimumVisibleDioceses": 1
+  },
+  {
+    "label": "Consulta interna E2E",
+    "email": "viewer-e2e@example.invalid",
+    "password": "REEMPLAZAR_EN_SECRETO",
+    "expectedState": "ready",
+    "navigationRole": "viewer",
+    "expectedNavigation": {
+      "visible": [
+        "/admin/jurisdicciones",
+        "/admin/personas"
+      ],
+      "hidden": [
+        "/admin/nuevo",
+        "/admin/importar",
+        "/admin/usuarios",
+        "/admin/configuracion"
+      ],
+      "readOnly": [
+        "/admin/jurisdicciones",
+        "/admin/personas"
+      ]
+    }
+  }
+]
+```
+
+Las rutas del ejemplo deben ajustarse a los permisos y alcances reales de las cuentas de prueba. El secreto completo solo debe almacenarse como `E2E_ACCESS_PROFILES_JSON` en GitHub Actions o en un entorno local protegido.
 
 ## Escenarios mutantes
 
@@ -63,6 +127,8 @@ Los workflows canónicos son:
 
 - `CI`: auditorías contractuales, typecheck, pruebas, build, CodeQL y ejecuciones manuales aplicables.
 - `E2E / Public accessibility`: Playwright, Chromium y Axe sobre rutas públicas cubiertas.
+
+La matriz autenticada se ejecuta manualmente desde `CI` indicando `base_url`. El job usa el secreto `E2E_ACCESS_PROFILES_JSON`; si no existe, informa la omisión sin exponer datos sensibles.
 
 Los filtros de rutas pueden hacer que un cambio exclusivamente documental no genere una nueva corrida E2E pública. Esto no convierte una referencia histórica de GitHub Actions en un workflow activo.
 
