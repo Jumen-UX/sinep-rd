@@ -33,7 +33,7 @@ export function evaluatePassword(password: string): PasswordEvaluation {
   const categoryCount = [hasLowercase, hasUppercase, hasNumber, hasSymbol].filter(Boolean).length
   const hasMinimumLength = length >= PASSWORD_MIN_LENGTH
   const hasLongPassphrase = length >= PASSWORD_LONG_PASSPHRASE_LENGTH
-  const hasSafeWhitespace = password === password.trim()
+  const hasSafeWhitespace = length > 0 && password === password.trim()
   const hasRequiredVariety = hasLongPassphrase || categoryCount >= 3
 
   let score = 0
