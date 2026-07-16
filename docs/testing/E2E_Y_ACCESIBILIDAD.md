@@ -125,10 +125,13 @@ Las pruebas mutantes solo pueden ejecutarse contra entornos no productivos, recu
 
 Los workflows canónicos son:
 
-- `CI`: auditorías contractuales, typecheck, pruebas, build, CodeQL y ejecuciones manuales aplicables.
-- `E2E / Public accessibility`: Playwright, Chromium y Axe sobre rutas públicas cubiertas.
+- `CI`: auditorías contractuales, typecheck, pruebas, build, CodeQL y ejecuciones manuales aplicables;
+- `E2E / Public accessibility`: Playwright, Chromium y Axe sobre rutas públicas cubiertas;
+- `E2E / Admin access matrix`: navegación autenticada y aislamiento de alcance para perfiles protegidos.
 
-La matriz autenticada se ejecuta manualmente desde `CI` indicando `base_url`. El job usa el secreto `E2E_ACCESS_PROFILES_JSON`; si no existe, informa la omisión sin exponer datos sensibles.
+`E2E / Admin access matrix` levanta la aplicación localmente cuando cambian el shell, la navegación, el acceso o la propia matriz. Si el secreto `E2E_ACCESS_PROFILES_JSON` no está configurado, el workflow registra la omisión sin instalar Chromium ni exponer datos sensibles.
+
+La matriz también puede ejecutarse manualmente desde `CI` indicando `base_url`. Ese job usa el mismo secreto protegido y permite validar un despliegue específico.
 
 Los filtros de rutas pueden hacer que un cambio exclusivamente documental no genere una nueva corrida E2E pública. Esto no convierte una referencia histórica de GitHub Actions en un workflow activo.
 
