@@ -12,7 +12,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 ## Cola inicial
 
 1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
-2. [ ] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **En progreso:** contrato definido; implementación y pruebas pendientes.
+2. [ ] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **En progreso:** contrato, registro y política implementados; servicio de contexto, shell y pruebas E2E pendientes.
 3. [ ] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias.
 4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial.
 5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual.
@@ -40,7 +40,15 @@ Se creó `docs/product/ADMIN_NAVIGATION_ARCHITECTURE.md` como contrato canónico
 - integración del dashboard;
 - responsabilidades técnicas y pruebas obligatorias.
 
-La siguiente actividad es implementar el contrato con políticas puras, servicio de contexto, proveedor compartido y sustitución de las listas estáticas de `AdminShell`.
+También quedaron implementados:
+
+- `src/features/admin/navigation/admin-navigation-contract.ts`, con un único registro de secciones, destinos, permisos, restricciones de alcance y prioridades móviles;
+- `src/features/admin/navigation/admin-navigation-policy.ts`, con reglas puras para visibilidad, lectura, operación, secciones, navegación móvil y rutas activas;
+- `tests/admin-navigation-policy.test.mjs`, con nueve escenarios de permisos, alcance, estados de acceso y navegación móvil.
+
+La validación aislada confirmó las nueve pruebas aprobadas y TypeScript sin errores para esta capa. El estado externo visible de Vercel está bloqueado por límite de compilaciones, no por un error de aplicación. GitHub Actions debe confirmarse antes de integrar el contrato en el shell.
+
+La siguiente actividad es implementar el servicio de contexto y sustituir las listas estáticas de `AdminShell` sin introducir consultas directas adicionales en la UI.
 
 ## Reglas del sprint
 
@@ -63,4 +71,4 @@ La siguiente actividad es implementar el contrato con políticas puras, servicio
 
 ## Punto de continuación
 
-Continuar S7-02 implementando `admin-navigation-contract.ts`, `admin-navigation-policy.ts` y sus pruebas unitarias antes de conectar el contexto de Supabase o modificar `AdminShell`.
+Continuar S7-02 implementando `admin-navigation-service.ts` y un proveedor compartido de contexto. Después, conectar `AdminShell` al registro canónico, mostrar el alcance activo y eliminar las listas paralelas de navegación de escritorio y móvil.
