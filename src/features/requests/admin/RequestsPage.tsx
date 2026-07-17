@@ -84,7 +84,7 @@ export default function RequestsPage() {
       ) : error ? (
         <PageState kind="error" title="No pudimos cargar las solicitudes" description={error} />
       ) : totalPending === 0 ? (
-        <PageState title="No hay solicitudes pendientes" description="Las nuevas solicitudes administrativas y sugerencias públicas aparecerán aquí cuando requieran revisión." />
+        <PageState kind="empty" title="No hay solicitudes pendientes" description="Las nuevas solicitudes administrativas y sugerencias públicas aparecerán aquí cuando requieran revisión." />
       ) : null}
 
       {!loading && !error && publicSuggestions.length > 0 && (
