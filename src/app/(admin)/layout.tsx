@@ -5,6 +5,7 @@ import '@/styles/admin-dashboard.css'
 import '@/styles/admin-dashboard-brand.css'
 import '@/styles/person-wizard-unified.css'
 import '@/styles/admin-modules.css'
+import '@/styles/admin-theme-compatibility.css'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
