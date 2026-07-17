@@ -8,7 +8,7 @@
 .officeForm input,
 .officeForm select,
 .officeForm textarea {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   color: var(--foreground);
@@ -34,7 +34,7 @@
 .officeCheckbox {
   align-items: center;
   align-self: start;
-  background: #fbf8f1;
+  background: var(--surface-subtle);
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--muted);
@@ -64,6 +64,8 @@
 }
 
 .tableWrap {
+  border: 1px solid var(--border);
+  border-radius: 16px;
   max-width: 100%;
   overflow-x: auto;
 }
@@ -83,6 +85,7 @@
 }
 
 .officeTable th {
+  background: var(--surface-soft);
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
@@ -93,6 +96,11 @@
 .officeTable td {
   font-size: 14px;
   line-height: 1.35;
+}
+
+.officeTable tbody tr:hover,
+.officeTable tbody tr:focus-within {
+  background: var(--surface-hover);
 }
 
 .officeTable strong {
@@ -108,6 +116,7 @@
 
 @media (max-width: 760px) {
   .tableWrap {
+    border: 0;
     overflow-x: visible;
   }
 
@@ -128,6 +137,7 @@
   }
 
   .officeTable tr {
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
     margin-bottom: 12px;
