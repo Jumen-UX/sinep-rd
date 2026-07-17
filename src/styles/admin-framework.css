@@ -24,50 +24,50 @@
 .admin-wizard-actions{align-items:center}
 .admin-wizard-actions>span{color:var(--muted);font-size:12px;font-weight:900;margin-left:auto}
 .admin-wizard-actions>.button:first-child{margin-right:0!important}
-.admin-wizard-progress{background:#fff;border:1px solid var(--border);border-radius:20px;display:grid;gap:14px;padding:16px}
+.admin-wizard-progress{background:var(--surface);border:1px solid var(--border);border-radius:20px;display:grid;gap:14px;padding:16px}
 .admin-wizard-progress-summary{align-items:center;display:flex;font-size:12px;justify-content:space-between}
-.admin-wizard-progress-bar{background:#f0ece3;border-radius:999px;height:7px;overflow:hidden}
-.admin-wizard-progress-bar span{background:linear-gradient(90deg,var(--primary),#ffc003);display:block;height:100%}
+.admin-wizard-progress-bar{background:var(--surface-muted);border-radius:999px;height:7px;overflow:hidden}
+.admin-wizard-progress-bar span{background:linear-gradient(90deg,var(--primary),var(--gold));display:block;height:100%}
 .admin-wizard-progress ol{display:grid;gap:6px;list-style:none;margin:0;padding:0}
 .admin-wizard-progress li button,.admin-wizard-progress li>div{align-items:center;background:transparent;border:0;border-radius:13px;color:inherit;display:grid;font:inherit;gap:10px;grid-template-columns:34px minmax(0,1fr);padding:9px;text-align:left;width:100%}
-.admin-wizard-progress li.active button,.admin-wizard-progress li.active>div{background:#fff8ea}
+.admin-wizard-progress li.active button,.admin-wizard-progress li.active>div{background:var(--warning-soft)}
 .admin-wizard-progress li.complete button{cursor:pointer}
-.admin-wizard-step-number{align-items:center;background:#f5f1e8;border-radius:10px;display:flex;font-size:12px;font-weight:950;height:32px;justify-content:center;width:32px}
-.admin-wizard-progress li.active .admin-wizard-step-number{background:var(--primary);color:#fff}
-.admin-wizard-progress li.complete .admin-wizard-step-number{background:#e6f4ea;color:#24753d}
+.admin-wizard-step-number{align-items:center;background:var(--surface-muted);border-radius:10px;display:flex;font-size:12px;font-weight:950;height:32px;justify-content:center;width:32px}
+.admin-wizard-progress li.active .admin-wizard-step-number{background:var(--primary);color:var(--on-primary)}
+.admin-wizard-progress li.complete .admin-wizard-step-number{background:var(--success-soft);color:var(--success)}
 .admin-wizard-progress li strong{font-size:12px}
 .admin-wizard-progress li small{color:var(--muted);display:block;font-size:10px;margin-top:2px}
 .admin-wizard-form details summary{cursor:pointer;font-weight:900}
 .admin-warning-box,.admin-info-box{align-items:flex-start;border:1px solid var(--border);border-radius:18px;display:flex;gap:16px;justify-content:space-between;padding:16px 18px}
 .admin-warning-box>div:first-child,.admin-info-box>div:first-child,.error-box>div:first-child,.success-box>div:first-child{display:grid;gap:4px}
 .admin-warning-box span,.admin-info-box span,.error-box span,.success-box span{display:block;font-size:13px;line-height:1.45}
-.admin-warning-box{background:#fff8e8;border-color:#efd68a}
-.admin-info-box{background:#f5f8fb;border-color:#cfdce8}
-.admin-country-grid button.entity-card{appearance:none;background:#fff;color:inherit;cursor:pointer;font:inherit;text-align:left;width:100%}
-.admin-country-grid button.entity-card:hover{border-color:#e5b83d;transform:translateY(-1px)}
-.admin-country-grid .entity-card.is-selected{background:#fff8e8;border-color:var(--primary);box-shadow:0 0 0 2px rgba(255,184,0,.16)}
+.admin-warning-box{background:var(--warning-soft);border-color:var(--border-warning)}
+.admin-info-box{background:var(--info-soft);border-color:var(--border-info)}
+.admin-country-grid button.entity-card{appearance:none;background:var(--surface);color:inherit;cursor:pointer;font:inherit;text-align:left;width:100%}
+.admin-country-grid button.entity-card:hover{border-color:var(--gold);transform:translateY(-1px)}
+.admin-country-grid .entity-card.is-selected{background:var(--warning-soft);border-color:var(--primary);box-shadow:var(--focus-ring)}
 .admin-country-grid .entity-card.is-selected::after{content:'Seleccionado';color:var(--primary);font-size:11px;font-weight:950;letter-spacing:.05em;text-transform:uppercase}
 .jurisdiction-page{display:grid;gap:18px}
-.jurisdiction-page select,.jurisdiction-page input{border:1px solid var(--border);border-radius:14px;font:inherit;padding:12px 14px;width:100%}
+.jurisdiction-page select,.jurisdiction-page input{background:var(--surface);border:1px solid var(--border);border-radius:14px;color:var(--foreground);font:inherit;padding:12px 14px;width:100%}
 .jurisdiction-toolbar{align-items:end;display:grid;gap:14px;grid-template-columns:minmax(220px,1fr) minmax(180px,.72fr) minmax(180px,.72fr)}
 .jurisdiction-toolbar label{color:var(--muted);display:grid;font-size:14px;font-weight:800;gap:7px}
 .jurisdiction-view-tabs{display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr))}
-.jurisdiction-view-tab{appearance:none;background:#fff;border:1px solid var(--border);border-radius:18px;cursor:pointer;display:grid;gap:6px;padding:18px;text-align:left}
+.jurisdiction-view-tab{appearance:none;background:var(--surface);border:1px solid var(--border);border-radius:18px;color:inherit;cursor:pointer;display:grid;gap:6px;padding:18px;text-align:left}
 .jurisdiction-view-tab span,.profile-tile span,.layer-node span,.tree-row small,.relationship-card small,.mode-card span{color:var(--muted);font-size:13px;line-height:1.45}
-.jurisdiction-view-tab.active,.tree-row.active{background:#fff8ea;border-color:var(--primary);box-shadow:0 12px 30px rgba(31,41,51,.08)}
+.jurisdiction-view-tab.active,.tree-row.active{background:var(--warning-soft);border-color:var(--primary);box-shadow:var(--shadow-md)}
 .jurisdiction-visual-grid{align-items:start;display:grid;gap:18px;grid-template-columns:minmax(310px,.9fr) minmax(0,1.1fr)}
 .tree-panel,.profile-panel,.tree-list,.mode-panel{display:grid;gap:12px}
-.tree-row{align-items:center;appearance:none;background:#fff;border:1px solid var(--border);border-radius:16px;color:inherit;display:grid;font:inherit;gap:6px;padding:13px 14px;text-align:left;width:100%}
+.tree-row{align-items:center;appearance:none;background:var(--surface);border:1px solid var(--border);border-radius:16px;color:inherit;display:grid;font:inherit;gap:6px;padding:13px 14px;text-align:left;width:100%}
 button.tree-row{cursor:pointer}
-button.tree-row:hover{border-color:#e5b83d}
+button.tree-row:hover{border-color:var(--gold)}
 .tree-row-main,.profile-title{align-items:center;display:flex;gap:10px;justify-content:space-between}
 .profile-title{align-items:flex-start}
 .tree-row-title{align-items:center;display:flex;gap:9px;min-width:0}
-.tree-dot{align-items:center;background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;flex:0 0 auto;font-size:12px;font-weight:900;height:28px;justify-content:center;width:28px}
-.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}
+.tree-dot{align-items:center;background:var(--surface-subtle);border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;flex:0 0 auto;font-size:12px;font-weight:900;height:28px;justify-content:center;width:28px}
+.mini-badge{background:var(--surface-subtle);border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}
 .jurisdiction-profile-grid,.relationship-list,.layer-map{display:grid;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr))}
-.profile-tile,.relationship-card,.layer-node,.mode-card{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:7px;padding:14px}
-.layer-node.canonical{border-color:rgba(255,184,0,.5)}
-.layer-node.civil,.mode-card.highlight{background:#fbf8f1;border-style:dashed}
+.profile-tile,.relationship-card,.layer-node,.mode-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;display:grid;gap:7px;padding:14px}
+.layer-node.canonical{border-color:color-mix(in srgb,var(--gold) 50%,transparent)}
+.layer-node.civil,.mode-card.highlight{background:var(--surface-subtle);border-style:dashed}
 @media(max-width:1450px){.admin-wizard-layout{grid-template-columns:200px minmax(0,1fr)}.admin-wizard-layout>.admin-smart-context-panel{grid-column:1/-1;position:static}}
 @media(max-width:1180px){.admin-wizard-header{flex-direction:column}.admin-wizard-layout{grid-template-columns:1fr}.admin-wizard-layout>.admin-wizard-progress{position:static}.admin-wizard-progress ol{display:flex;overflow-x:auto}.admin-wizard-progress li{flex:0 0 180px}.admin-form-fields-grid,.admin-review-grid,.admin-choice-grid,.jurisdiction-toolbar,.jurisdiction-view-tabs,.jurisdiction-visual-grid,.jurisdiction-profile-grid,.relationship-list,.layer-map{grid-template-columns:1fr}.admin-wizard-success{align-items:flex-start;flex-direction:column}.admin-warning-box,.admin-info-box{flex-direction:column}}
