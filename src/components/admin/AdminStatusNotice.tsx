@@ -7,6 +7,8 @@ type AdminStatusNoticeProps = {
   title: string
   description?: string
   action?: ReactNode
+  busy?: boolean
+  id?: string
 }
 
 const toneClass: Record<NoticeTone, string> = {
@@ -17,9 +19,25 @@ const toneClass: Record<NoticeTone, string> = {
   empty: 'empty-state',
 }
 
-export default function AdminStatusNotice({ tone = 'info', title, description, action }: AdminStatusNoticeProps) {
+export default function AdminStatusNotice({
+  tone = 'info',
+  title,
+  description,
+  action,
+  busy = false,
+  id,
+}: AdminStatusNoticeProps) {
+  const isError = tone === 'error'
+
   return (
-    <div className={toneClass[tone]} role={tone === 'error' ? 'alert' : 'status'}>
+    <div
+      aria-atomic="true"
+      aria-busy={busy || undefined}
+      aria-live={isError ? 'assertive' : 'polite'}
+      className={toneClass[tone]}
+      id={id}
+      role={isError ? 'alert' : 'status'}
+    >
       <div>
         <strong>{title}</strong>
         {description && <span>{description}</span>}
