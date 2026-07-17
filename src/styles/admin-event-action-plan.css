@@ -1,4 +1,4 @@
-/* Presentation specific to the event action-plan workflow. */
+/* Presentation specific to event action-plan and application-contract workflows. */
 
 .event-action-plan-page :is(select, input, textarea) {
   background: var(--surface);
@@ -15,7 +15,8 @@
   resize: vertical;
 }
 
-.plan-hero {
+.plan-hero,
+.contract-hero {
   align-items: stretch;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr);
 }
@@ -24,7 +25,10 @@
 .plan-card,
 .action-card,
 .relationship-editor,
-.conflict-panel {
+.conflict-panel,
+.contract-summary,
+.contract-card,
+.contract-action {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -38,11 +42,14 @@
 .plan-summary,
 .plan-card.highlight,
 .relationship-editor,
-.conflict-panel.clear {
+.conflict-panel.clear,
+.contract-summary,
+.contract-card.highlight {
   background: var(--surface-subtle);
 }
 
-.plan-card.highlight {
+.plan-card.highlight,
+.contract-card.highlight {
   border-style: dashed;
 }
 
@@ -69,17 +76,20 @@
 }
 
 .plan-grid,
+.contract-grid,
 .actions-list,
 .metric-grid,
 .status-grid,
 .editor-grid,
-.conflict-list {
+.conflict-list,
+.requirements-list {
   display: grid;
   gap: 14px;
   min-width: 0;
 }
 
-.plan-grid {
+.plan-grid,
+.contract-grid {
   align-items: start;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 0.4fr);
 }
@@ -105,7 +115,8 @@
   gap: 6px;
 }
 
-.event-action-plan-page .mini-badge {
+.event-action-plan-page .mini-badge,
+.event-application-contract-page .mini-badge {
   background: var(--surface-subtle);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -116,19 +127,22 @@
   padding: 6px 9px;
 }
 
-.event-action-plan-page .mini-badge.warning {
+.event-action-plan-page .mini-badge.warning,
+.event-application-contract-page .mini-badge.warning {
   background: var(--warning-soft);
   border-color: var(--border-warning);
   color: var(--warning);
 }
 
-.event-action-plan-page .mini-badge.success {
+.event-action-plan-page .mini-badge.success,
+.event-application-contract-page .mini-badge.success {
   background: var(--success-soft);
   border-color: var(--border-success);
   color: var(--success);
 }
 
-.event-action-plan-page .mini-badge.danger {
+.event-action-plan-page .mini-badge.danger,
+.event-application-contract-page .mini-badge.danger {
   background: var(--danger-soft);
   border-color: var(--border-danger);
   color: var(--danger);
@@ -145,6 +159,8 @@
 @media (max-width: 1080px) {
   .plan-hero,
   .plan-grid,
+  .contract-hero,
+  .contract-grid,
   .metric-grid,
   .status-grid,
   .editor-grid {
