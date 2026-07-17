@@ -15,7 +15,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
-5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **Siguiente tarea.**
+5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso.**
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
@@ -40,27 +40,21 @@ Se consolidó el dashboard administrativo con el mismo contexto canónico de nav
 
 ### S7-04 — Completada con validación manual diferida
 
-Se implementaron:
-
-- `admin-kpi-contract.ts`, con doce indicadores distribuidos entre las dimensiones territorial, pastoral, administrativa y colegial;
-- `admin-kpi-policy.ts`, con permisos, alcances y estados `available`, `not_applicable` y `hidden`;
-- `admin-kpi-value-service.ts`, con estados de valor `available`, `unavailable` y `not_applicable`;
-- agrupación visual de KPIs por dimensión en `AdminDashboardPage.tsx`;
-- bloqueo de fuentes globales para alcances restringidos;
-- `supabase/migrations/20260717013000_admin_contextual_kpis.sql`, que crea `public.get_admin_contextual_kpis(text, uuid)`;
-- validación de sesión, tipo de alcance y pertenencia mediante `current_user_has_scope_for_entity`;
-- expansión territorial exclusiva mediante `get_entity_descendants`;
-- agregación inicial de entidades activas, parroquias activas, nombramientos activos y solicitudes pendientes;
-- integración del alcance activo completo en `admin-dashboard-service.ts`;
-- pruebas `admin-contextual-kpi-rpc.test.mjs`, `admin-kpi-policy.test.mjs` y `admin-dashboard-context.test.mjs`.
-
-La migración fue aplicada correctamente en Supabase y CI confirmó documentación, TypeScript, pruebas y build en verde. Los alcances `diocese`, `parish` y `entity` reciben valores contextuales para los cuatro indicadores soportados. Las dimensiones pastorales y colegiales permanecen explícitamente sin valor cuando no existe todavía una relación contextual canónica confirmada. No se utiliza ningún fallback global.
+Se implementaron el contrato, política y adaptador de KPIs contextuales, la agrupación visual por dimensión, el bloqueo de fuentes globales para alcances restringidos y la RPC `public.get_admin_contextual_kpis(text, uuid)`. La migración fue aplicada correctamente en Supabase y CI confirmó documentación, TypeScript, pruebas y build en verde.
 
 Queda registrada como deuda funcional la validación manual con un perfil restringido real para confirmar que las políticas RLS permiten leer todos los descendientes autorizados sin producir conteos parciales.
 
-### S7-05 — Siguiente tarea
+### S7-05 — En progreso
 
-Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual en las pantallas administrativas principales, reutilizando los componentes existentes y corrigiendo inconsistencias antes de abordar modo oscuro y accesibilidad avanzada.
+La auditoría inicial confirmó que conviven componentes compartidos modernos con clases heredadas como `page-heading`, `empty-state`, `error-box` y `role-pill`.
+
+Se implementaron:
+
+- `src/components/ui/page-state.tsx`, que normaliza estados de carga, error y vacío con semántica accesible;
+- migración de `RequestsPage.tsx` a `PageHeader`, breadcrumbs canónicos, `PageState`, `StatusBadge` y `Button`;
+- jerarquía de encabezados `h1 → h2 → h3` en la bandeja de solicitudes;
+- contadores y estados visuales consistentes para solicitudes públicas e internas;
+- `tests/admin-page-state-hierarchy.test.mjs`, que evita regresar a los patrones heredados.
 
 ## Reglas del sprint
 
@@ -83,4 +77,4 @@ Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visu
 
 ## Punto de continuación
 
-Iniciar S7-05 auditando `PageHeader`, breadcrumbs, estados vacíos, mensajes de error/éxito y jerarquía visual en las rutas administrativas principales. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
+Ejecutar CI para el primer bloque de S7-05. Después extender `PageState`, `PageHeader`, badges y acciones compartidas a las pantallas administrativas principales que todavía usan encabezados y estados heredados. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
