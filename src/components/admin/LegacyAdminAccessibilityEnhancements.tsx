@@ -13,10 +13,24 @@ const focusableSelector = [
 
 const formFieldSelector = 'input:not([type="hidden"]), select, textarea'
 
+const canonicalEventRootSelector = [
+  '.event-assistant-page',
+  '.events-page',
+  '.event-review-page',
+  '.event-action-plan-page',
+  '.event-application-contract-page',
+  '.event-workflow-verification-page',
+  '.pending-events-page',
+].join(',')
+
+function belongsToCanonicalEventFlow(element: Element) {
+  return Boolean(element.closest(canonicalEventRootSelector))
+}
+
 function configureLiveRegion(message: HTMLElement, priority: 'assertive' | 'polite', role: 'alert' | 'status') {
   if (!message.hasAttribute('role')) message.setAttribute('role', role)
-  message.setAttribute('aria-live', priority)
-  message.setAttribute('aria-atomic', 'true')
+  if (!message.hasAttribute('aria-live')) message.setAttribute('aria-live', priority)
+  if (!message.hasAttribute('aria-atomic')) message.setAttribute('aria-atomic', 'true')
 }
 
 function appendDescriptionId(field: HTMLElement, descriptionId: string) {
@@ -58,34 +72,19 @@ function associateLegacyFormErrors(root: ParentNode) {
 }
 
 function enhanceLegacyAdmin(root: ParentNode) {
-  root.querySelectorAll<HTMLElement>('.assistant-stepper').forEach((stepper) => {
-    stepper.setAttribute('role', 'navigation')
-    stepper.setAttribute('aria-label', 'Pasos del asistente')
-
-    stepper.querySelectorAll<HTMLButtonElement>('.step-card').forEach((button, index) => {
-      const title = button.querySelector('strong')?.textContent?.trim() || `Paso ${index + 1}`
-      const isCurrent = button.classList.contains('active')
-
-      button.setAttribute('aria-label', `Ir al paso ${index + 1}: ${title}`)
-      if (isCurrent) button.setAttribute('aria-current', 'step')
-      else button.removeAttribute('aria-current')
-    })
-  })
-
-  root.querySelectorAll<HTMLButtonElement>('.mode-card').forEach((button) => {
-    button.setAttribute('aria-pressed', button.classList.contains('active') ? 'true' : 'false')
-  })
-
   root.querySelectorAll<HTMLElement>('.error-box, .admin-navigation-error').forEach((message) => {
+    if (belongsToCanonicalEventFlow(message)) return
     configureLiveRegion(message, 'assertive', 'alert')
   })
 
   root.querySelectorAll<HTMLElement>('.empty-state, .success-box, .admin-warning-box, .admin-info-box, .admin-navigation-status').forEach((message) => {
+    if (belongsToCanonicalEventFlow(message)) return
     configureLiveRegion(message, 'polite', 'status')
   })
 
   root.querySelectorAll<HTMLElement>('[data-loading="true"], [aria-busy="true"]').forEach((region) => {
-    region.setAttribute('aria-busy', 'true')
+    if (belongsToCanonicalEventFlow(region)) return
+    if (region.getAttribute('aria-busy') !== 'true') region.setAttribute('aria-busy', 'true')
   })
 
   associateLegacyFormErrors(root)
