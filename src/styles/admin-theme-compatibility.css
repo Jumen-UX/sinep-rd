@@ -1,0 +1,26 @@
+/* Compatibility aliases and final semantic states for legacy administrative surfaces. */
+
+:root {
+  --surface-default: var(--surface);
+  --surface-raised: var(--surface);
+  --border-default: var(--border);
+  --brand-primary: var(--primary);
+  --brand-secondary: var(--gold);
+  --text-secondary: var(--text-muted);
+}
+
+.admin-workspace :is(.data-table, .dashboard-list-table) tbody tr:hover,
+.admin-workspace :is(.data-table, .dashboard-list-table) tbody tr:focus-within {
+  background: var(--surface-hover);
+}
+
+.admin-workspace :is(dialog, [role='dialog']) {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.admin-workspace dialog::backdrop,
+.admin-mobile-menu-backdrop {
+  background: rgb(0 0 0 / 0.58);
+}
