@@ -17,7 +17,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
 5. [x] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **Completada con cuatro pantallas representativas y CI verde.**
-6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos. **Fundamentos, preferencia persistente y componentes compartidos completados; cobertura especializada en progreso.**
+6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos. **Fundamentos, dashboard, navegación y primer bloque de asistentes completados; cobertura especializada en progreso.**
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
 9. [ ] S7-09 — Reducir duplicación visual y consolidar componentes reutilizables.
@@ -88,7 +88,17 @@ La ejecución [CI #29552207127](https://github.com/Jumen-UX/sinep-rd/actions/run
 
 El primer E2E público del bloque detectó contraste insuficiente en el emblema porque la capa de marca sustituye el primario por amarillo. Se incorporó un token oscuro específico para texto sobre la marca y se amplió el filtro del workflow para observar `public-shell.css`, tokens, controles de tema y componentes compartidos. [CI #29552428659](https://github.com/Jumen-UX/sinep-rd/actions/runs/29552428659) y [E2E público #29552428639](https://github.com/Jumen-UX/sinep-rd/actions/runs/29552428639) confirmaron la corrección en verde.
 
-Este bloque establece la infraestructura canónica, pero no cierra S7-06. Permanecen colores fijos en estilos especializados del dashboard, navegación, asistentes, tablas, overlays y módulos históricos. Se migrarán por grupos visuales y se comprobarán en claro y oscuro antes de marcar la tarea como completada.
+El segundo bloque migró las superficies y estados especializados del dashboard y la navegación administrativa a tokens semánticos. Incluyó métricas, paneles, avisos, búsqueda, navegación móvil, selector de alcance y contraste de elementos activos.
+
+El tercer bloque inició la cobertura de formularios y asistentes:
+
+- `admin-framework.css` dejó de fijar superficies blancas en progreso, tarjetas, árboles, vistas de jurisdicción y selectores;
+- avisos e información usan ahora `warning-soft`, `info-soft` y sus bordes semánticos;
+- estados activos y completados usan tokens de foco, éxito y contraste sobre primario;
+- `person-wizard-unified.css` eliminó el fallback blanco de la barra de acciones persistente;
+- `tests/theme-contract.test.mjs` protege estas superficies y evita reintroducir fondos blancos fijos.
+
+La validación de CI de este tercer bloque permanece pendiente. S7-06 continúa abierto porque todavía deben revisarse tablas, overlays, modales y estilos especializados no cubiertos por el framework compartido.
 
 ## Estado operativo separado
 
@@ -121,4 +131,4 @@ No bloquean el avance técnico de S7-05, pero deben cerrarse antes de S7-10:
 
 ## Punto de continuación
 
-Continuar S7-06 desde la infraestructura de tema ya implementada. El siguiente bloque debe migrar las superficies y estados fijos de `admin-dashboard.css`, `admin-dashboard-brand.css` y `admin-navigation.css`; después formularios, tablas, overlays y asistentes especializados. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
+Continuar S7-06 con tablas, overlays, modales y estilos especializados que todavía contienen colores fijos. Después se cerrará la comprobación visual del modo oscuro y se avanzará a S7-07, acceso flotante a herramientas de accesibilidad. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
