@@ -16,7 +16,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
-5. [x] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **Completada con cuatro pantallas representativas y CI verde.**
+5. [x] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **Completada con cinco pantallas representativas y CI verde; refuerzo posterior pendiente de CI.**
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos. **Cobertura semántica implementada en shell, dashboard, asistentes, tablas, historiales y capas heredadas; validación final en progreso.**
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
@@ -60,13 +60,16 @@ Se implementaron:
 - migración de `UserAccessPage.tsx` a `PageHeader`, breadcrumbs, `PageState`, `Alert`, `StatusBadge` y `Button`;
 - corrección de la jerarquía de usuarios y roles para que las tarjetas usen `h3` bajo sus secciones `h2`;
 - estados vacíos explícitos para catálogos de usuarios y roles;
-- ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger las cuatro pantallas y evitar el retorno de patrones heredados.
+- migración de `ReviewQueuePage.tsx` a `PageHeader`, `PageState`, `Alert`, `StatusBadge` y `Button`, con filtros etiquetados y jerarquía `h1 → h2 → h3`;
+- ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger las cinco pantallas y evitar el retorno de patrones heredados.
 
 Los dos primeros bloques fueron confirmados con CI verde. El CI del tercer bloque detectó una regresión independiente en `package.json`: se habían perdido los scripts recientes de automatización documental, auditoría de migraciones y pruebas afectadas. El contrato completo fue restaurado sin modificar la funcionalidad de las pantallas.
 
 La ejecución [CI #29551515252](https://github.com/Jumen-UX/sinep-rd/actions/runs/29551515252) confirmó en verde la cuarta migración: documentación, automatizaciones, TypeScript, 462 pruebas, build y CodeQL.
 
-El inventario restante todavía contiene clases heredadas en asistentes y pantallas especializadas. No bloquea S7-05 porque la capa canónica, la semántica y el contrato de adopción ya quedaron demostrados en solicitudes, auditoría, personas y acceso. La eliminación transversal de duplicación visual continuará en S7-09, coordinada con modo oscuro y accesibilidad para evitar retrabajo.
+Como refuerzo posterior al cierre, el centro de revisión fue incorporado al mismo contrato visual y accesible. Este cambio no reabre S7-05 ni desplaza S7-06; queda pendiente de `pnpm check` y CI sobre los commits del refuerzo.
+
+El inventario restante todavía contiene clases heredadas en asistentes y pantallas especializadas. No bloquea S7-05 porque la capa canónica, la semántica y el contrato de adopción ya quedaron demostrados en solicitudes, auditoría, personas, acceso y revisión. La eliminación transversal de duplicación visual continuará en S7-09, coordinada con modo oscuro y accesibilidad para evitar retrabajo.
 
 ### S7-06 — En progreso
 
