@@ -25,6 +25,7 @@ function applyTheme(preference: ThemePreference, media: MediaQueryList) {
 
 export function ThemeControl({ compact = false }: { compact?: boolean }) {
   const [preference, setPreference] = useState<ThemePreference>('system')
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)')
@@ -33,6 +34,7 @@ export function ThemeControl({ compact = false }: { compact?: boolean }) {
 
     setPreference(initialPreference)
     applyTheme(initialPreference, media)
+    setReady(true)
 
     function handleSystemChange() {
       const currentPreference = window.localStorage.getItem(THEME_STORAGE_KEY)
@@ -67,6 +69,7 @@ export function ThemeControl({ compact = false }: { compact?: boolean }) {
       <span>{compact ? 'Tema' : 'Apariencia'}</span>
       <select
         aria-label="Seleccionar apariencia"
+        disabled={!ready}
         onChange={(event) => updatePreference(event.target.value as ThemePreference)}
         value={preference}
       >
