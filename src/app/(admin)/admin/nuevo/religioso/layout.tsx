@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react'
-import AutoSectionWizard from '@/components/admin/AutoSectionWizard'
 import PersonWizardContextRail from '@/components/admin/PersonWizardContextRail'
 import '@/styles/person-wizard-ui.css'
+import '@/styles/person-registration-wizard.css'
 
 export default function ReligiousWizardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="admin-religious-wizard person-wizard-with-context">
-      <div className="person-wizard-primary">
-        <AutoSectionWizard>{children}</AutoSectionWizard>
-      </div>
+      <div className="person-wizard-primary">{children}</div>
       <PersonWizardContextRail
         title="Vida consagrada"
         description="La pertenencia religiosa se añade a una identidad única y puede coexistir con cualquier grado del Orden."
