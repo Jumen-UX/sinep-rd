@@ -32,14 +32,18 @@ test('theme control persists light dark and automatic preferences', async () => 
 })
 
 test('public and administrative shells expose the shared appearance control', async () => {
-  const [layout, adminShell] = await Promise.all([
+  const [layout, adminShell, publicDashboard] = await Promise.all([
     source('src/app/layout.tsx'),
     source('src/app/(admin)/admin/AdminShell.tsx'),
+    source('src/features/public/PublicDashboardClient.tsx'),
   ])
 
   assert.match(layout, /import \{ ThemeControl \}/)
   assert.match(adminShell, /import \{ ThemeControl \}/)
   assert.match(adminShell, /<ThemeControl \/>/)
+  assert.match(publicDashboard, /import \{ ThemeControl \}/)
+  assert.match(publicDashboard, /public-mobile-header[\s\S]*<ThemeControl compact \/>/)
+  assert.match(publicDashboard, /public-topbar[\s\S]*<ThemeControl compact \/>/)
 })
 
 test('dark theme defines semantic surfaces borders states and focus tokens', async () => {
@@ -139,4 +143,14 @@ test('brand layer preserves dark surfaces instead of restoring the light gradien
   assert.match(brand, /html\[data-theme='dark'\][\s\S]*background:\s*linear-gradient\([^;]*var\(--background\)/)
   assert.match(brand, /html\[data-theme='dark'\] \.site-header\s*\{[^}]*var\(--surface\)/s)
   assert.match(brand, /\.button-primary\s*\{[^}]*color:\s*var\(--on-primary\)/s)
+})
+
+test('public dashboard exposes visible theme controls and semantic surfaces', async () => {
+  const dashboard = await source('src/app/public-dashboard.css')
+
+  assert.match(dashboard, /body:has\(\.public-dashboard-layout\)\s*\{[^}]*background:\s*var\(--surface-subtle\)/s)
+  assert.match(dashboard, /\.public-sidebar\s*\{[^}]*background:\s*color-mix\([^;]*var\(--surface\)/s)
+  assert.match(dashboard, /\.public-panel\s*\{[^}]*background:\s*color-mix\([^;]*var\(--surface\)/s)
+  assert.match(dashboard, /\.public-mobile-header\s*\{[^}]*background:\s*color-mix\([^;]*var\(--surface\)/s)
+  assert.match(dashboard, /\.public-mobile-header \[data-ui='theme-control'\] select\s*\{[^}]*min-width:\s*6\.5rem/s)
 })

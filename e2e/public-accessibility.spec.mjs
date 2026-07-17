@@ -44,7 +44,7 @@ test('tema oscuro se aplica sin perder persistencia ni accesibilidad', async ({ 
   expect(response).not.toBeNull()
   expect(response.status()).toBeLessThan(400)
 
-  const themeControl = page.locator('[data-ui="theme-control"] select').first()
+  const themeControl = page.locator('[data-ui="theme-control"]:visible select').first()
   await expect(themeControl).toBeVisible()
   await themeControl.selectOption('dark')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
