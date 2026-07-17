@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type SupabaseClient = ReturnType<typeof createClient>
@@ -81,25 +81,6 @@ type StructureHierarchySelectorProps = {
 const fixedJurisdictionKeys = ['country', 'ecclesiastical_province', 'archdiocese', 'diocese', 'military_ordinariate']
 const dioceseEntityTypeKeys = ['archdiocese', 'diocese', 'military_ordinariate', 'ordinariate', 'apostolic_vicariate', 'vicariate']
 
-const componentStyles = `
-  .structure-selector {
-    background: #fbf8f1;
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    display: grid;
-    gap: 14px;
-    padding: 18px;
-  }
-  .structure-selector h3 { color: var(--foreground); font-size: clamp(19px, 2vw, 22px); line-height: 1.15; margin: 0; }
-  .structure-selector-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .structure-selector label { color: var(--muted); display: grid; font-size: 14px; font-weight: 800; gap: 7px; }
-  .structure-selector select { background: #ffffff; border: 1px solid var(--border); border-radius: 14px; color: var(--foreground); font: inherit; padding: 12px 14px; width: 100%; }
-  .structure-selector-path { background: #ffffff; border: 1px solid var(--border); border-radius: 16px; display: grid; gap: 6px; padding: 14px; }
-  .structure-selector-path strong { color: var(--foreground); line-height: 1.2; }
-  .structure-selector-path span, .structure-selector-path small { color: var(--muted); font-size: 13px; line-height: 1.45; }
-  @media (max-width: 860px) { .structure-selector-grid { grid-template-columns: 1fr; } }
-`
-
 function toEntityTypes(entity: Pick<EcclesiasticalEntity, 'entity_types'>) {
   if (!entity.entity_types) return []
   return Array.isArray(entity.entity_types) ? entity.entity_types : [entity.entity_types]
@@ -144,6 +125,7 @@ export default function StructureHierarchySelector({
   required = false,
   onChange,
 }: StructureHierarchySelectorProps) {
+  const selectorId = useId()
   const supabase = useMemo<SupabaseClient>(() => createClient(), [])
   const [dioceses, setDioceses] = useState<EcclesiasticalEntity[]>([])
   const [selectedDioceseId, setSelectedDioceseId] = useState(defaultDioceseId ?? '')
@@ -155,6 +137,13 @@ export default function StructureHierarchySelector({
   const [loadingTree, setLoadingTree] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const headingId = `${selectorId}-heading`
+  const helperId = `${selectorId}-helper`
+  const errorId = `${selectorId}-error`
+  const dioceseSelectId = `${selectorId}-diocese`
+  const templateSelectId = `${selectorId}-template`
+  const nodeSelectId = `${selectorId}-node`
+  const pathId = `${selectorId}-path`
   const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) ?? null
   const sortedNodes = useMemo(() => [...nodes].sort((a, b) => pathLabel(a).localeCompare(pathLabel(b), 'es')), [nodes])
   const selectableNodes = useMemo(() => sortedNodes.filter((node) => node.is_current && node.status === 'active'), [sortedNodes])
@@ -289,39 +278,60 @@ export default function StructureHierarchySelector({
   }, [onChange, selection])
 
   return (
-    <section className="structure-selector">
-      <style>{componentStyles}</style>
+    <section
+      aria-busy={loadingBase || loadingTree}
+      aria-describedby={helperId}
+      aria-labelledby={headingId}
+      className="structure-selector"
+    >
       <div className="section-heading">
         <div>
           <p className="eyebrow">Motor flexible</p>
-          <h3>{label}</h3>
-          <p className="meta">{helperText}</p>
+          <h3 id={headingId}>{label}</h3>
+          <p className="meta" id={helperId}>{helperText}</p>
         </div>
       </div>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <div className="error-box" id={errorId} role="alert" aria-live="assertive">{error}</div>}
 
       <div className="structure-selector-grid">
-        <label>Diócesis
-          <select value={selectedDioceseId} onChange={(event) => setSelectedDioceseId(event.target.value)} required={required}>
-            <option value="">Seleccionar diócesis</option>
-            {dioceses.map((diocese) => <option key={diocese.id} value={diocese.id}>{diocese.name}</option>)}
-          </select>
-        </label>
+        <label htmlFor={dioceseSelectId}>Diócesis</label>
+        <select
+          aria-describedby={error ? `${helperId} ${errorId}` : helperId}
+          id={dioceseSelectId}
+          value={selectedDioceseId}
+          onChange={(event) => setSelectedDioceseId(event.target.value)}
+          required={required}
+        >
+          <option value="">Seleccionar diócesis</option>
+          {dioceses.map((diocese) => <option key={diocese.id} value={diocese.id}>{diocese.name}</option>)}
+        </select>
 
-        <label>Catálogo activo
-          <select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)} disabled={templates.length === 0}>
-            <option value="">{loadingTree ? 'Cargando catálogo...' : 'Sin catálogo activo'}</option>
-            {templates.map((template) => <option key={template.id} value={template.id}>{template.name}{template.is_primary ? ' · principal' : ''}</option>)}
-          </select>
-        </label>
+        <label htmlFor={templateSelectId}>Catálogo activo</label>
+        <select
+          aria-describedby={error ? `${helperId} ${errorId}` : helperId}
+          disabled={templates.length === 0}
+          id={templateSelectId}
+          value={selectedTemplateId}
+          onChange={(event) => setSelectedTemplateId(event.target.value)}
+        >
+          <option value="">{loadingTree ? 'Cargando catálogo...' : 'Sin catálogo activo'}</option>
+          {templates.map((template) => <option key={template.id} value={template.id}>{template.name}{template.is_primary ? ' · principal' : ''}</option>)}
+        </select>
 
-        <label>Unidad padre
-          <select value={selectedNodeId} onChange={(event) => setSelectedNodeId(event.target.value)} disabled={selectableNodes.length === 0} required={required}>
-            <option value="">{loadingTree ? 'Cargando árbol...' : 'Seleccionar unidad'}</option>
-            {selectableNodes.map((node) => <option key={node.node_id} value={node.node_id}>{nodeLabel(node)}</option>)}
-          </select>
-        </label>
+        <label htmlFor={nodeSelectId}>Unidad padre</label>
+        <select
+          aria-controls={pathId}
+          aria-describedby={error ? `${helperId} ${errorId}` : helperId}
+          disabled={selectableNodes.length === 0}
+          id={nodeSelectId}
+          value={selectedNodeId}
+          onChange={(event) => setSelectedNodeId(event.target.value)}
+          required={required}
+        >
+          <option value="">{loadingTree ? 'Cargando árbol...' : 'Seleccionar unidad'}</option>
+          {selectableNodes.map((node) => <option key={node.node_id} value={node.node_id}>{nodeLabel(node)}</option>)}
+        </select>
       </div>
 
       <input name={`${namePrefix}_diocese_id`} type="hidden" value={selection?.dioceseId ?? ''} readOnly />
@@ -333,7 +343,7 @@ export default function StructureHierarchySelector({
       <input name={`${namePrefix}_linked_organization_unit_id`} type="hidden" value={selection?.linkedOrganizationUnitId ?? ''} readOnly />
       <input name={`${namePrefix}_parent_path`} type="hidden" value={selection?.pathLabel ?? ''} readOnly />
 
-      <div className="structure-selector-path">
+      <div className="structure-selector-path" id={pathId} role="status" aria-live="polite" aria-atomic="true">
         <strong>Ruta seleccionada</strong>
         <span>{selection?.pathLabel ?? (loadingBase || loadingTree ? 'Cargando estructura...' : 'Selecciona una unidad del árbol flexible.')}</span>
         {selection && !selection.linkedEntityId && !selection.linkedOrganizationUnitId && <small>Esta unidad no está vinculada a una ficha pública; se guardará como contexto estructural.</small>}
