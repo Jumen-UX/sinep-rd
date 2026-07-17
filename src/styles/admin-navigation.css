@@ -34,7 +34,7 @@
 
 .admin-scope-control select {
   appearance: none;
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid transparent;
   border-radius: 10px;
   color: var(--foreground);
@@ -82,7 +82,7 @@
   background: var(--primary);
   border: 0;
   border-radius: 10px;
-  color: var(--foreground);
+  color: var(--on-primary);
   cursor: pointer;
   font: inherit;
   font-size: 12px;
@@ -130,7 +130,7 @@
   }
 
   .admin-mobile-nav button[aria-expanded='true'] > span:first-child {
-    background: #f4e7c3;
+    background: var(--gold-soft);
   }
 
   .admin-mobile-menu {
@@ -155,7 +155,7 @@
   }
 
   .admin-mobile-menu > section {
-    background: var(--surface, #ffffff);
+    background: var(--surface);
     border-radius: 24px 24px 0 0;
     box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.2);
     display: grid;
@@ -188,7 +188,7 @@
 
   .admin-mobile-menu > section > header > button {
     align-items: center;
-    background: var(--surface-soft, #f5f1e8);
+    background: var(--surface-soft);
     border: 1px solid var(--border);
     border-radius: 50%;
     color: var(--foreground);
@@ -202,7 +202,7 @@
   }
 
   .admin-mobile-menu .admin-scope-control {
-    background: var(--surface-soft, #f5f1e8);
+    background: var(--surface-soft);
     border-color: var(--border);
     margin: 0;
     padding: 10px;
@@ -240,7 +240,7 @@
   }
 
   .admin-mobile-menu .admin-sidebar-nav a {
-    background: var(--surface, #ffffff);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-left: 4px solid transparent;
     color: var(--foreground);
@@ -255,7 +255,7 @@
   .admin-mobile-menu .admin-sidebar-nav a[aria-current='page'],
   .admin-mobile-menu .admin-sidebar-nav a:hover,
   .admin-mobile-menu .admin-sidebar-nav a:focus-visible {
-    background: var(--gold-soft, #fff3cf);
+    background: var(--gold-soft);
     border-color: rgba(179, 139, 45, 0.35);
     border-left-color: var(--primary);
     color: var(--foreground);

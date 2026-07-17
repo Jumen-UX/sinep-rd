@@ -18,7 +18,7 @@
 
 .admin-brand-shield {
   background: var(--primary);
-  color: var(--foreground);
+  color: var(--on-primary);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
 }
 
@@ -43,7 +43,7 @@
   background: var(--primary);
   border-color: var(--primary);
   border-left-color: #ffffff;
-  color: var(--foreground);
+  color: var(--on-primary);
 }
 
 .admin-sidebar-nav a[aria-current='page'] small {
@@ -52,7 +52,7 @@
 
 .admin-sidebar-nav a[aria-current='page'] > span:first-child {
   background: rgba(0, 0, 0, 0.1);
-  color: var(--foreground);
+  color: var(--on-primary);
 }
 
 .admin-sidebar-nav a:not([aria-current='page']):hover,
@@ -66,7 +66,7 @@
 .admin-sidebar-nav a:not([aria-current='page']):hover > span:first-child,
 .admin-sidebar-nav a:not([aria-current='page']):focus-visible > span:first-child {
   background: var(--primary);
-  color: var(--foreground);
+  color: var(--on-primary);
 }
 
 .admin-sidebar-help {
@@ -89,7 +89,7 @@
 .admin-sidebar-help a {
   background: var(--primary);
   border-color: var(--primary);
-  color: var(--foreground);
+  color: var(--on-primary);
 }
 
 .admin-workspace,
@@ -133,20 +133,21 @@
 
 .admin-dashboard-review-icon {
   background: var(--warning);
-  color: #ffffff;
+  color: var(--on-primary);
 }
 
 .admin-dashboard-review-notice.is-clear {
-  background: #edf7ed;
-  border-color: #b9dfba;
+  background: var(--success-soft);
+  border-color: var(--border-success);
 }
 
 .admin-dashboard-review-notice.is-clear .admin-dashboard-review-icon {
-  background: #225d25;
+  background: var(--success);
+  color: var(--text-inverse);
 }
 
 .admin-dashboard-review-notice a {
-  background: #ffffff;
+  background: var(--surface);
   border-color: var(--border);
 }
 
@@ -176,14 +177,14 @@
 .admin-dashboard-action-icon.green,
 .admin-dashboard-metric-note.green,
 .admin-dashboard-state {
-  background: #edf7ed;
-  color: #225d25;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .admin-dashboard-metric-icon.alert,
 .admin-dashboard-action-icon.alert,
 .admin-dashboard-metric-note.alert {
-  background: #fff0ef;
+  background: var(--danger-soft);
   color: var(--danger);
 }
 
@@ -196,18 +197,18 @@
 }
 
 .admin-dashboard-quality-ring.is-clear {
-  background: #edf7ed;
+  background: var(--success-soft);
 }
 
 .admin-dashboard-quality-ring.is-clear strong {
-  color: #225d25;
+  color: var(--success);
 }
 
 .admin-dashboard-panel,
 .admin-dashboard-metric,
 .admin-dashboard-topbar,
 .admin-mobile-nav {
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .admin-mobile-nav a[aria-current='page'] {
@@ -216,5 +217,5 @@
 
 .admin-mobile-nav a[aria-current='page'] > span:first-child {
   background: var(--primary);
-  color: var(--foreground);
+  color: var(--on-primary);
 }

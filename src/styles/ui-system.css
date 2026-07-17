@@ -1,6 +1,7 @@
 :root {
   --surface: #ffffff;
   --surface-subtle: #fbf8f1;
+  --surface-soft: #f7f7f5;
   --surface-muted: #f1ece2;
   --surface-hover: #faf6ee;
   --surface-inverse: #2b2020;
@@ -23,6 +24,7 @@
   --primary-soft: #f7eaea;
   --gold-soft: #f7f0dc;
   --brand-mark-text: #35100d;
+  --on-primary: #35100d;
 
   --success: #287a3e;
   --success-soft: #edf7ef;
@@ -62,6 +64,7 @@ html[data-theme='dark'] {
   color-scheme: dark;
   --surface: #17191d;
   --surface-subtle: #1e2126;
+  --surface-soft: #1e2126;
   --surface-muted: #272b31;
   --surface-hover: #2d3239;
   --surface-inverse: #f6f1e8;
@@ -83,6 +86,7 @@ html[data-theme='dark'] {
   --primary-hover: #f0b1b1;
   --primary-soft: #3b2428;
   --gold-soft: #39311f;
+  --on-primary: #17191d;
 
   --success: #8bd49b;
   --success-soft: #1d3524;

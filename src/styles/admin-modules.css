@@ -79,7 +79,7 @@
 .admin-workspace .button-primary {
   background: var(--primary);
   border-color: var(--primary);
-  color: var(--foreground);
+  color: var(--on-primary);
 }
 
 .admin-workspace .button-primary:hover,
