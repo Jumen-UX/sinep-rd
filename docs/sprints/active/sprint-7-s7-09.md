@@ -140,7 +140,7 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - `tests/admin-theme-specialized.test.mjs` valida el contraste del diácono mediante `clergy-wizard-ui.css` y `admin-modules.css`, sin depender de una hoja retirada.
 - CI confirmó el bloque en verde.
 
-## Duodécimo bloque implementado
+## Duodécimo bloque implementado y validado
 
 - `BishopWizardPage.tsx` conserva las cinco etapas montadas y el mismo payload canónico, pero ahora declara directamente carga, error, éxito y guardado ocupado.
 - El contenido principal y el formulario exponen `aria-busy`; el error se anuncia como alerta assertiva y la confirmación como estado moderado y atómico.
@@ -149,7 +149,19 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - La ruta estructural y el filtrado de cargos se anuncian como estados dinámicos.
 - La navegación declara un grupo accesible, desactiva acciones durante el guardado y usa un submit explícito con `aria-busy`.
 - `tests/bishop-wizard-accessibility-consolidation.test.mjs` protege semántica, etiquetas, agrupación, navegación y permanencia de las cinco etapas montadas.
+- CI confirmó el bloque en verde.
+
+## Decimotercer bloque implementado
+
+- `PriestWizardPage.tsx` dejó de repetir `.admin-priest-wizard`; la única raíz visual del flujo permanece en el layout de ruta.
+- El mensaje de éxito dejó de escribir contenido mediante referencias y `textContent`; ahora se renderiza con React como región viva moderada y atómica.
+- Carga, error, contenido y formulario declaran `status`, `alert`, `aria-busy`, título asociado y relación con el error activo.
+- El tipo de sacerdote y los datos no identificados se agrupan mediante `fieldset` y `legend` compartidos.
+- Nombre visible, incardinación, servicio seleccionado y filtro de cargos se anuncian como estados dinámicos.
+- La revisión usa cuatro `article` dentro de un resumen identificado, y la barra de navegación declara un grupo accesible con estado ocupado.
+- Se conservaron las cinco etapas montadas, el borrador local, la continuidad de la identidad diaconal y el filtrado estricto de cargos por nivel.
+- `tests/priest-wizard-accessibility-consolidation.test.mjs` protege raíz única, semántica, agrupación, navegación y contratos canónicos.
 
 ## Criterio del siguiente bloque
 
-Validar el duodécimo bloque con CI. Después se consolidará `PriestWizardPage`, incluida la eliminación de su raíz visual duplicada, antes de abordar el flujo automático del diácono y los asistentes heredados de personas.
+Validar el decimotercer bloque con CI. Después se consolidará `DeaconWizardPage`, se reducirá su dependencia de `AutoSectionWizard` y se continuará con los asistentes heredados de personas antes de evaluar la retirada completa de `LegacyAdminAccessibilityEnhancements`.
