@@ -1,0 +1,80 @@
+/* Final semantic guard for legacy component-scoped style blocks. */
+
+.admin-workspace :is(
+  .events-page,
+  .event-assistant-page,
+  .event-review-page,
+  .event-action-plan-page,
+  .event-contract-page,
+  .event-workflow-page,
+  .pending-events-page,
+  .level-office-page
+) :is(input, select, textarea) {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+.admin-workspace :is(
+  .events-tab,
+  .event-card-button,
+  .facet-card,
+  .derived-card,
+  .impact-card,
+  .detail-tile,
+  .assistant-summary-card,
+  .step-card,
+  .mode-card,
+  .preview-card,
+  .review-card,
+  .action-card,
+  .contract-card,
+  .verification-card,
+  .pending-event-card,
+  .level-office-row,
+  .structure-selector-path
+) {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+.admin-workspace :is(
+  .event-date-box,
+  .mini-badge,
+  .facet-card.highlight,
+  .derived-card.highlight,
+  .impact-card.highlight,
+  .assistant-summary-card,
+  .preview-card.highlight,
+  .level-office-summary,
+  .structure-selector
+) {
+  background: var(--surface-subtle) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+.admin-workspace .mini-badge.warning {
+  background: var(--warning-soft) !important;
+  border-color: var(--border-warning) !important;
+  color: var(--warning) !important;
+}
+
+.admin-workspace .mini-badge.success {
+  background: var(--success-soft) !important;
+  border-color: var(--border-success) !important;
+  color: var(--success) !important;
+}
+
+.admin-workspace :is(.events-tab, .event-card-button, .step-card, .mode-card):is(:hover, :focus-visible),
+.admin-workspace :is(.events-tab, .event-card-button, .step-card, .mode-card).active {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border)) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+.admin-workspace .structure-selector select {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
