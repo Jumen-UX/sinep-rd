@@ -11,6 +11,12 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',')
 
+function configureLiveRegion(message: HTMLElement, priority: 'assertive' | 'polite', role: 'alert' | 'status') {
+  if (!message.hasAttribute('role')) message.setAttribute('role', role)
+  message.setAttribute('aria-live', priority)
+  message.setAttribute('aria-atomic', 'true')
+}
+
 function enhanceLegacyAdmin(root: ParentNode) {
   root.querySelectorAll<HTMLElement>('.assistant-stepper').forEach((stepper) => {
     stepper.setAttribute('role', 'navigation')
@@ -30,14 +36,16 @@ function enhanceLegacyAdmin(root: ParentNode) {
     button.setAttribute('aria-pressed', button.classList.contains('active') ? 'true' : 'false')
   })
 
-  root.querySelectorAll<HTMLElement>('.error-box').forEach((message) => {
-    if (!message.hasAttribute('role')) message.setAttribute('role', 'alert')
-    message.setAttribute('aria-live', 'assertive')
+  root.querySelectorAll<HTMLElement>('.error-box, .admin-navigation-error').forEach((message) => {
+    configureLiveRegion(message, 'assertive', 'alert')
   })
 
-  root.querySelectorAll<HTMLElement>('.empty-state').forEach((message) => {
-    if (!message.hasAttribute('role')) message.setAttribute('role', 'status')
-    message.setAttribute('aria-live', 'polite')
+  root.querySelectorAll<HTMLElement>('.empty-state, .success-box, .admin-warning-box, .admin-info-box, .admin-navigation-status').forEach((message) => {
+    configureLiveRegion(message, 'polite', 'status')
+  })
+
+  root.querySelectorAll<HTMLElement>('[data-loading="true"], [aria-busy="true"]').forEach((region) => {
+    region.setAttribute('aria-busy', 'true')
   })
 }
 
@@ -116,7 +124,7 @@ export function LegacyAdminAccessibilityEnhancements() {
     const observer = new MutationObserver(synchronize)
     observer.observe(root, {
       attributes: true,
-      attributeFilter: ['class', 'hidden', 'aria-expanded'],
+      attributeFilter: ['class', 'hidden', 'aria-expanded', 'aria-busy', 'data-loading'],
       childList: true,
       subtree: true,
     })
