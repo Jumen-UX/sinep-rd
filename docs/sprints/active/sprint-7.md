@@ -14,7 +14,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
-4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Contrato, política y frontera segura de datos implementados; agregación restringida pendiente.**
+4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Contrato, política y frontera segura de datos confirmados con CI verde; agregación restringida en progreso.**
 5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual.
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
@@ -66,7 +66,9 @@ Se implementaron:
 - mensajes explícitos cuando una fuente contextual todavía no existe, sin sustituirla con cifras nacionales;
 - `tests/admin-kpi-policy.test.mjs` y `tests/admin-dashboard-context.test.mjs`, que protegen permisos, alcances y la frontera contra fugas de datos globales.
 
-Los alcances global y nacional pueden reutilizar las fuentes globales actuales. Los alcances restringidos quedan deliberadamente sin valor hasta que se implemente la agregación jerárquica segura en base de datos.
+El CI confirmó este bloque en verde el 2026-07-17. Los alcances global y nacional pueden reutilizar las fuentes globales actuales. Los alcances restringidos quedan deliberadamente sin valor hasta que se implemente la agregación jerárquica segura en base de datos.
+
+La revisión para la siguiente capa confirmó que la jerarquía territorial canónica ya dispone de `public.get_entity_descendants(uuid, integer)` y que las validaciones de alcance reutilizan `public.current_user_has_scope_for_entity(uuid)`. La RPC de KPIs deberá construir sus conjuntos autorizados sobre esos contratos, validar la asignación activa solicitada y devolver valores nulos para dimensiones cuyo vínculo contextual aún no esté definido.
 
 ## Reglas del sprint
 
@@ -89,4 +91,4 @@ Los alcances global y nacional pueden reutilizar las fuentes globales actuales. 
 
 ## Punto de continuación
 
-Implementar la agregación jerárquica restringida en base de datos para los KPIs soportados inicialmente. La función deberá validar que el alcance solicitado pertenece a las asignaciones activas del usuario, resolver descendientes territoriales cuando corresponda y devolver únicamente valores autorizados. Después se conectará al adaptador existente y se validará con TypeScript, pruebas, migración y CI.
+Implementar la RPC de agregación restringida comenzando por alcances basados en entidades (`diocese`, `parish` y `entity`) y por los indicadores con vínculos canónicos confirmados: entidades activas, parroquias activas, nombramientos activos y solicitudes pendientes. La función deberá validar sesión, permiso y asignación activa, expandir descendientes mediante `get_entity_descendants`, y no inferir todavía métricas pastorales o colegiales sin una relación canónica explícita.
