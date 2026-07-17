@@ -124,6 +124,7 @@ export default function AdminDashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [peopleCount, setPeopleCount] = useState<number | null>(null)
   const [activeAssignments, setActiveAssignments] = useState<number | null>(null)
+  const [contextualKpis, setContextualKpis] = useState<Record<string, number> | null>(null)
   const [activities, setActivities] = useState<DashboardActivity[]>([])
   const [search, setSearch] = useState('')
 
@@ -143,11 +144,11 @@ export default function AdminDashboardPage() {
   const kpiValues = useMemo(() => {
     const values = resolveAdminKpiValues(
       kpiGroups.flatMap((group) => group.items),
-      { summary, peopleCount, activeAssignments },
+      { summary, peopleCount, activeAssignments, contextualKpis },
       includeGlobalMetrics,
     )
     return new Map(values.map((value) => [value.id, value]))
-  }, [activeAssignments, includeGlobalMetrics, kpiGroups, peopleCount, summary])
+  }, [activeAssignments, contextualKpis, includeGlobalMetrics, kpiGroups, peopleCount, summary])
 
   useEffect(() => {
     if (navigation.loading || !navigation.context) return
@@ -157,13 +158,19 @@ export default function AdminDashboardPage() {
       setLoading(true)
       setError(null)
       try {
-        const data = await loadAdminDashboardData(supabase, { includeGlobalMetrics, includeActivity })
+        const data = await loadAdminDashboardData(supabase, {
+          includeGlobalMetrics,
+          includeActivity,
+          activeScopeType: activeScope?.type ?? null,
+          activeScopeEntityId: activeScope?.entityId ?? null,
+        })
         if (cancelled) return
         setProfile(data.profile)
         setRoles(data.roles)
         setSummary(data.summary)
         setPeopleCount(data.peopleCount)
         setActiveAssignments(data.activeAssignments)
+        setContextualKpis(data.contextualKpis)
         setActivities(data.activities)
       } catch (loadError) {
         if (cancelled) return
@@ -179,7 +186,7 @@ export default function AdminDashboardPage() {
 
     void loadDashboard()
     return () => { cancelled = true }
-  }, [activeScope?.key, includeActivity, includeGlobalMetrics, navigation.context, navigation.loading, router, supabase])
+  }, [activeScope?.entityId, activeScope?.key, activeScope?.type, includeActivity, includeGlobalMetrics, navigation.context, navigation.loading, router, supabase])
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -255,31 +262,14 @@ export default function AdminDashboardPage() {
 
       {kpiGroups.map((group) => (
         <section className="admin-dashboard-panel" key={group.dimension} aria-labelledby={`kpi-${group.dimension}`}>
-          <div className="admin-dashboard-panel-heading">
-            <div>
-              <h2 id={`kpi-${group.dimension}`}>Dimensión {dimensionLabels[group.dimension].toLowerCase()}</h2>
-              <p>Indicadores aplicables al alcance activo y a tus permisos de lectura.</p>
-            </div>
-          </div>
+          <div className="admin-dashboard-panel-heading"><div><h2 id={`kpi-${group.dimension}`}>Dimensión {dimensionLabels[group.dimension].toLowerCase()}</h2><p>Indicadores aplicables al alcance activo y a tus permisos de lectura.</p></div></div>
           <div className="admin-dashboard-metrics">
             {group.items.map((kpi) => {
               const value = kpiValues.get(kpi.id)
               if (!value) return null
               const destination = kpi.destination && canVisit(kpi.destination) ? kpi.destination : null
-              const content = (
-                <>
-                  <span className={`admin-dashboard-metric-icon ${dimensionTones[group.dimension]}`} aria-hidden="true">{dimensionIcons[group.dimension]}</span>
-                  <span className="admin-dashboard-metric-label">{kpi.label}</span>
-                  <span className="admin-dashboard-metric-value">{formatKpiValue(value)}</span>
-                  <span className={`admin-dashboard-metric-note ${dimensionTones[group.dimension]}`}>{value.message}</span>
-                </>
-              )
-
-              return destination ? (
-                <a className="admin-dashboard-metric" href={destination} key={kpi.id} onClick={(event) => forceNavigation(event, destination)}>{content}</a>
-              ) : (
-                <div className="admin-dashboard-metric" key={kpi.id}>{content}</div>
-              )
+              const content = <><span className={`admin-dashboard-metric-icon ${dimensionTones[group.dimension]}`} aria-hidden="true">{dimensionIcons[group.dimension]}</span><span className="admin-dashboard-metric-label">{kpi.label}</span><span className="admin-dashboard-metric-value">{formatKpiValue(value)}</span><span className={`admin-dashboard-metric-note ${dimensionTones[group.dimension]}`}>{value.message}</span></>
+              return destination ? <a className="admin-dashboard-metric" href={destination} key={kpi.id} onClick={(event) => forceNavigation(event, destination)}>{content}</a> : <div className="admin-dashboard-metric" key={kpi.id}>{content}</div>
             })}
           </div>
         </section>
@@ -288,30 +278,20 @@ export default function AdminDashboardPage() {
       <section className="admin-dashboard-primary-grid">
         <article className="admin-dashboard-panel admin-dashboard-actions-panel">
           <div className="admin-dashboard-panel-heading"><div><h2>Acciones disponibles</h2><p>Procesos habilitados para tus permisos y alcance activo.</p></div></div>
-          {frequentActions.length > 0 ? (
-            <div className="admin-dashboard-action-list">
-              {frequentActions.map((action) => <a href={action.href} key={action.href} onClick={(event) => forceNavigation(event, action.href)}><span className={`admin-dashboard-action-icon ${action.tone}`}>{action.icon}</span><span><strong>{action.title}</strong><small>{action.description}</small></span><b aria-hidden="true">›</b></a>)}
-            </div>
-          ) : <EmptyState compact title="Acceso de consulta" description="Tu perfil no tiene operaciones de creación o configuración habilitadas en este alcance." />}
+          {frequentActions.length > 0 ? <div className="admin-dashboard-action-list">{frequentActions.map((action) => <a href={action.href} key={action.href} onClick={(event) => forceNavigation(event, action.href)}><span className={`admin-dashboard-action-icon ${action.tone}`}>{action.icon}</span><span><strong>{action.title}</strong><small>{action.description}</small></span><b aria-hidden="true">›</b></a>)}</div> : <EmptyState compact title="Acceso de consulta" description="Tu perfil no tiene operaciones de creación o configuración habilitadas en este alcance." />}
         </article>
 
         <article className="admin-dashboard-panel admin-dashboard-quality-panel">
           <div className="admin-dashboard-panel-heading"><div><h2>Contexto activo</h2><p>Resumen del ámbito con el que estás trabajando.</p></div></div>
           <div className="admin-dashboard-quality-copy"><small>Alcance seleccionado</small><strong>{activeScopeLabel}</strong><span>{roles.length} rol{roles.length === 1 ? '' : 'es'} activo{roles.length === 1 ? '' : 's'} para tu cuenta</span></div>
-          <dl className="admin-dashboard-quality-list">
-            <div><dt>Tipo de alcance</dt><dd>{activeScope?.type ?? 'Sin alcance'}</dd></div>
-            <div><dt>Indicadores visibles</dt><dd>{kpiGroups.reduce((total, group) => total + group.items.length, 0)}</dd></div>
-            <div><dt>Fuente global</dt><dd>{includeGlobalMetrics ? 'Habilitada' : 'Bloqueada'}</dd></div>
-          </dl>
+          <dl className="admin-dashboard-quality-list"><div><dt>Tipo de alcance</dt><dd>{activeScope?.type ?? 'Sin alcance'}</dd></div><div><dt>Indicadores visibles</dt><dd>{kpiGroups.reduce((total, group) => total + group.items.length, 0)}</dd></div><div><dt>Fuente global</dt><dd>{includeGlobalMetrics ? 'Habilitada' : 'Bloqueada'}</dd></div></dl>
         </article>
       </section>
 
       {canVisit('/admin/actividad') && (
         <section className="admin-dashboard-panel admin-dashboard-activity-panel">
           <div className="admin-dashboard-panel-heading"><div><h2>Actividad reciente</h2><p>Últimos cambios registrados en el sistema administrativo.</p></div><a href="/admin/actividad" onClick={(event) => forceNavigation(event, '/admin/actividad')}>Ver toda la actividad</a></div>
-          {activities.length > 0 ? (
-            <DataTable caption="Última actividad administrativa"><DataTableHeader><tr><DataTableHead>Registro</DataTableHead><DataTableHead>Acción</DataTableHead><DataTableHead>Usuario</DataTableHead><DataTableHead>Fecha</DataTableHead><DataTableHead>Estado</DataTableHead></tr></DataTableHeader><DataTableBody>{activities.map((activity) => <DataTableRow key={activity.id}><DataTableCell><strong>{activityTarget(activity)}</strong></DataTableCell><DataTableCell>{formatAction(activity.action)}</DataTableCell><DataTableCell>{activity.actor_name}</DataTableCell><DataTableCell>{formatDate(activity.created_at)}</DataTableCell><DataTableCell><StatusBadge tone="info" dot>{activityStatus(activity)}</StatusBadge></DataTableCell></DataTableRow>)}</DataTableBody></DataTable>
-          ) : <EmptyState compact title="Sin actividad registrada" description="Los cambios administrativos auditados aparecerán aquí cuando se realice la primera operación." />}
+          {activities.length > 0 ? <DataTable caption="Última actividad administrativa"><DataTableHeader><tr><DataTableHead>Registro</DataTableHead><DataTableHead>Acción</DataTableHead><DataTableHead>Usuario</DataTableHead><DataTableHead>Fecha</DataTableHead><DataTableHead>Estado</DataTableHead></tr></DataTableHeader><DataTableBody>{activities.map((activity) => <DataTableRow key={activity.id}><DataTableCell><strong>{activityTarget(activity)}</strong></DataTableCell><DataTableCell>{formatAction(activity.action)}</DataTableCell><DataTableCell>{activity.actor_name}</DataTableCell><DataTableCell>{formatDate(activity.created_at)}</DataTableCell><DataTableCell><StatusBadge tone="info" dot>{activityStatus(activity)}</StatusBadge></DataTableCell></DataTableRow>)}</DataTableBody></DataTable> : <EmptyState compact title="Sin actividad registrada" description="Los cambios administrativos auditados aparecerán aquí cuando se realice la primera operación." />}
         </section>
       )}
     </div>
