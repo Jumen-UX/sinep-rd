@@ -48,18 +48,32 @@ export type AdminDashboardData = {
   summary: DashboardSummary | null
   peopleCount: number | null
   activeAssignments: number | null
+  contextualKpis: Record<string, number> | null
   activities: DashboardActivity[]
 }
 
 export type AdminDashboardLoadOptions = {
   includeGlobalMetrics: boolean
   includeActivity: boolean
+  activeScopeType: string | null
+  activeScopeEntityId: string | null
 }
 
 type AuditRow = Omit<DashboardActivity, 'actor_name'>
 
+const contextualEntityScopeTypes = new Set(['diocese', 'parish', 'entity'])
+
 function throwIfError(error: { message: string } | null, fallback: string) {
   if (error) throw new Error(error.message || fallback)
+}
+
+function normalizeContextualKpis(value: unknown): Record<string, number> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+
+  const entries = Object.entries(value).filter(
+    (entry): entry is [string, number] => typeof entry[1] === 'number' && Number.isFinite(entry[1]),
+  )
+  return entries.length > 0 ? Object.fromEntries(entries) : null
 }
 
 export async function loadAdminDashboardData(
@@ -83,6 +97,7 @@ export async function loadAdminDashboardData(
   let summary: DashboardSummary | null = null
   let activeAssignments: number | null = null
   let peopleCount: number | null = null
+  let contextualKpis: Record<string, number> | null = null
 
   if (options.includeGlobalMetrics) {
     const [summaryResponse, assignmentResponse, peopleResponse] = await Promise.all([
@@ -97,6 +112,17 @@ export async function loadAdminDashboardData(
     summary = summaryResponse.error ? null : (summaryResponse.data as DashboardSummary | null)
     activeAssignments = assignmentResponse.error ? null : assignmentResponse.count ?? 0
     peopleCount = peopleResponse.error ? null : peopleResponse.count ?? 0
+  } else if (
+    options.activeScopeEntityId
+    && options.activeScopeType
+    && contextualEntityScopeTypes.has(options.activeScopeType)
+  ) {
+    const { data, error } = await supabase.rpc('get_admin_contextual_kpis', {
+      p_scope_type: options.activeScopeType,
+      p_scope_entity_id: options.activeScopeEntityId,
+    })
+    throwIfError(error, 'No se pudieron cargar los indicadores del alcance activo.')
+    contextualKpis = normalizeContextualKpis(data)
   }
 
   const auditRows = (auditResponse.data ?? []) as AuditRow[]
@@ -123,6 +149,7 @@ export async function loadAdminDashboardData(
     summary,
     activeAssignments,
     peopleCount,
+    contextualKpis,
     activities: auditRows.map((row) => ({
       ...row,
       actor_name: actorProfiles.get(row.actor_user_id) ?? 'Usuario administrativo',
