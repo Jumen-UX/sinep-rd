@@ -1,0 +1,159 @@
+/* Shared presentation for administrative event workflows and assistants. */
+
+.event-assistant-page :is(select, input, textarea),
+.events-page :is(select, input, textarea) {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--foreground);
+  font: inherit;
+  padding: 12px 14px;
+  width: 100%;
+}
+
+.event-assistant-page textarea,
+.events-page textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.assistant-hero {
+  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr);
+}
+
+.assistant-summary-card,
+.step-card,
+.mode-card,
+.preview-card,
+.impact-card,
+.derived-card,
+.events-tab,
+.event-card-button,
+.facet-card,
+.detail-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--foreground);
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+}
+
+.assistant-summary-card,
+.preview-card.highlight,
+.impact-card.highlight,
+.derived-card.highlight,
+.facet-card.highlight {
+  background: var(--surface-subtle);
+}
+
+.assistant-layout,
+.assistant-stepper,
+.mode-grid,
+.form-grid,
+.preview-grid,
+.impact-grid,
+.derived-list,
+.events-toolbar,
+.events-tabs,
+.events-layout,
+.events-timeline,
+.facets-grid,
+.impact-list,
+.event-detail-grid,
+.action-link-grid {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.assistant-layout {
+  align-items: start;
+  grid-template-columns: minmax(0, 0.72fr) minmax(320px, 0.42fr);
+}
+
+.assistant-stepper,
+.events-tabs {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.mode-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-grid,
+.preview-grid,
+.impact-grid,
+.event-detail-grid,
+.action-link-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-grid .full-width,
+.preview-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.form-grid label,
+.events-toolbar label {
+  color: var(--muted);
+  display: grid;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 7px;
+}
+
+.step-card,
+.mode-card,
+.events-tab,
+.event-card-button {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.step-card.active,
+.mode-card.active,
+.events-tab.active,
+.event-card-button.active {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  box-shadow: var(--focus-ring);
+}
+
+.button-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.detail-backlink {
+  margin-bottom: 8px;
+}
+
+.detail-backlink a {
+  color: var(--primary);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+@media (max-width: 1080px) {
+  .assistant-hero,
+  .assistant-layout,
+  .assistant-stepper,
+  .mode-grid,
+  .form-grid,
+  .preview-grid,
+  .impact-grid,
+  .events-toolbar,
+  .events-tabs,
+  .events-layout,
+  .event-detail-grid,
+  .action-link-grid {
+    grid-template-columns: 1fr;
+  }
+}
