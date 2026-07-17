@@ -5,15 +5,18 @@ import test from 'node:test'
 const adminLayout = await readFile('src/app/(admin)/layout.tsx', 'utf8')
 const sharedStyles = await readFile('src/styles/admin-event-workflows.css', 'utf8')
 const actionPlanStyles = await readFile('src/styles/admin-event-action-plan.css', 'utf8')
+const verificationStyles = await readFile('src/styles/admin-event-verification.css', 'utf8')
 const eventDraft = await readFile('src/features/events/admin/EventDraftPage.tsx', 'utf8')
 const eventRegistry = await readFile('src/features/events/admin/EventRegistryPage.tsx', 'utf8')
 const eventReview = await readFile('src/features/events/admin/EventReviewPage.tsx', 'utf8')
 const eventActionPlan = await readFile('src/features/events/admin/EventActionPlanPage.tsx', 'utf8')
 const eventApplicationContract = await readFile('src/features/events/admin/EventApplicationContractPage.tsx', 'utf8')
+const eventWorkflowVerification = await readFile('src/features/events/admin/EventWorkflowVerificationPage.tsx', 'utf8')
 
 test('admin layout loads the canonical event workflow style suite', () => {
   assert.match(adminLayout, /admin-event-workflows\.css/)
   assert.match(adminLayout, /admin-event-action-plan\.css/)
+  assert.match(adminLayout, /admin-event-verification\.css/)
   assert.match(sharedStyles, /\.event-assistant-page/)
   assert.match(sharedStyles, /\.assistant-stepper/)
   assert.match(sharedStyles, /\.events-toolbar/)
@@ -46,6 +49,20 @@ test('event action-plan and contract styles use semantic surfaces and responsive
   assert.match(actionPlanStyles, /var\(--danger-soft\)/)
   assert.match(actionPlanStyles, /@media \(max-width: 1080px\)/)
   assert.doesNotMatch(actionPlanStyles, /background:\s*#(?:fff|ffffff|fbf8f1|fff7ed|fef2f2)/i)
+})
+
+test('event workflow verification styles use semantic surfaces and responsive grids', () => {
+  assert.match(verificationStyles, /\.event-workflow-verification-page/)
+  assert.match(verificationStyles, /\.verify-hero/)
+  assert.match(verificationStyles, /\.verify-metric-grid/)
+  assert.match(verificationStyles, /\.verify-grid/)
+  assert.match(verificationStyles, /\.test-list/)
+  assert.match(verificationStyles, /var\(--surface\)/)
+  assert.match(verificationStyles, /var\(--surface-subtle\)/)
+  assert.match(verificationStyles, /var\(--warning-soft\)/)
+  assert.match(verificationStyles, /var\(--success-soft\)/)
+  assert.match(verificationStyles, /@media \(max-width: 1080px\)/)
+  assert.doesNotMatch(verificationStyles, /background:\s*#(?:fff|ffffff|fbf8f1|fff7ed|f0fdf4)/i)
 })
 
 test('event draft no longer injects page-scoped styles', () => {
@@ -128,4 +145,22 @@ test('event application contract owns application feedback and action semantics'
   assert.match(eventApplicationContract, /<h3>\{action\.action_type_name\}<\/h3>/)
   assert.match(eventApplicationContract, /role="status">El evento todavía no tiene acciones generadas/)
   assert.match(eventApplicationContract, /id="contract-application-guidance"/)
+})
+
+test('event workflow verification no longer injects page-scoped styles', () => {
+  assert.doesNotMatch(eventWorkflowVerification, /const pageStyles/)
+  assert.doesNotMatch(eventWorkflowVerification, /<style>\{pageStyles\}<\/style>/)
+})
+
+test('event workflow verification owns health checklist and manual-test semantics', () => {
+  assert.match(eventWorkflowVerification, /aria-label=\{`\$\{title\}: \$\{result\}`\}/)
+  assert.match(eventWorkflowVerification, /<span aria-hidden="true">\{ok \? '✓ ' : '⚠ '\}<\/span>/)
+  assert.match(eventWorkflowVerification, /role="status" aria-live="polite">Cargando verificación del flujo/)
+  assert.match(eventWorkflowVerification, /role="alert">\{error \?\? 'No se pudo cargar la verificación del flujo\.'/)
+  assert.match(eventWorkflowVerification, /verify-summary" aria-live="polite" aria-atomic="true"/)
+  assert.match(eventWorkflowVerification, /aria-label="Volumen del flujo de eventos"/)
+  assert.match(eventWorkflowVerification, /aria-label="Estado operativo del flujo"/)
+  assert.match(eventWorkflowVerification, /aria-label="Condiciones técnicas del flujo"/)
+  assert.match(eventWorkflowVerification, /<ol className="test-list" aria-label="Pasos de la prueba funcional manual">/)
+  assert.match(eventWorkflowVerification, /role="status"><span className="meta">No hay pasos manuales pendientes/)
 })
