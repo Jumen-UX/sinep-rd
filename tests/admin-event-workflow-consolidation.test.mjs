@@ -5,14 +5,20 @@ import test from 'node:test'
 const adminLayout = await readFile('src/app/(admin)/layout.tsx', 'utf8')
 const sharedStyles = await readFile('src/styles/admin-event-workflows.css', 'utf8')
 const eventDraft = await readFile('src/features/events/admin/EventDraftPage.tsx', 'utf8')
+const eventRegistry = await readFile('src/features/events/admin/EventRegistryPage.tsx', 'utf8')
 
 test('admin layout loads the canonical event workflow stylesheet', () => {
   assert.match(adminLayout, /admin-event-workflows\.css/)
   assert.match(sharedStyles, /\.event-assistant-page/)
   assert.match(sharedStyles, /\.assistant-stepper/)
+  assert.match(sharedStyles, /\.events-toolbar/)
   assert.match(sharedStyles, /\.events-tabs/)
+  assert.match(sharedStyles, /\.event-card-button/)
+  assert.match(sharedStyles, /\.event-date-box/)
   assert.match(sharedStyles, /var\(--surface\)/)
+  assert.match(sharedStyles, /var\(--surface-subtle\)/)
   assert.match(sharedStyles, /var\(--focus-ring\)/)
+  assert.doesNotMatch(sharedStyles, /background:\s*#(?:fff|ffffff|fbf8f1)/i)
 })
 
 test('event draft no longer injects page-scoped styles', () => {
@@ -27,4 +33,19 @@ test('event draft owns its accessibility semantics instead of relying on the com
   assert.match(eventDraft, /aria-pressed=\{loadMode === mode\.key\}/)
   assert.match(eventDraft, /role="alert" aria-live="assertive"/)
   assert.match(eventDraft, /aria-busy=\{saving\}/)
+})
+
+test('event registry no longer injects page-scoped styles', () => {
+  assert.doesNotMatch(eventRegistry, /const pageStyles/)
+  assert.doesNotMatch(eventRegistry, /<style>\{pageStyles\}<\/style>/)
+})
+
+test('event registry owns filter selection and detail announcement semantics', () => {
+  assert.match(eventRegistry, /aria-pressed=\{workMode === mode\.key\}/)
+  assert.match(eventRegistry, /aria-controls="event-detail-panel"/)
+  assert.match(eventRegistry, /aria-pressed=\{isSelected\}/)
+  assert.match(eventRegistry, /id="event-detail-panel" aria-live="polite" aria-atomic="true"/)
+  assert.match(eventRegistry, /role="alert" aria-live="assertive"/)
+  assert.match(eventRegistry, /role="status" aria-live="polite"/)
+  assert.match(eventRegistry, /type="search"/)
 })
