@@ -1,7 +1,7 @@
 # Sprint 3 — resultados operativos de acceso
 
 > Entorno autorizado: Supabase no productivo `hrvgpceqaxujlttpimdz`  
-> Fecha: 2026-07-15  
+> Fecha: 2026-07-17  
 > Estado: contrato de base validado; recorrido web con cuentas diferenciadas pendiente
 
 ## Migraciones aplicadas
@@ -66,24 +66,26 @@ Todavía no se declara cerrado S3-06. Faltan:
 3. ejecutar el recorrido real de invitación, onboarding, login y recuperación en navegador;
 4. demostrar aislamiento bidireccional entre dos diócesis;
 5. guardar evidencias de auditoría sin secretos;
-6. ejecutar integración y E2E aplicables contra este entorno.
+6. ejecutar integración y E2E aplicables contra este entorno;
+7. reemplazar el secreto protegido `E2E_ACCESS_PROFILES_JSON` por un arreglo JSON completo y válido.
 
 ## Automatización preparada
 
-La matriz autenticada quedó automatizada en `e2e/admin-access-matrix.spec.mjs` y puede
-ejecutarse mediante `pnpm test:e2e:access`. La ejecución es de solo lectura y queda
-omitida si no existe `E2E_ACCESS_PROFILES_JSON`.
+La matriz autenticada quedó automatizada en `e2e/admin-access-matrix.spec.mjs` y puede ejecutarse mediante `pnpm test:e2e:access`. La ejecución es de solo lectura y queda omitida localmente si no existe `E2E_ACCESS_PROFILES_JSON`.
 
-El workflow `CI` acepta ese valor únicamente como secreto del repositorio cuando se
-ejecuta manualmente con una URL pública. Una matriz completa debe incluir, como mínimo:
+El workflow canónico `E2E / Admin access matrix`, definido en `.github/workflows/e2e-admin-access.yml`, recibe la matriz únicamente desde el secreto protegido del repositorio. Una matriz completa debe incluir, como mínimo:
 
 - cuenta nacional lista;
 - administrador diocesano A con la entidad B marcada como prohibida;
 - administrador diocesano B con la entidad A marcada como prohibida;
 - cuenta sin rol, bloqueada o con onboarding pendiente según el caso que se documente.
 
-Esta automatización no sustituye la creación segura de las cuentas ni convierte el
-resultado transaccional previo en evidencia de navegador. S3-06 seguirá abierto hasta
-ejecutarla contra el entorno no productivo y conservar el reporte sin secretos.
+## Última ejecución automatizada
+
+La ejecución [E2E / Admin access matrix #29550578169](https://github.com/Jumen-UX/sinep-rd/actions/runs/29550578169) del 2026-07-17 no llegó a probar la aplicación. El secreto estaba presente, pero `JSON.parse` terminó con `Unexpected end of JSON input`, señal de contenido truncado o incompleto.
+
+La corrección requerida es operativa: reemplazar el valor completo del secreto y relanzar manualmente el workflow. El workflow ahora valida que el secreto sea JSON y contenga un arreglo no vacío antes de instalar dependencias o iniciar Chromium. No se registran valores, correos ni contraseñas en logs o documentación.
+
+Esta automatización no sustituye la creación segura de las cuentas ni convierte el resultado transaccional previo en evidencia de navegador. S3-06 seguirá abierto hasta ejecutarla contra el entorno no productivo y conservar el reporte sin secretos.
 
 La creación de cuentas debe realizarse mediante Supabase Auth Admin o la interfaz administrativa de SINEP; no se insertan usuarios directamente en tablas del esquema `auth`.
