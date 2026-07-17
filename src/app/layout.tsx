@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
+import { ThemeControl } from '../components/theme/ThemeControl'
 import { PublicCountryFlagEnhancements } from '../features/public/components/public-country-flag-enhancements'
 import { PublicDashboardEntityCards } from '../features/public/components/public-dashboard-entity-cards'
 import { PublicJurisdictionStructureNavigation } from '../features/public/components/public-jurisdiction-structure-navigation'
@@ -22,6 +23,22 @@ import './brand.css'
 import './admin-brand.css'
 import './public-shell.css'
 
+const themeBootstrapScript = `
+  (() => {
+    try {
+      const preference = localStorage.getItem('sinep-theme');
+      const theme = preference === 'light' || preference === 'dark'
+        ? preference
+        : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+    } catch {
+      document.documentElement.dataset.theme = 'light';
+      document.documentElement.style.colorScheme = 'light';
+    }
+  })();
+`
+
 export const metadata: Metadata = {
   title: {
     default: 'SINEP RD',
@@ -36,8 +53,11 @@ export default function RootLayout({
   children: ReactNode
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body>
+        <Script id="theme-bootstrap" strategy="beforeInteractive">
+          {themeBootstrapScript}
+        </Script>
         <a className="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
         <div className="site-shell">
           <header className="site-header">
@@ -49,12 +69,15 @@ export default function RootLayout({
                   <small>Sistema de Información Eclesial</small>
                 </span>
               </Link>
-              <nav aria-label="Navegación principal">
-                <Link href="/">Inicio</Link>
-                <Link href="/diocesis">Diócesis</Link>
-                <Link href="/personas">Personas</Link>
-                <Link href="/admin">Administración</Link>
-              </nav>
+              <div className="site-header-actions">
+                <nav aria-label="Navegación principal">
+                  <Link href="/">Inicio</Link>
+                  <Link href="/diocesis">Diócesis</Link>
+                  <Link href="/personas">Personas</Link>
+                  <Link href="/admin">Administración</Link>
+                </nav>
+                <ThemeControl compact />
+              </div>
             </div>
           </header>
 

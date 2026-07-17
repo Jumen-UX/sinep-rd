@@ -4,6 +4,7 @@ import type { MouseEvent, ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { ThemeControl } from '@/components/theme/ThemeControl'
 import { loadCanonicalIncompatibilityCount } from '@/features/appointments/services/canonical-incompatibility-queue'
 import {
   AdminNavigationProvider,
@@ -165,6 +166,7 @@ function AdminShellContent({ children }: { children: ReactNode }) {
           </a>
 
           <ScopeControl />
+          <ThemeControl />
 
           <nav className="admin-sidebar-nav">
             {renderNavigationLinks()}
