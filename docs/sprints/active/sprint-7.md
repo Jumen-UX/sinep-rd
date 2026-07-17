@@ -15,7 +15,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
-5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; primer bloque confirmado con CI verde.**
+5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; primer bloque confirmado con CI verde y segundo bloque pendiente de CI.**
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
@@ -46,7 +46,7 @@ Queda registrada como deuda funcional la validación manual con un perfil restri
 
 ### S7-05 — En progreso
 
-La auditoría inicial confirmó que conviven componentes compartidos modernos con clases heredadas como `page-heading`, `empty-state`, `error-box` y `role-pill`.
+La auditoría inicial confirmó que conviven componentes compartidos modernos con clases heredadas como `page-heading`, `empty-state`, `error-box`, `admin-topbar` y botones definidos únicamente por clases CSS.
 
 Se implementaron:
 
@@ -54,9 +54,12 @@ Se implementaron:
 - migración de `RequestsPage.tsx` a `PageHeader`, breadcrumbs canónicos, `PageState`, `StatusBadge` y `Button`;
 - jerarquía de encabezados `h1 → h2 → h3` en la bandeja de solicitudes;
 - contadores y estados visuales consistentes para solicitudes públicas e internas;
-- `tests/admin-page-state-hierarchy.test.mjs`, que evita regresar a los patrones heredados.
+- migración de `AdministrativeActivityPage.tsx` al mismo contrato compartido;
+- estados de carga, error y vacío accesibles en la actividad administrativa;
+- breadcrumbs completos `Administración → Configuración → Actividad` y jerarquía `h1 → h2 → h3`;
+- ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger ambas pantallas y evitar el retorno de clases heredadas.
 
-El primer bloque fue confirmado con CI verde el 2026-07-17. La siguiente iteración extenderá el mismo contrato a otras pantallas administrativas principales que todavía utilizan encabezados y estados heredados.
+El primer bloque fue confirmado con CI verde el 2026-07-17. El segundo bloque queda pendiente de CI antes de continuar con una tercera pantalla administrativa.
 
 ## Reglas del sprint
 
@@ -79,4 +82,4 @@ El primer bloque fue confirmado con CI verde el 2026-07-17. La siguiente iteraci
 
 ## Punto de continuación
 
-Extender `PageState`, `PageHeader`, badges y acciones compartidas a las pantallas administrativas principales que todavía usan encabezados y estados heredados. Priorizar pantallas con carga, error y vacío propios para maximizar la reutilización del contrato ya validado. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
+Ejecutar CI para el segundo bloque de S7-05. Con resultado verde, continuar con una tercera pantalla administrativa que conserve estados o encabezados heredados. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
