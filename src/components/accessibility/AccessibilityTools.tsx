@@ -129,28 +129,48 @@ export function AccessibilityTools() {
     }
   }, [open])
 
-  function updatePreferences(
-    patch: Partial<AccessibilityPreferences>,
-    message: string,
-  ) {
-    const nextPreferences = { ...preferences, ...patch }
-    window.localStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(nextPreferences))
+  function broadcastPreferences(nextPreferences: AccessibilityPreferences) {
     window.dispatchEvent(
       new CustomEvent<AccessibilityPreferences>(ACCESSIBILITY_CHANGE_EVENT, {
         detail: nextPreferences,
       }),
     )
-    setAnnouncement(message)
+  }
+
+  function updatePreferences(
+    patch: Partial<AccessibilityPreferences>,
+    message: string,
+  ) {
+    const nextPreferences = { ...preferences, ...patch }
+    let persisted = true
+
+    try {
+      window.localStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(nextPreferences))
+    } catch {
+      persisted = false
+    }
+
+    broadcastPreferences(nextPreferences)
+    setAnnouncement(
+      persisted ? message : `${message} El cambio solo estará activo durante esta sesión.`,
+    )
   }
 
   function resetPreferences() {
-    window.localStorage.removeItem(ACCESSIBILITY_STORAGE_KEY)
-    window.dispatchEvent(
-      new CustomEvent<AccessibilityPreferences>(ACCESSIBILITY_CHANGE_EVENT, {
-        detail: DEFAULT_PREFERENCES,
-      }),
+    let persisted = true
+
+    try {
+      window.localStorage.removeItem(ACCESSIBILITY_STORAGE_KEY)
+    } catch {
+      persisted = false
+    }
+
+    broadcastPreferences(DEFAULT_PREFERENCES)
+    setAnnouncement(
+      persisted
+        ? 'Preferencias de accesibilidad restablecidas.'
+        : 'Preferencias restablecidas durante esta sesión.',
     )
-    setAnnouncement('Preferencias de accesibilidad restablecidas.')
   }
 
   return (
