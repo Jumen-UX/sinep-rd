@@ -93,6 +93,32 @@
   box-shadow: var(--focus-ring);
 }
 
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard) .clergy-option-fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: 0.875rem;
+  margin: 0;
+  min-width: 0;
+  padding: 1rem;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard) .clergy-option-fieldset legend {
+  color: var(--foreground);
+  font-weight: 900;
+  padding-inline: 0.35rem;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard) .clergy-option-list {
+  display: grid;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+:is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard) .clergy-option-list--choices {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
 :is(.admin-priest-wizard, .admin-bishop-wizard) .admin-review-grid > * {
   display: grid;
   gap: 0.35rem;
@@ -235,7 +261,8 @@
 }
 
 @media (max-width: 820px) {
-  :is(.admin-priest-wizard, .admin-bishop-wizard) :is(.admin-choice-grid, .admin-form-fields-grid, .admin-review-grid) {
+  :is(.admin-priest-wizard, .admin-bishop-wizard) :is(.admin-choice-grid, .admin-form-fields-grid, .admin-review-grid),
+  :is(.admin-priest-wizard, .admin-deacon-wizard, .admin-bishop-wizard) .clergy-option-list--choices {
     grid-template-columns: 1fr;
   }
 
