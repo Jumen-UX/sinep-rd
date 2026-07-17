@@ -16,7 +16,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
-5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; tres bloques implementados y validación final del último bloque pendiente.**
+5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; tres bloques implementados y línea base confirmada con CI verde.**
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
@@ -59,7 +59,9 @@ Se implementaron:
 - filtros con `aria-pressed` y jerarquía `h1 → h2 → h3` en el directorio de personas;
 - ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger las tres pantallas y evitar el retorno de patrones heredados.
 
-Los dos primeros bloques fueron confirmados con CI verde. El CI del tercer bloque detectó una regresión independiente en `package.json`: se habían perdido los scripts recientes de automatización documental, auditoría de migraciones y pruebas afectadas. El contrato completo fue restaurado sin modificar la funcionalidad de las pantallas. La validación definitiva corresponde al run más reciente de `main`.
+Los dos primeros bloques fueron confirmados con CI verde. El CI del tercer bloque detectó una regresión independiente en `package.json`: se habían perdido los scripts recientes de automatización documental, auditoría de migraciones y pruebas afectadas. El contrato completo fue restaurado sin modificar la funcionalidad de las pantallas.
+
+La ejecución [CI #29550916630](https://github.com/Jumen-UX/sinep-rd/actions/runs/29550916630) confirmó en verde la línea base reconciliada: documentación, automatizaciones, TypeScript, pruebas, build y CodeQL.
 
 ## Estado operativo separado
 
@@ -92,4 +94,4 @@ No bloquean el avance técnico de S7-05, pero deben cerrarse antes de S7-10:
 
 ## Punto de continuación
 
-Confirmar el CI del último commit de `main`. Con resultado verde, ejecutar el inventario restante de clases heredadas y seleccionar una cuarta pantalla representativa solo si aporta cobertura nueva; en caso contrario, cerrar S7-05 y avanzar a S7-06. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
+Ejecutar el inventario restante de clases heredadas y seleccionar una cuarta pantalla representativa solo si aporta cobertura nueva; en caso contrario, cerrar S7-05 y avanzar a S7-06. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
