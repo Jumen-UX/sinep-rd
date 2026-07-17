@@ -15,7 +15,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
-5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; primer bloque confirmado con CI verde y segundo bloque pendiente de CI.**
+5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; dos bloques confirmados con CI verde.**
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
@@ -59,7 +59,7 @@ Se implementaron:
 - breadcrumbs completos `Administración → Configuración → Actividad` y jerarquía `h1 → h2 → h3`;
 - ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger ambas pantallas y evitar el retorno de clases heredadas.
 
-El primer bloque fue confirmado con CI verde el 2026-07-17. El segundo bloque queda pendiente de CI antes de continuar con una tercera pantalla administrativa.
+El primer y segundo bloque fueron confirmados con CI verde el 2026-07-17. La siguiente iteración continuará con una tercera pantalla administrativa que conserve estados o encabezados heredados.
 
 ## Reglas del sprint
 
@@ -82,4 +82,4 @@ El primer bloque fue confirmado con CI verde el 2026-07-17. El segundo bloque qu
 
 ## Punto de continuación
 
-Ejecutar CI para el segundo bloque de S7-05. Con resultado verde, continuar con una tercera pantalla administrativa que conserve estados o encabezados heredados. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
+Continuar con una tercera pantalla administrativa que conserve estados o encabezados heredados, priorizando una vista con carga, error y vacío propios. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
