@@ -15,15 +15,19 @@ test('legacy admin assistants expose current step and selected mode semantics', 
   assert.match(enhancement, /aria-pressed/)
 })
 
-test('legacy admin dynamic messages are announced and mutations stay synchronized', () => {
-  assert.match(enhancement, /\.error-box/)
-  assert.match(enhancement, /role', 'alert'/)
-  assert.match(enhancement, /aria-live', 'assertive'/)
-  assert.match(enhancement, /\.empty-state/)
-  assert.match(enhancement, /role', 'status'/)
-  assert.match(enhancement, /aria-live', 'polite'/)
+test('legacy admin feedback announces errors and non-blocking status changes', () => {
+  assert.match(enhancement, /configureLiveRegion/)
+  assert.match(enhancement, /\.error-box, \.admin-navigation-error/)
+  assert.match(enhancement, /'assertive', 'alert'/)
+  assert.match(enhancement, /\.empty-state, \.success-box, \.admin-warning-box, \.admin-info-box, \.admin-navigation-status/)
+  assert.match(enhancement, /'polite', 'status'/)
+  assert.match(enhancement, /aria-atomic/)
+  assert.match(enhancement, /\[data-loading="true"\], \[aria-busy="true"\]/)
+})
+
+test('legacy mutations remain synchronized with feedback and dialog state', () => {
   assert.match(enhancement, /new MutationObserver/)
-  assert.match(enhancement, /attributeFilter: \['class', 'hidden', 'aria-expanded'\]/)
+  assert.match(enhancement, /attributeFilter: \['class', 'hidden', 'aria-expanded', 'aria-busy', 'data-loading'\]/)
 })
 
 test('mobile admin dialog traps focus closes with Escape and restores its trigger', () => {
