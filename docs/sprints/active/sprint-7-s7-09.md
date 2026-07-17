@@ -129,7 +129,7 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - Los contratos de auditoría se actualizaron para exigir la desaparición física de la capa heredada.
 - CI confirmó el bloque en verde.
 
-## Undécimo bloque implementado
+## Undécimo bloque implementado y validado
 
 - Se creó `src/styles/clergy-wizard-ui.css` como extensión compartida para sacerdote, diácono y obispo.
 - Los tres layouts de ruta cargan `person-wizard-ui.css` y la nueva extensión de clero.
@@ -137,7 +137,19 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - La extensión conserva el layout de asistentes controlados, la navegación automática del diácono, el resumen de revisión, el éxito del sacerdote y los estados responsive.
 - El foco usa `--focus-ring` como valor de `box-shadow`, de acuerdo con la definición canónica del token; no se replica su uso inválido como `outline`.
 - `tests/clergy-wizard-style-consolidation.test.mjs` impide volver a hojas específicas por rol y protege la continuidad de `AutoSectionWizard`.
+- `tests/admin-theme-specialized.test.mjs` valida el contraste del diácono mediante `clergy-wizard-ui.css` y `admin-modules.css`, sin depender de una hoja retirada.
+- CI confirmó el bloque en verde.
+
+## Duodécimo bloque implementado
+
+- `BishopWizardPage.tsx` conserva las cinco etapas montadas y el mismo payload canónico, pero ahora declara directamente carga, error, éxito y guardado ocupado.
+- El contenido principal y el formulario exponen `aria-busy`; el error se anuncia como alerta assertiva y la confirmación como estado moderado y atómico.
+- Se eliminaron todos los controles identificados únicamente mediante `placeholder`; identidad, historia sacramental, función, estado, jurisdicción, cargo y fuentes usan etiquetas explícitas.
+- Sucesión apostólica y dignidades se agrupan con `fieldset` y `legend`, usando reglas compartidas de `clergy-wizard-ui.css`.
+- La ruta estructural y el filtrado de cargos se anuncian como estados dinámicos.
+- La navegación declara un grupo accesible, desactiva acciones durante el guardado y usa un submit explícito con `aria-busy`.
+- `tests/bishop-wizard-accessibility-consolidation.test.mjs` protege semántica, etiquetas, agrupación, navegación y permanencia de las cinco etapas montadas.
 
 ## Criterio del siguiente bloque
 
-Validar el undécimo bloque con CI. Después se consolidará la semántica y la estructura del asistente de obispo, seguido por sacerdote y diácono, antes de abordar los asistentes de personas y evaluar la retirada completa de `LegacyAdminAccessibilityEnhancements`.
+Validar el duodécimo bloque con CI. Después se consolidará `PriestWizardPage`, incluida la eliminación de su raíz visual duplicada, antes de abordar el flujo automático del diácono y los asistentes heredados de personas.
