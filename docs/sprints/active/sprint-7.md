@@ -13,8 +13,8 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 
 1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
-3. [ ] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Implementación completada; pendiente de CI.**
-4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial.
+3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
+4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **En progreso.**
 5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual.
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
@@ -34,7 +34,7 @@ Se creó `docs/product/ADMIN_NAVIGATION_ARCHITECTURE.md` como contrato canónico
 
 La implementación quedó cubierta por TypeScript, pruebas unitarias y contractuales. La ejecución real de `E2E / Admin access matrix` se intentó con perfiles protegidos, pero quedó diferida por configuración inestable del secreto y credenciales de prueba. Esta deuda no elimina el workflow ni su contrato; deberá retomarse antes del cierre S7-10 o cuando existan perfiles E2E estables.
 
-### S7-03 — Implementación completada; pendiente de CI
+### S7-03 — Completada
 
 Se consolidó el dashboard administrativo con el mismo contexto canónico de navegación:
 
@@ -48,7 +48,11 @@ Se consolidó el dashboard administrativo con el mismo contexto canónico de nav
 - perfiles de consulta reciben un estado explícito sin operaciones habilitadas;
 - `tests/admin-dashboard-context.test.mjs` protege límites de servicio, contexto canónico, acciones y búsqueda.
 
-El filtrado de los valores de KPI y datos por alcance activo se mantiene en S7-04 para no mezclar la política de acciones con la capa analítica contextual.
+El CI confirmó documentación, TypeScript, pruebas y build en verde. El filtrado de valores de KPI y datos por alcance activo se mantiene en S7-04 para no mezclar la política de acciones con la capa analítica contextual.
+
+### S7-04 — En progreso
+
+Se inicia el contrato de KPIs contextuales para que cada indicador declare dimensión, permiso de lectura, alcance aplicable, fuente de datos, estado de disponibilidad y destino navegable. La implementación deberá reutilizar el alcance activo de `AdminNavigationProvider`, evitar conteos globales para perfiles restringidos y separar los indicadores territoriales, pastorales, administrativos y colegiales.
 
 ## Reglas del sprint
 
@@ -71,4 +75,4 @@ El filtrado de los valores de KPI y datos por alcance activo se mantiene en S7-0
 
 ## Punto de continuación
 
-Confirmar CI para S7-03. Si queda en verde, marcar S7-03 completada e iniciar S7-04 diseñando el contrato de KPIs contextuales y el filtrado de datos por alcance activo.
+Revisar las fuentes actuales de indicadores, el servicio del dashboard y los contratos territoriales, pastorales, administrativos y colegiales para definir una API contextual única. Después implementar filtros por alcance activo, estados de dato no disponible y pruebas que impidan mostrar cifras globales a perfiles restringidos.
