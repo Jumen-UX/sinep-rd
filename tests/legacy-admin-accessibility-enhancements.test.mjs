@@ -5,24 +5,38 @@ import test from 'node:test'
 const enhancement = await readFile('src/components/admin/LegacyAdminAccessibilityEnhancements.tsx', 'utf8')
 const adminLayout = await readFile('src/app/(admin)/layout.tsx', 'utf8')
 
-test('legacy admin assistants expose current step and selected mode semantics', () => {
-  assert.match(enhancement, /\.assistant-stepper/)
-  assert.match(enhancement, /role', 'navigation'/)
-  assert.match(enhancement, /aria-label', 'Pasos del asistente'/)
-  assert.match(enhancement, /aria-current', 'step'/)
-  assert.match(enhancement, /Ir al paso \$\{index \+ 1\}/)
-  assert.match(enhancement, /\.mode-card/)
-  assert.match(enhancement, /aria-pressed/)
+const canonicalEventRoots = [
+  'event-assistant-page',
+  'events-page',
+  'event-review-page',
+  'event-action-plan-page',
+  'event-application-contract-page',
+  'event-workflow-verification-page',
+  'pending-events-page',
+]
+
+test('legacy bridge no longer owns canonical event assistant semantics', () => {
+  assert.match(enhancement, /canonicalEventRootSelector/)
+  for (const root of canonicalEventRoots) assert.match(enhancement, new RegExp(`\\.${root}`))
+
+  assert.doesNotMatch(enhancement, /\.assistant-stepper/)
+  assert.doesNotMatch(enhancement, /\.step-card/)
+  assert.doesNotMatch(enhancement, /\.mode-card/)
+  assert.doesNotMatch(enhancement, /aria-current', 'step'/)
+  assert.doesNotMatch(enhancement, /Ir al paso \$\{index \+ 1\}/)
 })
 
-test('legacy admin feedback announces errors and non-blocking status changes', () => {
-  assert.match(enhancement, /configureLiveRegion/)
+test('legacy feedback skips canonical event flows and preserves native semantics', () => {
+  assert.match(enhancement, /belongsToCanonicalEventFlow/)
+  assert.match(enhancement, /element\.closest\(canonicalEventRootSelector\)/)
   assert.match(enhancement, /\.error-box, \.admin-navigation-error/)
-  assert.match(enhancement, /'assertive', 'alert'/)
   assert.match(enhancement, /\.empty-state, \.success-box, \.admin-warning-box, \.admin-info-box, \.admin-navigation-status/)
-  assert.match(enhancement, /'polite', 'status'/)
-  assert.match(enhancement, /aria-atomic/)
+  assert.equal((enhancement.match(/if \(belongsToCanonicalEventFlow\((?:message|region)\)\) return/g) ?? []).length, 3)
+  assert.match(enhancement, /if \(!message\.hasAttribute\('role'\)\)/)
+  assert.match(enhancement, /if \(!message\.hasAttribute\('aria-live'\)\)/)
+  assert.match(enhancement, /if \(!message\.hasAttribute\('aria-atomic'\)\)/)
   assert.match(enhancement, /\[data-loading="true"\], \[aria-busy="true"\]/)
+  assert.match(enhancement, /region\.getAttribute\('aria-busy'\) !== 'true'/)
 })
 
 test('legacy form errors are associated with the first invalid control and preserve existing help', () => {
