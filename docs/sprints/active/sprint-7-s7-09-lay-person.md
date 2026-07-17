@@ -1,6 +1,6 @@
 # Sprint 7 · S7-09 — Consolidación del asistente de persona laica
 
-> Estado: implementado; CI pendiente
+> Estado: completado y validado
 > Fecha: 2026-07-17
 > Rama: `main`
 
@@ -8,7 +8,7 @@
 
 - El decimocuarto bloque de S7-09, correspondiente a `DeaconWizardPage`, fue confirmado con CI en verde.
 
-## Decimoquinto bloque implementado
+## Decimoquinto bloque completado
 
 - `LayPersonWizardPage.tsx` dejó de depender de la inferencia de etapas por DOM y controla cinco etapas explícitas mediante `AdminWizardProgress`.
 - El layout de la ruta ya no monta `AutoSectionWizard`; conserva `PersonWizardContextRail` y carga `person-registration-wizard.css` después de la base compartida.
@@ -20,13 +20,9 @@
 - La revisión usa artículos semánticos y la barra inferior expone navegación y submit nativos, sin `MutationObserver` ni `requestSubmit`.
 - Se conservaron la reutilización de identidad, la subida y reversión de fotografía, la visibilidad del servicio, el filtrado por nivel y la limpieza de cargos incompatibles.
 - `tests/lay-person-wizard-accessibility-consolidation.test.mjs` protege estructura, semántica, estilos y contratos canónicos.
+- CI confirmó el bloque en verde.
 
-## Deuda controlada
+## Deuda transferida
 
-- `AutoSectionWizard` permanece porque el asistente de vida consagrada todavía lo consume.
-- `person-wizard-ui.css` conserva temporalmente las reglas de `.auto-section-wizard` hasta migrar ese último consumidor.
-- El registro principal `sprint-7-s7-09.md` se reconciliará al validar este bloque o durante el cierre de S7-09.
-
-## Criterio del siguiente bloque
-
-Validar este bloque con CI. Después se consolidará `ReligiousWizardPage`, se retirará `AutoSectionWizard` si queda sin consumidores y se continuará con la reducción de `LegacyAdminAccessibilityEnhancements`.
+- La retirada física de `AutoSectionWizard` y de sus reglas en `person-wizard-ui.css` se ejecutará después de validar la migración del último consumidor, `ReligiousWizardPage`.
+- El registro principal `sprint-7-s7-09.md` se reconciliará durante el cierre de S7-09.
