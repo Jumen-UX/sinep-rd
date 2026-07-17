@@ -117,7 +117,7 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - `tests/legacy-admin-accessibility-enhancements.test.mjs` protege la exclusión de eventos y las responsabilidades que todavía deben permanecer en el puente.
 - CI confirmó el bloque en verde.
 
-## Décimo bloque implementado
+## Décimo bloque implementado y validado
 
 - Se creó `src/styles/admin-structure-workflows.css` como hoja canónica para configuración de cargos por nivel y selección jerárquica.
 - `LevelOfficeConfigurationPage.tsx` dejó de declarar `pageStyles`; carga, errores, confirmación, selección de nivel y guardado declaran semántica propia.
@@ -127,7 +127,17 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - `admin-embedded-theme-cleanup.css` y su import se eliminaron por completo; ya no existen reglas administrativas de superficie con `!important` en esa capa.
 - `tests/admin-structure-consolidation.test.mjs` protege estilos, responsive, semántica y ausencia de CSS embebido.
 - Los contratos de auditoría se actualizaron para exigir la desaparición física de la capa heredada.
+- CI confirmó el bloque en verde.
+
+## Undécimo bloque implementado
+
+- Se creó `src/styles/clergy-wizard-ui.css` como extensión compartida para sacerdote, diácono y obispo.
+- Los tres layouts de ruta cargan `person-wizard-ui.css` y la nueva extensión de clero.
+- Se eliminaron `priest-wizard-ui.css`, `deacon-wizard-ui.css` y `deacon-wizard-polish.css`.
+- La extensión conserva el layout de asistentes controlados, la navegación automática del diácono, el resumen de revisión, el éxito del sacerdote y los estados responsive.
+- El foco usa `--focus-ring` como valor de `box-shadow`, de acuerdo con la definición canónica del token; no se replica su uso inválido como `outline`.
+- `tests/clergy-wizard-style-consolidation.test.mjs` impide volver a hojas específicas por rol y protege la continuidad de `AutoSectionWizard`.
 
 ## Criterio del siguiente bloque
 
-Validar el décimo bloque con CI. Después se consolidarán los asistentes heredados de clero y personas, se reducirá nuevamente `LegacyAdminAccessibilityEnhancements` y se evaluará si ya puede retirarse por completo antes de cerrar S7-09.
+Validar el undécimo bloque con CI. Después se consolidará la semántica y la estructura del asistente de obispo, seguido por sacerdote y diácono, antes de abordar los asistentes de personas y evaluar la retirada completa de `LegacyAdminAccessibilityEnhancements`.
