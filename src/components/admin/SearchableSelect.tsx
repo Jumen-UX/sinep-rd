@@ -31,6 +31,8 @@ export function SearchableSelect({
 }: Props) {
   const inputId = useId()
   const listId = `${inputId}-options`
+  const helpId = `${inputId}-help`
+  const statusId = `${inputId}-status`
   const selected = options.find((option) => option.value === value)
   const [query, setQuery] = useState(selected?.label ?? value)
   const [open, setOpen] = useState(false)
@@ -86,7 +88,9 @@ export function SearchableSelect({
           aria-activedescendant={activeOptionId}
           aria-autocomplete="list"
           aria-controls={listId}
+          aria-describedby={[help ? helpId : null, open ? statusId : null].filter(Boolean).join(' ') || undefined}
           aria-expanded={open}
+          aria-haspopup="listbox"
           autoComplete="off"
           disabled={disabled}
           id={inputId}
@@ -148,18 +152,19 @@ export function SearchableSelect({
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => selectOption(option)}
                 role="option"
+                tabIndex={-1}
                 type="button"
               >
                 <strong>{option.label}</strong>
                 {option.description && <span>{option.description}</span>}
               </button>
             )) : (
-              <p className="meta">No hay coincidencias.</p>
+              <p className="meta" id={statusId} role="status">No hay coincidencias.</p>
             )}
           </div>
         )}
       </div>
-      {help && <small className="meta">{help}</small>}
+      {help && <small className="meta" id={helpId}>{help}</small>}
     </label>
   )
 }
