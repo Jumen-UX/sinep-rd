@@ -12,12 +12,6 @@ import {
   type ContractAction,
 } from '../services/event-application-admin-service'
 
-const pageStyles = `
-  .contract-hero{align-items:stretch;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr)}
-  .contract-summary,.contract-card,.contract-action{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:14px}
-  .contract-summary,.contract-card.highlight{background:#fbf8f1}.contract-grid,.metric-grid,.actions-list,.requirements-list{display:grid;gap:14px}.contract-grid{align-items:start;grid-template-columns:minmax(0,1fr) minmax(300px,.4fr)}.metric-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.badge-row,.button-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}.mini-badge.danger{background:#fef2f2;color:#991b1b}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:980px){.contract-hero,.contract-grid,.metric-grid{grid-template-columns:1fr}}
-`
-
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback
 }
@@ -122,16 +116,20 @@ export default function EventApplicationContractPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId])
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando contrato de aplicación...</div></main>
-  if (!contract?.event) return <main className="container"><div className="error-box">No se encontró el evento.</div></main>
+  if (loading) {
+    return <main className="container"><div className="empty-state" role="status" aria-live="polite">Cargando contrato de aplicación...</div></main>
+  }
+
+  if (!contract?.event) {
+    return <main className="container"><div className="error-box" role="alert">No se encontró el evento.</div></main>
+  }
 
   const summary = contract.summary
   const isOrganizational = contract.event.applies_to === 'organization_unit'
   const isApplied = contract.event.status === 'applied'
 
   return (
-    <main className="container dashboard-page event-application-contract-page">
-      <style>{pageStyles}</style>
+    <main className="container dashboard-page event-application-contract-page" aria-busy={applying}>
       <div className="detail-backlink"><Link href={`/admin/eventos/${eventId}/plan`}>← Volver al plan</Link></div>
 
       <section className="dashboard-hero card contract-hero">
@@ -142,20 +140,31 @@ export default function EventApplicationContractPage() {
           <div className="badge-row">
             <Link className="button button-secondary" href={`/admin/eventos/${eventId}`}>Revisar evento</Link>
             <Link className="button button-secondary" href={`/admin/eventos/${eventId}/plan`}>Plan de acciones</Link>
-            {isOrganizational && !isApplied && <button className="button button-primary" disabled={!summary.can_apply || applying} onClick={applyEvent} type="button">{applying ? 'Aplicando…' : 'Aplicar evento'}</button>}
+            {isOrganizational && !isApplied && (
+              <button
+                aria-busy={applying}
+                aria-describedby="contract-application-guidance"
+                className="button button-primary"
+                disabled={!summary.can_apply || applying}
+                onClick={applyEvent}
+                type="button"
+              >
+                {applying ? 'Aplicando…' : 'Aplicar evento'}
+              </button>
+            )}
           </div>
         </div>
-        <div className="contract-summary">
+        <div className="contract-summary" aria-live="polite" aria-atomic="true">
           <span className={`mini-badge ${isApplied || summary.can_apply ? 'success' : 'warning'}`}>{isApplied ? 'Aplicado' : summary.can_apply ? 'Listo para aplicar' : 'Aplicación bloqueada'}</span>
           <strong>{statusLabel(contract.event.status)}</strong>
           <span className="meta">{lockReasonLabel(summary.apply_lock_reason)}</span>
         </div>
       </section>
 
-      {error && <div className="error-box">{error}</div>}
-      {message && <div className="success-box">{message}</div>}
+      {error && <div className="error-box" role="alert" aria-live="assertive">{error}</div>}
+      {message && <div className="success-box" role="status" aria-live="polite" aria-atomic="true">{message}</div>}
 
-      <section className="metric-grid">
+      <section className="metric-grid" aria-label="Resumen del contrato de aplicación">
         <div className="contract-card"><strong>{summary.action_count}</strong><span className="meta">acciones</span></div>
         <div className="contract-card"><strong>{summary.ready_count}</strong><span className="meta">listas</span></div>
         <div className="contract-card"><strong>{summary.applied_count}</strong><span className="meta">aplicadas</span></div>
@@ -165,11 +174,15 @@ export default function EventApplicationContractPage() {
       <section className="contract-grid">
         <div className="card dashboard-section">
           <div className="section-heading"><div><p className="eyebrow">Acciones</p><h2>Contrato por acción</h2><p className="meta">Cada acción declara su estrategia, estado y objetivo.</p></div></div>
-          <div className="actions-list">
-            {contract.actions.length === 0 && <div className="empty-state">El evento todavía no tiene acciones generadas.</div>}
+          <div className="actions-list" aria-label="Acciones incluidas en el contrato">
+            {contract.actions.length === 0 && <div className="empty-state" role="status">El evento todavía no tiene acciones generadas.</div>}
             {contract.actions.map((action) => (
-              <article className="contract-action" key={action.id}>
-                <div><p className="eyebrow">Orden {action.sort_order}</p><h2>{action.action_type_name}</h2></div>
+              <article
+                aria-label={`${action.action_type_name}: ${contractStatusLabel(action.contract_status)}`}
+                className="contract-action"
+                key={action.id}
+              >
+                <div><p className="eyebrow">Orden {action.sort_order}</p><h3>{action.action_type_name}</h3></div>
                 <div className="badge-row">
                   <span className={`mini-badge ${badgeClass(action)}`}>{contractStatusLabel(action.contract_status)}</span>
                   <span className="mini-badge">{strategyLabel(action.apply_strategy)}</span>
@@ -189,13 +202,13 @@ export default function EventApplicationContractPage() {
 
         <aside className="card dashboard-section">
           <div className="section-heading"><div><p className="eyebrow">Condiciones</p><h2>Estado del contrato</h2></div></div>
-          <div className="requirements-list">
+          <div className="requirements-list" aria-label="Condiciones para aplicar el evento">
             <div className="contract-card"><strong>Tipo de destino</strong><span className="meta">{isOrganizational ? 'Unidad organizativa' : 'Entidad eclesiástica'}</span></div>
             <div className="contract-card"><strong>Acciones planificadas</strong><span className="meta">{summary.planned_count}</span></div>
             <div className="contract-card"><strong>Errores relacionales</strong><span className="meta">{summary.relationship_error_count}</span></div>
             <div className="contract-card"><strong>Acciones solo manuales</strong><span className="meta">{summary.manual_only_count}</span></div>
           </div>
-          <div className="contract-card highlight">
+          <div className="contract-card highlight" id="contract-application-guidance">
             <strong>Regla vigente</strong>
             <span className="meta">{isOrganizational ? 'Los eventos organizativos aprobados pueden aplicarse transaccionalmente cuando todas sus acciones están listas.' : 'Los eventos jurisdiccionales siguen limitados a revisión y planificación; su mutación automática permanece bloqueada.'}</span>
           </div>
