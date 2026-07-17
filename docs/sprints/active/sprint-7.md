@@ -86,6 +86,8 @@ El primer bloque implementó:
 
 La ejecución [CI #29552207127](https://github.com/Jumen-UX/sinep-rd/actions/runs/29552207127) confirmó documentación, auditorías, TypeScript, 465 pruebas, build y CodeQL. El primer intento detectó una expectativa heredada que exigía hexadecimales claros literales; el contrato fue actualizado para comprobar los tokens de contraste en ambos temas.
 
+El primer E2E público del bloque detectó contraste insuficiente en el emblema porque la capa de marca sustituye el primario por amarillo. Se incorporó un token oscuro específico para texto sobre la marca y se amplió el filtro del workflow para observar `public-shell.css`, tokens, controles de tema y componentes compartidos. [CI #29552428659](https://github.com/Jumen-UX/sinep-rd/actions/runs/29552428659) y [E2E público #29552428639](https://github.com/Jumen-UX/sinep-rd/actions/runs/29552428639) confirmaron la corrección en verde.
+
 Este bloque establece la infraestructura canónica, pero no cierra S7-06. Permanecen colores fijos en estilos especializados del dashboard, navegación, asistentes, tablas, overlays y módulos históricos. Se migrarán por grupos visuales y se comprobarán en claro y oscuro antes de marcar la tarea como completada.
 
 ## Estado operativo separado
