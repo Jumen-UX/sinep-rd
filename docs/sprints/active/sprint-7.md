@@ -17,7 +17,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
 5. [x] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **Completada con cuatro pantallas representativas y CI verde.**
-6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
+6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos. **Fundamentos, preferencia persistente y componentes compartidos completados; cobertura especializada en progreso.**
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
 9. [ ] S7-09 — Reducir duplicación visual y consolidar componentes reutilizables.
@@ -68,6 +68,26 @@ La ejecución [CI #29551515252](https://github.com/Jumen-UX/sinep-rd/actions/run
 
 El inventario restante todavía contiene clases heredadas en asistentes y pantallas especializadas. No bloquea S7-05 porque la capa canónica, la semántica y el contrato de adopción ya quedaron demostrados en solicitudes, auditoría, personas y acceso. La eliminación transversal de duplicación visual continuará en S7-09, coordinada con modo oscuro y accesibilidad para evitar retrabajo.
 
+### S7-06 — En progreso
+
+El inventario inicial confirmó que el sistema solo declaraba `color-scheme: light`, no conservaba una preferencia de apariencia y mantenía colores claros fijos en superficies y estados compartidos.
+
+El primer bloque implementó:
+
+- preferencia `Claro`, `Oscuro` y `Automático`, persistida en `localStorage`;
+- resolución de la preferencia del sistema mediante `prefers-color-scheme`;
+- script `beforeInteractive` en el layout raíz para aplicar el tema antes del render y evitar destellos;
+- control compartido disponible en el encabezado público y en la navegación administrativa;
+- sincronización inmediata entre controles y reacción a cambios del sistema;
+- tokens oscuros para superficies, texto, bordes, foco, sombras y estados semánticos;
+- bordes semánticos temáticos en `Alert` y `StatusBadge`;
+- sustitución de superficies claras fijas en el shell público y en los módulos administrativos compartidos;
+- `tests/theme-contract.test.mjs`, que protege arranque, persistencia, opciones, exposición en ambos shells y uso de tokens semánticos.
+
+La ejecución [CI #29552207127](https://github.com/Jumen-UX/sinep-rd/actions/runs/29552207127) confirmó documentación, auditorías, TypeScript, 465 pruebas, build y CodeQL. El primer intento detectó una expectativa heredada que exigía hexadecimales claros literales; el contrato fue actualizado para comprobar los tokens de contraste en ambos temas.
+
+Este bloque establece la infraestructura canónica, pero no cierra S7-06. Permanecen colores fijos en estilos especializados del dashboard, navegación, asistentes, tablas, overlays y módulos históricos. Se migrarán por grupos visuales y se comprobarán en claro y oscuro antes de marcar la tarea como completada.
+
 ## Estado operativo separado
 
 No bloquean el avance técnico de S7-05, pero deben cerrarse antes de S7-10:
@@ -99,4 +119,4 @@ No bloquean el avance técnico de S7-05, pero deben cerrarse antes de S7-10:
 
 ## Punto de continuación
 
-Iniciar S7-06 con un inventario de componentes y reglas que todavía dependen de colores fijos o no tienen variante oscura. Priorizar shell, navegación, formularios, tablas, estados y overlays compartidos antes de corregir pantallas aisladas. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
+Continuar S7-06 desde la infraestructura de tema ya implementada. El siguiente bloque debe migrar las superficies y estados fijos de `admin-dashboard.css`, `admin-dashboard-brand.css` y `admin-navigation.css`; después formularios, tablas, overlays y asistentes especializados. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.

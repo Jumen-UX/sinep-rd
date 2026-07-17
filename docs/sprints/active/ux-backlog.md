@@ -7,7 +7,7 @@
 ## Sprint UX 0.1 — fundamentos visuales y accesibilidad
 
 - [ ] Consolidar tokens semánticos.
-- [ ] Definir tema claro, oscuro y automático sin destello inicial.
+- [x] Definir tema claro, oscuro y automático sin destello inicial.
 - [ ] Crear botón flotante y panel de preferencias de accesibilidad.
 - [ ] Corregir contrastes AA.
 - [ ] Consolidar componentes básicos compartidos.
