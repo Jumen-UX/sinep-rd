@@ -1,6 +1,6 @@
 # Sprint 7 · S7-07 — Herramientas de accesibilidad
 
-> Estado: implementación completada; validación automatizada en curso
+> Estado: completada y validada
 > Fecha: 2026-07-17
 > Rama: `main`
 
@@ -22,12 +22,13 @@ S7-06 quedó técnicamente validada por CI y E2E público. La comprobación visu
 - Recuperación segura ante almacenamiento no disponible o datos inválidos.
 - Región viva para anunciar cambios a tecnologías de asistencia.
 
-## Validación incorporada
+## Validación completada
 
 - `tests/accessibility-tools.test.mjs` protege montaje, semántica, persistencia, estilos y responsive.
 - `e2e/public-accessibility.spec.mjs` valida apertura, teclado, tamaño, contraste, recarga, persistencia y Axe.
 - `.github/workflows/e2e-public.yml` observa el layout raíz y `src/components/accessibility/**`.
+- `pnpm check`, CI y `E2E / Public accessibility` confirmados en verde.
 
-## Criterio de cierre
+## Cierre
 
-Cerrar S7-07 cuando `pnpm check`, CI y `E2E / Public accessibility` estén en verde. Después iniciar S7-08: responsive, teclado, foco, contraste y lectores de pantalla.
+S7-07 queda cerrada. El siguiente bloque es S7-08: auditoría transversal de responsive, teclado, foco, contraste y lectores de pantalla.
