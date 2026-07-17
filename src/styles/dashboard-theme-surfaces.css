@@ -1,0 +1,74 @@
+/* Theme-safe surfaces for shared public dashboard primitives. */
+
+.dashboard-path-card {
+  background: var(--surface-subtle);
+}
+
+.dashboard-path-list span,
+.metric-card,
+.filter-chip,
+.list-row,
+.empty-state,
+.error-box {
+  background: var(--surface);
+}
+
+.quick-link-card,
+.hierarchy-preview-grid div,
+.role-pill {
+  background: var(--surface-subtle);
+}
+
+.list-row:hover,
+.list-row:focus-within,
+.quick-link-card:hover,
+.quick-link-card:focus-visible,
+.filter-chip:hover,
+.filter-chip:focus-visible {
+  background: var(--surface-hover);
+}
+
+.metric-card,
+.quick-link-card,
+.filter-chip,
+.list-row,
+.empty-state,
+.error-box,
+.dashboard-path-card,
+.dashboard-path-list span,
+.hierarchy-preview-grid div,
+.role-pill {
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.metric-card strong,
+.quick-link-card strong,
+.filter-chip strong,
+.list-row strong,
+.hierarchy-preview-grid strong {
+  color: var(--foreground);
+}
+
+.metric-card span,
+.quick-link-card span,
+.filter-chip span,
+.list-row small,
+.list-row > span,
+.dashboard-path-list span,
+.hierarchy-preview-grid span,
+.role-pill {
+  color: var(--muted);
+}
+
+html[data-theme='dark'] .metric-card,
+html[data-theme='dark'] .dashboard-path-list span {
+  box-shadow: var(--shadow-sm);
+}
+
+html[data-contrast='high'] .metric-card,
+html[data-contrast='high'] .quick-link-card,
+html[data-contrast='high'] .filter-chip,
+html[data-contrast='high'] .dashboard-path-list span {
+  border-color: var(--border-strong);
+}
