@@ -1,0 +1,153 @@
+/* Presentation specific to the event action-plan workflow. */
+
+.event-action-plan-page :is(select, input, textarea) {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--foreground);
+  font: inherit;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.event-action-plan-page textarea {
+  min-height: 74px;
+  resize: vertical;
+}
+
+.plan-hero {
+  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr);
+}
+
+.plan-summary,
+.plan-card,
+.action-card,
+.relationship-editor,
+.conflict-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--foreground);
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.plan-summary,
+.plan-card.highlight,
+.relationship-editor,
+.conflict-panel.clear {
+  background: var(--surface-subtle);
+}
+
+.plan-card.highlight {
+  border-style: dashed;
+}
+
+.conflict-panel.error {
+  background: var(--danger-soft);
+  border-color: var(--border-danger);
+}
+
+.conflict-panel.warning {
+  background: var(--warning-soft);
+  border-color: var(--border-warning);
+}
+
+.conflict-panel.error strong {
+  color: var(--danger);
+}
+
+.conflict-panel.warning strong {
+  color: var(--warning);
+}
+
+.conflict-panel.clear strong {
+  color: var(--success);
+}
+
+.plan-grid,
+.actions-list,
+.metric-grid,
+.status-grid,
+.editor-grid,
+.conflict-list {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.plan-grid {
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.4fr);
+}
+
+.metric-grid,
+.status-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.editor-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.editor-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.relationship-editor label {
+  color: var(--muted);
+  display: grid;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.event-action-plan-page .mini-badge {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--primary);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 9px;
+}
+
+.event-action-plan-page .mini-badge.warning {
+  background: var(--warning-soft);
+  border-color: var(--border-warning);
+  color: var(--warning);
+}
+
+.event-action-plan-page .mini-badge.success {
+  background: var(--success-soft);
+  border-color: var(--border-success);
+  color: var(--success);
+}
+
+.event-action-plan-page .mini-badge.danger {
+  background: var(--danger-soft);
+  border-color: var(--border-danger);
+  color: var(--danger);
+}
+
+.action-controls {
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+@media (max-width: 1080px) {
+  .plan-hero,
+  .plan-grid,
+  .metric-grid,
+  .status-grid,
+  .editor-grid {
+    grid-template-columns: 1fr;
+  }
+}
