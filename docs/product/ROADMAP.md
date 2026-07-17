@@ -15,7 +15,7 @@ La aplicación cuenta con identidad canónica de personas, dimensiones clericale
 
 [Sprint 7 — Portal administrativo y experiencia de usuario](../sprints/active/sprint-7.md).
 
-Estado: S7-01, S7-02, S7-03 y S7-04 están completados técnicamente. S7-05 está en progreso y normaliza encabezados, breadcrumbs, estados de carga/error/vacío, feedback y jerarquía visual de las pantallas administrativas. Las validaciones E2E autenticadas de navegación y la comprobación manual de KPIs con alcance restringido permanecen como deuda operativa explícita para S7-10.
+Estado: S7-01 a S7-05 están completados técnicamente. El siguiente bloque es S7-06: completar modo oscuro sobre componentes administrativos compartidos y después sobre las pantallas especializadas. Las validaciones E2E autenticadas de navegación y la comprobación manual de KPIs con alcance restringido permanecen como deuda operativa explícita para S7-10.
 
 ## Programa transversal UX
 
@@ -44,8 +44,8 @@ El portal público y su accesibilidad ya cuentan con una ejecución E2E verde so
 
 ## Orden vigente de ejecución
 
-1. Continuar Sprint 7 desde S7-05 y cerrar la normalización visual representativa.
-2. Completar S7-06 a S7-09: modo oscuro, herramientas de accesibilidad, responsive/teclado/foco/contraste y reducción de duplicación visual.
+1. Continuar Sprint 7 desde S7-06, comenzando por el inventario de colores fijos y componentes sin variante oscura.
+2. Completar S7-07 a S7-09: herramientas de accesibilidad, responsive/teclado/foco/contraste y reducción de duplicación visual.
 3. Reparar el secreto protegido y ejecutar la matriz E2E autenticada antes de S7-10.
 4. Validar manualmente los KPIs restringidos y registrar la evidencia operativa.
 5. Ejecutar S7-10 con pruebas visuales, accesibilidad, `pnpm check`, CI y cierre.
