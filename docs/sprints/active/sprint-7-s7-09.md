@@ -25,7 +25,7 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - `tests/admin-event-workflow-consolidation.test.mjs` protege la extracción y evita regresar al patrón embebido.
 - CI confirmó el bloque en verde.
 
-## Segundo bloque implementado
+## Segundo bloque implementado y validado
 
 - `EventRegistryPage.tsx` dejó de declarar `pageStyles` y de inyectar CSS desde React.
 - La hoja compartida incorporó barra de filtros, pestañas, tarjetas seleccionables, caja de fecha, badges semánticos y adaptación móvil del registro.
@@ -34,7 +34,19 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - Las tarjetas controlan el panel de detalle mediante `aria-controls` y el detalle se anuncia como región viva moderada.
 - Carga, errores, resultados vacíos y cambios en el número de resultados exponen semántica accesible propia.
 - El contrato de consolidación protege ambas pantallas y evita reintroducir estilos embebidos o superficies claras fijas.
+- CI confirmó el bloque en verde.
+
+## Tercer bloque implementado
+
+- `EventReviewPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
+- La hoja compartida incorporó tarjetas de revisión, validaciones, participantes, nodos de impacto e incidencias con severidades semánticas.
+- Los estados de éxito, advertencia y error usan `success-soft`, `warning-soft`, `danger-soft` y sus bordes canónicos.
+- Las validaciones exponen nombres accesibles con resultado explícito y los iconos visuales se marcan como decorativos.
+- Las incidencias bloqueantes se anuncian como alertas y las advertencias como estados moderados.
+- Carga, evento inexistente, errores de acción, resumen y guardado declaran semántica propia.
+- La nota de revisión usa asociación `label`/`textarea`, y la acción de aprobación referencia la guía de impacto mediante `aria-describedby`.
+- El contrato de consolidación protege las tres pantallas migradas.
 
 ## Criterio del siguiente bloque
 
-Validar el segundo bloque con CI y migrar las pantallas de revisión, plan, contrato, verificación y pendientes a la hoja compartida. Después se retirarán de `admin-embedded-theme-cleanup.css` los selectores de eventos que ya no sean necesarios.
+Validar el tercer bloque con CI y migrar plan y contrato de aplicación. Después se consolidarán verificación y pendientes, y se retirarán de `admin-embedded-theme-cleanup.css` los selectores de eventos que ya no sean necesarios.
