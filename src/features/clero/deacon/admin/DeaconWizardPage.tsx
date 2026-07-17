@@ -3,9 +3,10 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import AdminWizardProgress from '@/components/admin/AdminWizardProgress'
 import type { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
 import { PersonIdentityStep } from '@/features/personas/shared/components/PersonIdentityStep'
+import { createClient } from '@/lib/supabase/client'
 import {
   loadAllowedOfficeIds,
   loadDeaconCatalogs,
@@ -17,6 +18,15 @@ import {
   type UnordainedPersonOption,
   type UploadedDeaconPhoto,
 } from '../services/deacon-admin-service'
+
+const wizardSteps = [
+  { label: 'Origen', description: 'Reutilizar o crear identidad' },
+  { label: 'Tipo', description: 'Clasificación del diaconado' },
+  { label: 'Identidad', description: 'Datos personales y contacto' },
+  { label: 'Ordenación', description: 'Fecha y estado clerical' },
+  { label: 'Servicio', description: 'Incardinación y cargo actual' },
+  { label: 'Revisión', description: 'Completitud y guardado' },
+]
 
 const optionalFields = [
   { key: 'birth_date', label: 'Fecha de nacimiento' },
@@ -57,6 +67,7 @@ function deaconTypeLabel(value: DeaconType) {
 export default function DeaconWizardPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -70,7 +81,9 @@ export default function DeaconWizardPage() {
   const [entities, setEntities] = useState<EntityHierarchyEntity[]>([])
   const [officeConfigs, setOfficeConfigs] = useState<OfficeConfig[]>([])
   const [allowedOfficeIds, setAllowedOfficeIds] = useState<string[]>([])
-  const [officeFilterMessage, setOfficeFilterMessage] = useState('Selecciona la entidad del cargo para ver sus cargos permitidos.')
+  const [officeFilterMessage, setOfficeFilterMessage] = useState(
+    'Selecciona la entidad del cargo para ver sus cargos permitidos.',
+  )
   const [incardinationId, setIncardinationId] = useState('')
   const [serviceId, setServiceId] = useState('')
   const [quickEntityId, setQuickEntityId] = useState('')
@@ -83,6 +96,7 @@ export default function DeaconWizardPage() {
   const filteredOfficeConfigs = quickEntityId
     ? officeConfigs.filter((office) => allowedOfficeIds.includes(office.id))
     : []
+  const selectedOffice = filteredOfficeConfigs.find((office) => office.id === quickOfficeConfigId)
 
   useEffect(() => {
     async function loadData() {
@@ -124,7 +138,11 @@ export default function DeaconWizardPage() {
             : 'Este nivel no tiene cargos configurados. Configúralos en Administración → Estructura antes de asignar uno.',
         )
       } catch (officeError) {
-        setOfficeFilterMessage(officeError instanceof Error ? officeError.message : 'No se pudieron cargar los cargos permitidos.')
+        setOfficeFilterMessage(
+          officeError instanceof Error
+            ? officeError.message
+            : 'No se pudieron cargar los cargos permitidos.',
+        )
       }
     }
 
@@ -132,7 +150,10 @@ export default function DeaconWizardPage() {
   }, [quickEntityId, supabase])
 
   useEffect(() => {
-    if (quickOfficeConfigId && !filteredOfficeConfigs.some((office) => office.id === quickOfficeConfigId)) {
+    if (
+      quickOfficeConfigId
+      && !filteredOfficeConfigs.some((office) => office.id === quickOfficeConfigId)
+    ) {
       setQuickOfficeConfigId('')
     }
   }, [filteredOfficeConfigs, quickOfficeConfigId])
@@ -155,20 +176,26 @@ export default function DeaconWizardPage() {
     if (mode === 'existing' && !selectedPersonId) {
       setError('Selecciona la persona que recibió el diaconado.')
       setSaving(false)
+      setStep(0)
       return
     }
 
     if (mode === 'new' && (!firstName || !lastName || !displayName || !slug)) {
       setError('Primer nombre y primer apellido son obligatorios.')
       setSaving(false)
+      setStep(2)
       return
     }
 
     let uploadedPhoto: UploadedDeaconPhoto | null = null
 
     try {
-      const photoFile = mode === 'new' && form.get('photo_file') instanceof File ? form.get('photo_file') as File : null
-      uploadedPhoto = photoFile ? await uploadDeaconPhoto(supabase, photoFile, slug) : { photo_url: null, photo_path: null }
+      const photoFile = mode === 'new' && form.get('photo_file') instanceof File
+        ? form.get('photo_file') as File
+        : null
+      uploadedPhoto = photoFile
+        ? await uploadDeaconPhoto(supabase, photoFile, slug)
+        : { photo_url: null, photo_path: null }
       const payload = {
         mode,
         selected_person_id: mode === 'existing' ? selectedPersonId : null,
@@ -225,6 +252,7 @@ export default function DeaconWizardPage() {
       setServiceId('')
       setQuickEntityId('')
       setQuickOfficeConfigId('')
+      setStep(0)
     } catch (saveError) {
       await removeDeaconPhoto(supabase, uploadedPhoto?.photo_path)
       setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el diácono.')
@@ -233,158 +261,449 @@ export default function DeaconWizardPage() {
     }
   }
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando asistente...</div></main>
+  if (loading) {
+    return (
+      <main className="container">
+        <div className="empty-state" role="status" aria-live="polite">
+          Cargando asistente...
+        </div>
+      </main>
+    )
+  }
 
   return (
-    <main className="container dashboard-page admin-config-page">
-      <div className="detail-backlink"><Link href="/admin/nuevo">← Volver a agregar nueva ficha</Link></div>
+    <main
+      aria-busy={saving}
+      aria-labelledby="deacon-wizard-title"
+      className="container dashboard-page admin-config-page"
+    >
+      <div className="detail-backlink">
+        <Link href="/admin/nuevo">← Volver a agregar nueva ficha</Link>
+      </div>
 
       <section className="dashboard-hero card">
         <div>
           <p className="eyebrow">Inicio del historial clerical</p>
-          <h1>Registrar diaconado</h1>
-          <p className="lead">Busca primero la ficha de la persona. La ordenación diaconal se añade sobre esa misma identidad; solo crea una ficha nueva cuando la persona todavía no existe en SINEP RD.</p>
+          <h1 id="deacon-wizard-title">Registrar diaconado</h1>
+          <p className="lead">
+            Busca primero la ficha de la persona. La ordenación diaconal se añade sobre esa misma
+            identidad; solo crea una ficha nueva cuando la persona todavía no existe en SINEP RD.
+          </p>
         </div>
       </section>
 
-      {error && <div className="error-box">{error}</div>}
-      {message && (
-        <div className="empty-state">
-          <strong>{message}</strong>
-          {savedInternalCode && <span>Código interno administrativo: {savedInternalCode}</span>}
-          {savedSlug && <Link href={`/personas/${savedSlug}`}>Ver ficha pública</Link>}
+      {error ? (
+        <div className="error-box" id="deacon-wizard-error" role="alert" aria-live="assertive">
+          {error}
         </div>
-      )}
+      ) : null}
 
-      <form className="admin-form admin-config-form card dashboard-section" onSubmit={handleSubmit}>
-        <PersonIdentityStep
-          mode={mode}
-          onModeChange={setMode}
-          selectedPersonId={selectedPersonId}
-          onSelectedPersonChange={setSelectedPersonId}
-          people={unordainedPeople}
-          existingActionLabel="Añadir el diaconado a una persona existente."
-          newActionLabel="Crear la identidad y registrar el diaconado."
-          selectPlaceholder="Selecciona una persona sin ordenaciones"
-          existingSummary="Se conservarán su ficha, slug, código interno, vida consagrada y demás datos existentes."
+      {message ? (
+        <div className="empty-state" role="status" aria-atomic="true" aria-live="polite">
+          <strong>{message}</strong>
+          {savedInternalCode ? <span>Código interno administrativo: {savedInternalCode}</span> : null}
+          {savedSlug ? <Link href={`/personas/${savedSlug}`}>Ver ficha pública</Link> : null}
+        </div>
+      ) : null}
+
+      <div className="admin-wizard-layout">
+        <AdminWizardProgress
+          steps={wizardSteps}
+          currentStep={step}
+          maxReachableStep={wizardSteps.length - 1}
+          onStepChange={setStep}
         />
 
-        <section>
-          <p className="eyebrow">Tipo de diácono</p>
-          <h2>¿Qué tipo de diácono quieres registrar?</h2>
-          <div className="dashboard-grid dashboard-summary">
-            <button className={`metric-card metric-button ${deaconType === 'permanent' ? 'active-filter' : ''}`} type="button" onClick={() => setDeaconType('permanent')}><strong>Permanente</strong><span>No se asume que será sacerdote.</span></button>
-            <button className={`metric-card metric-button ${deaconType === 'transitional' ? 'active-filter' : ''}`} type="button" onClick={() => setDeaconType('transitional')}><strong>Transitorio</strong><span>Queda listo para registrarlo luego como sacerdote.</span></button>
-            <button className={`metric-card metric-button ${deaconType === 'external' ? 'active-filter' : ''}`} type="button" onClick={() => setDeaconType('external')}><strong>Externo</strong><span>Pertenece o viene de otra jurisdicción.</span></button>
-          </div>
-          {deaconType === 'external' && <input name="external_jurisdiction_name" placeholder="Jurisdicción externa o procedencia" />}
-        </section>
+        <form
+          aria-busy={saving}
+          aria-describedby={error ? 'deacon-wizard-error' : undefined}
+          className="admin-form admin-config-form card dashboard-section admin-wizard-form"
+          onSubmit={handleSubmit}
+        >
+          <section hidden={step !== 0}>
+            <p className="eyebrow">Etapa 1</p>
+            <h2>Origen de la identidad</h2>
+            <PersonIdentityStep
+              mode={mode}
+              onModeChange={setMode}
+              selectedPersonId={selectedPersonId}
+              onSelectedPersonChange={setSelectedPersonId}
+              people={unordainedPeople}
+              existingActionLabel="Añadir el diaconado a una persona existente."
+              newActionLabel="Crear la identidad y registrar el diaconado."
+              selectPlaceholder="Selecciona una persona sin ordenaciones"
+              existingSummary="Se conservarán su ficha, slug, código interno, vida consagrada y demás datos existentes."
+            />
+          </section>
 
-        {mode === 'new' && (
-          <>
-            <section>
-              <p className="eyebrow">Datos obligatorios</p>
-              <h2>Identificación básica</h2>
-              <input name="first_name" placeholder="Primer nombre" required />
-              <input name="middle_name" placeholder="Segundo nombre, si aplica" />
-              <input name="last_name" placeholder="Primer apellido" required />
-              <input name="second_last_name" placeholder="Segundo apellido, si aplica" />
-              <p className="meta">El sistema creará una identidad única y añadirá sobre ella el evento de ordenación diaconal.</p>
-            </section>
+          <section hidden={step !== 1}>
+            <p className="eyebrow">Etapa 2</p>
+            <h2>Tipo de diácono</h2>
+            <div className="dashboard-grid dashboard-summary" role="group" aria-label="Tipo de diácono">
+              <button
+                aria-pressed={deaconType === 'permanent'}
+                className={`metric-card metric-button ${deaconType === 'permanent' ? 'active-filter' : ''}`}
+                type="button"
+                onClick={() => setDeaconType('permanent')}
+              >
+                <strong>Permanente</strong>
+                <span>No se asume que será sacerdote.</span>
+              </button>
+              <button
+                aria-pressed={deaconType === 'transitional'}
+                className={`metric-card metric-button ${deaconType === 'transitional' ? 'active-filter' : ''}`}
+                type="button"
+                onClick={() => setDeaconType('transitional')}
+              >
+                <strong>Transitorio</strong>
+                <span>Queda listo para registrarlo luego como sacerdote.</span>
+              </button>
+              <button
+                aria-pressed={deaconType === 'external'}
+                className={`metric-card metric-button ${deaconType === 'external' ? 'active-filter' : ''}`}
+                type="button"
+                onClick={() => setDeaconType('external')}
+              >
+                <strong>Externo</strong>
+                <span>Pertenece o viene de otra jurisdicción.</span>
+              </button>
+            </div>
+            {deaconType === 'external' ? (
+              <label>
+                Jurisdicción externa o procedencia
+                <input name="external_jurisdiction_name" />
+              </label>
+            ) : null}
+          </section>
 
-            <section>
-              <p className="eyebrow">Validación privada</p>
-              <h2>Documentos y contactos internos</h2>
-              <select name="validation_type" defaultValue="">
-                <option value="">Sin documento por ahora</option>
-                <option value="cedula">Cédula</option>
-                <option value="passport">Pasaporte</option>
-                <option value="other">Otro documento</option>
+          <section hidden={step !== 2}>
+            <p className="eyebrow">Etapa 3</p>
+            <h2>Identidad, documentos y contacto</h2>
+
+            {mode === 'existing' ? (
+              <div className="empty-state" role="status" aria-live="polite">
+                <strong>{selectedPerson?.display_name ?? 'Persona no seleccionada'}</strong>
+                <span>Se conservará la identidad existente y solo se añadirá el historial diaconal.</span>
+              </div>
+            ) : (
+              <>
+                <div className="admin-form-fields-grid">
+                  <label>
+                    Primer nombre
+                    <input autoComplete="given-name" name="first_name" />
+                  </label>
+                  <label>
+                    Segundo nombre
+                    <input autoComplete="additional-name" name="middle_name" />
+                  </label>
+                  <label>
+                    Primer apellido
+                    <input autoComplete="family-name" name="last_name" />
+                  </label>
+                  <label>
+                    Segundo apellido
+                    <input name="second_last_name" />
+                  </label>
+                  <label>
+                    Fecha de nacimiento
+                    <input autoComplete="bday" name="birth_date" type="date" />
+                  </label>
+                  <label>
+                    Lugar de nacimiento
+                    <input name="birth_place" />
+                  </label>
+                </div>
+
+                <fieldset className="clergy-option-fieldset">
+                  <legend>Documento y contacto privado</legend>
+                  <div className="admin-form-fields-grid">
+                    <label>
+                      Tipo de documento
+                      <select name="validation_type" defaultValue="">
+                        <option value="">Sin documento por ahora</option>
+                        <option value="cedula">Cédula</option>
+                        <option value="passport">Pasaporte</option>
+                        <option value="other">Otro documento</option>
+                      </select>
+                    </label>
+                    <label>
+                      Número del documento
+                      <input name="validation_value" />
+                    </label>
+                    <label>
+                      País del documento
+                      <input name="validation_country" defaultValue="República Dominicana" />
+                    </label>
+                    <label>
+                      Teléfono principal
+                      <input autoComplete="tel" name="primary_phone" />
+                    </label>
+                    <label>
+                      Teléfono alterno
+                      <input name="secondary_phone" />
+                    </label>
+                    <label>
+                      Correo de contacto
+                      <input autoComplete="email" name="contact_email" type="email" />
+                    </label>
+                  </div>
+                  <p className="meta">Estos datos son privados y no aparecen en la ficha pública.</p>
+                </fieldset>
+
+                <fieldset className="clergy-option-fieldset">
+                  <legend>Familia, biografía y fotografía</legend>
+                  <div className="admin-form-fields-grid">
+                    <label>
+                      Nombre del padre
+                      <input name="father_name" />
+                    </label>
+                    <label>
+                      Nombre de la madre
+                      <input name="mother_name" />
+                    </label>
+                    <label>
+                      Fotografía
+                      <input name="photo_file" type="file" accept="image/jpeg,image/png,image/webp" />
+                    </label>
+                  </div>
+                  <label>
+                    Notas familiares
+                    <textarea name="family_notes" />
+                  </label>
+                  <label>
+                    Apuntes internos para la biografía
+                    <textarea name="biography_notes" />
+                  </label>
+                  <label>
+                    Biografía pública
+                    <textarea name="biography_public" />
+                  </label>
+                </fieldset>
+              </>
+            )}
+          </section>
+
+          <section hidden={step !== 3}>
+            <p className="eyebrow">Etapa 4</p>
+            <h2>Ordenación y estado clerical</h2>
+            <div className="admin-form-fields-grid">
+              <label>
+                Ordenación diaconal
+                <input name="diaconal_ordination_date" type="date" />
+              </label>
+              <label>
+                Orden o congregación, si aplica
+                <input name="religious_order" />
+              </label>
+              <label>
+                Estado canónico
+                <select name="canonical_status" defaultValue="active">
+                  <option value="active">Activo</option>
+                  <option value="retired">Retirado</option>
+                  <option value="suspended">Suspendido</option>
+                  <option value="deceased">Fallecido</option>
+                  <option value="unknown">No identificado</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Notas internas del perfil clerical
+              <textarea name="clergy_notes" />
+            </label>
+          </section>
+
+          <section hidden={step !== 4}>
+            <p className="eyebrow">Etapa 5</p>
+            <h2>Incardinación, servicio y cargo actual</h2>
+
+            <label>
+              Incardinación
+              <select
+                name="incardination_entity_id"
+                value={incardinationId}
+                onChange={(event) => setIncardinationId(event.target.value)}
+              >
+                <option value="">Sin incardinación por ahora</option>
+                {entities.map((entity) => (
+                  <option key={entity.direct_entity_id} value={entity.direct_entity_id}>
+                    {entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}
+                  </option>
+                ))}
               </select>
-              <input name="validation_value" placeholder="Número del documento para validación interna" />
-              <input name="validation_country" placeholder="País del documento" defaultValue="República Dominicana" />
-              <input name="primary_phone" placeholder="Teléfono principal" />
-              <input name="secondary_phone" placeholder="Teléfono alterno" />
-              <input name="contact_email" type="email" placeholder="Correo de contacto" />
-              <p className="meta">Estos datos son privados y no aparecen en la ficha pública.</p>
-            </section>
+            </label>
+            <div className="empty-state" role="status" aria-atomic="true" aria-live="polite">
+              <strong>Incardinación seleccionada</strong>
+              <span>
+                {incardination?.hierarchy_path
+                  ?? incardination?.direct_entity_name
+                  ?? 'Selecciona la jurisdicción si aplica.'}
+              </span>
+            </div>
 
-            <section>
-              <p className="eyebrow">Datos personales</p>
-              <h2>Nacimiento, familia y foto</h2>
-              <label>Fecha de nacimiento<input name="birth_date" type="date" /></label>
-              <input name="birth_place" placeholder="Lugar de nacimiento" />
-              <input name="father_name" placeholder="Nombre del padre" />
-              <input name="mother_name" placeholder="Nombre de la madre" />
-              <textarea name="family_notes" placeholder="Notas familiares relevantes para la biografía" />
-              <textarea name="biography_notes" placeholder="Apuntes internos para preparar la biografía" />
-              <textarea name="biography_public" placeholder="Biografía breve para mostrar en la ficha pública" />
-              <input name="photo_file" type="file" accept="image/jpeg,image/png,image/webp" />
-            </section>
-          </>
-        )}
+            <label>
+              Entidad donde sirve actualmente
+              <select
+                name="current_service_entity_id"
+                value={serviceId}
+                onChange={(event) => {
+                  const value = event.target.value
+                  setServiceId(value)
+                  setQuickEntityId(value)
+                }}
+              >
+                <option value="">Sin servicio actual por ahora</option>
+                {entities.map((entity) => (
+                  <option key={entity.direct_entity_id} value={entity.direct_entity_id}>
+                    {entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="empty-state" role="status" aria-atomic="true" aria-live="polite">
+              <strong>Servicio actual seleccionado</strong>
+              <span>
+                {service?.hierarchy_path
+                  ?? service?.direct_entity_name
+                  ?? 'Selecciona parroquia, capilla, curia o entidad donde sirve.'}
+              </span>
+            </div>
 
-        <section>
-          <p className="eyebrow">Datos clericales</p>
-          <h2>Ordenación y estado</h2>
-          <label>Ordenación diaconal<input name="diaconal_ordination_date" type="date" /></label>
-          <input name="religious_order" placeholder="Orden o congregación, si aplica" />
-          <select name="canonical_status" defaultValue="active">
-            <option value="active">Activo</option>
-            <option value="retired">Retirado</option>
-            <option value="suspended">Suspendido</option>
-            <option value="deceased">Fallecido</option>
-            <option value="unknown">No identificado</option>
-          </select>
-          <textarea name="clergy_notes" placeholder="Notas internas del perfil clerical" />
-        </section>
+            <fieldset className="clergy-option-fieldset">
+              <legend>Asignación rápida opcional</legend>
+              <label>
+                Entidad del cargo
+                <select
+                  name="quick_entity_id"
+                  value={quickEntityId}
+                  onChange={(event) => setQuickEntityId(event.target.value)}
+                >
+                  <option value="">Selecciona primero la entidad del cargo</option>
+                  {entities.map((entity) => (
+                    <option key={entity.direct_entity_id} value={entity.direct_entity_id}>
+                      {entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="empty-state" role="status" aria-atomic="true" aria-live="polite">
+                <strong>Entidad del cargo seleccionada</strong>
+                <span>
+                  {quickEntity?.hierarchy_path
+                    ?? quickEntity?.direct_entity_name
+                    ?? service?.hierarchy_path
+                    ?? service?.direct_entity_name
+                    ?? 'Selecciona la entidad del cargo.'}
+                </span>
+              </div>
+              <label>
+                Cargo actual
+                <select
+                  name="quick_office_configuration_id"
+                  value={quickOfficeConfigId}
+                  onChange={(event) => setQuickOfficeConfigId(event.target.value)}
+                  disabled={!quickEntityId || filteredOfficeConfigs.length === 0}
+                >
+                  <option value="">Sin cargo actual por ahora</option>
+                  {filteredOfficeConfigs.map((office) => (
+                    <option key={office.id} value={office.id}>{office.display_name}</option>
+                  ))}
+                </select>
+              </label>
+              <p className="meta" role="status" aria-live="polite">{officeFilterMessage}</p>
+              <div className="admin-form-fields-grid">
+                <label>
+                  Título para mostrar
+                  <input name="quick_title_override" />
+                </label>
+                <label>
+                  Fecha de inicio del cargo
+                  <input name="quick_start_date" type="date" />
+                </label>
+              </div>
+              <label>
+                Notas visibles del cargo
+                <textarea name="quick_notes_public" />
+              </label>
+            </fieldset>
+          </section>
 
-        <section>
-          <p className="eyebrow">Servicio</p>
-          <h2>Incardinación y servicio actual</h2>
-          <select name="incardination_entity_id" value={incardinationId} onChange={(event) => setIncardinationId(event.target.value)}>
-            <option value="">Sin incardinación por ahora</option>
-            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-          </select>
-          <div className="empty-state"><strong>Incardinación</strong><span>{incardination?.hierarchy_path ?? incardination?.direct_entity_name ?? 'Selecciona la jurisdicción si aplica.'}</span></div>
-          <select name="current_service_entity_id" value={serviceId} onChange={(event) => { const value = event.target.value; setServiceId(value); setQuickEntityId(value) }}>
-            <option value="">Sin servicio actual por ahora</option>
-            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-          </select>
-          <div className="empty-state"><strong>Servicio actual</strong><span>{service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona parroquia, capilla, curia o entidad donde sirve.'}</span></div>
-        </section>
+          <section hidden={step !== 5}>
+            <p className="eyebrow">Etapa 6</p>
+            <h2>Revisar completitud y guardar</h2>
+            <div className="admin-review-grid" aria-label="Resumen del registro diaconal">
+              <article className="card compact-section">
+                <span>Persona</span>
+                <strong>{selectedPerson?.display_name ?? (mode === 'new' ? 'Nueva identidad' : 'Sin seleccionar')}</strong>
+                <small>{mode === 'existing' ? 'Se reutilizará la ficha existente' : 'Se creará una ficha nueva'}</small>
+                <button type="button" onClick={() => setStep(0)}>Cambiar</button>
+              </article>
+              <article className="card compact-section">
+                <span>Tipo</span>
+                <strong>{deaconTypeLabel(deaconType)}</strong>
+                <small>Clasificación del diaconado</small>
+                <button type="button" onClick={() => setStep(1)}>Cambiar</button>
+              </article>
+              <article className="card compact-section">
+                <span>Servicio</span>
+                <strong>{service?.direct_entity_name ?? 'Sin servicio actual'}</strong>
+                <small>{selectedOffice?.display_name ?? 'Sin cargo actual'}</small>
+                <button type="button" onClick={() => setStep(4)}>Cambiar</button>
+              </article>
+            </div>
 
-        <section>
-          <p className="eyebrow">Cargo actual</p>
-          <h2>Asignación rápida</h2>
-          <select name="quick_entity_id" value={quickEntityId} onChange={(event) => setQuickEntityId(event.target.value)}>
-            <option value="">Selecciona primero la entidad del cargo</option>
-            {entities.map((entity) => <option key={entity.direct_entity_id} value={entity.direct_entity_id}>{entity.direct_entity_name} · {entity.direct_entity_type_name ?? 'Entidad'}</option>)}
-          </select>
-          <div className="empty-state"><strong>Entidad del cargo</strong><span>{quickEntity?.hierarchy_path ?? quickEntity?.direct_entity_name ?? service?.hierarchy_path ?? service?.direct_entity_name ?? 'Selecciona la entidad del cargo.'}</span></div>
-          <select name="quick_office_configuration_id" value={quickOfficeConfigId} onChange={(event) => setQuickOfficeConfigId(event.target.value)} disabled={!quickEntityId || filteredOfficeConfigs.length === 0}>
-            <option value="">Sin cargo actual por ahora</option>
-            {filteredOfficeConfigs.map((office) => <option key={office.id} value={office.id}>{office.display_name}</option>)}
-          </select>
-          <p className="meta">{officeFilterMessage}</p>
-          <input name="quick_title_override" placeholder="Título para mostrar" />
-          <label>Fecha de inicio del cargo<input name="quick_start_date" type="date" /></label>
-          <textarea name="quick_notes_public" placeholder="Notas visibles del cargo" />
-        </section>
+            <fieldset className="clergy-option-fieldset">
+              <legend>Datos buscados y no encontrados</legend>
+              <div className="clergy-option-list clergy-option-list--choices">
+                {optionalFields.map((field) => (
+                  <label key={field.key} className="role-pill">
+                    <input type="checkbox" name="not_identified_fields" value={field.key} />
+                    <span>{field.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-        <section>
-          <p className="eyebrow">Completitud</p>
-          <h2>Datos buscados y no encontrados</h2>
-          <div className="card compact-section">
-            {optionalFields.map((field) => (
-              <label key={field.key} className="role-pill"><input type="checkbox" name="not_identified_fields" value={field.key} /> {field.label}</label>
-            ))}
+            <label>
+              Notas internas de carga o verificación
+              <textarea name="notes_internal" />
+            </label>
+          </section>
+
+          <div
+            className="admin-form-grid admin-wizard-actions"
+            role="group"
+            aria-label="Navegación y guardado del asistente"
+          >
+            <button
+              className="button button-secondary"
+              disabled={step === 0 || saving}
+              type="button"
+              onClick={() => setStep((current) => Math.max(0, current - 1))}
+            >
+              Anterior
+            </button>
+            <span aria-live="polite">Paso {step + 1} de {wizardSteps.length}</span>
+            {step < wizardSteps.length - 1 ? (
+              <button
+                className="button button-primary"
+                disabled={saving}
+                type="button"
+                onClick={() => setStep((current) => Math.min(wizardSteps.length - 1, current + 1))}
+              >
+                Continuar
+              </button>
+            ) : (
+              <button className="button button-primary" aria-busy={saving} disabled={saving} type="submit">
+                {saving
+                  ? 'Guardando...'
+                  : mode === 'existing'
+                    ? 'Registrar ordenación diaconal'
+                    : `Guardar ${deaconTypeLabel(deaconType).toLowerCase()}`}
+              </button>
+            )}
           </div>
-          <textarea name="notes_internal" placeholder="Notas internas de carga o verificación" />
-        </section>
-
-        <button className="button button-primary" disabled={saving}>{saving ? 'Guardando...' : mode === 'existing' ? 'Registrar ordenación diaconal' : `Guardar ${deaconTypeLabel(deaconType).toLowerCase()}`}</button>
-      </form>
+        </form>
+      </div>
     </main>
   )
 }
