@@ -5,7 +5,7 @@
 }
 
 .site-header {
-  background: rgba(255, 255, 255, 0.96);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
   border-bottom: 1px solid var(--border);
   box-shadow: 0 8px 28px rgba(16, 35, 63, 0.05);
   position: sticky;
@@ -35,7 +35,7 @@
   align-items: center;
   background: var(--primary);
   border-radius: 14px;
-  color: var(--foreground);
+  color: var(--text-inverse);
   display: inline-flex;
   font-size: 13px;
   font-weight: 950;
@@ -64,14 +64,19 @@
   margin-top: 3px;
 }
 
-.site-header-inner > nav {
+.site-header-actions,
+.site-header-actions > nav {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.site-header-inner > nav a {
+.site-header-actions {
+  gap: 12px;
+}
+
+.site-header-actions > nav a {
   border-radius: 999px;
   color: var(--foreground);
   font-size: 14px;
@@ -80,8 +85,8 @@
   text-decoration: none;
 }
 
-.site-header-inner > nav a:hover,
-.site-header-inner > nav a:focus-visible {
+.site-header-actions > nav a:hover,
+.site-header-actions > nav a:focus-visible {
   background: var(--gold-soft);
 }
 
@@ -132,7 +137,7 @@
 
 #contenido-principal > .container .card,
 #contenido-principal > main.container .card {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 24px;
   box-shadow: 0 16px 42px rgba(16, 35, 63, 0.065);
@@ -190,7 +195,7 @@
   align-items: center;
   background:
     radial-gradient(circle at 88% 14%, rgba(255, 192, 3, 0.18), transparent 24rem),
-    #ffffff;
+    var(--surface);
   margin: 0;
 }
 
@@ -201,7 +206,7 @@
 
 .public-entity-detail .dashboard-path-card {
   align-self: stretch;
-  background: rgba(255, 255, 255, 0.78);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
   border-color: rgba(208, 208, 206, 0.9);
   padding: 20px;
 }
@@ -257,7 +262,7 @@
 }
 
 .public-entity-detail .entity-authority-list .public-directory-item {
-  background: linear-gradient(135deg, #ffffff, var(--gold-soft));
+  background: linear-gradient(135deg, var(--surface), var(--gold-soft));
   border-left: 5px solid var(--primary);
   grid-template-columns: minmax(0, 1fr) auto;
   min-height: 0;
@@ -334,13 +339,22 @@
     width: min(calc(100% - 28px), 1320px);
   }
 
-  .site-header-inner > nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .site-header-actions,
+  .site-header-actions > nav {
     width: 100%;
   }
 
-  .site-header-inner > nav a {
+  .site-header-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .site-header-actions > nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .site-header-actions > nav a {
     background: var(--surface-soft);
     text-align: center;
   }

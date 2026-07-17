@@ -34,7 +34,7 @@
 
 .admin-page-header {
   align-items: flex-start;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -91,7 +91,7 @@
 }
 
 .admin-workspace .button-secondary {
-  background: #fff;
+  background: var(--surface);
   border-color: var(--border);
   color: var(--foreground);
 }
@@ -161,7 +161,7 @@
 .admin-countries-page #country-catalog > .card > label input,
 .admin-config-page .section-heading select,
 .timeline-item textarea {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 0.875rem;
   color: var(--foreground);
@@ -286,7 +286,7 @@
 .list-card,
 .timeline-item,
 .access-user-card {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1.125rem;
   box-shadow: var(--shadow-sm);
@@ -371,7 +371,7 @@
 .catalog-preset-card,
 .catalog-level,
 .catalog-node {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1rem;
   display: grid;

@@ -9,10 +9,10 @@ const alertVariants = cva(
     variants: {
       tone: {
         neutral: 'border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text)]',
-        info: 'border-[#bdd7ea] bg-[var(--info-soft)] text-[var(--info)]',
-        success: 'border-[#b9dfc1] bg-[var(--success-soft)] text-[var(--success)]',
-        warning: 'border-[#ecd49b] bg-[var(--warning-soft)] text-[var(--warning)]',
-        danger: 'border-[#edc0bb] bg-[var(--danger-soft)] text-[var(--danger)]',
+        info: 'border-[var(--border-info)] bg-[var(--info-soft)] text-[var(--info)]',
+        success: 'border-[var(--border-success)] bg-[var(--success-soft)] text-[var(--success)]',
+        warning: 'border-[var(--border-warning)] bg-[var(--warning-soft)] text-[var(--warning)]',
+        danger: 'border-[var(--border-danger)] bg-[var(--danger-soft)] text-[var(--danger)]',
       },
     },
     defaultVariants: {

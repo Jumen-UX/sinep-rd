@@ -13,6 +13,11 @@
 
   --border-subtle: #ece6da;
   --border-strong: #d6cdbd;
+  --border-info: #bdd7ea;
+  --border-success: #b9dfc1;
+  --border-warning: #ecd49b;
+  --border-danger: #edc0bb;
+  --border-institutional: #dcc7c7;
 
   --primary-hover: #5e1717;
   --primary-soft: #f7eaea;
@@ -44,8 +49,53 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: light dark;
   scroll-behavior: smooth;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --surface: #17191d;
+  --surface-subtle: #1e2126;
+  --surface-muted: #272b31;
+  --surface-hover: #2d3239;
+  --surface-inverse: #f6f1e8;
+
+  --text: #e7e9ed;
+  --text-strong: #ffffff;
+  --text-muted: #b6bdc7;
+  --text-subtle: #939ca8;
+  --text-inverse: #17191d;
+
+  --border-subtle: #30353d;
+  --border-strong: #4a515c;
+  --border-info: #356d99;
+  --border-success: #3c7548;
+  --border-warning: #866b2d;
+  --border-danger: #8c4842;
+  --border-institutional: #80545a;
+
+  --primary-hover: #f0b1b1;
+  --primary-soft: #3b2428;
+  --gold-soft: #39311f;
+
+  --success: #8bd49b;
+  --success-soft: #1d3524;
+  --warning: #f0c76f;
+  --warning-soft: #3a301c;
+  --danger: #f29a91;
+  --danger-soft: #3b2322;
+  --info: #8fc5ed;
+  --info-soft: #1e3040;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.28);
+  --shadow-md: 0 10px 30px rgb(0 0 0 / 0.32);
+  --shadow-lg: 0 20px 50px rgb(0 0 0 / 0.42);
+  --focus-ring: 0 0 0 3px rgb(230 191 89 / 0.34);
 }
 
 body {
@@ -60,6 +110,46 @@ body {
 
 ::selection {
   background: var(--gold-soft);
+  color: var(--text);
+}
+
+[data-ui='theme-control'] {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+[data-ui='theme-control'] > span {
+  color: inherit;
+}
+
+[data-ui='theme-control'] select {
+  min-height: 2.5rem;
+  min-width: 8.5rem;
+  padding-block: 0.4rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+[data-ui='theme-control'][data-compact='true'] {
+  align-items: center;
+  grid-template-columns: auto minmax(7.5rem, 1fr);
+}
+
+.admin-sidebar [data-ui='theme-control'] {
+  color: rgb(255 255 255 / 0.72);
+}
+
+.admin-sidebar [data-ui='theme-control'] select {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+  color: #ffffff;
+}
+
+.admin-sidebar [data-ui='theme-control'] option {
+  background: var(--surface);
   color: var(--text);
 }
 
