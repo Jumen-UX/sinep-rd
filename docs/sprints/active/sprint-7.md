@@ -15,7 +15,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
-5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; dos bloques confirmados con CI verde.**
+5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; dos bloques confirmados con CI verde y tercer bloque pendiente de CI.**
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
@@ -46,20 +46,19 @@ Queda registrada como deuda funcional la validación manual con un perfil restri
 
 ### S7-05 — En progreso
 
-La auditoría inicial confirmó que conviven componentes compartidos modernos con clases heredadas como `page-heading`, `empty-state`, `error-box`, `admin-topbar` y botones definidos únicamente por clases CSS.
+La auditoría inicial confirmó que conviven componentes compartidos modernos con clases heredadas como `page-heading`, `empty-state`, `error-box`, `admin-topbar`, `admin-top-header` y botones definidos únicamente por clases CSS.
 
 Se implementaron:
 
 - `src/components/ui/page-state.tsx`, que normaliza estados de carga, error y vacío con semántica accesible;
 - migración de `RequestsPage.tsx` a `PageHeader`, breadcrumbs canónicos, `PageState`, `StatusBadge` y `Button`;
-- jerarquía de encabezados `h1 → h2 → h3` en la bandeja de solicitudes;
-- contadores y estados visuales consistentes para solicitudes públicas e internas;
 - migración de `AdministrativeActivityPage.tsx` al mismo contrato compartido;
-- estados de carga, error y vacío accesibles en la actividad administrativa;
-- breadcrumbs completos `Administración → Configuración → Actividad` y jerarquía `h1 → h2 → h3`;
-- ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger ambas pantallas y evitar el retorno de clases heredadas.
+- migración de `PersonListPage.tsx`, eliminando su cabecera paralela y el panel de bienvenida duplicado;
+- breadcrumbs `Administración → Personas`, badges de resumen, botones compartidos y estados de carga, error y vacío;
+- filtros con `aria-pressed` y jerarquía `h1 → h2 → h3` en el directorio de personas;
+- ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger las tres pantallas y evitar el retorno de patrones heredados.
 
-El primer y segundo bloque fueron confirmados con CI verde el 2026-07-17. La siguiente iteración continuará con una tercera pantalla administrativa que conserve estados o encabezados heredados.
+Los dos primeros bloques fueron confirmados con CI verde el 2026-07-17. El tercer bloque queda pendiente de CI antes de decidir si S7-05 requiere una cuarta pantalla representativa o puede pasar a cierre.
 
 ## Reglas del sprint
 
@@ -82,4 +81,4 @@ El primer y segundo bloque fueron confirmados con CI verde el 2026-07-17. La sig
 
 ## Punto de continuación
 
-Continuar con una tercera pantalla administrativa que conserve estados o encabezados heredados, priorizando una vista con carga, error y vacío propios. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
+Ejecutar CI para el tercer bloque de S7-05. Con resultado verde, revisar el inventario restante de clases heredadas y decidir si hace falta una cuarta migración representativa antes de cerrar S7-05. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
