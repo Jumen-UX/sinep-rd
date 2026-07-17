@@ -64,13 +64,18 @@ test('assignment manager surfaces no longer depend on light fallbacks', async ()
   assert.doesNotMatch(styles, /var\([^,]+,\s*#[0-9a-f]{3,6}\)/i)
 })
 
-test('deacon wizard actions preserve contrast in both themes', async () => {
-  const styles = await source('src/styles/deacon-wizard-polish.css')
+test('deacon wizard actions preserve contrast through canonical shared styles', async () => {
+  const clergyStyles = await source('src/styles/clergy-wizard-ui.css')
+  const moduleStyles = await source('src/styles/admin-modules.css')
+  const layout = await source('src/app/(admin)/admin/nuevo/diacono/layout.tsx')
 
-  assert.match(styles, /\.button-primary\s*\{[^}]*color:\s*var\(--on-primary\)/s)
-  assert.match(styles, /\.button-secondary\s*\{[^}]*background:\s*var\(--surface\)/s)
-  assert.match(styles, /\.button-secondary:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--surface-soft\)/s)
-  assert.doesNotMatch(styles, /background:\s*#fff(?:fff)?/i)
+  assert.match(layout, /clergy-wizard-ui\.css/)
+  assert.match(clergyStyles, /\.admin-deacon-wizard \.auto-section-wizard__actions\s*\{[^}]*min-height:\s*4\.125rem/s)
+  assert.match(clergyStyles, /\.admin-deacon-wizard \.auto-section-wizard__actions \.button\s*\{[^}]*min-height:\s*2\.75rem/s)
+  assert.match(moduleStyles, /\.admin-workspace \.button-primary\s*\{[^}]*background:\s*var\(--primary\)[^}]*color:\s*var\(--on-primary\)/s)
+  assert.match(moduleStyles, /\.admin-workspace \.button-secondary\s*\{[^}]*background:\s*var\(--surface\)[^}]*color:\s*var\(--foreground\)/s)
+  assert.match(moduleStyles, /\.admin-workspace \.button-secondary:hover,[\s\S]*background:\s*var\(--gold-soft\)/s)
+  assert.doesNotMatch(clergyStyles, /background:\s*#fff(?:fff)?/i)
 })
 
 test('office catalog uses semantic form and responsive table surfaces', async () => {
