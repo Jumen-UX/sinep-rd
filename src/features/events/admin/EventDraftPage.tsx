@@ -34,11 +34,6 @@ const verificationOptions: Array<{ key: VerificationStatus; name: string }> = [
   { key: 'unverified', name: 'Sin verificar' },
 ]
 
-const pageStyles = `
-  .event-assistant-page select,.event-assistant-page input,.event-assistant-page textarea{border:1px solid var(--border);border-radius:14px;font:inherit;padding:12px 14px;width:100%}.event-assistant-page textarea{min-height:96px;resize:vertical}.assistant-hero{align-items:stretch;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr)}
-  .assistant-summary-card,.step-card,.mode-card,.preview-card,.impact-card,.derived-card{background:var(--surface,#fff);border:1px solid var(--border);border-radius:16px;display:grid;gap:7px;padding:14px}.assistant-summary-card,.preview-card.highlight,.impact-card.highlight,.derived-card.highlight{background:var(--surface-soft,#fbf8f1)}.assistant-layout,.assistant-stepper,.mode-grid,.form-grid,.preview-grid,.impact-grid,.derived-list{display:grid;gap:14px}.assistant-layout{align-items:start;grid-template-columns:minmax(0,.72fr) minmax(320px,.42fr)}.assistant-stepper{grid-template-columns:repeat(5,minmax(0,1fr))}.mode-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.form-grid,.preview-grid,.impact-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid .full-width,.preview-grid .full-width{grid-column:1/-1}.form-grid label{color:var(--muted);display:grid;font-size:14px;font-weight:800;gap:7px}.step-card,.mode-card{appearance:none;cursor:pointer;font:inherit;text-align:left}.step-card.active,.mode-card.active{border-color:rgba(122,31,31,.55);box-shadow:0 16px 38px rgba(122,31,31,.12)}.button-row{align-items:center;display:flex;flex-wrap:wrap;gap:14px;margin-top:14px}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:1080px){.assistant-hero,.assistant-layout,.assistant-stepper,.mode-grid,.form-grid,.preview-grid,.impact-grid{grid-template-columns:1fr}}
-`
-
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback
 }
@@ -188,7 +183,6 @@ export default function EventDraftPage() {
 
   return (
     <main className="container dashboard-page event-assistant-page">
-      <style>{pageStyles}</style>
       <div className="detail-backlink"><Link href="/admin/eventos">← Volver a eventos</Link></div>
 
       <section className="dashboard-hero card assistant-hero">
@@ -197,22 +191,29 @@ export default function EventDraftPage() {
           <h1>Preparar evento</h1>
           <p className="lead">Crea un evento como pendiente de revisión. No aplica cambios al estado actual hasta que exista aprobación posterior.</p>
         </div>
-        <div className="assistant-summary-card">
+        <div className="assistant-summary-card" aria-live="polite" aria-atomic="true">
           <span className="mini-badge">{modeLabel(loadMode)}</span>
           <strong>{isReadyForPreview ? 'Listo para guardar' : 'Borrador visual'}</strong>
           <span className="meta">Se guardará como pendiente de revisión.</span>
         </div>
       </section>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <div className="error-box" role="alert" aria-live="assertive">{error}</div>}
 
-      <section className="assistant-stepper">
-        {steps.map((item) => (
-          <button className={`step-card ${step === item.key ? 'active' : ''}`} key={item.key} onClick={() => setStep(item.key)} type="button">
+      <nav className="assistant-stepper" aria-label="Pasos del asistente">
+        {steps.map((item, index) => (
+          <button
+            aria-current={step === item.key ? 'step' : undefined}
+            aria-label={`Ir al paso ${index + 1}: ${item.title}`}
+            className={`step-card ${step === item.key ? 'active' : ''}`}
+            key={item.key}
+            onClick={() => setStep(item.key)}
+            type="button"
+          >
             <strong>{item.title}</strong><span className="meta">{item.description}</span>
           </button>
         ))}
-      </section>
+      </nav>
 
       <section className="assistant-layout">
         <div className="card dashboard-section">
@@ -221,7 +222,13 @@ export default function EventDraftPage() {
               <div className="section-heading"><div><p className="eyebrow">Paso 1</p><h2>Qué estás registrando</h2><p className="meta">La historia pasada, un cambio nuevo y la foto inicial vigente alimentan el mismo registro histórico-documental.</p></div></div>
               <div className="mode-grid">
                 {eventLoadModes.map((mode) => (
-                  <button className={`mode-card ${loadMode === mode.key ? 'active' : ''}`} key={mode.key} onClick={() => setLoadMode(mode.key)} type="button">
+                  <button
+                    aria-pressed={loadMode === mode.key}
+                    className={`mode-card ${loadMode === mode.key ? 'active' : ''}`}
+                    key={mode.key}
+                    onClick={() => setLoadMode(mode.key)}
+                    type="button"
+                  >
                     <strong>{mode.title}</strong><span className="meta">{mode.description}</span>
                   </button>
                 ))}
@@ -285,7 +292,7 @@ export default function EventDraftPage() {
           <div className="button-row">
             <button className="button button-secondary" onClick={() => setStep(previousStep(step))} disabled={step === 'modo'} type="button">Anterior</button>
             <button className="button button-primary" onClick={() => setStep(nextStep(step))} disabled={step === 'impacto'} type="button">Siguiente</button>
-            <button className="button button-primary" disabled={!isReadyForPreview || saving} onClick={saveDraft} type="button">{saving ? 'Guardando...' : 'Guardar pendiente'}</button>
+            <button aria-busy={saving} className="button button-primary" disabled={!isReadyForPreview || saving} onClick={saveDraft} type="button">{saving ? 'Guardando...' : 'Guardar pendiente'}</button>
           </div>
         </div>
 
