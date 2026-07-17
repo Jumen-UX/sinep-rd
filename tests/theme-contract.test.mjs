@@ -58,6 +58,8 @@ test('dark theme defines semantic surfaces borders states and focus tokens', asy
     '--border-danger',
     '--border-institutional',
     '--brand-mark-text',
+    '--on-primary',
+    '--surface-soft',
     '--focus-ring',
   ]) {
     assert.match(systemStyles, new RegExp(`${token}:`))
@@ -110,4 +112,31 @@ test('public accessibility workflow watches shared theme surfaces', async () => 
   ]) {
     assert.match(workflow, new RegExp(`- '${watchedPath.replaceAll('*', '\\*')}'`))
   }
+})
+
+test('administrative dashboard surfaces and states use semantic theme tokens', async () => {
+  const [dashboard, brandedDashboard, navigation, modules] = await Promise.all([
+    source('src/styles/admin-dashboard.css'),
+    source('src/styles/admin-dashboard-brand.css'),
+    source('src/styles/admin-navigation.css'),
+    source('src/styles/admin-modules.css'),
+  ])
+
+  assert.match(dashboard, /\.admin-dashboard-topbar\s*\{[^}]*var\(--surface\)/s)
+  assert.match(dashboard, /\.admin-dashboard-metric\s*\{[^}]*background:\s*var\(--surface\)/s)
+  assert.match(dashboard, /\.admin-dashboard-panel\s*\{[^}]*background:\s*var\(--surface\)/s)
+  assert.match(dashboard, /\.admin-dashboard-state\s*\{[^}]*background:\s*var\(--success-soft\)/s)
+  assert.match(brandedDashboard, /\.admin-dashboard-review-notice\.is-clear\s*\{[^}]*var\(--success-soft\)/s)
+  assert.match(brandedDashboard, /\.admin-mobile-nav\s*\{[^}]*background:\s*var\(--surface\)/s)
+  assert.match(navigation, /\.admin-scope-control select\s*\{[^}]*background:\s*var\(--surface\)/s)
+  assert.match(navigation, /\.admin-mobile-menu > section\s*\{[^}]*background:\s*var\(--surface\)/s)
+  assert.match(modules, /\.admin-workspace \.button-primary\s*\{[^}]*color:\s*var\(--on-primary\)/s)
+})
+
+test('brand layer preserves dark surfaces instead of restoring the light gradient', async () => {
+  const brand = await source('src/app/brand.css')
+
+  assert.match(brand, /html\[data-theme='dark'\][\s\S]*background:\s*linear-gradient\([^;]*var\(--background\)/)
+  assert.match(brand, /html\[data-theme='dark'\] \.site-header\s*\{[^}]*var\(--surface\)/s)
+  assert.match(brand, /\.button-primary\s*\{[^}]*color:\s*var\(--on-primary\)/s)
 })

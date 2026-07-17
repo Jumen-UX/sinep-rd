@@ -38,6 +38,23 @@ for (const publicPage of publicPages) {
   })
 }
 
+test('tema oscuro se aplica sin perder persistencia ni accesibilidad', async ({ page }, testInfo) => {
+  const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+  expect(response).not.toBeNull()
+  expect(response.status()).toBeLessThan(400)
+
+  const themeControl = page.locator('[data-ui="theme-control"] select').first()
+  await expect(themeControl).toBeVisible()
+  await themeControl.selectOption('dark')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('sinep-theme'))).toBe('dark')
+
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expectNoBlockingAccessibilityViolations({ page, expect, testInfo })
+})
+
 test('inicio territorial mantiene sus secciones en flujo vertical', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1200 })
   const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
