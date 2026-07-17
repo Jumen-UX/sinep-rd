@@ -76,24 +76,24 @@
 
 .admin-deacon-wizard .auto-section-wizard__actions .button-primary {
   background: var(--primary);
-  color: var(--foreground);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+  color: var(--on-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .admin-deacon-wizard .auto-section-wizard__actions .button-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.14);
+  box-shadow: var(--shadow-md);
 }
 
 .admin-deacon-wizard .auto-section-wizard__actions .button-secondary {
   border-color: var(--border);
-  background: #ffffff;
+  background: var(--surface);
   color: var(--foreground);
 }
 
 .admin-deacon-wizard .auto-section-wizard__actions .button-secondary:hover:not(:disabled) {
   border-color: var(--primary);
-  background: var(--surface-soft, #fbf8f1);
+  background: var(--surface-soft);
 }
 
 .admin-deacon-wizard .auto-section-wizard__actions .button:disabled {
