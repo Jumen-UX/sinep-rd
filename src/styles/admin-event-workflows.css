@@ -1,7 +1,8 @@
 /* Shared presentation for administrative event workflows and assistants. */
 
 .event-assistant-page :is(select, input, textarea),
-.events-page :is(select, input, textarea) {
+.events-page :is(select, input, textarea),
+.event-review-page :is(select, input, textarea) {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -12,12 +13,14 @@
 }
 
 .event-assistant-page textarea,
-.events-page textarea {
+.events-page textarea,
+.event-review-page textarea {
   min-height: 96px;
   resize: vertical;
 }
 
-.assistant-hero {
+.assistant-hero,
+.review-hero {
   align-items: stretch;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr);
 }
@@ -31,7 +34,13 @@
 .events-tab,
 .event-card-button,
 .facet-card,
-.detail-tile {
+.detail-tile,
+.review-summary,
+.review-card,
+.check-card,
+.participant-card,
+.impact-node,
+.impact-issue {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -45,14 +54,30 @@
 .preview-card.highlight,
 .impact-card.highlight,
 .derived-card.highlight,
-.facet-card.highlight {
+.facet-card.highlight,
+.review-summary,
+.review-card.highlight,
+.check-card.ok,
+.impact-node.ready {
   background: var(--surface-subtle);
 }
 
 .facet-card.highlight,
 .derived-card.highlight,
-.impact-card.highlight {
+.impact-card.highlight,
+.review-card.highlight {
   border-style: dashed;
+}
+
+.check-card.fail,
+.impact-issue.warning {
+  background: var(--warning-soft);
+  border-color: var(--border-warning);
+}
+
+.impact-issue.error {
+  background: var(--danger-soft);
+  border-color: var(--border-danger);
 }
 
 .assistant-layout,
@@ -69,7 +94,14 @@
 .facets-grid,
 .impact-list,
 .event-detail-grid,
-.action-link-grid {
+.action-link-grid,
+.review-layout,
+.review-grid,
+.check-grid,
+.participant-list,
+.impact-node-list,
+.impact-issue-list,
+.derived-update-list {
   display: grid;
   gap: 14px;
   min-width: 0;
@@ -80,7 +112,8 @@
   grid-template-columns: minmax(0, 0.72fr) minmax(320px, 0.42fr);
 }
 
-.events-layout {
+.events-layout,
+.review-layout {
   align-items: start;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
 }
@@ -103,7 +136,9 @@
 .preview-grid,
 .impact-grid,
 .event-detail-grid,
-.action-link-grid {
+.action-link-grid,
+.review-grid,
+.check-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -113,7 +148,8 @@
 }
 
 .form-grid label,
-.events-toolbar label {
+.events-toolbar label,
+.event-review-page label {
   color: var(--muted);
   display: grid;
   font-size: 14px;
@@ -197,13 +233,15 @@
 
 .badge-row,
 .button-row {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 10px;
 }
 
 .events-page .mini-badge,
-.event-assistant-page .mini-badge {
+.event-assistant-page .mini-badge,
+.event-review-page .mini-badge {
   background: var(--surface-subtle);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -215,21 +253,42 @@
 }
 
 .events-page .mini-badge.warning,
-.event-assistant-page .mini-badge.warning {
+.event-assistant-page .mini-badge.warning,
+.event-review-page .mini-badge.warning {
   background: var(--warning-soft);
   border-color: var(--border-warning);
   color: var(--warning);
 }
 
 .events-page .mini-badge.success,
-.event-assistant-page .mini-badge.success {
+.event-assistant-page .mini-badge.success,
+.event-review-page .mini-badge.success {
   background: var(--success-soft);
   border-color: var(--border-success);
   color: var(--success);
 }
 
+.event-review-page .mini-badge.danger {
+  background: var(--danger-soft);
+  border-color: var(--border-danger);
+  color: var(--danger);
+}
+
+.check-card.ok strong,
+.impact-node.ready > div:first-child strong {
+  color: var(--success);
+}
+
+.check-card.fail strong,
+.impact-issue.warning strong {
+  color: var(--warning);
+}
+
+.impact-issue.error strong {
+  color: var(--danger);
+}
+
 .button-row {
-  align-items: center;
   margin-top: 14px;
 }
 
@@ -255,7 +314,11 @@
   .events-tabs,
   .events-layout,
   .event-detail-grid,
-  .action-link-grid {
+  .action-link-grid,
+  .review-hero,
+  .review-layout,
+  .review-grid,
+  .check-grid {
     grid-template-columns: 1fr;
   }
 }
