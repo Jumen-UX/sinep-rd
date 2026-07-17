@@ -85,7 +85,7 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - El contrato de consolidación protege estilos, responsive, semántica y ausencia de CSS embebido.
 - CI confirmó el bloque en verde.
 
-## Séptimo bloque implementado
+## Séptimo bloque implementado y validado
 
 - `PendingEventsPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
 - `admin-event-workflows.css` incorporó la lista, tarjetas y badges de la cola sin crear otro módulo para una pantalla pequeña.
@@ -95,7 +95,16 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - Las métricas decorativas ocultan sus símbolos al lector de pantalla.
 - Cada evento usa `article`, encabezado `h3`, lista accesible de clasificación y grupo de acciones con nombres contextualizados.
 - El contrato de consolidación protege la extracción, la jerarquía y la semántica de la cola.
+- CI confirmó el bloque en verde.
+
+## Octavo bloque implementado
+
+- `admin-embedded-theme-cleanup.css` dejó de contener raíces, tarjetas, badges, campos y estados del flujo de eventos.
+- Se retiraron también nombres heredados que ya no correspondían a las raíces actuales del contrato y la verificación.
+- La hoja temporal conserva exclusivamente configuración estructural todavía no consolidada: `level-office-*` y `structure-selector*`.
+- Los `!important` ya no pueden sobrescribir superficies, severidades, foco o estados activos de las siete pantallas de eventos.
+- `tests/admin-event-legacy-cleanup.test.mjs` impide reintroducir selectores de eventos y confirma que las hojas canónicas permanecen cargadas antes de la compatibilidad temporal.
 
 ## Criterio del siguiente bloque
 
-Validar el séptimo bloque con CI. Después se retirarán de `admin-embedded-theme-cleanup.css` los selectores de eventos que ya no sean necesarios y se auditarán las responsabilidades del puente `LegacyAdminAccessibilityEnhancements` que puedan eliminarse para estos flujos.
+Validar el octavo bloque con CI y reducir en `LegacyAdminAccessibilityEnhancements` las responsabilidades que aún recorren asistentes, modos y mensajes de eventos ya semánticos. La gestión del diálogo móvil y la asociación progresiva de errores de formularios no migrados deben conservarse hasta completar el resto de S7-09.
