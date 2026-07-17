@@ -98,7 +98,15 @@ El tercer bloque inició la cobertura de formularios y asistentes:
 - `person-wizard-unified.css` eliminó el fallback blanco de la barra de acciones persistente;
 - `tests/theme-contract.test.mjs` protege estas superficies y evita reintroducir fondos blancos fijos.
 
-La validación de CI de este tercer bloque permanece pendiente. S7-06 continúa abierto porque todavía deben revisarse tablas, overlays, modales y estilos especializados no cubiertos por el framework compartido.
+El cuarto bloque completó las superficies principales del dashboard público y del shell administrativo:
+
+- el dashboard público expone el control de apariencia en escritorio y móvil, aunque sustituya el encabezado global;
+- la preferencia no puede modificarse antes de que React haya hidratado el control, evitando que una selección temprana se pierda;
+- paneles, filtros, métricas, listados y navegación móvil del dashboard público heredan superficies y texto semánticos;
+- configuración, formularios persistentes, roles, pestañas de entidad, tarjetas de completitud y estados activos del shell administrativo dejaron de fijar fondos claros;
+- los contratos verifican estas superficies y el E2E comprueba persistencia, recarga y Axe con tema oscuro.
+
+[CI #29553574966](https://github.com/Jumen-UX/sinep-rd/actions/runs/29553574966) y [E2E público #29553574996](https://github.com/Jumen-UX/sinep-rd/actions/runs/29553574996) confirmaron el conjunto completo en verde. S7-06 continúa abierto porque todavía deben revisarse tablas, overlays, modales y estilos especializados no cubiertos por el framework compartido.
 
 ## Estado operativo separado
 
