@@ -19,7 +19,6 @@ const layouts = {
 }
 
 const sharedStyles = await source('src/styles/clergy-wizard-ui.css')
-const autoSectionWizard = await source('src/components/admin/AutoSectionWizard.tsx')
 
 const retiredStylePaths = [
   'src/styles/priest-wizard-ui.css',
@@ -45,14 +44,14 @@ test('retired clergy stylesheets remain physically removed', async () => {
   }
 })
 
-test('shared clergy styles preserve controlled and automatic wizard layouts', () => {
-  assert.match(sharedStyles, /\.admin-priest-wizard, \.admin-bishop-wizard/)
-  assert.match(sharedStyles, /\.admin-wizard-layout/)
+test('shared clergy styles preserve one controlled wizard layout for every clergy role', () => {
+  assert.match(sharedStyles, /:is\(\.admin-priest-wizard, \.admin-deacon-wizard, \.admin-bishop-wizard\) \.admin-wizard-layout/)
   assert.match(sharedStyles, /> aside\[aria-label='Progreso del asistente'\]/)
-  assert.match(sharedStyles, /\.admin-deacon-wizard \.auto-section-wizard/)
-  assert.match(sharedStyles, /\.auto-section-wizard__actions/)
+  assert.match(sharedStyles, /\.admin-wizard-form > :is\(div, section\):not\(\[hidden\]\)/)
   assert.match(sharedStyles, /\.admin-review-grid/)
+  assert.match(sharedStyles, /\.admin-wizard-actions/)
   assert.match(sharedStyles, /\.admin-wizard-success/)
+  assert.doesNotMatch(sharedStyles, /auto-section-wizard/)
   assert.match(sharedStyles, /@media \(max-width: 900px\)/)
   assert.match(sharedStyles, /@media \(max-width: 640px\)/)
   assert.match(sharedStyles, /@media \(prefers-reduced-motion: reduce\)/)
@@ -67,10 +66,8 @@ test('shared clergy styles use semantic tokens and the focus ring as a shadow va
   assert.doesNotMatch(sharedStyles, /#[0-9a-f]{3,8}\b/i)
 })
 
-test('deacon keeps the automatic section wizard behavior while presentation is shared', () => {
-  assert.match(layouts.deacon, /<AutoSectionWizard>\{children\}<\/AutoSectionWizard>/)
-  assert.match(autoSectionWizard, /readSteps\(form\)/)
-  assert.match(autoSectionWizard, /section\.hidden = index !== safeStep/)
-  assert.match(autoSectionWizard, /form\.requestSubmit\(submitButton\)/)
-  assert.match(autoSectionWizard, /<AdminWizardProgress/)
+test('deacon route no longer delegates navigation to AutoSectionWizard', () => {
+  assert.doesNotMatch(layouts.deacon, /AutoSectionWizard/)
+  assert.doesNotMatch(layouts.deacon, /<AutoSectionWizard>/)
+  assert.match(layouts.deacon, /<div className="admin-deacon-wizard">\{children\}<\/div>/)
 })
