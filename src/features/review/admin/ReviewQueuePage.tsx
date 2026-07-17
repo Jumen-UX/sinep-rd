@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageState } from '@/components/ui/page-state'
+import { StatusBadge } from '@/components/ui/status-badge'
 import {
   formatReviewDate,
   getReviewDecisionPrompt,
@@ -18,6 +23,18 @@ import {
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback
+}
+
+function reviewStatusTone(status: string | null) {
+  if (status === 'approved' || status === 'published' || status === 'verified') return 'success' as const
+  if (status === 'rejected' || status === 'blocked') return 'danger' as const
+  if (status === 'needs_changes' || status === 'pending') return 'warning' as const
+  return 'info' as const
+}
+
+function reviewDecisionVariant(decision: ReviewDecision) {
+  if (decision === 'reject' || decision === 'rejected') return 'destructive' as const
+  return isPrimaryReviewAction(decision) ? 'default' as const : 'secondary' as const
 }
 
 export default function ReviewQueuePage() {
@@ -99,78 +116,94 @@ export default function ReviewQueuePage() {
   }, [items])
 
   return (
-    <main className="admin-review-page" id="top">
-      <header className="admin-top-header">
-        <div className="admin-top-title">
-          <span className="admin-mini-mark">REVISIÓN</span>
-          <strong>Pendientes de revisión</strong>
-        </div>
-        <div className="admin-top-actions">
-          <Link className="button button-secondary" href="/admin">Volver al panel</Link>
-          <Link className="button button-secondary" href="/admin/eventos/pendientes">Eventos pendientes</Link>
-          <Link className="button button-secondary" href="/admin/importar/lotes">Lotes de importación</Link>
-        </div>
-      </header>
+    <main className="container admin-review-page" id="top">
+      <PageHeader
+        breadcrumbs={[{ label: 'Administración', href: '/admin' }, { label: 'Revisión' }]}
+        eyebrow="Auditoría y trazabilidad"
+        title="Cola de revisión"
+        description="Centraliza nombramientos, candidatos, solicitudes de cambio, lotes de importación y datos pendientes de verificación según tu rol y alcance territorial."
+        metadata={(
+          <>
+            <StatusBadge tone={counts.total > 0 ? 'warning' : 'success'} dot>
+              {counts.total} pendiente{counts.total === 1 ? '' : 's'}
+            </StatusBadge>
+            <StatusBadge tone="info">Validación editorial</StatusBadge>
+            <StatusBadge tone="institutional">Publicación controlada</StatusBadge>
+          </>
+        )}
+        actions={(
+          <>
+            <Button asChild variant="secondary"><Link href="/admin">Volver al panel</Link></Button>
+            <Button asChild variant="secondary"><Link href="/admin/eventos/pendientes">Eventos pendientes</Link></Button>
+            <Button asChild variant="secondary"><Link href="/admin/importar/lotes">Lotes de importación</Link></Button>
+          </>
+        )}
+      />
 
-      <section className="admin-welcome-panel">
-        <div>
-          <p className="eyebrow">Auditoría y trazabilidad</p>
-          <h1>Cola de revisión</h1>
-          <p className="lead">Centraliza nombramientos, candidatos, solicitudes de cambio, lotes de importación y datos pendientes de verificación. Las acciones disponibles dependen del rol y del alcance territorial del usuario.</p>
-          <div className="role-list admin-role-list">
-            <span className="role-pill">Validación editorial</span>
-            <span className="role-pill">Publicación controlada</span>
-            <span className="role-pill">Corrección documentada</span>
-          </div>
-        </div>
-        <div className="admin-welcome-illustration" aria-hidden="true">!</div>
-      </section>
-
-      {error && <div className="error-box">{error}</div>}
-      {actionMessage && <div className="success-box">{actionMessage}</div>}
+      {error ? (
+        <Alert tone="danger" title="No pudimos completar la operación">{error}</Alert>
+      ) : null}
+      {actionMessage ? (
+        <Alert tone="success" title="Revisión actualizada">{actionMessage}</Alert>
+      ) : null}
 
       <section className="admin-stat-strip" aria-label="Resumen de revisión">
-        <a href="#review-results"><span>!</span><strong>{counts.total}</strong><small>Total pendiente</small></a>
-        <a href="#review-results"><span>▤</span><strong>{counts.missingFields}</strong><small>Datos faltantes</small></a>
-        <a href="#review-results"><span>▣</span><strong>{counts.assignments}</strong><small>Cargos por verificar</small></a>
-        <a href="#review-results"><span>◉</span><strong>{counts.personCandidates}</strong><small>Personas por revisar</small></a>
-        <a href="#review-results"><span>⇩</span><strong>{counts.importBatches}</strong><small>Lotes por resolver</small></a>
-        <a href="#review-results"><span>↻</span><strong>{counts.changeRequests}</strong><small>Solicitudes de cambio</small></a>
+        <a href="#review-results"><span aria-hidden="true">!</span><strong>{counts.total}</strong><small>Total pendiente</small></a>
+        <a href="#review-results"><span aria-hidden="true">▤</span><strong>{counts.missingFields}</strong><small>Datos faltantes</small></a>
+        <a href="#review-results"><span aria-hidden="true">▣</span><strong>{counts.assignments}</strong><small>Cargos por verificar</small></a>
+        <a href="#review-results"><span aria-hidden="true">◉</span><strong>{counts.personCandidates}</strong><small>Personas por revisar</small></a>
+        <a href="#review-results"><span aria-hidden="true">⇩</span><strong>{counts.importBatches}</strong><small>Lotes por resolver</small></a>
+        <a href="#review-results"><span aria-hidden="true">↻</span><strong>{counts.changeRequests}</strong><small>Solicitudes de cambio</small></a>
       </section>
 
-      <section className="card dashboard-section" id="review-filters">
+      <section className="card dashboard-section" id="review-filters" aria-labelledby="review-filters-heading">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Filtros</p>
-            <h2>Cola operativa</h2>
+            <h2 id="review-filters-heading">Cola operativa</h2>
             <p className="meta">Filtra por tipo de pendiente y estado de verificación para trabajar por prioridad.</p>
           </div>
         </div>
         <div className="admin-form-grid">
-          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-            <option value="">Todos los tipos</option>
-            {itemTypes.map((itemType) => <option key={itemType} value={itemType}>{getReviewItemTypeLabel(itemType)}</option>)}
-          </select>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            <option value="">Todos los estados</option>
-            {statuses.map((status) => <option key={status} value={status}>{getReviewStatusLabel(status)}</option>)}
-          </select>
+          <label htmlFor="review-type-filter">
+            Tipo de pendiente
+            <select id="review-type-filter" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <option value="">Todos los tipos</option>
+              {itemTypes.map((itemType) => <option key={itemType} value={itemType}>{getReviewItemTypeLabel(itemType)}</option>)}
+            </select>
+          </label>
+          <label htmlFor="review-status-filter">
+            Estado de verificación
+            <select id="review-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="">Todos los estados</option>
+              {statuses.map((status) => <option key={status} value={status}>{getReviewStatusLabel(status)}</option>)}
+            </select>
+          </label>
         </div>
       </section>
 
-      <section className="card dashboard-section" id="review-results">
+      <section className="card dashboard-section" id="review-results" aria-labelledby="review-results-heading">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Resultado</p>
-            <h2>{filteredItems.length} registros encontrados</h2>
+            <h2 id="review-results-heading">Registros para revisar</h2>
+            <p className="meta">{filteredItems.length} registro{filteredItems.length === 1 ? '' : 's'} visible{filteredItems.length === 1 ? '' : 's'} con los filtros actuales.</p>
           </div>
-          <button className="button button-secondary" disabled={loading} onClick={refreshReviewQueue} type="button">Actualizar</button>
+          <Button disabled={loading} onClick={refreshReviewQueue} variant="secondary">
+            {loading ? 'Actualizando…' : 'Actualizar'}
+          </Button>
         </div>
 
         {loading ? (
-          <div className="empty-state">Cargando pendientes...</div>
+          <PageState compact kind="loading" title="Cargando pendientes" description="Estamos preparando la cola de revisión para tu alcance." />
         ) : filteredItems.length === 0 ? (
-          <div className="empty-state">No hay pendientes con los filtros seleccionados.</div>
+          <PageState
+            kind="empty"
+            title={items.length === 0 ? 'No hay pendientes de revisión' : 'No hay resultados con estos filtros'}
+            description={items.length === 0
+              ? 'Los nuevos registros que requieran validación aparecerán aquí.'
+              : 'Cambia el tipo o el estado para ampliar la búsqueda.'}
+          />
         ) : (
           <div className="dashboard-list">
             {filteredItems.map((item) => {
@@ -181,7 +214,10 @@ export default function ReviewQueuePage() {
               return (
                 <article className="list-card" key={item.item_key}>
                   <div>
-                    <p className="eyebrow">{getReviewItemTypeLabel(item.item_type)} · {getReviewStatusLabel(item.verification_status)}</p>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <StatusBadge tone="institutional">{getReviewItemTypeLabel(item.item_type)}</StatusBadge>
+                      <StatusBadge tone={reviewStatusTone(item.verification_status)}>{getReviewStatusLabel(item.verification_status)}</StatusBadge>
+                    </div>
                     <h3>{item.title || item.record_table}</h3>
                     <p className="meta">{item.detail || 'Sin detalle adicional.'}</p>
                     <p className="meta">
@@ -189,23 +225,23 @@ export default function ReviewQueuePage() {
                     </p>
                   </div>
                   <div className="admin-card-actions">
-                    <span className="role-pill">{item.issue_count ?? 1} pendiente</span>
-                    {directHref && (
-                      <Link className="button button-primary" href={directHref}>Abrir y resolver</Link>
-                    )}
+                    <StatusBadge tone="warning">{item.issue_count ?? 1} pendiente{(item.issue_count ?? 1) === 1 ? '' : 's'}</StatusBadge>
+                    {directHref ? (
+                      <Button asChild><Link href={directHref}>Abrir y resolver</Link></Button>
+                    ) : null}
                     {!directHref && actions.length === 0 ? (
-                      <span className="role-pill">Solo lectura</span>
-                    ) : !directHref && actions.map((decision) => (
-                      <button
-                        className={`button ${isPrimaryReviewAction(decision) ? 'button-primary' : 'button-secondary'}`}
+                      <StatusBadge tone="neutral">Solo lectura</StatusBadge>
+                    ) : null}
+                    {!directHref ? actions.map((decision) => (
+                      <Button
                         disabled={busy}
                         key={decision}
                         onClick={() => reviewItem(item, decision)}
-                        type="button"
+                        variant={reviewDecisionVariant(decision)}
                       >
-                        {reviewActionLabels[decision]}
-                      </button>
-                    ))}
+                        {busy ? 'Procesando…' : reviewActionLabels[decision]}
+                      </Button>
+                    )) : null}
                   </div>
                 </article>
               )
