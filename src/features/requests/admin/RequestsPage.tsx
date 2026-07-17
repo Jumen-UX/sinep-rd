@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageState } from '@/components/ui/page-state'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { createClient } from '@/lib/supabase/client'
 import {
   hasRequestAdminSession,
@@ -26,6 +30,13 @@ function targetLink(item: PublicSuggestion) {
   return null
 }
 
+function statusTone(status: string | null) {
+  if (status === 'approved' || status === 'published') return 'success' as const
+  if (status === 'rejected') return 'danger' as const
+  if (status === 'needs_changes') return 'warning' as const
+  return 'info' as const
+}
+
 export default function RequestsPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -46,7 +57,7 @@ export default function RequestsPage() {
         setItems(queue.requests)
         setPublicSuggestions(queue.publicSuggestions)
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'No se pudieron cargar las solicitudes')
+        setError(loadError instanceof Error ? loadError.message : 'No se pudieron cargar las solicitudes.')
       } finally {
         setLoading(false)
       }
@@ -55,30 +66,35 @@ export default function RequestsPage() {
     void loadRequests()
   }, [router, supabase])
 
+  const totalPending = items.length + publicSuggestions.length
+
   return (
     <main className="container admin-dashboard">
-      <div className="page-heading">
-        <Link className="meta" href="/admin">← Volver al panel</Link>
-        <p className="eyebrow">Aprobaciones</p>
-        <h1>Solicitudes de cambio</h1>
-        <p className="lead">Bandeja de solicitudes administrativas y sugerencias públicas pendientes de revisión.</p>
-      </div>
+      <PageHeader
+        breadcrumbs={[{ label: 'Administración', href: '/admin' }, { label: 'Solicitudes' }]}
+        eyebrow="Aprobaciones"
+        title="Solicitudes de cambio"
+        description="Revisa solicitudes administrativas y sugerencias públicas pendientes, con su procedencia, alcance y estado actual."
+        metadata={<StatusBadge tone={totalPending > 0 ? 'warning' : 'success'} dot>{totalPending} pendiente{totalPending === 1 ? '' : 's'}</StatusBadge>}
+        actions={<Button asChild variant="secondary"><Link href="/admin">Volver al panel</Link></Button>}
+      />
 
-      {loading && <div className="empty-state">Cargando solicitudes...</div>}
-      {error && <div className="error-box">{error}</div>}
-
-      {!loading && !error && items.length === 0 && publicSuggestions.length === 0 && (
-        <div className="empty-state">No hay solicitudes pendientes por ahora.</div>
-      )}
+      {loading ? (
+        <PageState compact kind="loading" title="Cargando solicitudes" description="Estamos preparando la bandeja de revisión." />
+      ) : error ? (
+        <PageState kind="error" title="No pudimos cargar las solicitudes" description={error} />
+      ) : totalPending === 0 ? (
+        <PageState title="No hay solicitudes pendientes" description="Las nuevas solicitudes administrativas y sugerencias públicas aparecerán aquí cuando requieran revisión." />
+      ) : null}
 
       {!loading && !error && publicSuggestions.length > 0 && (
-        <section className="request-list">
+        <section className="request-list" aria-labelledby="public-suggestions-heading">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Sugerencias públicas</p>
-              <h2>Enviadas desde fichas públicas</h2>
+              <h2 id="public-suggestions-heading">Enviadas desde fichas públicas</h2>
             </div>
-            <span className="meta">{publicSuggestions.length} pendientes</span>
+            <StatusBadge tone="warning">{publicSuggestions.length} pendiente{publicSuggestions.length === 1 ? '' : 's'}</StatusBadge>
           </div>
           {publicSuggestions.map((item) => {
             const href = targetLink(item)
@@ -87,9 +103,9 @@ export default function RequestsPage() {
                 <div className="request-card-header">
                   <div>
                     <p className="entity-type">{item.suggestion_type}</p>
-                    <h2>{item.title}</h2>
+                    <h3>{item.title}</h3>
                   </div>
-                  <span className="role-pill">{item.status}</span>
+                  <StatusBadge tone={statusTone(item.status)}>{item.status}</StatusBadge>
                 </div>
                 <p className="meta">{item.description}</p>
                 <div className="request-meta-grid">
@@ -107,22 +123,22 @@ export default function RequestsPage() {
       )}
 
       {!loading && !error && items.length > 0 && (
-        <section className="request-list">
+        <section className="request-list" aria-labelledby="admin-requests-heading">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Solicitudes administrativas</p>
-              <h2>Cambios propuestos por usuarios internos</h2>
+              <h2 id="admin-requests-heading">Cambios propuestos por usuarios internos</h2>
             </div>
-            <span className="meta">{items.length} pendientes</span>
+            <StatusBadge tone="warning">{items.length} pendiente{items.length === 1 ? '' : 's'}</StatusBadge>
           </div>
           {items.map((item) => (
             <article className="entity-card request-card" key={item.id}>
               <div className="request-card-header">
                 <div>
                   <p className="entity-type">{item.action_type ?? 'Solicitud'}</p>
-                  <h2>{item.title}</h2>
+                  <h3>{item.title}</h3>
                 </div>
-                <span className="role-pill">{item.status}</span>
+                <StatusBadge tone={statusTone(item.status)}>{item.status}</StatusBadge>
               </div>
 
               {item.description && <p className="meta">{item.description}</p>}
@@ -137,7 +153,7 @@ export default function RequestsPage() {
               </div>
 
               <div className="admin-actions">
-                <Link className="button button-primary" href={`/admin/solicitudes/${item.id}`}>Revisar solicitud</Link>
+                <Button asChild><Link href={`/admin/solicitudes/${item.id}`}>Revisar solicitud</Link></Button>
               </div>
             </article>
           ))}
