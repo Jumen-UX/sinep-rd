@@ -49,8 +49,8 @@ test('accessibility presentation supports contrast text motion links and mobile 
 
   assert.match(styles, /html\[data-text-scale='large'\]\s*\{[^}]*font-size:\s*112\.5%/s)
   assert.match(styles, /html\[data-text-scale='xlarge'\]\s*\{[^}]*font-size:\s*125%/s)
-  assert.match(styles, /html\[data-theme='light'\]\[data-contrast='high'\]/)
-  assert.match(styles, /html\[data-theme='dark'\]\[data-contrast='high'\]/)
+  assert.match(styles, /html\[data-theme='light'\]\[data-contrast='high'\][^{]*\{[^}]*--brand-mark-text:\s*#ffffff/s)
+  assert.match(styles, /html\[data-theme='dark'\]\[data-contrast='high'\][^{]*\{[^}]*--brand-mark-text:\s*#000000/s)
   assert.match(styles, /html\[data-underline-links='true'\] a\[href\]/)
   assert.match(styles, /html\[data-reduce-motion='true'\] \*/)
   assert.match(styles, /\.accessibility-tools\s*\{[^}]*position:\s*fixed/s)
