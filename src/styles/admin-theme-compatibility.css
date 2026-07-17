@@ -3,10 +3,17 @@
 :root {
   --surface-default: var(--surface);
   --surface-raised: var(--surface);
+  --surface-card: var(--surface);
   --border-default: var(--border);
+  --border-color: var(--border);
   --brand-primary: var(--primary);
   --brand-secondary: var(--gold);
+  --brand-accent: var(--gold);
+  --brand-gold: var(--gold);
+  --text-primary: var(--foreground);
   --text-secondary: var(--text-muted);
+  --muted-foreground: var(--text-muted);
+  --muted-text: var(--text-muted);
 }
 
 .admin-workspace :is(.data-table, .dashboard-list-table) tbody tr:hover,
@@ -23,4 +30,107 @@
 .admin-workspace dialog::backdrop,
 .admin-mobile-menu-backdrop {
   background: rgb(0 0 0 / 0.58);
+}
+
+.admin-auth-page .auth-card {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface) 62%, var(--gold-soft) 100%);
+  box-shadow: var(--shadow-lg);
+}
+
+.admin-auth-page .auth-form input {
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.admin-auth-page .auth-form input:focus-visible {
+  border-color: var(--gold);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.admin-workspace .admin-top-header {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow-md);
+}
+
+.admin-workspace .admin-mini-mark {
+  color: var(--on-primary);
+}
+
+.admin-workspace .admin-user-avatar {
+  background: var(--surface-inverse);
+  color: var(--text-inverse);
+}
+
+.admin-workspace .admin-welcome-panel {
+  background:
+    radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--gold) 18%, transparent), transparent 30%),
+    linear-gradient(135deg, var(--surface) 0%, var(--surface) 68%, var(--gold-soft) 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.admin-workspace :is(.admin-quick-card, .admin-stat-strip, .admin-module-group, .admin-module-card) {
+  background: var(--surface);
+}
+
+.admin-workspace :is(.admin-quick-card, .admin-module-card) {
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-workspace :is(.admin-quick-card, .admin-module-card):hover,
+.admin-workspace :is(.admin-quick-card, .admin-module-card):focus-visible {
+  box-shadow: var(--shadow-md);
+}
+
+.admin-workspace :is(.admin-card-icon, .admin-module-icon, .admin-stat-strip span, .admin-activity-card li span) {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.admin-workspace :is(
+  .admin-quick-card:nth-child(2n) .admin-card-icon,
+  .admin-module-card:nth-child(2n) .admin-module-icon,
+  .admin-stat-strip a:nth-child(2n) span
+) {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.admin-workspace .admin-stat-strip a:hover,
+.admin-workspace .admin-stat-strip a:focus-visible {
+  background: var(--surface-hover);
+}
+
+.admin-workspace .admin-group-heading > span {
+  color: var(--on-primary);
+}
+
+.admin-workspace .admin-module-card.is-planned {
+  background: var(--surface-subtle);
+}
+
+.admin-workspace :is(.admin-status-pill.active, .admin-system-card div strong) {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.admin-workspace .admin-status-pill.planned {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.admin-workspace .admin-status-pill.config {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.admin-workspace .success-box {
+  background: var(--success-soft);
+  border-color: var(--border-success);
+  color: var(--success);
+}
+
+.admin-workspace .admin-country-flag {
+  background: var(--gold-soft);
+  border-color: var(--border-warning);
 }
