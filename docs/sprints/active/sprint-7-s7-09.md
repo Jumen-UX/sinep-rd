@@ -72,7 +72,7 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - El contrato de consolidación protege ausencia de estilos embebidos, tokens semánticos y comportamiento accesible.
 - CI confirmó el bloque en verde.
 
-## Sexto bloque implementado
+## Sexto bloque implementado y validado
 
 - `EventWorkflowVerificationPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
 - Se creó `src/styles/admin-event-verification.css` para mantener aisladas las reglas específicas del tablero de verificación.
@@ -83,7 +83,19 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - El recorrido manual se representa como lista ordenada y declara un estado explícito cuando no existen pasos pendientes.
 - Carga y errores usan `status` y `alert` con prioridad adecuada.
 - El contrato de consolidación protege estilos, responsive, semántica y ausencia de CSS embebido.
+- CI confirmó el bloque en verde.
+
+## Séptimo bloque implementado
+
+- `PendingEventsPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
+- `admin-event-workflows.css` incorporó la lista, tarjetas y badges de la cola sin crear otro módulo para una pantalla pequeña.
+- Las superficies y estados usan tokens semánticos compatibles con tema claro y oscuro.
+- La cola traduce los estados internos a etiquetas legibles y diferencia visualmente aprobación, advertencia y cancelación.
+- Carga, error, resumen de resultados y estado vacío declaran prioridades de anuncio propias.
+- Las métricas decorativas ocultan sus símbolos al lector de pantalla.
+- Cada evento usa `article`, encabezado `h3`, lista accesible de clasificación y grupo de acciones con nombres contextualizados.
+- El contrato de consolidación protege la extracción, la jerarquía y la semántica de la cola.
 
 ## Criterio del siguiente bloque
 
-Validar el sexto bloque con CI y migrar `PendingEventsPage.tsx`. Después se retirarán de `admin-embedded-theme-cleanup.css` los selectores de eventos que ya no sean necesarios.
+Validar el séptimo bloque con CI. Después se retirarán de `admin-embedded-theme-cleanup.css` los selectores de eventos que ya no sean necesarios y se auditarán las responsabilidades del puente `LegacyAdminAccessibilityEnhancements` que puedan eliminarse para estos flujos.
