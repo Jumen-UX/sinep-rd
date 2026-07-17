@@ -305,9 +305,9 @@ export default function BishopWizardPage() {
               </div>
             ) : (
               <>
-                <label>Primer nombre<input autoComplete="given-name" name="first_name" required /></label>
+                <label>Primer nombre<input autoComplete="given-name" name="first_name" /></label>
                 <label>Segundo nombre<input autoComplete="additional-name" name="middle_name" /></label>
-                <label>Primer apellido<input autoComplete="family-name" name="last_name" required /></label>
+                <label>Primer apellido<input autoComplete="family-name" name="last_name" /></label>
                 <label>Segundo apellido<input name="second_last_name" /></label>
                 <label>Nombre visible<input name="display_name" /></label>
                 <label>Fecha de nacimiento<input autoComplete="bday" name="birth_date" type="date" /></label>
