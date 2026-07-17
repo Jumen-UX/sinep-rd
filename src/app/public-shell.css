@@ -35,7 +35,7 @@
   align-items: center;
   background: var(--primary);
   border-radius: 14px;
-  color: var(--text-inverse);
+  color: var(--brand-mark-text);
   display: inline-flex;
   font-size: 13px;
   font-weight: 950;

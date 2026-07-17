@@ -57,6 +57,7 @@ test('dark theme defines semantic surfaces borders states and focus tokens', asy
     '--border-warning',
     '--border-danger',
     '--border-institutional',
+    '--brand-mark-text',
     '--focus-ring',
   ]) {
     assert.match(systemStyles, new RegExp(`${token}:`))
@@ -86,4 +87,14 @@ test('shared administrative module surfaces inherit the active theme', async () 
   assert.match(moduleStyles, /\.admin-page-header\s*\{[^}]*background:\s*var\(--surface\)/s)
   assert.match(moduleStyles, /\.admin-workspace \.button-secondary\s*\{[^}]*background:\s*var\(--surface\)/s)
   assert.doesNotMatch(moduleStyles, /background:\s*#fff(?:fff)?;/i)
+})
+
+test('brand mark keeps a dark foreground over the institutional gold', async () => {
+  const [systemStyles, publicShell] = await Promise.all([
+    source('src/styles/ui-system.css'),
+    source('src/app/public-shell.css'),
+  ])
+
+  assert.match(systemStyles, /--brand-mark-text:\s*#35100d/)
+  assert.match(publicShell, /\.site-header \.brand-mark\s*\{[^}]*color:\s*var\(--brand-mark-text\)/s)
 })
