@@ -40,7 +40,8 @@
 .check-card,
 .participant-card,
 .impact-node,
-.impact-issue {
+.impact-issue,
+.pending-event-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -48,6 +49,12 @@
   display: grid;
   gap: 7px;
   padding: 14px;
+}
+
+.pending-event-card {
+  border-radius: 18px;
+  gap: 12px;
+  padding: 18px;
 }
 
 .assistant-summary-card,
@@ -101,7 +108,8 @@
 .participant-list,
 .impact-node-list,
 .impact-issue-list,
-.derived-update-list {
+.derived-update-list,
+.pending-events-list {
   display: grid;
   gap: 14px;
   min-width: 0;
@@ -227,7 +235,8 @@
   width: 100%;
 }
 
-.event-info h3 {
+.event-info h3,
+.pending-event-card h3 {
   margin: 0;
 }
 
@@ -241,7 +250,8 @@
 
 .events-page .mini-badge,
 .event-assistant-page .mini-badge,
-.event-review-page .mini-badge {
+.event-review-page .mini-badge,
+.pending-events-page .mini-badge {
   background: var(--surface-subtle);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -254,7 +264,8 @@
 
 .events-page .mini-badge.warning,
 .event-assistant-page .mini-badge.warning,
-.event-review-page .mini-badge.warning {
+.event-review-page .mini-badge.warning,
+.pending-events-page .mini-badge.warning {
   background: var(--warning-soft);
   border-color: var(--border-warning);
   color: var(--warning);
@@ -262,13 +273,15 @@
 
 .events-page .mini-badge.success,
 .event-assistant-page .mini-badge.success,
-.event-review-page .mini-badge.success {
+.event-review-page .mini-badge.success,
+.pending-events-page .mini-badge.success {
   background: var(--success-soft);
   border-color: var(--border-success);
   color: var(--success);
 }
 
-.event-review-page .mini-badge.danger {
+.event-review-page .mini-badge.danger,
+.pending-events-page .mini-badge.danger {
   background: var(--danger-soft);
   border-color: var(--border-danger);
   color: var(--danger);
@@ -290,6 +303,10 @@
 
 .button-row {
   margin-top: 14px;
+}
+
+.pending-event-card .button-row {
+  margin-top: 0;
 }
 
 .detail-backlink {
@@ -332,5 +349,9 @@
   .event-date-box {
     grid-template-columns: auto auto auto;
     justify-content: start;
+  }
+
+  .pending-event-card .button-row > .button {
+    flex: 1 1 100%;
   }
 }
