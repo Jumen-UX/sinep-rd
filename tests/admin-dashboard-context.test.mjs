@@ -16,7 +16,7 @@ test('admin dashboard delegates data loading and sign out to its service', async
   assert.match(page, /signOutAdminDashboard\(supabase\)/)
   assert.doesNotMatch(page, /supabase\.from\(/)
   assert.match(service, /options\.includeGlobalMetrics/)
-  assert.match(service, /supabase\.from\('admin_dashboard_summary'\)/)
+  assert.match(service, /supabase\s*\.from\('admin_dashboard_summary'\)/)
   assert.match(service, /options\.includeActivity/)
   assert.match(service, /supabase\.from\('admin_audit_log'\)/)
 })
