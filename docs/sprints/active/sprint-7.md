@@ -14,8 +14,8 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
-4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **RPC restringida e integración implementadas; pendiente de aplicar migración y confirmar CI.**
-5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual.
+4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
+5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **Siguiente tarea.**
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
@@ -38,7 +38,7 @@ La implementación quedó cubierta por TypeScript, pruebas unitarias y contractu
 
 Se consolidó el dashboard administrativo con el mismo contexto canónico de navegación, acceso a datos mediante servicio, acciones filtradas por disponibilidad, alcance activo visible, búsqueda precisa y pruebas contractuales. CI confirmó documentación, TypeScript, pruebas y build en verde.
 
-### S7-04 — En progreso
+### S7-04 — Completada con validación manual diferida
 
 Se implementaron:
 
@@ -54,7 +54,13 @@ Se implementaron:
 - integración del alcance activo completo en `admin-dashboard-service.ts`;
 - pruebas `admin-contextual-kpi-rpc.test.mjs`, `admin-kpi-policy.test.mjs` y `admin-dashboard-context.test.mjs`.
 
-Los alcances `diocese`, `parish` y `entity` reciben valores contextuales para los cuatro indicadores soportados. Las dimensiones pastorales y colegiales permanecen explícitamente sin valor cuando no existe todavía una relación contextual canónica confirmada. No se utiliza ningún fallback global.
+La migración fue aplicada correctamente en Supabase y CI confirmó documentación, TypeScript, pruebas y build en verde. Los alcances `diocese`, `parish` y `entity` reciben valores contextuales para los cuatro indicadores soportados. Las dimensiones pastorales y colegiales permanecen explícitamente sin valor cuando no existe todavía una relación contextual canónica confirmada. No se utiliza ningún fallback global.
+
+Queda registrada como deuda funcional la validación manual con un perfil restringido real para confirmar que las políticas RLS permiten leer todos los descendientes autorizados sin producir conteos parciales.
+
+### S7-05 — Siguiente tarea
+
+Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual en las pantallas administrativas principales, reutilizando los componentes existentes y corrigiendo inconsistencias antes de abordar modo oscuro y accesibilidad avanzada.
 
 ## Reglas del sprint
 
@@ -77,4 +83,4 @@ Los alcances `diocese`, `parish` y `entity` reciben valores contextuales para lo
 
 ## Punto de continuación
 
-Aplicar la migración `20260717013000_admin_contextual_kpis.sql` en Supabase y ejecutar `pnpm check`. Con ambos resultados correctos, cerrar S7-04 e iniciar S7-05. Las métricas pastorales y colegiales ampliadas deberán incorporarse solo cuando sus relaciones canónicas estén documentadas y verificadas.
+Iniciar S7-05 auditando `PageHeader`, breadcrumbs, estados vacíos, mensajes de error/éxito y jerarquía visual en las rutas administrativas principales. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
