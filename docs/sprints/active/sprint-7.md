@@ -118,7 +118,7 @@ El quinto bloque completó la cobertura especializada pendiente:
 - autenticación y componentes heredados de `admin-brand.css` reciben una capa final para tarjetas, indicadores, estados y superficies;
 - `tests/admin-theme-specialized.test.mjs` y `tests/profile-theme-surfaces.test.mjs` protegen el bloque completo.
 
-La validación automatizada del quinto bloque permanece pendiente: GitHub todavía no expone una ejecución asociada al último commit y Vercel reporta únicamente el límite de compilaciones del plan. S7-06 no se cerrará hasta confirmar `pnpm check`, CI y una comprobación visual breve en ambos temas.
+[CI #29554083148](https://github.com/Jumen-UX/sinep-rd/actions/runs/29554083148) confirmó documentación, TypeScript, pruebas, build y CodeQL. [E2E público #29554014925](https://github.com/Jumen-UX/sinep-rd/actions/runs/29554014925) confirmó navegación pública y Axe con la preferencia oscura persistida. S7-06 queda técnicamente validado; su cierre formal espera únicamente una comprobación visual administrativa autenticada en ambos temas, coordinada con la reparación del perfil E2E operativo ya registrada para S7-10.
 
 ## Estado operativo separado
 
