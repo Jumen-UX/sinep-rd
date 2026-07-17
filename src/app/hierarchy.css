@@ -87,7 +87,7 @@
 }
 
 .tenure-grid span {
-  background: #fbf8f1;
+  background: var(--surface-subtle);
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--foreground);
@@ -192,15 +192,17 @@
 }
 
 .metric-button:hover,
-.filter-card:hover {
-  border-color: rgba(122, 31, 31, 0.45);
-  box-shadow: 0 12px 30px rgba(31, 41, 51, 0.08);
+.metric-button:focus-visible,
+.filter-card:hover,
+.filter-card:focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
 .active-filter {
-  border-color: rgba(122, 31, 31, 0.7) !important;
-  box-shadow: 0 0 0 3px rgba(122, 31, 31, 0.08) !important;
+  border-color: color-mix(in srgb, var(--primary) 70%, var(--border)) !important;
+  box-shadow: var(--focus-ring) !important;
 }
 
 .admin-form-grid {
@@ -215,7 +217,7 @@
 .admin-form input,
 .admin-form select,
 .admin-form textarea {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   color: var(--foreground);
@@ -223,6 +225,13 @@
   min-height: 44px;
   padding: 10px 12px;
   width: 100%;
+}
+
+.admin-form input:focus-visible,
+.admin-form select:focus-visible,
+.admin-form textarea:focus-visible {
+  border-color: var(--gold);
+  box-shadow: var(--focus-ring);
 }
 
 .admin-form textarea {
