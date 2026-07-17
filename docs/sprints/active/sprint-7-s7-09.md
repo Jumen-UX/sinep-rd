@@ -134,9 +134,9 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - Se creó `src/styles/clergy-wizard-ui.css` como extensión compartida para sacerdote, diácono y obispo.
 - Los tres layouts de ruta cargan `person-wizard-ui.css` y la nueva extensión de clero.
 - Se eliminaron `priest-wizard-ui.css`, `deacon-wizard-ui.css` y `deacon-wizard-polish.css`.
-- La extensión conserva el layout de asistentes controlados, la navegación automática del diácono, el resumen de revisión, el éxito del sacerdote y los estados responsive.
+- La extensión conserva el layout de asistentes controlados, la navegación automática inicial del diácono, el resumen de revisión, el éxito del sacerdote y los estados responsive.
 - El foco usa `--focus-ring` como valor de `box-shadow`, de acuerdo con la definición canónica del token; no se replica su uso inválido como `outline`.
-- `tests/clergy-wizard-style-consolidation.test.mjs` impide volver a hojas específicas por rol y protege la continuidad de `AutoSectionWizard`.
+- `tests/clergy-wizard-style-consolidation.test.mjs` impide volver a hojas específicas por rol.
 - `tests/admin-theme-specialized.test.mjs` valida el contraste del diácono mediante `clergy-wizard-ui.css` y `admin-modules.css`, sin depender de una hoja retirada.
 - CI confirmó el bloque en verde.
 
@@ -151,7 +151,7 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - `tests/bishop-wizard-accessibility-consolidation.test.mjs` protege semántica, etiquetas, agrupación, navegación y permanencia de las cinco etapas montadas.
 - CI confirmó el bloque en verde.
 
-## Decimotercer bloque implementado
+## Decimotercer bloque implementado y validado
 
 - `PriestWizardPage.tsx` dejó de repetir `.admin-priest-wizard`; la única raíz visual del flujo permanece en el layout de ruta.
 - El mensaje de éxito dejó de escribir contenido mediante referencias y `textContent`; ahora se renderiza con React como región viva moderada y atómica.
@@ -161,7 +161,21 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - La revisión usa cuatro `article` dentro de un resumen identificado, y la barra de navegación declara un grupo accesible con estado ocupado.
 - Se conservaron las cinco etapas montadas, el borrador local, la continuidad de la identidad diaconal y el filtrado estricto de cargos por nivel.
 - `tests/priest-wizard-accessibility-consolidation.test.mjs` protege raíz única, semántica, agrupación, navegación y contratos canónicos.
+- CI confirmó el bloque en verde.
+
+## Decimocuarto bloque implementado
+
+- `DeaconWizardPage.tsx` dejó de depender de la inferencia de etapas por DOM y controla seis etapas explícitas mediante `AdminWizardProgress`.
+- El layout de la ruta ya no monta `AutoSectionWizard`; el componente permanece temporalmente para laico y vida consagrada.
+- Las seis etapas relevantes permanecen montadas mediante `hidden`, de modo que el submit final conserva el mismo `FormData` y payload canónico.
+- Carga, error, confirmación, contenido, formulario y guardado declaran estados accesibles propios.
+- Se eliminaron controles identificados solo con `placeholder`; identidad, documentos, contacto, ordenación, servicio, cargo y revisión usan etiquetas explícitas.
+- El tipo de diácono usa `aria-pressed`; documentos, biografía, asignación y datos no identificados se agrupan mediante `fieldset` y `legend`.
+- Incardinación, servicio, entidad del cargo y filtro de cargos se anuncian como estados dinámicos.
+- La revisión usa artículos semánticos y la barra inferior expone navegación y submit nativos, sin `MutationObserver` ni `requestSubmit`.
+- `clergy-wizard-ui.css` dejó de contener selectores de `auto-section-wizard` y aplica el mismo layout controlado a sacerdote, diácono y obispo.
+- `tests/deacon-wizard-accessibility-consolidation.test.mjs`, `tests/clergy-wizard-style-consolidation.test.mjs` y `tests/admin-theme-specialized.test.mjs` protegen la nueva separación.
 
 ## Criterio del siguiente bloque
 
-Validar el decimotercer bloque con CI. Después se consolidará `DeaconWizardPage`, se reducirá su dependencia de `AutoSectionWizard` y se continuará con los asistentes heredados de personas antes de evaluar la retirada completa de `LegacyAdminAccessibilityEnhancements`.
+Validar el decimocuarto bloque con CI. Después se consolidarán los asistentes de laico y vida consagrada, los únicos consumidores restantes de `AutoSectionWizard`, antes de evaluar su retiro y reducir nuevamente `LegacyAdminAccessibilityEnhancements`.
