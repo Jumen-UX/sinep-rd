@@ -15,7 +15,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
-5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso.**
+5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; primer bloque confirmado con CI verde.**
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
@@ -56,6 +56,8 @@ Se implementaron:
 - contadores y estados visuales consistentes para solicitudes públicas e internas;
 - `tests/admin-page-state-hierarchy.test.mjs`, que evita regresar a los patrones heredados.
 
+El primer bloque fue confirmado con CI verde el 2026-07-17. La siguiente iteración extenderá el mismo contrato a otras pantallas administrativas principales que todavía utilizan encabezados y estados heredados.
+
 ## Reglas del sprint
 
 - Antes de rediseñar se debe revisar el plan UX ya existente y contrastarlo con el código actual.
@@ -77,4 +79,4 @@ Se implementaron:
 
 ## Punto de continuación
 
-Ejecutar CI para el primer bloque de S7-05. Después extender `PageState`, `PageHeader`, badges y acciones compartidas a las pantallas administrativas principales que todavía usan encabezados y estados heredados. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
+Extender `PageState`, `PageHeader`, badges y acciones compartidas a las pantallas administrativas principales que todavía usan encabezados y estados heredados. Priorizar pantallas con carga, error y vacío propios para maximizar la reutilización del contrato ya validado. La deuda de validación funcional de KPIs restringidos y la matriz E2E autenticada deberán retomarse antes del cierre S7-10 o cuando existan perfiles de prueba estables.
