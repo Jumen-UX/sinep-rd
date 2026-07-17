@@ -73,9 +73,17 @@
 }
 
 .public-combobox-option:hover,
-.public-combobox-option.active {
+.public-combobox-option.active,
+.public-combobox-option:focus-visible {
   background: var(--gold-soft);
   color: var(--gold);
+}
+
+.public-combobox-option:focus-visible,
+.public-combobox-toggle:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
 .public-combobox-empty {
@@ -86,14 +94,14 @@
   .public-combobox-input {
     border-radius: 11px;
     font-size: 12px;
-    min-height: 38px;
+    min-height: 44px;
     padding-left: 11px;
   }
 
   .public-combobox-toggle {
-    height: 30px;
-    top: 4px;
-    width: 30px;
+    height: 34px;
+    top: 5px;
+    width: 34px;
   }
 
   .public-combobox-list {
@@ -103,6 +111,7 @@
   .public-combobox-option,
   .public-combobox-empty {
     font-size: 12px;
+    min-height: 44px;
     padding: 9px 10px;
   }
 }
