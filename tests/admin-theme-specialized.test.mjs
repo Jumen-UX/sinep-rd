@@ -70,8 +70,8 @@ test('deacon wizard actions preserve contrast through canonical shared styles', 
   const layout = await source('src/app/(admin)/admin/nuevo/diacono/layout.tsx')
 
   assert.match(layout, /clergy-wizard-ui\.css/)
-  assert.match(clergyStyles, /\.admin-deacon-wizard \.auto-section-wizard__actions\s*\{[^}]*min-height:\s*4\.125rem/s)
-  assert.match(clergyStyles, /\.admin-deacon-wizard \.auto-section-wizard__actions \.button\s*\{[^}]*min-height:\s*2\.75rem/s)
+  assert.match(clergyStyles, /:is\(\.admin-priest-wizard, \.admin-deacon-wizard, \.admin-bishop-wizard\) \.admin-wizard-actions\s*\{[^}]*min-height:\s*4\.25rem/s)
+  assert.match(clergyStyles, /:is\(\.admin-priest-wizard, \.admin-deacon-wizard, \.admin-bishop-wizard\) \.admin-wizard-actions \.button\s*\{[^}]*min-height:\s*2\.75rem/s)
   assert.match(moduleStyles, /\.admin-workspace \.button-primary\s*\{[^}]*background:\s*var\(--primary\)[^}]*color:\s*var\(--on-primary\)/s)
   assert.match(moduleStyles, /\.admin-workspace \.button-secondary\s*\{[^}]*background:\s*var\(--surface\)[^}]*color:\s*var\(--foreground\)/s)
   assert.match(moduleStyles, /\.admin-workspace \.button-secondary:hover,[\s\S]*background:\s*var\(--gold-soft\)/s)
