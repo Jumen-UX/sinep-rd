@@ -23,30 +23,6 @@ const workModes: Array<{ key: WorkMode; title: string; description: string }> = 
   { key: 'pending', title: 'Pendientes', description: 'Datos con documento o evidencia pendiente de completar.' },
 ]
 
-const pageStyles = `
-  .events-page select,.events-page input{border:1px solid var(--border);border-radius:14px;font:inherit;padding:12px 14px;width:100%}
-  .events-toolbar,.events-tabs,.events-layout,.events-timeline,.facets-grid,.derived-list,.impact-list,.event-detail-grid,.action-link-grid{display:grid;gap:14px}
-  .events-toolbar{align-items:end;grid-template-columns:minmax(180px,.6fr) minmax(180px,.6fr) minmax(220px,1fr) minmax(200px,.8fr)}
-  .events-toolbar label{color:var(--muted);display:grid;font-size:14px;font-weight:800;gap:7px}
-  .events-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
-  .events-tab,.event-card-button{appearance:none;background:#fff;border:1px solid var(--border);cursor:pointer;font:inherit;text-align:left}
-  .events-tab{border-radius:18px;display:grid;gap:6px;padding:16px}
-  .events-tab.active,.event-card-button.active{border-color:rgba(122,31,31,.55);box-shadow:0 16px 38px rgba(122,31,31,.12)}
-  .events-layout{align-items:start;grid-template-columns:minmax(0,1fr) minmax(320px,.42fr)}
-  .event-card-button,.facet-card,.derived-card,.impact-card,.detail-tile{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:7px;padding:14px}
-  .event-card-button{border-left:5px solid rgba(122,31,31,.25);width:100%}
-  .event-card-main{align-items:start;display:flex;gap:12px;justify-content:space-between}
-  .event-date-box{align-items:center;background:#fbf8f1;border:1px solid var(--border);border-radius:14px;display:grid;flex:0 0 76px;justify-items:center;padding:10px}
-  .event-date-box strong{font-size:22px;line-height:1}.event-date-box span{color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase}
-  .event-info{display:grid;gap:6px;min-width:0}.event-info h3{margin:0}
-  .badge-row,.button-row{display:flex;flex-wrap:wrap;gap:7px}
-  .mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}
-  .mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}
-  .facet-card.highlight,.derived-card.highlight,.impact-card.highlight{background:#fbf8f1;border-style:dashed}
-  .event-detail-grid,.action-link-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  @media(max-width:1080px){.events-toolbar,.events-tabs,.events-layout,.event-detail-grid,.action-link-grid{grid-template-columns:1fr}}
-`
-
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback
 }
@@ -124,11 +100,16 @@ function impactNotesFor(event: EventRegistryRow | null) {
 
 function EventDetailPanel({ event }: { event: EventRegistryRow | null }) {
   if (!event) {
-    return <div className="facet-card highlight"><strong>Selecciona un evento</strong><span className="meta">Aquí se mostrará la ficha, páginas derivadas e impacto.</span></div>
+    return (
+      <div className="facet-card highlight" id="event-detail-panel" role="status">
+        <strong>Selecciona un evento</strong>
+        <span className="meta">Aquí se mostrará la ficha, páginas derivadas e impacto.</span>
+      </div>
+    )
   }
 
   return (
-    <div className="facets-grid">
+    <div className="facets-grid" id="event-detail-panel" aria-live="polite" aria-atomic="true">
       <div className="facet-card highlight"><strong>Ficha del evento</strong><span className="meta">{event.title}</span></div>
       <div className="event-detail-grid">
         <div className="detail-tile"><strong>Fecha</strong><span className="meta">{formatDate(event.event_date)}</span></div>
@@ -236,11 +217,12 @@ export default function EventRegistryPage() {
     return Array.from({ length: Math.max(max - min + 1, 0) }, (_, index) => max - index)
   }, [summary?.max_year, summary?.min_year])
 
-  if (loading) return <div className="empty-state">Cargando registro de eventos...</div>
+  if (loading) {
+    return <div className="empty-state" role="status" aria-live="polite">Cargando registro de eventos...</div>
+  }
 
   return (
     <main className="events-page" id="top">
-      <style>{pageStyles}</style>
       <header className="admin-top-header">
         <div className="admin-top-title"><span className="admin-mini-mark">HISTORIA</span><strong>Eventos</strong></div>
         <div className="admin-top-actions">
@@ -264,14 +246,14 @@ export default function EventRegistryPage() {
         <div className="admin-welcome-illustration" aria-hidden="true">◷</div>
       </section>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <div className="error-box" role="alert" aria-live="assertive">{error}</div>}
 
       <section className="admin-stat-strip" aria-label="Resumen de eventos">
-        <a href="#event-stream"><span>◷</span><strong>{summary?.historical_events ?? 0}</strong><small>Carga histórica</small></a>
-        <a href="#event-stream"><span>＋</span><strong>{summary?.new_events ?? 0}</strong><small>Eventos nuevos</small></a>
-        <a href="#event-stream"><span>◎</span><strong>{summary?.calendar_occurrences ?? 0}</strong><small>Fechas derivadas</small></a>
-        <a href="#event-stream"><span>!</span><strong>{summary?.pending_evidence ?? 0}</strong><small>Evidencia pendiente</small></a>
-        <a href="#event-stream"><span>⌕</span><strong>{filteredEvents.length}</strong><small>Resultados visibles</small></a>
+        <a href="#event-stream"><span aria-hidden="true">◷</span><strong>{summary?.historical_events ?? 0}</strong><small>Carga histórica</small></a>
+        <a href="#event-stream"><span aria-hidden="true">＋</span><strong>{summary?.new_events ?? 0}</strong><small>Eventos nuevos</small></a>
+        <a href="#event-stream"><span aria-hidden="true">◎</span><strong>{summary?.calendar_occurrences ?? 0}</strong><small>Fechas derivadas</small></a>
+        <a href="#event-stream"><span aria-hidden="true">!</span><strong>{summary?.pending_evidence ?? 0}</strong><small>Evidencia pendiente</small></a>
+        <a href="#event-stream"><span aria-hidden="true">⌕</span><strong>{filteredEvents.length}</strong><small>Resultados visibles</small></a>
       </section>
 
       <section className="card dashboard-section" id="event-filters">
@@ -280,13 +262,19 @@ export default function EventRegistryPage() {
           <label>Año<select value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}><option value="">Todos los años</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</select></label>
           <label>Mes<select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)}><option value="">Todos los meses</option>{monthNames.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}</select></label>
           <label>Tipo de evento<select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="">Todos los tipos</option>{(summary?.event_types ?? []).map((facet) => <option key={facet.key} value={facet.key}>{facet.name ?? facet.key} · {facet.count}</option>)}</select></label>
-          <label>Buscar<input value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Diócesis, febrero, fuente..." /></label>
+          <label>Buscar<input type="search" value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Diócesis, febrero, fuente..." /></label>
         </div>
       </section>
 
       <section className="events-tabs" aria-label="Modos de trabajo">
         {workModes.map((mode) => (
-          <button className={`events-tab ${workMode === mode.key ? 'active' : ''}`} key={mode.key} onClick={() => setWorkMode(mode.key)} type="button">
+          <button
+            aria-pressed={workMode === mode.key}
+            className={`events-tab ${workMode === mode.key ? 'active' : ''}`}
+            key={mode.key}
+            onClick={() => setWorkMode(mode.key)}
+            type="button"
+          >
             <strong>{mode.title}</strong><span>{mode.description}</span>
           </button>
         ))}
@@ -294,31 +282,47 @@ export default function EventRegistryPage() {
 
       <section className="events-layout" id="event-stream">
         <div className="card dashboard-section">
-          <div className="section-heading"><div><p className="eyebrow">Línea de eventos</p><h2>{filteredEvents.length} resultados</h2><p className="meta">Selecciona un evento para ver qué páginas alimenta y abrir su flujo operativo cuando aplique.</p></div></div>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Línea de eventos</p>
+              <h2 aria-live="polite">{filteredEvents.length} resultados</h2>
+              <p className="meta">Selecciona un evento para ver qué páginas alimenta y abrir su flujo operativo cuando aplique.</p>
+            </div>
+          </div>
           <div className="events-timeline">
-            {filteredEvents.length === 0 && <div className="empty-state">No hay eventos con esos filtros.</div>}
-            {filteredEvents.map((event) => (
-              <button className={`event-card-button ${selectedEvent && eventKey(event) === eventKey(selectedEvent) ? 'active' : ''}`} key={eventKey(event)} onClick={() => setSelectedEventKey(eventKey(event))} type="button">
-                <div className="event-card-main">
-                  <div className="event-date-box"><strong>{dayValue(event.event_date)}</strong><span>{monthLabel(event.event_month).slice(0, 3)}</span><span>{event.event_year ?? '—'}</span></div>
-                  <div className="event-info">
-                    <h3>{event.title}</h3>
-                    <p className="meta">{formatDate(event.event_date)} · {event.event_type_name ?? event.event_type_key ?? 'Tipo no definido'}</p>
-                    <div className="badge-row">
-                      <span className="mini-badge">{loadModeLabel(event.load_mode)}</span>
-                      <span className={`mini-badge ${isEvidencePending(event) ? 'warning' : 'success'}`}>{evidenceLabel(event.evidence_status)}</span>
-                      {event.workflow_status === 'pending_review' && <span className="mini-badge warning">Pendiente de revisión</span>}
-                      {event.related_entity_name && <span className="mini-badge">{event.related_entity_name}</span>}
-                      {event.source_name && <span className="mini-badge">Fuente: {event.source_name}</span>}
+            {filteredEvents.length === 0 && <div className="empty-state" role="status">No hay eventos con esos filtros.</div>}
+            {filteredEvents.map((event) => {
+              const isSelected = Boolean(selectedEvent && eventKey(event) === eventKey(selectedEvent))
+              return (
+                <button
+                  aria-controls="event-detail-panel"
+                  aria-pressed={isSelected}
+                  className={`event-card-button ${isSelected ? 'active' : ''}`}
+                  key={eventKey(event)}
+                  onClick={() => setSelectedEventKey(eventKey(event))}
+                  type="button"
+                >
+                  <div className="event-card-main">
+                    <div className="event-date-box" aria-hidden="true"><strong>{dayValue(event.event_date)}</strong><span>{monthLabel(event.event_month).slice(0, 3)}</span><span>{event.event_year ?? '—'}</span></div>
+                    <div className="event-info">
+                      <h3>{event.title}</h3>
+                      <p className="meta">{formatDate(event.event_date)} · {event.event_type_name ?? event.event_type_key ?? 'Tipo no definido'}</p>
+                      <div className="badge-row">
+                        <span className="mini-badge">{loadModeLabel(event.load_mode)}</span>
+                        <span className={`mini-badge ${isEvidencePending(event) ? 'warning' : 'success'}`}>{evidenceLabel(event.evidence_status)}</span>
+                        {event.workflow_status === 'pending_review' && <span className="mini-badge warning">Pendiente de revisión</span>}
+                        {event.related_entity_name && <span className="mini-badge">{event.related_entity_name}</span>}
+                        {event.source_name && <span className="mini-badge">Fuente: {event.source_name}</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        <aside className="facets-grid">
+        <aside className="facets-grid" aria-label="Detalle del evento seleccionado">
           <EventDetailPanel event={selectedEvent} />
           <div className="facet-card highlight"><strong>Asistentes</strong><div className="action-link-grid"><Link className="button button-primary" href="/admin/eventos/nuevo">Preparar evento</Link><Link className="button button-secondary" href="/admin/eventos/pendientes">Cola de revisión</Link></div></div>
         </aside>
