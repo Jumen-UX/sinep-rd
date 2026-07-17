@@ -23,6 +23,20 @@ test('legacy admin dynamic messages are announced and mutations stay synchronize
   assert.match(enhancement, /role', 'status'/)
   assert.match(enhancement, /aria-live', 'polite'/)
   assert.match(enhancement, /new MutationObserver/)
+  assert.match(enhancement, /attributeFilter: \['class', 'hidden', 'aria-expanded'\]/)
+})
+
+test('mobile admin dialog traps focus closes with Escape and restores its trigger', () => {
+  assert.match(enhancement, /#admin-mobile-menu/)
+  assert.match(enhancement, /aria-modal', 'true'/)
+  assert.match(enhancement, /dialog\.setAttribute\('tabindex', '-1'\)/)
+  assert.match(enhancement, /queueMicrotask/)
+  assert.match(enhancement, /event\.key === 'Escape'/)
+  assert.match(enhancement, /event\.key !== 'Tab'/)
+  assert.match(enhancement, /last\.focus\(\)/)
+  assert.match(enhancement, /first\.focus\(\)/)
+  assert.match(enhancement, /returnFocus\?\.focus\(\)/)
+  assert.match(enhancement, /removeEventListener\('keydown', handleKeyDown\)/)
   assert.match(enhancement, /observer\.disconnect\(\)/)
 })
 
