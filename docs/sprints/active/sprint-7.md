@@ -14,7 +14,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
-4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Contrato y política implementados; consultas por alcance en progreso.**
+4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Contrato, política y frontera segura de datos implementados; agregación restringida pendiente.**
 5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual.
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
@@ -59,10 +59,14 @@ Se implementaron:
 - `src/features/admin/dashboard/admin-kpi-contract.ts`, con doce indicadores distribuidos entre las dimensiones territorial, pastoral, administrativa y colegial;
 - permisos explícitos, tipos de valor, alcances admitidos y destinos navegables por indicador;
 - `src/features/admin/dashboard/admin-kpi-policy.ts`, que diferencia `available`, `not_applicable` y `hidden` sin tratar un alcance restringido como global;
-- agrupación de indicadores por dimensión para mantener una UI predecible;
-- `tests/admin-kpi-policy.test.mjs`, que protege dimensiones, permisos, alcances y estados de disponibilidad.
+- `src/features/admin/dashboard/admin-kpi-value-service.ts`, que traduce fuentes disponibles a estados `available`, `unavailable` y `not_applicable`;
+- agrupación visual de indicadores por dimensión en `AdminDashboardPage.tsx`;
+- bloqueo de las consultas a `admin_dashboard_summary`, conteos globales de personas y nombramientos cuando el alcance activo no es irrestricto;
+- carga de actividad únicamente cuando el destino de auditoría es visible;
+- mensajes explícitos cuando una fuente contextual todavía no existe, sin sustituirla con cifras nacionales;
+- `tests/admin-kpi-policy.test.mjs` y `tests/admin-dashboard-context.test.mjs`, que protegen permisos, alcances y la frontera contra fugas de datos globales.
 
-La siguiente capa debe resolver valores por alcance mediante una API única y segura. Hasta que esa fuente contextual exista, los perfiles restringidos no deben recibir como sustituto los conteos globales de `admin_dashboard_summary`.
+Los alcances global y nacional pueden reutilizar las fuentes globales actuales. Los alcances restringidos quedan deliberadamente sin valor hasta que se implemente la agregación jerárquica segura en base de datos.
 
 ## Reglas del sprint
 
@@ -85,4 +89,4 @@ La siguiente capa debe resolver valores por alcance mediante una API única y se
 
 ## Punto de continuación
 
-Diseñar e implementar la fuente contextual de valores KPI usando el alcance activo. Debe devolver estados explícitos cuando un dato todavía no tenga soporte, reutilizar la jerarquía territorial existente y evitar cualquier fallback global para perfiles restringidos. Después se conectará el dashboard al contrato por dimensiones y se validará con TypeScript, pruebas y CI.
+Implementar la agregación jerárquica restringida en base de datos para los KPIs soportados inicialmente. La función deberá validar que el alcance solicitado pertenece a las asignaciones activas del usuario, resolver descendientes territoriales cuando corresponda y devolver únicamente valores autorizados. Después se conectará al adaptador existente y se validará con TypeScript, pruebas, migración y CI.
