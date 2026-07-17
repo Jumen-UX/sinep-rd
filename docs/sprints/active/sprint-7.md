@@ -16,7 +16,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
-5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **En progreso; tres bloques implementados y línea base confirmada con CI verde.**
+5. [x] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **Completada con cuatro pantallas representativas y CI verde.**
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
@@ -45,7 +45,7 @@ Se implementaron el contrato, política y adaptador de KPIs contextuales, la agr
 
 Queda registrada como deuda funcional la validación manual con un perfil restringido real para confirmar que las políticas RLS permiten leer todos los descendientes autorizados sin producir conteos parciales.
 
-### S7-05 — En progreso
+### S7-05 — Completada
 
 La auditoría inicial confirmó que conviven componentes compartidos modernos con clases heredadas como `page-heading`, `empty-state`, `error-box`, `admin-topbar`, `admin-top-header` y botones definidos únicamente por clases CSS.
 
@@ -57,11 +57,16 @@ Se implementaron:
 - migración de `PersonListPage.tsx`, eliminando su cabecera paralela y el panel de bienvenida duplicado;
 - breadcrumbs `Administración → Personas`, badges de resumen, botones compartidos y estados de carga, error y vacío;
 - filtros con `aria-pressed` y jerarquía `h1 → h2 → h3` en el directorio de personas;
-- ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger las tres pantallas y evitar el retorno de patrones heredados.
+- migración de `UserAccessPage.tsx` a `PageHeader`, breadcrumbs, `PageState`, `Alert`, `StatusBadge` y `Button`;
+- corrección de la jerarquía de usuarios y roles para que las tarjetas usen `h3` bajo sus secciones `h2`;
+- estados vacíos explícitos para catálogos de usuarios y roles;
+- ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger las cuatro pantallas y evitar el retorno de patrones heredados.
 
 Los dos primeros bloques fueron confirmados con CI verde. El CI del tercer bloque detectó una regresión independiente en `package.json`: se habían perdido los scripts recientes de automatización documental, auditoría de migraciones y pruebas afectadas. El contrato completo fue restaurado sin modificar la funcionalidad de las pantallas.
 
-La ejecución [CI #29550916630](https://github.com/Jumen-UX/sinep-rd/actions/runs/29550916630) confirmó en verde la línea base reconciliada: documentación, automatizaciones, TypeScript, pruebas, build y CodeQL.
+La ejecución [CI #29551515252](https://github.com/Jumen-UX/sinep-rd/actions/runs/29551515252) confirmó en verde la cuarta migración: documentación, automatizaciones, TypeScript, 462 pruebas, build y CodeQL.
+
+El inventario restante todavía contiene clases heredadas en asistentes y pantallas especializadas. No bloquea S7-05 porque la capa canónica, la semántica y el contrato de adopción ya quedaron demostrados en solicitudes, auditoría, personas y acceso. La eliminación transversal de duplicación visual continuará en S7-09, coordinada con modo oscuro y accesibilidad para evitar retrabajo.
 
 ## Estado operativo separado
 
@@ -94,4 +99,4 @@ No bloquean el avance técnico de S7-05, pero deben cerrarse antes de S7-10:
 
 ## Punto de continuación
 
-Ejecutar el inventario restante de clases heredadas y seleccionar una cuarta pantalla representativa solo si aporta cobertura nueva; en caso contrario, cerrar S7-05 y avanzar a S7-06. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
+Iniciar S7-06 con un inventario de componentes y reglas que todavía dependen de colores fijos o no tienen variante oscura. Priorizar shell, navegación, formularios, tablas, estados y overlays compartidos antes de corregir pantallas aisladas. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
