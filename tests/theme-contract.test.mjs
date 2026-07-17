@@ -157,3 +157,19 @@ test('public dashboard exposes visible theme controls and semantic surfaces', as
   assert.match(dashboard, /\.public-mobile-header\s*\{[^}]*background:\s*color-mix\([^;]*var\(--surface\)/s)
   assert.match(dashboard, /\.public-mobile-header \[data-ui='theme-control'\] select\s*\{[^}]*min-width:\s*6\.5rem/s)
 })
+
+test('wizard and jurisdiction surfaces use semantic colors in every theme', async () => {
+  const [framework, unifiedWizard] = await Promise.all([
+    source('src/styles/admin-framework.css'),
+    source('src/styles/person-wizard-unified.css'),
+  ])
+
+  assert.match(framework, /\.admin-wizard-progress\{[^}]*background:var\(--surface\)/s)
+  assert.match(framework, /\.admin-warning-box\{[^}]*background:var\(--warning-soft\);border-color:var\(--border-warning\)/s)
+  assert.match(framework, /\.admin-info-box\{[^}]*background:var\(--info-soft\);border-color:var\(--border-info\)/s)
+  assert.match(framework, /\.jurisdiction-view-tab\{[^}]*background:var\(--surface\)/s)
+  assert.match(framework, /\.tree-row\{[^}]*background:var\(--surface\)/s)
+  assert.doesNotMatch(framework, /background:\s*#fff(?:fff)?/i)
+  assert.match(unifiedWizard, /background:\s*color-mix\(in srgb, var\(--surface\) 96%, transparent\)/)
+  assert.doesNotMatch(unifiedWizard, /var\(--surface-raised,\s*#fff\)/i)
+})
