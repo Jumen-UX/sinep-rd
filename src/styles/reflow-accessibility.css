@@ -1,0 +1,105 @@
+/* Cross-application reflow safeguards for zoomed text and narrow viewports. */
+
+:where(
+  .site-shell,
+  .container,
+  .dashboard-page,
+  .admin-area,
+  .admin-redesign,
+  .admin-workspace,
+  .admin-workspace > *,
+  .card,
+  .dashboard-section,
+  .public-main,
+  .public-main > *,
+  .public-panel,
+  .public-section-card,
+  .assistant-layout,
+  .assistant-layout > *,
+  .form-grid,
+  .preview-grid,
+  .impact-grid,
+  .section-heading,
+  .admin-topbar
+) {
+  min-width: 0;
+}
+
+:where(
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  li,
+  dd,
+  dt,
+  label,
+  small,
+  strong,
+  span,
+  a,
+  button,
+  th,
+  td
+) {
+  overflow-wrap: anywhere;
+}
+
+:where(input, select, textarea, button) {
+  max-width: 100%;
+}
+
+:where(.table-wrap, .public-table, .admin-table-wrap) {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+:where(.data-table, .dashboard-list-table, .public-table table) {
+  width: 100%;
+}
+
+:where(.assistant-stepper, .public-view-tabs, .admin-tabs, .button-row, .table-actions) {
+  min-width: 0;
+}
+
+:where(.assistant-stepper, .public-view-tabs, .admin-tabs) > * {
+  min-width: 0;
+}
+
+@media (max-width: 780px), (max-resolution: 1.5dppx) and (max-width: 1040px) {
+  :where(.assistant-stepper, .public-view-tabs, .admin-tabs) {
+    grid-template-columns: 1fr !important;
+  }
+
+  :where(.section-heading, .admin-topbar, .button-row, .table-actions) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :where(.button-row, .table-actions) > :where(button, a) {
+    justify-content: center;
+    width: 100%;
+  }
+
+  :where(.data-table, .dashboard-list-table) {
+    min-width: 42rem;
+  }
+}
+
+html[data-text-scale='large'] :where(.assistant-stepper, .public-view-tabs, .admin-tabs),
+html[data-text-scale='xlarge'] :where(.assistant-stepper, .public-view-tabs, .admin-tabs) {
+  grid-template-columns: 1fr !important;
+}
+
+html[data-text-scale='large'] :where(.section-heading, .admin-topbar, .button-row, .table-actions),
+html[data-text-scale='xlarge'] :where(.section-heading, .admin-topbar, .button-row, .table-actions) {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+html[data-text-scale='xlarge'] :where(.container, .public-main, .admin-workspace) {
+  max-width: 100%;
+}
