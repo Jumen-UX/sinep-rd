@@ -14,10 +14,17 @@ test('administrative compatibility layer defines canonical legacy aliases', asyn
   for (const alias of [
     '--surface-default: var(--surface)',
     '--surface-raised: var(--surface)',
+    '--surface-card: var(--surface)',
     '--border-default: var(--border)',
+    '--border-color: var(--border)',
     '--brand-primary: var(--primary)',
     '--brand-secondary: var(--gold)',
+    '--brand-accent: var(--gold)',
+    '--brand-gold: var(--gold)',
+    '--text-primary: var(--foreground)',
     '--text-secondary: var(--text-muted)',
+    '--muted-foreground: var(--text-muted)',
+    '--muted-text: var(--text-muted)',
   ]) {
     assert.match(styles, new RegExp(alias.replace(/[()]/g, '\\$&')))
   }
@@ -34,6 +41,18 @@ test('administrative layout loads compatibility rules after module styles', asyn
 
   assert.ok(modulesIndex >= 0)
   assert.ok(compatibilityIndex > modulesIndex)
+})
+
+test('legacy administrative brand surfaces are overridden semantically', async () => {
+  const styles = await source('src/styles/admin-theme-compatibility.css')
+
+  assert.match(styles, /\.admin-auth-page \.auth-card\s*\{[^}]*var\(--surface\)[^}]*var\(--gold-soft\)/s)
+  assert.match(styles, /\.admin-workspace \.admin-welcome-panel\s*\{[^}]*var\(--surface\)[^}]*var\(--gold-soft\)/s)
+  assert.match(styles, /:is\(\.admin-quick-card, \.admin-stat-strip, \.admin-module-group, \.admin-module-card\)\s*\{[^}]*background:\s*var\(--surface\)/s)
+  assert.match(styles, /\.admin-status-pill\.active, \.admin-system-card div strong\)\s*\{[^}]*background:\s*var\(--success-soft\)[^}]*color:\s*var\(--success\)/s)
+  assert.match(styles, /\.admin-status-pill\.config\s*\{[^}]*background:\s*var\(--warning-soft\)[^}]*color:\s*var\(--warning\)/s)
+  assert.match(styles, /\.success-box\s*\{[^}]*background:\s*var\(--success-soft\)[^}]*border-color:\s*var\(--border-success\)/s)
+  assert.doesNotMatch(styles, /background:\s*#(?:fff|ffffff|fff8ea|fbf8f1)/i)
 })
 
 test('assignment manager surfaces no longer depend on light fallbacks', async () => {
