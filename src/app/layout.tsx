@@ -23,6 +23,7 @@ import './scope-back-controls.css'
 import './brand.css'
 import './admin-brand.css'
 import './public-shell.css'
+import '../styles/dashboard-theme-surfaces.css'
 import '../styles/accessibility-tools.css'
 
 const themeBootstrapScript = `
@@ -142,7 +143,7 @@ export default function RootLayout({
           id="vercel-speed-insights"
           src="/_vercel/speed-insights/script.js"
           strategy="afterInteractive"
-          data-sdkn="@vercel/speed-insights/next"
+          data-sdkn="@vercel/analytics/next"
           data-sdkv="2.0.0"
         />
       </body>
