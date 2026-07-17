@@ -2,6 +2,10 @@
 
 import { type FormEvent, type MouseEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageState } from '@/components/ui/page-state'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { createClient } from '@/lib/supabase/client'
 
 type PersonRow = {
@@ -68,6 +72,12 @@ function visibilityLabel(value: string | null) {
   if (value === 'private') return 'Privada'
   if (value === 'internal') return 'Interna'
   return value ?? 'Sin visibilidad'
+}
+
+function visibilityTone(value: string | null) {
+  if (value === 'public') return 'success' as const
+  if (value === 'private') return 'warning' as const
+  return 'info' as const
 }
 
 function personName(person: PersonRow) {
@@ -146,13 +156,13 @@ export default function PersonListPage() {
     event.preventDefault()
     const normalizedSearch = searchInput.trim()
     setSearch(normalizedSearch)
-    loadPeople(normalizedSearch)
+    void loadPeople(normalizedSearch)
   }
 
   function clearSearch() {
     setSearch('')
     setSearchInput('')
-    loadPeople('')
+    void loadPeople('')
   }
 
   const bishops = people.filter((person) => person.person_type === 'bishop')
@@ -190,86 +200,75 @@ export default function PersonListPage() {
       || (filter === 'deceased' && person.status === 'deceased')
   })
 
-  if (loading) return <div className="empty-state">Cargando personas...</div>
+  if (loading) {
+    return <main className="container"><PageState compact kind="loading" title="Cargando personas" description="Estamos preparando el directorio administrativo." /></main>
+  }
 
   return (
-    <div id="top">
-      <header className="admin-top-header">
-        <div className="admin-top-title">
-          <span className="admin-mini-mark">PERSONAS</span>
-          <strong>Directorio administrativo</strong>
-        </div>
-        <div className="admin-top-actions">
-          <a className="button button-secondary" href="/admin" onClick={(event) => forceNavigation(event, '/admin')}>Volver al panel</a>
-          <a className="button button-secondary" href="/admin/importar" onClick={(event) => forceNavigation(event, '/admin/importar')}>Carga por lotes</a>
-          <a className="button button-secondary" href="/admin/asignaciones" onClick={(event) => forceNavigation(event, '/admin/asignaciones')}>Nombramientos</a>
-          <a className="button button-primary" href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>Agregar ficha</a>
-        </div>
-      </header>
+    <main className="container admin-dashboard" id="top">
+      <PageHeader
+        breadcrumbs={[{ label: 'Administración', href: '/admin' }, { label: 'Personas' }]}
+        eyebrow="Gestión de personas"
+        title="Personas, ministerios y agentes eclesiales"
+        description="Consulta, filtra y administra fichas personales con su alcance, visibilidad, estado y vínculos actuales."
+        metadata={(
+          <>
+            <StatusBadge tone="institutional" dot>{clergy.length} en clero</StatusBadge>
+            <StatusBadge tone="info" dot>{religious.length} religiosos/as</StatusBadge>
+            <StatusBadge tone="neutral" dot>{laypeople.length} laicos/as</StatusBadge>
+            <StatusBadge tone="success" dot>{publicPeople.length} públicas</StatusBadge>
+            <StatusBadge tone="warning" dot>{privatePeople.length} internas o privadas</StatusBadge>
+          </>
+        )}
+        actions={(
+          <>
+            <Button asChild variant="secondary"><a href="/admin/importar" onClick={(event) => forceNavigation(event, '/admin/importar')}>Carga por lotes</a></Button>
+            <Button asChild variant="secondary"><a href="/admin/asignaciones" onClick={(event) => forceNavigation(event, '/admin/asignaciones')}>Nombramientos</a></Button>
+            <Button asChild><a href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>Agregar ficha</a></Button>
+          </>
+        )}
+      />
 
-      <section className="admin-welcome-panel">
-        <div>
-          <p className="eyebrow">Gestión de personas</p>
-          <h1>Personas, ministerios y agentes eclesiales</h1>
-          <p className="lead">Consulta, filtra y administra fichas personales con su alcance, visibilidad, estado y vínculos actuales. Cada ficha puede abrirse para edición o seguimiento.</p>
-          <div className="role-list admin-role-list">
-            <span className="role-pill">{clergy.length} en clero</span>
-            <span className="role-pill">{religious.length} religiosos/as</span>
-            <span className="role-pill">{laypeople.length} laicos/as</span>
-            <span className="role-pill">{publicPeople.length} públicas · {privatePeople.length} internas/privadas</span>
-          </div>
-        </div>
-        <div className="admin-welcome-illustration" aria-hidden="true">◉</div>
-      </section>
-
-      <section className="card dashboard-section">
+      <section className="card dashboard-section" aria-labelledby="person-quick-access-heading">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Accesos rápidos</p>
-            <h2>Registrar, importar o mantener información personal</h2>
+            <h2 id="person-quick-access-heading">Registrar, importar o mantener información personal</h2>
             <p className="meta">Usa asistentes específicos para registros individuales o carga masiva para lotes revisables.</p>
           </div>
-          <button className="button button-secondary" disabled={refreshing} onClick={() => loadPeople(search)} type="button">{refreshing ? 'Actualizando...' : 'Actualizar listado'}</button>
+          <Button disabled={refreshing} onClick={() => void loadPeople(search)} type="button" variant="secondary">{refreshing ? 'Actualizando...' : 'Actualizar listado'}</Button>
         </div>
         <div className="admin-quick-grid">
           {quickAccesses.map((item) => (
             <a className="admin-quick-card" href={item.href} key={item.href} onClick={(event) => forceNavigation(event, item.href)}>
-              <span className="admin-card-icon">{item.icon}</span>
-              <span>
-                <strong>{item.title}</strong>
-                <small>{item.description}</small>
-              </span>
+              <span className="admin-card-icon" aria-hidden="true">{item.icon}</span>
+              <span><strong>{item.title}</strong><small>{item.description}</small></span>
               <span className="admin-card-arrow" aria-hidden="true">→</span>
             </a>
           ))}
         </div>
       </section>
 
-      {error && (
-        <div className="error-box">
-          <strong>No se pudo cargar el listado.</strong>
-          <p>{error}</p>
-        </div>
-      )}
+      {error ? <PageState kind="error" title="No se pudo cargar el listado" description={error} /> : null}
 
       <section className="admin-stat-strip" aria-label="Filtros de personas">
         {filterCards.map((item) => (
-          <button className={`metric-button ${filter === item.key ? 'active-filter' : ''}`} key={item.key} onClick={() => setFilter(item.key)} type="button">
-            <span>{item.icon}</span>
+          <button aria-pressed={filter === item.key} className={`metric-button ${filter === item.key ? 'active-filter' : ''}`} key={item.key} onClick={() => setFilter(item.key)} type="button">
+            <span aria-hidden="true">{item.icon}</span>
             <strong>{item.count}</strong>
             <small>{item.label}</small>
           </button>
         ))}
       </section>
 
-      <section className="card dashboard-section">
+      <section className="card dashboard-section" aria-labelledby="person-directory-heading">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Búsqueda y filtros</p>
-            <h2>Listado administrativo</h2>
+            <h2 id="person-directory-heading">Listado administrativo</h2>
             <p className="meta">La búsqueda se ejecuta en servidor mediante una RPC protegida por permisos administrativos.</p>
           </div>
-          <span className="role-pill">{visiblePeople.length} resultados</span>
+          <StatusBadge tone="info">{visiblePeople.length} resultado{visiblePeople.length === 1 ? '' : 's'}</StatusBadge>
         </div>
 
         <form className="auth-form access-form" onSubmit={handleSearch}>
@@ -277,23 +276,20 @@ export default function PersonListPage() {
             Buscar por nombre, tipo o entidad
             <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Ej. Juan, sacerdote, Catedral, Santo Domingo" />
           </label>
-          <button className="button button-primary" disabled={refreshing} type="submit">Buscar</button>
-          {(search || searchInput) && <button className="button button-secondary" onClick={clearSearch} type="button">Limpiar</button>}
+          <Button disabled={refreshing} type="submit">Buscar</Button>
+          {(search || searchInput) ? <Button onClick={clearSearch} type="button" variant="secondary">Limpiar</Button> : null}
         </form>
 
-        <div className="role-list admin-role-list">
+        <div className="role-list admin-role-list" aria-label="Filtros resumidos">
           {filterCards.map((item) => (
-            <button className={`role-pill ${filter === item.key ? 'active-filter' : ''}`} key={`pill-${item.key}`} onClick={() => setFilter(item.key)} type="button">
+            <button aria-pressed={filter === item.key} className={`role-pill ${filter === item.key ? 'active-filter' : ''}`} key={`pill-${item.key}`} onClick={() => setFilter(item.key)} type="button">
               {item.label} · {item.count}
             </button>
           ))}
         </div>
 
         {visiblePeople.length === 0 ? (
-          <div className="empty-state">
-            <h3>No hay personas visibles</h3>
-            <p>No se encontraron registros para el filtro actual o tu alcance administrativo.</p>
-          </div>
+          <PageState kind="empty" title="No hay personas visibles" description="No se encontraron registros para el filtro actual, la búsqueda o tu alcance administrativo." />
         ) : (
           <div className="admin-module-grid">
             {visiblePeople.map((person) => {
@@ -303,8 +299,8 @@ export default function PersonListPage() {
               return (
                 <article className="admin-module-card is-active" key={person.person_id}>
                   <div className="admin-module-card-head">
-                    <span className="admin-module-icon">{person.person_type === 'bishop' ? '◍' : person.person_type === 'priest' ? '●' : person.person_type === 'deacon' ? '◌' : person.person_type === 'religious' ? '✦' : '◇'}</span>
-                    <span className="admin-status-pill active">{visibilityLabel(person.visibility)}</span>
+                    <span className="admin-module-icon" aria-hidden="true">{person.person_type === 'bishop' ? '◍' : person.person_type === 'priest' ? '●' : person.person_type === 'deacon' ? '◌' : person.person_type === 'religious' ? '✦' : '◇'}</span>
+                    <StatusBadge tone={visibilityTone(person.visibility)}>{visibilityLabel(person.visibility)}</StatusBadge>
                   </div>
                   <p className="entity-type">{personTypeLabel(person.person_type)}</p>
                   <h3>{personName(person)}</h3>
@@ -315,10 +311,10 @@ export default function PersonListPage() {
                     <li>ID: {person.person_id.slice(0, 8)}</li>
                   </ul>
                   <div className="admin-actions">
-                    <a className="button button-secondary" href={detailHref} onClick={(event) => forceNavigation(event, detailHref)}>Abrir ficha</a>
-                    {person.status !== 'deceased' && (
-                      <a className="button button-primary" href={deceasedHref} onClick={(event) => forceNavigation(event, deceasedHref)}>Marcar fallecimiento</a>
-                    )}
+                    <Button asChild variant="secondary"><a href={detailHref} onClick={(event) => forceNavigation(event, detailHref)}>Abrir ficha</a></Button>
+                    {person.status !== 'deceased' ? (
+                      <Button asChild><a href={deceasedHref} onClick={(event) => forceNavigation(event, deceasedHref)}>Marcar fallecimiento</a></Button>
+                    ) : null}
                   </div>
                 </article>
               )
@@ -326,6 +322,6 @@ export default function PersonListPage() {
           </div>
         )}
       </section>
-    </div>
+    </main>
   )
 }
