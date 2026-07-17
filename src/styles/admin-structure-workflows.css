@@ -15,7 +15,8 @@
 .level-office-toolbar,
 .level-office-grid,
 .level-office-list,
-.structure-selector-grid {
+.structure-selector-grid,
+.structure-selector-field {
   display: grid;
   min-width: 0;
 }
@@ -26,13 +27,15 @@
 }
 
 .level-office-toolbar label,
-.structure-selector label {
+.structure-selector-field label {
   color: var(--muted);
-  display: grid;
   font-size: 14px;
   font-weight: 800;
+}
+
+.level-office-toolbar label,
+.structure-selector-field {
   gap: 7px;
-  min-width: 0;
 }
 
 .level-office-grid {
