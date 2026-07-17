@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import PersonWizardContextRail from '@/components/admin/PersonWizardContextRail'
 import '@/styles/person-wizard-ui.css'
+import '@/styles/clergy-wizard-ui.css'
 
 export default function BishopWizardLayout({ children }: { children: ReactNode }) {
   return (
