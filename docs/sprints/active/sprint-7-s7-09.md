@@ -107,7 +107,7 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - `tests/legacy-theme-surface-audit.test.mjs` se alineó con el nuevo alcance estructural del guard final.
 - CI confirmó el bloque en verde.
 
-## Noveno bloque implementado
+## Noveno bloque implementado y validado
 
 - `LegacyAdminAccessibilityEnhancements` dejó de recorrer `.assistant-stepper`, `.step-card` y botones `.mode-card`; estas semánticas pertenecen ahora al asistente de eventos.
 - Las siete raíces canónicas de eventos quedan excluidas de la normalización genérica de mensajes y regiones ocupadas.
@@ -115,7 +115,19 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - Se conserva la asociación progresiva entre errores y controles inválidos para formularios todavía no migrados.
 - Se conserva la gestión de foco, Escape y trampa de tabulación del diálogo móvil administrativo.
 - `tests/legacy-admin-accessibility-enhancements.test.mjs` protege la exclusión de eventos y las responsabilidades que todavía deben permanecer en el puente.
+- CI confirmó el bloque en verde.
+
+## Décimo bloque implementado
+
+- Se creó `src/styles/admin-structure-workflows.css` como hoja canónica para configuración de cargos por nivel y selección jerárquica.
+- `LevelOfficeConfigurationPage.tsx` dejó de declarar `pageStyles`; carga, errores, confirmación, selección de nivel y guardado declaran semántica propia.
+- Los cargos disponibles se agrupan mediante `fieldset` y `legend`, y el resumen seleccionado se anuncia como región viva moderada.
+- `StructureHierarchySelector.tsx` dejó de declarar `componentStyles` y usa `useId` para evitar colisiones cuando existen varias instancias.
+- Diócesis, catálogo y unidad padre tienen asociaciones `label`/`id`; errores y ruta seleccionada declaran prioridades de anuncio propias.
+- `admin-embedded-theme-cleanup.css` y su import se eliminaron por completo; ya no existen reglas administrativas de superficie con `!important` en esa capa.
+- `tests/admin-structure-consolidation.test.mjs` protege estilos, responsive, semántica y ausencia de CSS embebido.
+- Los contratos de auditoría se actualizaron para exigir la desaparición física de la capa heredada.
 
 ## Criterio del siguiente bloque
 
-Validar el noveno bloque con CI. Después se consolidarán la configuración estructural y el selector jerárquico para retirar las últimas reglas de `admin-embedded-theme-cleanup.css` antes de abordar los asistentes heredados de clero y personas.
+Validar el décimo bloque con CI. Después se consolidarán los asistentes heredados de clero y personas, se reducirá nuevamente `LegacyAdminAccessibilityEnhancements` y se evaluará si ya puede retirarse por completo antes de cerrar S7-09.
