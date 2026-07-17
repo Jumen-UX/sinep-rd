@@ -20,8 +20,15 @@ export type DashboardRoleRow = {
 export type DashboardSummary = {
   active_entities: number
   active_dioceses: number
+  active_parishes: number
+  active_people: number
+  active_priests: number
+  active_deacons: number
+  bishops_and_emeriti: number
   active_pastoral_areas: number
+  active_organization_units: number
   pending_change_requests: number
+  pending_documents: number
 }
 
 export type DashboardActivity = {
@@ -44,27 +51,53 @@ export type AdminDashboardData = {
   activities: DashboardActivity[]
 }
 
+export type AdminDashboardLoadOptions = {
+  includeGlobalMetrics: boolean
+  includeActivity: boolean
+}
+
 type AuditRow = Omit<DashboardActivity, 'actor_name'>
 
 function throwIfError(error: { message: string } | null, fallback: string) {
   if (error) throw new Error(error.message || fallback)
 }
 
-export async function loadAdminDashboardData(supabase: SupabaseClient): Promise<AdminDashboardData> {
+export async function loadAdminDashboardData(
+  supabase: SupabaseClient,
+  options: AdminDashboardLoadOptions,
+): Promise<AdminDashboardData> {
   const { data: userData, error: userError } = await supabase.auth.getUser()
   if (userError || !userData.user) throw new Error('AUTH_REQUIRED')
 
   const userId = userData.user.id
-  const [profileResponse, roleResponse, summaryResponse, assignmentResponse, peopleResponse, auditResponse] = await Promise.all([
+  const [profileResponse, roleResponse, auditResponse] = await Promise.all([
     supabase.from('profiles').select('id,full_name,email').eq('id', userId).maybeSingle(),
     supabase.from('user_role_assignments').select('scope_type,status,roles(key,name)').eq('user_id', userId).eq('status', 'active'),
-    supabase.from('admin_dashboard_summary').select('active_entities,active_dioceses,active_pastoral_areas,pending_change_requests').maybeSingle(),
-    supabase.from('position_assignments').select('id', { count: 'exact', head: true }).eq('is_current', true).eq('assignment_status', 'active'),
-    supabase.from('persons').select('id', { count: 'exact', head: true }),
-    supabase.from('admin_audit_log').select('id,actor_user_id,action,target_table,target_id,metadata,created_at').order('created_at', { ascending: false }).limit(5),
+    options.includeActivity
+      ? supabase.from('admin_audit_log').select('id,actor_user_id,action,target_table,target_id,metadata,created_at').order('created_at', { ascending: false }).limit(5)
+      : Promise.resolve({ data: [], error: null }),
   ])
 
   throwIfError(roleResponse.error, 'No se pudieron cargar los roles activos.')
+
+  let summary: DashboardSummary | null = null
+  let activeAssignments: number | null = null
+  let peopleCount: number | null = null
+
+  if (options.includeGlobalMetrics) {
+    const [summaryResponse, assignmentResponse, peopleResponse] = await Promise.all([
+      supabase
+        .from('admin_dashboard_summary')
+        .select('active_entities,active_dioceses,active_parishes,active_people,active_priests,active_deacons,bishops_and_emeriti,active_pastoral_areas,active_organization_units,pending_change_requests,pending_documents')
+        .maybeSingle(),
+      supabase.from('position_assignments').select('id', { count: 'exact', head: true }).eq('is_current', true).eq('assignment_status', 'active'),
+      supabase.from('persons').select('id', { count: 'exact', head: true }),
+    ])
+
+    summary = summaryResponse.error ? null : (summaryResponse.data as DashboardSummary | null)
+    activeAssignments = assignmentResponse.error ? null : assignmentResponse.count ?? 0
+    peopleCount = peopleResponse.error ? null : peopleResponse.count ?? 0
+  }
 
   const auditRows = (auditResponse.data ?? []) as AuditRow[]
   const actorIds = Array.from(new Set(auditRows.map((row) => row.actor_user_id).filter(Boolean)))
@@ -87,9 +120,9 @@ export async function loadAdminDashboardData(supabase: SupabaseClient): Promise<
       email: userData.user.email ?? null,
     },
     roles: (roleResponse.data ?? []) as unknown as DashboardRoleRow[],
-    summary: summaryResponse.error ? null : (summaryResponse.data as DashboardSummary | null),
-    activeAssignments: assignmentResponse.error ? null : assignmentResponse.count ?? 0,
-    peopleCount: peopleResponse.error ? null : peopleResponse.count ?? 0,
+    summary,
+    activeAssignments,
+    peopleCount,
     activities: auditRows.map((row) => ({
       ...row,
       actor_name: actorProfiles.get(row.actor_user_id) ?? 'Usuario administrativo',
