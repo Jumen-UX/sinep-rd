@@ -96,7 +96,7 @@ test('security-definer implementations are not anonymous API entry points', asyn
 
   assert.match(
     migration,
-    /revoke execute on function app_private\.get_entity_descendants\(uuid, integer\)\s+from public, anon/i,
+    /revoke (?:all|execute) on function app_private\.get_entity_descendants\(uuid, integer\)\s+from public, anon/i,
   )
   assert.match(
     migration,
@@ -104,7 +104,7 @@ test('security-definer implementations are not anonymous API entry points', asyn
   )
   assert.match(
     migration,
-    /revoke all on function public\.get_entity_descendants\(uuid, integer\)\s+from public, anon/i,
+    /revoke (?:all|execute) on function public\.get_entity_descendants\(uuid, integer\)\s+from public, anon/i,
   )
   assert.match(
     migration,
