@@ -12,13 +12,14 @@ export type AdminKpiValue = {
   message: string
 }
 
-export type AdminKpiGlobalSource = {
+export type AdminKpiSource = {
   summary: DashboardSummary | null
   peopleCount: number | null
   activeAssignments: number | null
+  contextualKpis: Record<string, number> | null
 }
 
-const globalValueReaders: Record<string, (source: AdminKpiGlobalSource) => number | null> = {
+const globalValueReaders: Record<string, (source: AdminKpiSource) => number | null> = {
   'territorial.active_entities': (source) => source.summary?.active_entities ?? null,
   'territorial.active_parishes': (source) => source.summary?.active_parishes ?? null,
   'territorial.active_people': (source) => source.peopleCount,
@@ -30,7 +31,7 @@ const globalValueReaders: Record<string, (source: AdminKpiGlobalSource) => numbe
 
 export function resolveAdminKpiValues(
   kpis: readonly ResolvedAdminKpi[],
-  source: AdminKpiGlobalSource,
+  source: AdminKpiSource,
   isUnrestricted: boolean,
 ): AdminKpiValue[] {
   return kpis.map((kpi) => {
@@ -44,27 +45,30 @@ export function resolveAdminKpiValues(
       }
     }
 
-    if (!isUnrestricted) {
+    const value = isUnrestricted
+      ? globalValueReaders[kpi.id]?.(source) ?? null
+      : source.contextualKpis?.[kpi.id] ?? null
+
+    if (value === null) {
       return {
         id: kpi.id,
         value: null,
         valueKind: kpi.valueKind,
         status: 'unavailable',
-        message: 'La agregación segura para este alcance todavía no está disponible.',
+        message: isUnrestricted
+          ? 'La fuente de este indicador todavía no está disponible.'
+          : 'La agregación segura para este indicador todavía no está disponible en el alcance activo.',
       }
     }
-
-    const reader = globalValueReaders[kpi.id]
-    const value = reader?.(source) ?? null
 
     return {
       id: kpi.id,
       value,
       valueKind: kpi.valueKind,
-      status: value === null ? 'unavailable' : 'available',
-      message: value === null
-        ? 'La fuente de este indicador todavía no está disponible.'
-        : 'Dato calculado para el alcance global o nacional activo.',
+      status: 'available',
+      message: isUnrestricted
+        ? 'Dato calculado para el alcance global o nacional activo.'
+        : 'Dato calculado dentro del alcance territorial activo y sus descendientes autorizados.',
     }
   })
 }
