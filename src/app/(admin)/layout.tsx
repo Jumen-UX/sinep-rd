@@ -7,6 +7,7 @@ import '@/styles/admin-dashboard-brand.css'
 import '@/styles/person-wizard-unified.css'
 import '@/styles/admin-modules.css'
 import '@/styles/admin-event-workflows.css'
+import '@/styles/admin-event-action-plan.css'
 import '@/styles/admin-theme-compatibility.css'
 import '@/styles/admin-embedded-theme-cleanup.css'
 
