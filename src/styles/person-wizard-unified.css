@@ -92,8 +92,8 @@
 .auto-section-wizard__actions,
 .admin-priest-wizard .admin-wizard-actions {
   align-items: center;
-  background: color-mix(in srgb, var(--surface-raised, #fff) 96%, transparent);
-  border: 1px solid var(--border-subtle, var(--border));
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   bottom: 0;
   box-shadow: var(--shadow-sm);
@@ -127,7 +127,7 @@
 }
 
 .admin-priest-wizard .admin-wizard-actions > span {
-  color: var(--text-muted, var(--muted));
+  color: var(--text-muted);
   font-size: 0.78rem;
   font-weight: 800;
   margin-inline: auto;
