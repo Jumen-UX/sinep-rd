@@ -2,6 +2,15 @@
 
 import { useEffect } from 'react'
 
+const focusableSelector = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',')
+
 function enhanceLegacyAdmin(root: ParentNode) {
   root.querySelectorAll<HTMLElement>('.assistant-stepper').forEach((stepper) => {
     stepper.setAttribute('role', 'navigation')
@@ -34,18 +43,88 @@ function enhanceLegacyAdmin(root: ParentNode) {
 
 export function LegacyAdminAccessibilityEnhancements() {
   useEffect(() => {
-    const workspace = document.querySelector('.admin-workspace') ?? document.body
-    enhanceLegacyAdmin(workspace)
+    const root = document.querySelector('.admin-area') ?? document.body
+    let returnFocus: HTMLElement | null = null
 
-    const observer = new MutationObserver(() => enhanceLegacyAdmin(workspace))
-    observer.observe(workspace, {
+    function openMobileDialog() {
+      const menu = document.querySelector<HTMLElement>('#admin-mobile-menu')
+      const dialog = menu?.querySelector<HTMLElement>('[role="dialog"]')
+      if (!menu || menu.hidden || !dialog || dialog.dataset.a11yOpen === 'true') return
+
+      const trigger = document.querySelector<HTMLElement>('[aria-controls="admin-mobile-menu"]')
+      returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : trigger
+      dialog.dataset.a11yOpen = 'true'
+      dialog.setAttribute('aria-modal', 'true')
+      dialog.setAttribute('tabindex', '-1')
+
+      queueMicrotask(() => {
+        const closeButton = dialog.querySelector<HTMLElement>('button[aria-label*="Cerrar"]')
+        ;(closeButton ?? dialog).focus()
+      })
+    }
+
+    function restoreMobileDialogFocus() {
+      const menu = document.querySelector<HTMLElement>('#admin-mobile-menu')
+      const dialog = menu?.querySelector<HTMLElement>('[role="dialog"]')
+      if (!dialog || menu?.hidden !== true || dialog.dataset.a11yOpen !== 'true') return
+
+      delete dialog.dataset.a11yOpen
+      returnFocus?.focus()
+      returnFocus = null
+    }
+
+    function synchronize() {
+      enhanceLegacyAdmin(root)
+      openMobileDialog()
+      restoreMobileDialogFocus()
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      const menu = document.querySelector<HTMLElement>('#admin-mobile-menu')
+      const dialog = menu?.querySelector<HTMLElement>('[role="dialog"]')
+      if (!menu || menu.hidden || !dialog) return
+
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        dialog.querySelector<HTMLButtonElement>('button[aria-label*="Cerrar"]')?.click()
+        return
+      }
+
+      if (event.key !== 'Tab') return
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector))
+        .filter((element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true')
+      if (focusable.length === 0) {
+        event.preventDefault()
+        dialog.focus()
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    synchronize()
+    document.addEventListener('keydown', handleKeyDown)
+
+    const observer = new MutationObserver(synchronize)
+    observer.observe(root, {
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ['class', 'hidden', 'aria-expanded'],
       childList: true,
       subtree: true,
     })
 
-    return () => observer.disconnect()
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      observer.disconnect()
+    }
   }, [])
 
   return null
