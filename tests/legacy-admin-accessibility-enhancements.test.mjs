@@ -25,6 +25,26 @@ test('legacy admin feedback announces errors and non-blocking status changes', (
   assert.match(enhancement, /\[data-loading="true"\], \[aria-busy="true"\]/)
 })
 
+test('legacy form errors are associated with the first invalid control and preserve existing help', () => {
+  assert.match(enhancement, /associateLegacyFormErrors/)
+  assert.match(enhancement, /field\.checkValidity\(\)/)
+  assert.match(enhancement, /aria-invalid', 'true'/)
+  assert.match(enhancement, /dataset\.a11yErrorId/)
+  assert.match(enhancement, /appendDescriptionId/)
+  assert.match(enhancement, /aria-describedby/)
+  assert.match(enhancement, /queueMicrotask\(\(\) => invalidField\.focus\(\)\)/)
+})
+
+test('corrected legacy fields clear only the linked error state', () => {
+  assert.match(enhancement, /handleFieldCorrection/)
+  assert.match(enhancement, /removeDescriptionId/)
+  assert.match(enhancement, /removeAttribute\('aria-invalid'\)/)
+  assert.match(enhancement, /root\.addEventListener\('input', handleFieldCorrection\)/)
+  assert.match(enhancement, /root\.addEventListener\('change', handleFieldCorrection\)/)
+  assert.match(enhancement, /root\.removeEventListener\('input', handleFieldCorrection\)/)
+  assert.match(enhancement, /root\.removeEventListener\('change', handleFieldCorrection\)/)
+})
+
 test('legacy mutations remain synchronized with feedback and dialog state', () => {
   assert.match(enhancement, /new MutationObserver/)
   assert.match(enhancement, /attributeFilter: \['class', 'hidden', 'aria-expanded', 'aria-busy', 'data-loading'\]/)
