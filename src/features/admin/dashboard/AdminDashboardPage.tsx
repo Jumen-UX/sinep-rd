@@ -8,44 +8,16 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { PageHeader } from '@/components/ui/page-header'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { createClient } from '@/lib/supabase/client'
-
-type Profile = {
-  id?: string
-  full_name: string | null
-  email: string | null
-}
-
-type RoleInfo = {
-  key: string
-  name: string
-}
-
-type RoleRow = {
-  scope_type: string | null
-  status: string
-  roles: RoleInfo[] | RoleInfo | null
-}
-
-type DashboardSummary = {
-  active_entities: number
-  active_dioceses: number
-  active_pastoral_areas: number
-  pending_change_requests: number
-}
-
-type AuditRow = {
-  id: string
-  actor_user_id: string
-  action: string
-  target_table: string | null
-  target_id: string | null
-  metadata: Record<string, unknown> | null
-  created_at: string
-}
-
-type ActivityRow = AuditRow & {
-  actor_name: string
-}
+import { useAdminNavigation } from '../navigation/AdminNavigationProvider'
+import {
+  loadAdminDashboardData,
+  signOutAdminDashboard,
+  type DashboardActivity,
+  type DashboardProfile,
+  type DashboardRoleInfo,
+  type DashboardRoleRow,
+  type DashboardSummary,
+} from './admin-dashboard-service'
 
 type MetricCardProps = {
   href: string
@@ -56,51 +28,30 @@ type MetricCardProps = {
   tone: 'wine' | 'gold' | 'green' | 'alert'
 }
 
-const frequentActions = [
-  {
-    href: '/admin/nuevo',
-    icon: 'N',
-    title: 'Nueva persona',
-    description: 'Sacerdote, diácono, religioso o laico',
-    tone: 'wine',
-  },
-  {
-    href: '/admin/nuevo/jurisdiccion',
-    icon: 'E',
-    title: 'Nueva entidad',
-    description: 'Diócesis, parroquia, capilla o comunidad',
-    tone: 'gold',
-  },
-  {
-    href: '/admin/asignaciones',
-    icon: 'A',
-    title: 'Asignar cargo',
-    description: 'Nombramiento, vigencia y sucesión',
-    tone: 'green',
-  },
-  {
-    href: '/admin/estructura',
-    icon: 'C',
-    title: 'Crear estructura',
-    description: 'Niveles y dependencias por diócesis',
-    tone: 'alert',
-  },
+type DashboardAction = {
+  href: string
+  icon: string
+  title: string
+  description: string
+  tone: MetricCardProps['tone']
+}
+
+const actionCatalog: readonly DashboardAction[] = [
+  { href: '/admin/nuevo', icon: 'N', title: 'Nueva persona', description: 'Sacerdote, diácono, religioso o laico', tone: 'wine' },
+  { href: '/admin/jurisdicciones', icon: 'E', title: 'Gestionar entidades', description: 'Diócesis, parroquias y otras entidades', tone: 'gold' },
+  { href: '/admin/asignaciones', icon: 'A', title: 'Gestionar cargos', description: 'Nombramientos, vigencia y sucesión', tone: 'green' },
+  { href: '/admin/estructura', icon: 'C', title: 'Configurar estructura', description: 'Niveles y dependencias territoriales', tone: 'alert' },
 ] as const
 
-function getRoleInfo(role: RoleRow): RoleInfo | null {
+function getRoleInfo(role: DashboardRoleRow): DashboardRoleInfo | null {
   if (!role.roles) return null
   if (Array.isArray(role.roles)) return role.roles[0] ?? null
   return role.roles
 }
 
-function getInitials(profile: Profile | null) {
+function getInitials(profile: DashboardProfile | null) {
   const value = profile?.full_name || profile?.email || 'Usuario'
-  return value
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('') || 'AD'
+  return value.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'AD'
 }
 
 function forceNavigation(event: MouseEvent<HTMLAnchorElement>, href: string) {
@@ -115,24 +66,12 @@ function formatNumber(value: number | null) {
 }
 
 function formatAction(value: string) {
-  return value
-    .replace(/[._-]+/g, ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  return value.replace(/[._-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
 function formatDate(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return 'Fecha no disponible'
-
-  const today = new Date()
-  const sameDay = date.toDateString() === today.toDateString()
-  const yesterday = new Date(today)
-  yesterday.setDate(today.getDate() - 1)
-  const wasYesterday = date.toDateString() === yesterday.toDateString()
-  const time = new Intl.DateTimeFormat('es-DO', { hour: '2-digit', minute: '2-digit' }).format(date)
-
-  if (sameDay) return `Hoy, ${time}`
-  if (wasYesterday) return `Ayer, ${time}`
   return new Intl.DateTimeFormat('es-DO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date)
 }
 
@@ -145,13 +84,11 @@ function getMetadataText(metadata: Record<string, unknown> | null, keys: string[
   return null
 }
 
-function activityTarget(activity: ActivityRow) {
-  return getMetadataText(activity.metadata, ['display_name', 'name', 'title', 'label'])
-    ?? activity.target_table
-    ?? 'Registro administrativo'
+function activityTarget(activity: DashboardActivity) {
+  return getMetadataText(activity.metadata, ['display_name', 'name', 'title', 'label']) ?? activity.target_table ?? 'Registro administrativo'
 }
 
-function activityStatus(activity: ActivityRow) {
+function activityStatus(activity: DashboardActivity) {
   return getMetadataText(activity.metadata, ['status', 'state']) ?? 'Registrado'
 }
 
@@ -169,149 +106,96 @@ function MetricCard({ href, icon, label, value, note, tone }: MetricCardProps) {
 export default function AdminDashboardPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const navigation = useAdminNavigation()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [roles, setRoles] = useState<RoleRow[]>([])
+  const [profile, setProfile] = useState<DashboardProfile | null>(null)
+  const [roles, setRoles] = useState<DashboardRoleRow[]>([])
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [peopleCount, setPeopleCount] = useState<number | null>(null)
   const [activeAssignments, setActiveAssignments] = useState<number | null>(null)
-  const [activities, setActivities] = useState<ActivityRow[]>([])
+  const [activities, setActivities] = useState<DashboardActivity[]>([])
   const [search, setSearch] = useState('')
+
+  const destinations = useMemo(() => navigation.sections.flatMap((section) => section.items), [navigation.sections])
+  const destinationByHref = useMemo(() => new Map(destinations.map((item) => [item.href, item])), [destinations])
+  const canVisit = (href: string) => destinationByHref.has(href)
+  const canOperate = (href: string) => destinationByHref.get(href)?.availability === 'available'
+  const frequentActions = actionCatalog.filter((action) => canOperate(action.href))
 
   useEffect(() => {
     let cancelled = false
 
     async function loadDashboard() {
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      if (userError || !userData.user) {
-        router.replace('/admin/login')
-        return
-      }
-
-      const [profileResponse, roleResponse] = await Promise.all([
-        supabase.from('profiles').select('id,full_name,email').eq('id', userData.user.id).maybeSingle(),
-        supabase.from('user_role_assignments').select('scope_type,status,roles(key,name)').eq('user_id', userData.user.id).eq('status', 'active'),
-      ])
-
-      if (roleResponse.error) {
-        if (!cancelled) {
-          setError(roleResponse.error.message)
-          setLoading(false)
+      try {
+        const data = await loadAdminDashboardData(supabase)
+        if (cancelled) return
+        setProfile(data.profile)
+        setRoles(data.roles)
+        setSummary(data.summary)
+        setPeopleCount(data.peopleCount)
+        setActiveAssignments(data.activeAssignments)
+        setActivities(data.activities)
+      } catch (loadError) {
+        if (cancelled) return
+        if (loadError instanceof Error && loadError.message === 'AUTH_REQUIRED') {
+          router.replace('/admin/login')
+          return
         }
-        return
+        setError(loadError instanceof Error ? loadError.message : 'No pudimos cargar el portal.')
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-
-      const [summaryResponse, assignmentResponse, peopleResponse, auditResponse] = await Promise.all([
-        supabase.from('admin_dashboard_summary').select('active_entities,active_dioceses,active_pastoral_areas,pending_change_requests').maybeSingle(),
-        supabase.from('position_assignments').select('id', { count: 'exact', head: true }).eq('is_current', true).eq('assignment_status', 'active'),
-        supabase.from('persons').select('id', { count: 'exact', head: true }),
-        supabase.from('admin_audit_log').select('id,actor_user_id,action,target_table,target_id,metadata,created_at').order('created_at', { ascending: false }).limit(5),
-      ])
-
-      const auditRows = (auditResponse.data ?? []) as AuditRow[]
-      const actorIds = Array.from(new Set(auditRows.map((row) => row.actor_user_id).filter(Boolean)))
-      const actorProfiles = new Map<string, string>()
-
-      if (actorIds.length > 0) {
-        const { data: actors } = await supabase.from('profiles').select('id,full_name,email').in('id', actorIds)
-        for (const actor of actors ?? []) {
-          const typedActor = actor as Profile & { id: string }
-          actorProfiles.set(typedActor.id, typedActor.full_name ?? typedActor.email ?? 'Usuario administrativo')
-        }
-      }
-
-      if (cancelled) return
-
-      setProfile((profileResponse.data as Profile | null) ?? {
-        id: userData.user.id,
-        full_name: userData.user.email ?? null,
-        email: userData.user.email ?? null,
-      })
-      setRoles((roleResponse.data ?? []) as unknown as RoleRow[])
-      setSummary((summaryResponse.data as DashboardSummary | null) ?? null)
-      setActiveAssignments(assignmentResponse.error ? null : assignmentResponse.count ?? 0)
-      setPeopleCount(peopleResponse.error ? null : peopleResponse.count ?? 0)
-      setActivities(auditRows.map((row) => ({
-        ...row,
-        actor_name: actorProfiles.get(row.actor_user_id) ?? 'Usuario administrativo',
-      })))
-      setLoading(false)
     }
 
-    loadDashboard()
-
-    return () => {
-      cancelled = true
-    }
+    void loadDashboard()
+    return () => { cancelled = true }
   }, [router, supabase])
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const query = search.trim()
-    if (!query) return
+    if (!query || !canVisit('/admin/personas')) return
     window.location.assign(`/admin/personas?search=${encodeURIComponent(query)}`)
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut()
-    window.location.assign('/admin/login')
+    try {
+      await signOutAdminDashboard(supabase)
+    } finally {
+      window.location.assign('/admin/login')
+    }
   }
 
-  if (loading) {
-    return (
-      <div data-ui="page-shell">
-        <EmptyState compact title="Cargando portal administrativo" description="Estamos preparando tus indicadores, permisos y actividad reciente." />
-      </div>
-    )
+  if (loading || navigation.loading) {
+    return <div data-ui="page-shell"><EmptyState compact title="Cargando portal administrativo" description="Estamos preparando tus indicadores, permisos y actividad reciente." /></div>
   }
 
-  if (error) {
-    return (
-      <div data-ui="page-shell">
-        <EmptyState compact title="No pudimos cargar el portal" description={error} />
-      </div>
-    )
+  if (error || navigation.error) {
+    return <div data-ui="page-shell"><EmptyState compact title="No pudimos cargar el portal" description={error ?? navigation.error ?? 'Error desconocido'} /></div>
   }
 
   if (roles.length === 0) {
-    return (
-      <div data-ui="page-shell">
-        <EmptyState
-          title="Usuario sin rol activo"
-          description="Tu cuenta existe, pero todavía no tiene un rol administrativo activo. Solicita la asignación correspondiente antes de continuar."
-          action={<Button variant="secondary" onClick={handleSignOut}>Cerrar sesión</Button>}
-        />
-      </div>
-    )
+    return <div data-ui="page-shell"><EmptyState title="Usuario sin rol activo" description="Tu cuenta existe, pero todavía no tiene un rol administrativo activo." action={<Button variant="secondary" onClick={handleSignOut}>Cerrar sesión</Button>} /></div>
   }
 
   const pendingReviews = summary?.pending_change_requests ?? 0
-  const reviewMessage = pendingReviews > 0
-    ? `${formatNumber(pendingReviews)} registros requieren revisión antes de publicarse o aplicarse.`
-    : 'No hay registros pendientes de revisión en este momento.'
+  const activeScopeLabel = navigation.context?.activeScope.label ?? 'Sin alcance activo'
+  const primaryRole = getRoleInfo(roles[0])?.name ?? 'Usuario administrativo'
 
   return (
     <div className="admin-dashboard" id="top">
       <header className="admin-dashboard-topbar">
-        <div className="admin-dashboard-breadcrumb">Administración <span>/</span> Resumen</div>
-        <form className="admin-dashboard-search" onSubmit={handleSearch}>
-          <label htmlFor="admin-dashboard-search-input">Buscar en el portal</label>
-          <input
-            id="admin-dashboard-search-input"
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar personas, entidades o documentos"
-            type="search"
-            value={search}
-          />
-          <button type="submit">Buscar</button>
-        </form>
+        {canVisit('/admin/personas') ? (
+          <form className="admin-dashboard-search" onSubmit={handleSearch}>
+            <label htmlFor="admin-dashboard-search-input">Buscar personas</label>
+            <input id="admin-dashboard-search-input" onChange={(event) => setSearch(event.target.value)} placeholder="Buscar personas por nombre" type="search" value={search} />
+            <button type="submit">Buscar</button>
+          </form>
+        ) : <span />}
         <div className="admin-dashboard-user">
           <span>{getInitials(profile)}</span>
-          <div>
-            <strong>{profile?.full_name ?? profile?.email}</strong>
-            <small>{getRoleInfo(roles[0])?.name ?? 'Administrador'}</small>
-          </div>
+          <div><strong>{profile?.full_name ?? profile?.email}</strong><small>{primaryRole}</small></div>
           <button onClick={handleSignOut} type="button">Salir</button>
         </div>
       </header>
@@ -321,122 +205,56 @@ export default function AdminDashboardPage() {
         breadcrumbs={[{ label: 'Administración', href: '/admin' }, { label: 'Resumen' }]}
         eyebrow="Panel de control"
         title="Resumen administrativo"
-        description="Supervisa la información eclesial, los flujos de revisión y la actividad reciente."
-        metadata={(
+        description="Supervisa la información eclesial, los flujos de revisión y la actividad disponible para tu alcance."
+        metadata={<><StatusBadge tone="institutional" dot>{primaryRole}</StatusBadge><StatusBadge tone="info" dot>{activeScopeLabel}</StatusBadge></>}
+        actions={(canOperate('/admin/importar') || canOperate('/admin/nuevo')) ? (
           <>
-            <StatusBadge tone="institutional" dot>{getRoleInfo(roles[0])?.name ?? 'Administrador'}</StatusBadge>
-            <StatusBadge tone={pendingReviews > 0 ? 'warning' : 'success'} dot>
-              {pendingReviews > 0 ? `${formatNumber(pendingReviews)} pendientes` : 'Revisión al día'}
-            </StatusBadge>
+            {canOperate('/admin/importar') && <Button asChild variant="secondary"><a href="/admin/importar" onClick={(event) => forceNavigation(event, '/admin/importar')}>Importar datos</a></Button>}
+            {canOperate('/admin/nuevo') && <Button asChild><a href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>+ Nuevo registro</a></Button>}
           </>
-        )}
-        actions={(
-          <>
-            <Button asChild variant="secondary"><a href="/admin/importar" onClick={(event) => forceNavigation(event, '/admin/importar')}>Importar datos</a></Button>
-            <Button asChild><a href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>+ Nuevo registro</a></Button>
-          </>
-        )}
+        ) : undefined}
       />
 
-      <section className={`admin-dashboard-review-notice ${pendingReviews > 0 ? 'has-pending' : 'is-clear'}`}>
-        <span className="admin-dashboard-review-icon" aria-hidden="true">i</span>
-        <div>
-          <strong>{pendingReviews > 0 ? 'Integridad de datos en seguimiento' : 'Integridad de datos al día'}</strong>
-          <p>{reviewMessage}</p>
-        </div>
-        <a href="/admin/revision" onClick={(event) => forceNavigation(event, '/admin/revision')}>Abrir centro de revisión</a>
-      </section>
+      {canVisit('/admin/revision') && (
+        <section className={`admin-dashboard-review-notice ${pendingReviews > 0 ? 'has-pending' : 'is-clear'}`}>
+          <span className="admin-dashboard-review-icon" aria-hidden="true">i</span>
+          <div><strong>{pendingReviews > 0 ? 'Integridad de datos en seguimiento' : 'Integridad de datos al día'}</strong><p>{pendingReviews > 0 ? `${formatNumber(pendingReviews)} registros requieren revisión.` : 'No hay registros pendientes de revisión.'}</p></div>
+          <a href="/admin/revision" onClick={(event) => forceNavigation(event, '/admin/revision')}>Abrir centro de revisión</a>
+        </section>
+      )}
 
       <section className="admin-dashboard-metrics" aria-label="Indicadores administrativos">
-        <MetricCard href="/admin/personas" icon="P" label="Personas registradas" value={peopleCount} note="Directorio general" tone="green" />
-        <MetricCard href="/admin/estructura" icon="E" label="Entidades activas" value={summary?.active_entities ?? null} note={`${formatNumber(summary?.active_dioceses ?? null)} jurisdicciones`} tone="wine" />
-        <MetricCard href="/admin/asignaciones" icon="A" label="Asignaciones activas" value={activeAssignments} note="Cargos vigentes" tone="gold" />
-        <MetricCard href="/admin/revision" icon="R" label="Pendientes de revisión" value={pendingReviews} note={pendingReviews > 0 ? 'Requieren atención' : 'Sin pendientes'} tone="alert" />
+        {canVisit('/admin/personas') && <MetricCard href="/admin/personas" icon="P" label="Personas registradas" value={peopleCount} note="Directorio general" tone="green" />}
+        {canVisit('/admin/jurisdicciones') && <MetricCard href="/admin/jurisdicciones" icon="E" label="Entidades activas" value={summary?.active_entities ?? null} note={`${formatNumber(summary?.active_dioceses ?? null)} jurisdicciones`} tone="wine" />}
+        {canVisit('/admin/asignaciones') && <MetricCard href="/admin/asignaciones" icon="A" label="Asignaciones activas" value={activeAssignments} note="Cargos vigentes" tone="gold" />}
+        {canVisit('/admin/revision') && <MetricCard href="/admin/revision" icon="R" label="Pendientes de revisión" value={pendingReviews} note={pendingReviews > 0 ? 'Requieren atención' : 'Sin pendientes'} tone="alert" />}
       </section>
 
       <section className="admin-dashboard-primary-grid">
         <article className="admin-dashboard-panel admin-dashboard-actions-panel">
-          <div className="admin-dashboard-panel-heading">
-            <div>
-              <h2>Acciones frecuentes</h2>
-              <p>Inicia los procesos más utilizados sin salir del resumen.</p>
+          <div className="admin-dashboard-panel-heading"><div><h2>Acciones disponibles</h2><p>Procesos habilitados para tus permisos y alcance activo.</p></div></div>
+          {frequentActions.length > 0 ? (
+            <div className="admin-dashboard-action-list">
+              {frequentActions.map((action) => <a href={action.href} key={action.href} onClick={(event) => forceNavigation(event, action.href)}><span className={`admin-dashboard-action-icon ${action.tone}`}>{action.icon}</span><span><strong>{action.title}</strong><small>{action.description}</small></span><b aria-hidden="true">›</b></a>)}
             </div>
-            <a href="/admin/nuevo" onClick={(event) => forceNavigation(event, '/admin/nuevo')}>Ver todos</a>
-          </div>
-          <div className="admin-dashboard-action-list">
-            {frequentActions.map((action) => (
-              <a href={action.href} key={action.href} onClick={(event) => forceNavigation(event, action.href)}>
-                <span className={`admin-dashboard-action-icon ${action.tone}`}>{action.icon}</span>
-                <span>
-                  <strong>{action.title}</strong>
-                  <small>{action.description}</small>
-                </span>
-                <b aria-hidden="true">›</b>
-              </a>
-            ))}
-          </div>
+          ) : <EmptyState compact title="Acceso de consulta" description="Tu perfil no tiene operaciones de creación o configuración habilitadas en este alcance." />}
         </article>
 
         <article className="admin-dashboard-panel admin-dashboard-quality-panel">
-          <div className="admin-dashboard-panel-heading">
-            <div>
-              <h2>Control de información</h2>
-              <p>Indicadores verificables del alcance actual.</p>
-            </div>
-          </div>
-          <div className={`admin-dashboard-quality-ring ${pendingReviews > 0 ? 'has-pending' : 'is-clear'}`}>
-            <strong>{formatNumber(pendingReviews)}</strong>
-            <span>pendientes</span>
-          </div>
-          <div className="admin-dashboard-quality-copy">
-            <small>Estado general</small>
-            <strong>{pendingReviews > 0 ? 'Datos en seguimiento' : 'Datos revisados'}</strong>
-            <span>{roles.length} rol{roles.length === 1 ? '' : 'es'} activo{roles.length === 1 ? '' : 's'} para tu cuenta</span>
-          </div>
-          <dl className="admin-dashboard-quality-list">
-            <div><dt>Jurisdicciones activas</dt><dd>{formatNumber(summary?.active_dioceses ?? null)}</dd></div>
-            <div><dt>Áreas pastorales</dt><dd>{formatNumber(summary?.active_pastoral_areas ?? null)}</dd></div>
-            <div><dt>Nombramientos activos</dt><dd>{formatNumber(activeAssignments)}</dd></div>
-          </dl>
+          <div className="admin-dashboard-panel-heading"><div><h2>Contexto activo</h2><p>Resumen del ámbito con el que estás trabajando.</p></div></div>
+          <div className="admin-dashboard-quality-copy"><small>Alcance seleccionado</small><strong>{activeScopeLabel}</strong><span>{roles.length} rol{roles.length === 1 ? '' : 'es'} activo{roles.length === 1 ? '' : 's'} para tu cuenta</span></div>
+          <dl className="admin-dashboard-quality-list"><div><dt>Jurisdicciones activas</dt><dd>{formatNumber(summary?.active_dioceses ?? null)}</dd></div><div><dt>Áreas pastorales</dt><dd>{formatNumber(summary?.active_pastoral_areas ?? null)}</dd></div><div><dt>Nombramientos activos</dt><dd>{formatNumber(activeAssignments)}</dd></div></dl>
         </article>
       </section>
 
-      <section className="admin-dashboard-panel admin-dashboard-activity-panel">
-        <div className="admin-dashboard-panel-heading">
-          <div>
-            <h2>Actividad reciente</h2>
-            <p>Últimos cambios registrados en el sistema administrativo.</p>
-          </div>
-          <a href="/admin/actividad" onClick={(event) => forceNavigation(event, '/admin/actividad')}>Ver toda la actividad</a>
-        </div>
-
-        {activities.length > 0 ? (
-          <DataTable caption="Última actividad administrativa">
-            <DataTableHeader>
-              <tr>
-                <DataTableHead>Registro</DataTableHead>
-                <DataTableHead>Acción</DataTableHead>
-                <DataTableHead>Usuario</DataTableHead>
-                <DataTableHead>Fecha</DataTableHead>
-                <DataTableHead>Estado</DataTableHead>
-              </tr>
-            </DataTableHeader>
-            <DataTableBody>
-              {activities.map((activity) => (
-                <DataTableRow key={activity.id}>
-                  <DataTableCell><strong>{activityTarget(activity)}</strong></DataTableCell>
-                  <DataTableCell>{formatAction(activity.action)}</DataTableCell>
-                  <DataTableCell>{activity.actor_name}</DataTableCell>
-                  <DataTableCell>{formatDate(activity.created_at)}</DataTableCell>
-                  <DataTableCell><StatusBadge tone="info" dot>{activityStatus(activity)}</StatusBadge></DataTableCell>
-                </DataTableRow>
-              ))}
-            </DataTableBody>
-          </DataTable>
-        ) : (
-          <EmptyState compact title="Sin actividad registrada" description="Los cambios administrativos auditados aparecerán aquí cuando se realice la primera operación." />
-        )}
-      </section>
+      {canVisit('/admin/actividad') && (
+        <section className="admin-dashboard-panel admin-dashboard-activity-panel">
+          <div className="admin-dashboard-panel-heading"><div><h2>Actividad reciente</h2><p>Últimos cambios registrados en el sistema administrativo.</p></div><a href="/admin/actividad" onClick={(event) => forceNavigation(event, '/admin/actividad')}>Ver toda la actividad</a></div>
+          {activities.length > 0 ? (
+            <DataTable caption="Última actividad administrativa"><DataTableHeader><tr><DataTableHead>Registro</DataTableHead><DataTableHead>Acción</DataTableHead><DataTableHead>Usuario</DataTableHead><DataTableHead>Fecha</DataTableHead><DataTableHead>Estado</DataTableHead></tr></DataTableHeader><DataTableBody>{activities.map((activity) => <DataTableRow key={activity.id}><DataTableCell><strong>{activityTarget(activity)}</strong></DataTableCell><DataTableCell>{formatAction(activity.action)}</DataTableCell><DataTableCell>{activity.actor_name}</DataTableCell><DataTableCell>{formatDate(activity.created_at)}</DataTableCell><DataTableCell><StatusBadge tone="info" dot>{activityStatus(activity)}</StatusBadge></DataTableCell></DataTableRow>)}</DataTableBody></DataTable>
+          ) : <EmptyState compact title="Sin actividad registrada" description="Los cambios administrativos auditados aparecerán aquí cuando se realice la primera operación." />}
+        </section>
+      )}
     </div>
   )
 }
