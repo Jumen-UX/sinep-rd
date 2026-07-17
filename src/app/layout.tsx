@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
+import { AccessibilityTools } from '../components/accessibility/AccessibilityTools'
 import { ThemeControl } from '../components/theme/ThemeControl'
 import { PublicCountryFlagEnhancements } from '../features/public/components/public-country-flag-enhancements'
 import { PublicDashboardEntityCards } from '../features/public/components/public-dashboard-entity-cards'
@@ -22,6 +23,7 @@ import './scope-back-controls.css'
 import './brand.css'
 import './admin-brand.css'
 import './public-shell.css'
+import '../styles/accessibility-tools.css'
 
 const themeBootstrapScript = `
   (() => {
@@ -35,6 +37,27 @@ const themeBootstrapScript = `
     } catch {
       document.documentElement.dataset.theme = 'light';
       document.documentElement.style.colorScheme = 'light';
+    }
+  })();
+`
+
+const accessibilityBootstrapScript = `
+  (() => {
+    try {
+      const storedValue = localStorage.getItem('sinep-accessibility');
+      if (!storedValue) return;
+
+      const preferences = JSON.parse(storedValue);
+      const root = document.documentElement;
+
+      if (preferences.textScale === 'large' || preferences.textScale === 'xlarge') {
+        root.dataset.textScale = preferences.textScale;
+      }
+      if (preferences.highContrast === true) root.dataset.contrast = 'high';
+      if (preferences.reduceMotion === true) root.dataset.reduceMotion = 'true';
+      if (preferences.underlineLinks === true) root.dataset.underlineLinks = 'true';
+    } catch {
+      localStorage.removeItem('sinep-accessibility');
     }
   })();
 `
@@ -57,6 +80,9 @@ export default function RootLayout({
       <body>
         <Script id="theme-bootstrap" strategy="beforeInteractive">
           {themeBootstrapScript}
+        </Script>
+        <Script id="accessibility-bootstrap" strategy="beforeInteractive">
+          {accessibilityBootstrapScript}
         </Script>
         <a className="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
         <div className="site-shell">
@@ -104,6 +130,7 @@ export default function RootLayout({
         <PublicPastoralEnhancements />
         <PublicTerritorialLevelEnhancements />
         <ScopeBackControls />
+        <AccessibilityTools />
         <Script
           id="vercel-web-analytics"
           src="/_vercel/insights/script.js"
