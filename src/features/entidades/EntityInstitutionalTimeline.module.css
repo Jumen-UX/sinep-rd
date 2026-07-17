@@ -25,7 +25,7 @@
   top: 1.1rem;
   bottom: 0;
   width: 1px;
-  background: var(--border-color, #d8d4ca);
+  background: var(--border-subtle);
 }
 
 .marker {
@@ -33,18 +33,18 @@
   height: 0.75rem;
   border-radius: 999px;
   margin-top: 0.45rem;
-  border: 2px solid var(--brand-gold, #b59a5b);
-  background: var(--surface, #fff);
+  border: 2px solid var(--gold);
+  background: var(--surface);
   position: relative;
   z-index: 1;
 }
 
 .content {
   min-width: 0;
-  border: 1px solid var(--border-color, #d8d4ca);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 1rem 1.1rem;
-  background: var(--surface, #fff);
+  background: var(--surface);
 }
 
 .heading {
@@ -64,7 +64,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--muted-foreground, #6e685c);
+  color: var(--text-muted);
 }
 
 .date {
