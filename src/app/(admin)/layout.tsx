@@ -11,7 +11,6 @@ import '@/styles/admin-event-action-plan.css'
 import '@/styles/admin-event-verification.css'
 import '@/styles/admin-structure-workflows.css'
 import '@/styles/admin-theme-compatibility.css'
-import '@/styles/admin-embedded-theme-cleanup.css'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
