@@ -29,8 +29,8 @@
 }
 
 .home-context-card {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(228, 222, 209, 0.95);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  border: 1px solid var(--border-subtle);
   border-radius: 20px;
   display: grid;
   gap: 16px;
@@ -49,7 +49,7 @@
 
 .home-hierarchy-path span {
   align-items: center;
-  background: #fbf8f1;
+  background: var(--surface-subtle);
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--foreground);
@@ -78,10 +78,11 @@
 }
 
 .home-metric-card {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
-  box-shadow: 0 14px 35px rgba(31, 41, 51, 0.06);
+  box-shadow: var(--shadow-md);
+  color: var(--foreground);
   display: grid;
   gap: 8px;
   min-height: 142px;
@@ -99,8 +100,8 @@ button.home-metric-card {
 .public-view-tab.active,
 .public-card-button.active,
 .public-list-row.active {
-  border-color: rgba(122, 31, 31, 0.55);
-  box-shadow: 0 16px 38px rgba(122, 31, 31, 0.12);
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  box-shadow: var(--focus-ring);
 }
 
 .home-metric-card span,
@@ -119,13 +120,18 @@ button.home-metric-card {
 }
 
 .public-filter-panel select {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
   color: var(--foreground);
   font: inherit;
   padding: 11px 13px;
   width: 100%;
+}
+
+.public-filter-panel select:focus-visible {
+  border-color: var(--gold);
+  box-shadow: var(--focus-ring);
 }
 
 .public-filter-grid {
@@ -149,9 +155,10 @@ button.home-metric-card {
 }
 
 .public-view-tab {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
+  color: var(--foreground);
   cursor: pointer;
   display: grid;
   font: inherit;
@@ -194,7 +201,7 @@ button.home-metric-card {
 }
 
 .home-province-card {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
   color: inherit;
@@ -241,11 +248,15 @@ button.home-metric-card {
 }
 
 .home-province-card:hover,
+.home-province-card:focus-visible,
 .public-view-tab:hover,
+.public-view-tab:focus-visible,
 .home-metric-card:hover,
-.public-list-row:hover {
-  border-color: rgba(122, 31, 31, 0.45);
-  box-shadow: 0 14px 32px rgba(31, 41, 51, 0.08);
+.home-metric-card:focus-visible,
+.public-list-row:hover,
+.public-list-row:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -279,7 +290,7 @@ button.home-metric-card {
 }
 
 .home-empty-row {
-  background: #ffffff;
+  background: var(--surface);
   color: var(--muted);
   font-size: 14px;
   padding: 16px;
