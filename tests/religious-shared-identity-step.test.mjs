@@ -23,5 +23,8 @@ test('priest religious life remains delegated to the canonical priest flow', asy
 
   assert.match(source, /if \(lifeType === 'priest'\)/)
   assert.match(source, /router\.push\('\/admin\/nuevo\/sacerdote'\)/)
-  assert.match(source, /Ese asistente registra el presbiterado y la vida consagrada sobre la misma persona/)
+  assert.match(
+    source,
+    /Ese asistente registra el presbiterado y la vida consagrada\s+sobre la misma persona/,
+  )
 })
