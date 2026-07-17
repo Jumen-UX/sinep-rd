@@ -173,3 +173,15 @@ test('wizard and jurisdiction surfaces use semantic colors in every theme', asyn
   assert.match(unifiedWizard, /background:\s*color-mix\(in srgb, var\(--surface\) 96%, transparent\)/)
   assert.doesNotMatch(unifiedWizard, /var\(--surface-raised,\s*#fff\)/i)
 })
+
+test('administrative configuration and entity shells inherit semantic surfaces', async () => {
+  const shell = await source('src/styles/admin-shell.css')
+
+  assert.match(shell, /\.admin-area\{[^}]*background:var\(--background\)/s)
+  assert.match(shell, /\.admin-sidebar-nav a\[aria-current=page\]\{[^}]*background:var\(--gold-soft\)/s)
+  assert.match(shell, /\.admin-config-page[^}]*\.metric-button\{[^}]*background:var\(--surface\)/s)
+  assert.match(shell, /\.admin-config-form\.dashboard-section input,[^{]*\{[^}]*background:var\(--surface\)/s)
+  assert.match(shell, /\.admin-entity-tabs\{[^}]*background:var\(--surface\)/s)
+  assert.match(shell, /\.admin-completion-bar\{[^}]*background:var\(--surface-muted\)/s)
+  assert.doesNotMatch(shell, /background:\s*#(?:fff|ffffff|fff8ea|fbfaf7)/i)
+})
