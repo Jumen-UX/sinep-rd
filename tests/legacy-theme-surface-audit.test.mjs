@@ -35,7 +35,7 @@ test('intentional print white remains isolated to print rules', async () => {
   assert.match(styles.slice(printIndex), /background:\s*#ffffff\s*!important/)
 })
 
-test('embedded administrative styles are neutralized by the final semantic guard', async () => {
+test('remaining embedded administrative styles are neutralized by a scoped structural guard', async () => {
   const layout = await source('src/app/(admin)/layout.tsx')
   const compatibilityIndex = layout.indexOf("import '@/styles/admin-theme-compatibility.css'")
   const cleanupIndex = layout.indexOf("import '@/styles/admin-embedded-theme-cleanup.css'")
@@ -43,9 +43,10 @@ test('embedded administrative styles are neutralized by the final semantic guard
 
   assert.ok(compatibilityIndex >= 0)
   assert.ok(cleanupIndex > compatibilityIndex)
-  assert.match(cleanup, /\.events-page,[\s\S]*\.level-office-page/)
-  assert.match(cleanup, /:is\(input, select, textarea\)\s*\{[^}]*background:\s*var\(--surface\)\s*!important/s)
+  assert.match(cleanup, /\.level-office-page\s+:is\(input, select, textarea\)\s*\{[^}]*background:\s*var\(--surface\)\s*!important/s)
+  assert.match(cleanup, /\.level-office-row/)
+  assert.match(cleanup, /\.level-office-summary/)
+  assert.match(cleanup, /\.structure-selector-path/)
   assert.match(cleanup, /\.structure-selector select\s*\{[^}]*background:\s*var\(--surface\)\s*!important/s)
-  assert.match(cleanup, /\.mini-badge\.warning\s*\{[^}]*var\(--warning-soft\)/s)
-  assert.match(cleanup, /\.mini-badge\.success\s*\{[^}]*var\(--success-soft\)/s)
+  assert.doesNotMatch(cleanup, /\.events-page|\.event-assistant-page|\.pending-events-page|\.mini-badge/)
 })
