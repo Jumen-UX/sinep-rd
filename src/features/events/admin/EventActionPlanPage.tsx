@@ -21,16 +21,6 @@ import {
   type RelationshipConflictAction,
 } from '../services/event-application-admin-service'
 
-const pageStyles = `
-  .plan-hero{align-items:stretch;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr)}
-  .plan-summary,.plan-card,.action-card,.relationship-editor,.conflict-panel{background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;gap:8px;padding:14px}
-  .plan-summary,.plan-card.highlight,.relationship-editor,.conflict-panel.clear{background:#fbf8f1}.conflict-panel.error{background:#fef2f2;border-color:#fecaca}.conflict-panel.warning{background:#fff7ed;border-color:#fed7aa}
-  .plan-grid,.actions-list,.metric-grid,.status-grid,.editor-grid,.conflict-list{display:grid;gap:14px}.plan-grid{align-items:start;grid-template-columns:minmax(0,1fr) minmax(300px,.4fr)}.metric-grid,.status-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.editor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.editor-grid .full-width{grid-column:1/-1}
-  .relationship-editor label{color:var(--muted);display:grid;font-size:14px;font-weight:800;gap:6px}.relationship-editor select,.relationship-editor input,.relationship-editor textarea{border:1px solid var(--border);border-radius:14px;font:inherit;padding:10px 12px;width:100%}.relationship-editor textarea{min-height:74px;resize:vertical}
-  .badge-row,.button-row{display:flex;flex-wrap:wrap;gap:7px}.mini-badge{background:#fbf8f1;border:1px solid var(--border);border-radius:999px;color:var(--primary);display:inline-flex;font-size:12px;font-weight:900;padding:6px 9px}.mini-badge.warning{background:#fff7ed;color:#9a3412}.mini-badge.success{background:#f0fdf4;color:#166534}.mini-badge.danger{background:#fef2f2;color:#991b1b}
-  .action-controls{border-top:1px solid var(--border);display:grid;gap:10px;margin-top:8px;padding-top:12px}.detail-backlink{margin-bottom:8px}.detail-backlink a{color:var(--primary);font-weight:800;text-decoration:none}@media(max-width:980px){.plan-hero,.plan-grid,.metric-grid,.status-grid,.editor-grid{grid-template-columns:1fr}}
-`
-
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback
 }
@@ -100,12 +90,13 @@ function RelationshipActionEditor({ action, options, saving, onSave }: {
   const [validFrom, setValidFrom] = useState(payloadString(action.payload, 'relationship_valid_from'))
   const [validTo, setValidTo] = useState(payloadString(action.payload, 'relationship_valid_to'))
   const [relationshipNotes, setRelationshipNotes] = useState(payloadString(action.payload, 'relationship_notes'))
+  const editorTitleId = `relationship-editor-${action.id}-title`
 
   if (!isRelationalAction(action)) return null
 
   return (
-    <div className="relationship-editor">
-      <strong>Editor relacional</strong>
+    <section aria-labelledby={editorTitleId} className="relationship-editor">
+      <strong id={editorTitleId}>Editor relacional</strong>
       <span className="meta">Define origen, destino y tipo de relación antes de marcar la acción como lista.</span>
       <div className="editor-grid">
         <label>Entidad origen
@@ -131,6 +122,7 @@ function RelationshipActionEditor({ action, options, saving, onSave }: {
         <label className="full-width">Notas de relación<textarea value={relationshipNotes} onChange={(event) => setRelationshipNotes(event.target.value)} /></label>
       </div>
       <button
+        aria-busy={saving}
         className="button button-primary"
         disabled={saving}
         onClick={() => onSave({
@@ -147,24 +139,33 @@ function RelationshipActionEditor({ action, options, saving, onSave }: {
       >
         Guardar configuración relacional
       </button>
-    </div>
+    </section>
   )
 }
 
 function ConflictPanel({ conflictAction }: { conflictAction?: RelationshipConflictAction }) {
   if (!conflictAction) return null
   if (conflictAction.conflicts.length === 0) {
-    return <div className="conflict-panel clear"><strong>Sin conflictos detectados</strong><span className="meta">La relación configurada no presenta duplicados ni superposición conocida.</span></div>
+    return <div aria-atomic="true" aria-live="polite" className="conflict-panel clear" role="status"><strong>Sin conflictos detectados</strong><span className="meta">La relación configurada no presenta duplicados ni superposición conocida.</span></div>
   }
 
   return (
-    <div className="conflict-list">
-      {conflictAction.conflicts.map((conflict) => (
-        <div className={`conflict-panel ${conflictClass(conflict)}`} key={`${conflict.code}-${conflict.message}`}>
-          <strong>{conflict.severity === 'error' ? 'Error' : 'Advertencia'} · {conflict.code}</strong>
-          <span className="meta">{conflict.message}</span>
-        </div>
-      ))}
+    <div aria-label="Conflictos relacionales" className="conflict-list">
+      {conflictAction.conflicts.map((conflict) => {
+        const isError = conflict.severity === 'error'
+        return (
+          <div
+            aria-atomic="true"
+            aria-live={isError ? 'assertive' : 'polite'}
+            className={`conflict-panel ${conflictClass(conflict)}`}
+            key={`${conflict.code}-${conflict.message}`}
+            role={isError ? 'alert' : 'status'}
+          >
+            <strong>{isError ? 'Error' : 'Advertencia'} · {conflict.code}</strong>
+            <span className="meta">{conflict.message}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -271,8 +272,8 @@ export default function EventActionPlanPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId])
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando plan de acciones...</div></main>
-  if (!plan?.event) return <main className="container"><div className="error-box">No se encontró el evento.</div></main>
+  if (loading) return <main className="container"><div aria-live="polite" className="empty-state" role="status">Cargando plan de acciones...</div></main>
+  if (!plan?.event) return <main className="container"><div className="error-box" role="alert">No se encontró el evento.</div></main>
 
   const summary = plan.summary
   const isOrganizational = plan.event.applies_to === 'organization_unit'
@@ -280,8 +281,7 @@ export default function EventActionPlanPage() {
   const conflictFor = (actionId: string) => conflictPreview.actions.find((action) => action.action_id === actionId)
 
   return (
-    <main className="container dashboard-page event-action-plan-page">
-      <style>{pageStyles}</style>
+    <main aria-busy={saving} className="container dashboard-page event-action-plan-page">
       <div className="detail-backlink"><Link href={`/admin/eventos/${eventId}`}>← Volver a revisión</Link></div>
 
       <section className="dashboard-hero card plan-hero">
@@ -290,29 +290,29 @@ export default function EventActionPlanPage() {
           <h1>{plan.event.title}</h1>
           <p className="lead">Traduce el evento en acciones revisables antes de modificar el estado vigente.</p>
           <div className="button-row">
-            <button className="button button-primary" disabled={!summary.can_generate_plan || saving || plan.event.status === 'applied'} onClick={generatePlan} type="button">{saving ? 'Procesando...' : 'Generar / regenerar plan'}</button>
+            <button aria-busy={saving} className="button button-primary" disabled={!summary.can_generate_plan || saving || plan.event.status === 'applied'} onClick={generatePlan} type="button">{saving ? 'Procesando...' : 'Generar / regenerar plan'}</button>
             {!isOrganizational && <button className="button button-secondary" disabled={saving} onClick={reviewConflicts} type="button">Revisar conflictos</button>}
             <Link className="button button-secondary" href={`/admin/eventos/${eventId}`}>Revisar evento</Link>
             <Link className="button button-secondary" href={`/admin/eventos/${eventId}/contrato`}>Contrato de aplicación</Link>
           </div>
         </div>
-        <div className="plan-summary">
+        <div aria-atomic="true" aria-live="polite" className="plan-summary">
           <span className="mini-badge">{statusLabel(plan.event.status)}</span>
           <strong>{modeLabel(plan.event.load_mode)}</strong>
           <span className="meta">{plan.event.event_type_name} · {formatDate(plan.event.event_date)}</span>
         </div>
       </section>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <div aria-live="assertive" className="error-box" role="alert">{error}</div>}
 
-      <section className="metric-grid">
+      <section aria-label="Métricas generales del plan" className="metric-grid">
         <div className="plan-card"><strong>{summary.action_count}</strong><span className="meta">acciones generadas</span></div>
         <div className="plan-card"><strong>{summary.state_changing_count}</strong><span className="meta">cambian estado</span></div>
         <div className="plan-card"><strong>{isOrganizational ? 0 : conflictPreview.error_count}</strong><span className="meta">errores relacionales</span></div>
         <div className="plan-card"><strong>{summary.applied_count}</strong><span className="meta">aplicadas</span></div>
       </section>
 
-      <section className="status-grid">
+      <section aria-label="Estados de las acciones" className="status-grid">
         <div className="plan-card"><strong>{summary.planned_count}</strong><span className="meta">planificadas</span></div>
         <div className="plan-card"><strong>{summary.ready_count}</strong><span className="meta">listas</span></div>
         <div className="plan-card"><strong>{summary.skipped_count}</strong><span className="meta">omitidas</span></div>
@@ -322,35 +322,40 @@ export default function EventActionPlanPage() {
       <section className="plan-grid">
         <div className="card dashboard-section">
           <div className="section-heading"><div><p className="eyebrow">Acciones</p><h2>Plan generado</h2><p className="meta">{isOrganizational ? 'Las acciones organizativas se habilitan al aprobar el evento.' : 'Configura relaciones y revisa conflictos antes de aprobar.'}</p></div></div>
-          <div className="actions-list">
-            {plan.actions.length === 0 && <div className="empty-state">Este evento todavía no tiene plan. Usa Generar plan.</div>}
-            {plan.actions.map((action) => (
-              <article className="action-card" key={action.id}>
-                <div><p className="eyebrow">Orden {action.sort_order}</p><h2>{action.action_type_name}</h2><p className="meta">{action.description ?? action.notes ?? 'Sin descripción.'}</p></div>
-                <div className="badge-row">
-                  <span className={`mini-badge ${statusClass(action.status)}`}>{statusLabel(action.status)}</span>
-                  {action.changes_state && <span className="mini-badge warning">Cambia estado</span>}
-                  {action.requires_manual_review && <span className="mini-badge warning">Revisión manual</span>}
-                  {action.subject_entity_name && <span className="mini-badge">Origen: {action.subject_entity_name}</span>}
-                  {action.target_entity_name && <span className="mini-badge">Destino: {action.target_entity_name}</span>}
-                  {action.subject_organization_unit_name && <span className="mini-badge">Unidad: {action.subject_organization_unit_name}</span>}
-                  {action.target_organization_unit_name && <span className="mini-badge">Superior: {action.target_organization_unit_name}</span>}
-                  {action.relationship_type_name && <span className="mini-badge">Relación: {action.relationship_type_name}</span>}
-                </div>
-                {action.notes && <p className="meta">{action.notes}</p>}
-                {!isOrganizational && <RelationshipActionEditor action={action} options={editorOptions} saving={saving} onSave={saveActionConfiguration} />}
-                {!isOrganizational && isRelationalAction(action) && <ConflictPanel conflictAction={conflictFor(action.id)} />}
-                {!isOrganizational && action.status !== 'applied' && <div className="action-controls">
-                  <strong>Revisión de acción</strong>
-                  <div className="button-row">
-                    <button className="button button-secondary" disabled={saving || action.status === 'planned'} onClick={() => changeActionStatus(action.id, 'planned')} type="button">Planificada</button>
-                    <button className="button button-primary" disabled={saving || action.status === 'ready'} onClick={() => changeActionStatus(action.id, 'ready')} type="button">Lista</button>
-                    <button className="button button-secondary" disabled={saving || action.status === 'skipped'} onClick={() => changeActionStatus(action.id, 'skipped')} type="button">Omitir</button>
-                    <button className="button button-secondary" disabled={saving || action.status === 'failed'} onClick={() => changeActionStatus(action.id, 'failed')} type="button">Observación</button>
+          <div aria-busy={saving} aria-live="polite" className="actions-list">
+            {plan.actions.length === 0 && <div className="empty-state" role="status">Este evento todavía no tiene plan. Usa Generar plan.</div>}
+            {plan.actions.map((action) => {
+              const actionTitleId = `event-action-${action.id}-title`
+              return (
+                <article aria-labelledby={actionTitleId} className="action-card" key={action.id}>
+                  <div><p className="eyebrow">Orden {action.sort_order}</p><h3 id={actionTitleId}>{action.action_type_name}</h3><p className="meta">{action.description ?? action.notes ?? 'Sin descripción.'}</p></div>
+                  <div className="badge-row">
+                    <span className={`mini-badge ${statusClass(action.status)}`}>{statusLabel(action.status)}</span>
+                    {action.changes_state && <span className="mini-badge warning">Cambia estado</span>}
+                    {action.requires_manual_review && <span className="mini-badge warning">Revisión manual</span>}
+                    {action.subject_entity_name && <span className="mini-badge">Origen: {action.subject_entity_name}</span>}
+                    {action.target_entity_name && <span className="mini-badge">Destino: {action.target_entity_name}</span>}
+                    {action.subject_organization_unit_name && <span className="mini-badge">Unidad: {action.subject_organization_unit_name}</span>}
+                    {action.target_organization_unit_name && <span className="mini-badge">Superior: {action.target_organization_unit_name}</span>}
+                    {action.relationship_type_name && <span className="mini-badge">Relación: {action.relationship_type_name}</span>}
                   </div>
-                </div>}
-              </article>
-            ))}
+                  {action.notes && <p className="meta">{action.notes}</p>}
+                  {!isOrganizational && <RelationshipActionEditor action={action} options={editorOptions} saving={saving} onSave={saveActionConfiguration} />}
+                  {!isOrganizational && isRelationalAction(action) && <ConflictPanel conflictAction={conflictFor(action.id)} />}
+                  {!isOrganizational && action.status !== 'applied' && (
+                    <div className="action-controls">
+                      <strong>Revisión de acción</strong>
+                      <div aria-label={`Estado de ${action.action_type_name}`} className="button-row" role="group">
+                        <button aria-pressed={action.status === 'planned'} className="button button-secondary" disabled={saving || action.status === 'planned'} onClick={() => changeActionStatus(action.id, 'planned')} type="button">Planificada</button>
+                        <button aria-pressed={action.status === 'ready'} className="button button-primary" disabled={saving || action.status === 'ready'} onClick={() => changeActionStatus(action.id, 'ready')} type="button">Lista</button>
+                        <button aria-pressed={action.status === 'skipped'} className="button button-secondary" disabled={saving || action.status === 'skipped'} onClick={() => changeActionStatus(action.id, 'skipped')} type="button">Omitir</button>
+                        <button aria-pressed={action.status === 'failed'} className="button button-secondary" disabled={saving || action.status === 'failed'} onClick={() => changeActionStatus(action.id, 'failed')} type="button">Observación</button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              )
+            })}
           </div>
         </div>
 
