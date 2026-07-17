@@ -57,7 +57,7 @@ const accessibilityBootstrapScript = `
       if (preferences.reduceMotion === true) root.dataset.reduceMotion = 'true';
       if (preferences.underlineLinks === true) root.dataset.underlineLinks = 'true';
     } catch {
-      localStorage.removeItem('sinep-accessibility');
+      // A malformed or unavailable preference store must not block page rendering.
     }
   })();
 `
