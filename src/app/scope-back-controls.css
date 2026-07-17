@@ -1,9 +1,10 @@
 .public-scope-backbar {
   align-items: center;
-  background: #ffffff;
-  border: 1px solid var(--public-border, #e5e8ef);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 18px;
-  box-shadow: 0 12px 34px rgba(16, 35, 63, 0.08);
+  box-shadow: var(--shadow-md);
+  color: var(--foreground);
   display: grid;
   gap: 10px;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -16,7 +17,7 @@
 }
 
 .public-scope-back-label {
-  color: var(--public-muted, #68758a);
+  color: var(--text-muted);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -33,10 +34,10 @@
 }
 
 .public-scope-crumb {
-  background: #f6f8fb;
-  border: 1px solid rgba(16, 35, 63, 0.08);
+  background: var(--surface-soft);
+  border: 1px solid var(--border-subtle);
   border-radius: 999px;
-  color: #4a5f7a;
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 900;
   line-height: 1;
@@ -48,9 +49,9 @@
 }
 
 .public-scope-crumb.active {
-  background: var(--public-gold-soft, #fff8ea);
-  border-color: rgba(200, 149, 29, 0.34);
-  color: var(--public-gold, #9f7417);
+  background: var(--gold-soft);
+  border-color: var(--border-warning);
+  color: var(--gold);
 }
 
 .public-scope-crumb-button {
@@ -58,24 +59,25 @@
   font: inherit;
 }
 
-.public-scope-crumb-button:hover {
-  background: #eef4ff;
-  border-color: rgba(27, 79, 156, 0.28);
-  color: #10233f;
+.public-scope-crumb-button:hover,
+.public-scope-crumb-button:focus-visible {
+  background: var(--info-soft);
+  border-color: var(--border-info);
+  color: var(--info);
 }
 
 .public-scope-crumb-separator {
-  background: #eef3fa;
-  color: #10233f;
+  background: var(--surface-muted);
+  color: var(--foreground);
   max-width: none;
   padding-inline: 9px;
 }
 
 .public-scope-back-button {
-  background: #10233f;
+  background: var(--surface-inverse);
   border: 0;
   border-radius: 999px;
-  color: #ffffff;
+  color: var(--text-inverse);
   cursor: pointer;
   font-size: 12px;
   font-weight: 900;
@@ -83,8 +85,10 @@
   white-space: nowrap;
 }
 
-.public-scope-back-button:hover {
-  background: #1b4f9c;
+.public-scope-back-button:hover,
+.public-scope-back-button:focus-visible {
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 .public-country-flag-mark {
