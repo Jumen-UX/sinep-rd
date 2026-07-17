@@ -295,43 +295,49 @@ export default function StructureHierarchySelector({
       {error && <div className="error-box" id={errorId} role="alert" aria-live="assertive">{error}</div>}
 
       <div className="structure-selector-grid">
-        <label htmlFor={dioceseSelectId}>Diócesis</label>
-        <select
-          aria-describedby={error ? `${helperId} ${errorId}` : helperId}
-          id={dioceseSelectId}
-          value={selectedDioceseId}
-          onChange={(event) => setSelectedDioceseId(event.target.value)}
-          required={required}
-        >
-          <option value="">Seleccionar diócesis</option>
-          {dioceses.map((diocese) => <option key={diocese.id} value={diocese.id}>{diocese.name}</option>)}
-        </select>
+        <div className="structure-selector-field">
+          <label htmlFor={dioceseSelectId}>Diócesis</label>
+          <select
+            aria-describedby={error ? `${helperId} ${errorId}` : helperId}
+            id={dioceseSelectId}
+            value={selectedDioceseId}
+            onChange={(event) => setSelectedDioceseId(event.target.value)}
+            required={required}
+          >
+            <option value="">Seleccionar diócesis</option>
+            {dioceses.map((diocese) => <option key={diocese.id} value={diocese.id}>{diocese.name}</option>)}
+          </select>
+        </div>
 
-        <label htmlFor={templateSelectId}>Catálogo activo</label>
-        <select
-          aria-describedby={error ? `${helperId} ${errorId}` : helperId}
-          disabled={templates.length === 0}
-          id={templateSelectId}
-          value={selectedTemplateId}
-          onChange={(event) => setSelectedTemplateId(event.target.value)}
-        >
-          <option value="">{loadingTree ? 'Cargando catálogo...' : 'Sin catálogo activo'}</option>
-          {templates.map((template) => <option key={template.id} value={template.id}>{template.name}{template.is_primary ? ' · principal' : ''}</option>)}
-        </select>
+        <div className="structure-selector-field">
+          <label htmlFor={templateSelectId}>Catálogo activo</label>
+          <select
+            aria-describedby={error ? `${helperId} ${errorId}` : helperId}
+            disabled={templates.length === 0}
+            id={templateSelectId}
+            value={selectedTemplateId}
+            onChange={(event) => setSelectedTemplateId(event.target.value)}
+          >
+            <option value="">{loadingTree ? 'Cargando catálogo...' : 'Sin catálogo activo'}</option>
+            {templates.map((template) => <option key={template.id} value={template.id}>{template.name}{template.is_primary ? ' · principal' : ''}</option>)}
+          </select>
+        </div>
 
-        <label htmlFor={nodeSelectId}>Unidad padre</label>
-        <select
-          aria-controls={pathId}
-          aria-describedby={error ? `${helperId} ${errorId}` : helperId}
-          disabled={selectableNodes.length === 0}
-          id={nodeSelectId}
-          value={selectedNodeId}
-          onChange={(event) => setSelectedNodeId(event.target.value)}
-          required={required}
-        >
-          <option value="">{loadingTree ? 'Cargando árbol...' : 'Seleccionar unidad'}</option>
-          {selectableNodes.map((node) => <option key={node.node_id} value={node.node_id}>{nodeLabel(node)}</option>)}
-        </select>
+        <div className="structure-selector-field">
+          <label htmlFor={nodeSelectId}>Unidad padre</label>
+          <select
+            aria-controls={pathId}
+            aria-describedby={error ? `${helperId} ${errorId}` : helperId}
+            disabled={selectableNodes.length === 0}
+            id={nodeSelectId}
+            value={selectedNodeId}
+            onChange={(event) => setSelectedNodeId(event.target.value)}
+            required={required}
+          >
+            <option value="">{loadingTree ? 'Cargando árbol...' : 'Seleccionar unidad'}</option>
+            {selectableNodes.map((node) => <option key={node.node_id} value={node.node_id}>{nodeLabel(node)}</option>)}
+          </select>
+        </div>
       </div>
 
       <input name={`${namePrefix}_diocese_id`} type="hidden" value={selection?.dioceseId ?? ''} readOnly />
