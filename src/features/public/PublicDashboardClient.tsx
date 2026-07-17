@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { ThemeControl } from '@/components/theme/ThemeControl'
 import type { PublicView } from '@/lib/public/dashboard'
 import { sideNav, views, type Props } from './PublicDashboardShared'
 import { PublicAdministrativeView, PublicCollegialView } from './PublicOrganizationViews'
@@ -29,6 +30,7 @@ export default function PublicDashboardClient(props: Props) {
     <div className="public-dashboard-layout">
       <header className="public-mobile-header">
         <Link className="public-mobile-brand" href="/"><span className="public-brand-mark" aria-hidden="true">✛</span><span><span className="public-brand-title">SINEP RD</span><span className="public-brand-subtitle">Sistema de Información<br />Eclesial Pastoral</span></span></Link>
+        <ThemeControl compact />
         <Link className="public-mobile-icon-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
       </header>
       <aside className="public-sidebar" aria-label="Menú principal">
@@ -38,7 +40,7 @@ export default function PublicDashboardClient(props: Props) {
       </aside>
 
       <main className="public-main">
-        <div className="public-topbar"><Link className="public-user-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link></div>
+        <div className="public-topbar"><ThemeControl compact /><Link className="public-user-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link></div>
         <section className="public-panel public-filter-panel" aria-labelledby="ambito-title">
           <div className="public-panel-title"><div className="public-heading-accent"><h1 id="ambito-title">Ámbito de consulta</h1></div><button className="public-clear-button" onClick={resetScope} type="button">↻ Limpiar filtros</button></div>
           <div className="public-filter-grid">
