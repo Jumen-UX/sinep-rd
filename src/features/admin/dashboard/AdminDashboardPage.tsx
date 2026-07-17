@@ -18,22 +18,36 @@ import {
   type DashboardRoleRow,
   type DashboardSummary,
 } from './admin-dashboard-service'
+import { groupAdminKpisByDimension } from './admin-kpi-policy'
+import { resolveAdminKpiValues, type AdminKpiValue } from './admin-kpi-value-service'
 
-type MetricCardProps = {
-  href: string
-  icon: string
-  label: string
-  value: number | null
-  note: string
-  tone: 'wine' | 'gold' | 'green' | 'alert'
-}
+const dimensionLabels = {
+  territorial: 'Territorial',
+  pastoral: 'Pastoral',
+  administrative: 'Administrativa',
+  collegial: 'Colegial',
+} as const
+
+const dimensionIcons = {
+  territorial: 'T',
+  pastoral: 'P',
+  administrative: 'A',
+  collegial: 'C',
+} as const
+
+const dimensionTones = {
+  territorial: 'wine',
+  pastoral: 'green',
+  administrative: 'gold',
+  collegial: 'alert',
+} as const
 
 type DashboardAction = {
   href: string
   icon: string
   title: string
   description: string
-  tone: MetricCardProps['tone']
+  tone: 'wine' | 'gold' | 'green' | 'alert'
 }
 
 const actionCatalog: readonly DashboardAction[] = [
@@ -41,7 +55,7 @@ const actionCatalog: readonly DashboardAction[] = [
   { href: '/admin/jurisdicciones', icon: 'E', title: 'Gestionar entidades', description: 'Diócesis, parroquias y otras entidades', tone: 'gold' },
   { href: '/admin/asignaciones', icon: 'A', title: 'Gestionar cargos', description: 'Nombramientos, vigencia y sucesión', tone: 'green' },
   { href: '/admin/estructura', icon: 'C', title: 'Configurar estructura', description: 'Niveles y dependencias territoriales', tone: 'alert' },
-] as const
+]
 
 function getRoleInfo(role: DashboardRoleRow): DashboardRoleInfo | null {
   if (!role.roles) return null
@@ -63,6 +77,13 @@ function forceNavigation(event: MouseEvent<HTMLAnchorElement>, href: string) {
 function formatNumber(value: number | null) {
   if (value === null) return '—'
   return new Intl.NumberFormat('es-DO').format(value)
+}
+
+function formatKpiValue(value: AdminKpiValue) {
+  if (value.value === null) return '—'
+  if (value.valueKind === 'percentage') return `${formatNumber(value.value)} %`
+  if (value.valueKind === 'duration_days') return `${formatNumber(value.value)} días`
+  return formatNumber(value.value)
 }
 
 function formatAction(value: string) {
@@ -92,17 +113,6 @@ function activityStatus(activity: DashboardActivity) {
   return getMetadataText(activity.metadata, ['status', 'state']) ?? 'Registrado'
 }
 
-function MetricCard({ href, icon, label, value, note, tone }: MetricCardProps) {
-  return (
-    <a className="admin-dashboard-metric" href={href} onClick={(event) => forceNavigation(event, href)}>
-      <span className={`admin-dashboard-metric-icon ${tone}`} aria-hidden="true">{icon}</span>
-      <span className="admin-dashboard-metric-label">{label}</span>
-      <span className="admin-dashboard-metric-value">{formatNumber(value)}</span>
-      <span className={`admin-dashboard-metric-note ${tone}`}>{note}</span>
-    </a>
-  )
-}
-
 export default function AdminDashboardPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -122,13 +132,32 @@ export default function AdminDashboardPage() {
   const canVisit = (href: string) => destinationByHref.has(href)
   const canOperate = (href: string) => destinationByHref.get(href)?.availability === 'available'
   const frequentActions = actionCatalog.filter((action) => canOperate(action.href))
+  const activeScope = navigation.context?.activeScope
+  const includeGlobalMetrics = activeScope?.isUnrestricted ?? false
+  const includeActivity = canVisit('/admin/actividad')
+
+  const kpiGroups = useMemo(
+    () => groupAdminKpisByDimension(navigation.policyContext),
+    [navigation.policyContext],
+  )
+  const kpiValues = useMemo(() => {
+    const values = resolveAdminKpiValues(
+      kpiGroups.flatMap((group) => group.items),
+      { summary, peopleCount, activeAssignments },
+      includeGlobalMetrics,
+    )
+    return new Map(values.map((value) => [value.id, value]))
+  }, [activeAssignments, includeGlobalMetrics, kpiGroups, peopleCount, summary])
 
   useEffect(() => {
+    if (navigation.loading || !navigation.context) return
     let cancelled = false
 
     async function loadDashboard() {
+      setLoading(true)
+      setError(null)
       try {
-        const data = await loadAdminDashboardData(supabase)
+        const data = await loadAdminDashboardData(supabase, { includeGlobalMetrics, includeActivity })
         if (cancelled) return
         setProfile(data.profile)
         setRoles(data.roles)
@@ -150,7 +179,7 @@ export default function AdminDashboardPage() {
 
     void loadDashboard()
     return () => { cancelled = true }
-  }, [router, supabase])
+  }, [activeScope?.key, includeActivity, includeGlobalMetrics, navigation.context, navigation.loading, router, supabase])
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -179,8 +208,9 @@ export default function AdminDashboardPage() {
     return <div data-ui="page-shell"><EmptyState title="Usuario sin rol activo" description="Tu cuenta existe, pero todavía no tiene un rol administrativo activo." action={<Button variant="secondary" onClick={handleSignOut}>Cerrar sesión</Button>} /></div>
   }
 
-  const pendingReviews = summary?.pending_change_requests ?? 0
-  const activeScopeLabel = navigation.context?.activeScope.label ?? 'Sin alcance activo'
+  const pendingReviewValue = kpiValues.get('administrative.pending_reviews')
+  const pendingReviews = pendingReviewValue?.status === 'available' ? pendingReviewValue.value ?? 0 : null
+  const activeScopeLabel = activeScope?.label ?? 'Sin alcance activo'
   const primaryRole = getRoleInfo(roles[0])?.name ?? 'Usuario administrativo'
 
   return (
@@ -215,7 +245,7 @@ export default function AdminDashboardPage() {
         ) : undefined}
       />
 
-      {canVisit('/admin/revision') && (
+      {canVisit('/admin/revision') && pendingReviews !== null && (
         <section className={`admin-dashboard-review-notice ${pendingReviews > 0 ? 'has-pending' : 'is-clear'}`}>
           <span className="admin-dashboard-review-icon" aria-hidden="true">i</span>
           <div><strong>{pendingReviews > 0 ? 'Integridad de datos en seguimiento' : 'Integridad de datos al día'}</strong><p>{pendingReviews > 0 ? `${formatNumber(pendingReviews)} registros requieren revisión.` : 'No hay registros pendientes de revisión.'}</p></div>
@@ -223,12 +253,37 @@ export default function AdminDashboardPage() {
         </section>
       )}
 
-      <section className="admin-dashboard-metrics" aria-label="Indicadores administrativos">
-        {canVisit('/admin/personas') && <MetricCard href="/admin/personas" icon="P" label="Personas registradas" value={peopleCount} note="Directorio general" tone="green" />}
-        {canVisit('/admin/jurisdicciones') && <MetricCard href="/admin/jurisdicciones" icon="E" label="Entidades activas" value={summary?.active_entities ?? null} note={`${formatNumber(summary?.active_dioceses ?? null)} jurisdicciones`} tone="wine" />}
-        {canVisit('/admin/asignaciones') && <MetricCard href="/admin/asignaciones" icon="A" label="Asignaciones activas" value={activeAssignments} note="Cargos vigentes" tone="gold" />}
-        {canVisit('/admin/revision') && <MetricCard href="/admin/revision" icon="R" label="Pendientes de revisión" value={pendingReviews} note={pendingReviews > 0 ? 'Requieren atención' : 'Sin pendientes'} tone="alert" />}
-      </section>
+      {kpiGroups.map((group) => (
+        <section className="admin-dashboard-panel" key={group.dimension} aria-labelledby={`kpi-${group.dimension}`}>
+          <div className="admin-dashboard-panel-heading">
+            <div>
+              <h2 id={`kpi-${group.dimension}`}>Dimensión {dimensionLabels[group.dimension].toLowerCase()}</h2>
+              <p>Indicadores aplicables al alcance activo y a tus permisos de lectura.</p>
+            </div>
+          </div>
+          <div className="admin-dashboard-metrics">
+            {group.items.map((kpi) => {
+              const value = kpiValues.get(kpi.id)
+              if (!value) return null
+              const destination = kpi.destination && canVisit(kpi.destination) ? kpi.destination : null
+              const content = (
+                <>
+                  <span className={`admin-dashboard-metric-icon ${dimensionTones[group.dimension]}`} aria-hidden="true">{dimensionIcons[group.dimension]}</span>
+                  <span className="admin-dashboard-metric-label">{kpi.label}</span>
+                  <span className="admin-dashboard-metric-value">{formatKpiValue(value)}</span>
+                  <span className={`admin-dashboard-metric-note ${dimensionTones[group.dimension]}`}>{value.message}</span>
+                </>
+              )
+
+              return destination ? (
+                <a className="admin-dashboard-metric" href={destination} key={kpi.id} onClick={(event) => forceNavigation(event, destination)}>{content}</a>
+              ) : (
+                <div className="admin-dashboard-metric" key={kpi.id}>{content}</div>
+              )
+            })}
+          </div>
+        </section>
+      ))}
 
       <section className="admin-dashboard-primary-grid">
         <article className="admin-dashboard-panel admin-dashboard-actions-panel">
@@ -243,7 +298,11 @@ export default function AdminDashboardPage() {
         <article className="admin-dashboard-panel admin-dashboard-quality-panel">
           <div className="admin-dashboard-panel-heading"><div><h2>Contexto activo</h2><p>Resumen del ámbito con el que estás trabajando.</p></div></div>
           <div className="admin-dashboard-quality-copy"><small>Alcance seleccionado</small><strong>{activeScopeLabel}</strong><span>{roles.length} rol{roles.length === 1 ? '' : 'es'} activo{roles.length === 1 ? '' : 's'} para tu cuenta</span></div>
-          <dl className="admin-dashboard-quality-list"><div><dt>Jurisdicciones activas</dt><dd>{formatNumber(summary?.active_dioceses ?? null)}</dd></div><div><dt>Áreas pastorales</dt><dd>{formatNumber(summary?.active_pastoral_areas ?? null)}</dd></div><div><dt>Nombramientos activos</dt><dd>{formatNumber(activeAssignments)}</dd></div></dl>
+          <dl className="admin-dashboard-quality-list">
+            <div><dt>Tipo de alcance</dt><dd>{activeScope?.type ?? 'Sin alcance'}</dd></div>
+            <div><dt>Indicadores visibles</dt><dd>{kpiGroups.reduce((total, group) => total + group.items.length, 0)}</dd></div>
+            <div><dt>Fuente global</dt><dd>{includeGlobalMetrics ? 'Habilitada' : 'Bloqueada'}</dd></div>
+          </dl>
         </article>
       </section>
 
