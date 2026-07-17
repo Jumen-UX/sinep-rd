@@ -12,10 +12,12 @@ test('admin dashboard delegates data loading and sign out to its service', async
   const page = await read('src/features/admin/dashboard/AdminDashboardPage.tsx')
   const service = await read('src/features/admin/dashboard/admin-dashboard-service.ts')
 
-  assert.match(page, /loadAdminDashboardData\(supabase\)/)
+  assert.match(page, /loadAdminDashboardData\(supabase, \{ includeGlobalMetrics, includeActivity \}\)/)
   assert.match(page, /signOutAdminDashboard\(supabase\)/)
   assert.doesNotMatch(page, /supabase\.from\(/)
+  assert.match(service, /options\.includeGlobalMetrics/)
   assert.match(service, /supabase\.from\('admin_dashboard_summary'\)/)
+  assert.match(service, /options\.includeActivity/)
   assert.match(service, /supabase\.from\('admin_audit_log'\)/)
 })
 
@@ -29,6 +31,21 @@ test('admin dashboard filters actions links and metrics through canonical naviga
   assert.match(page, /frequentActions = actionCatalog\.filter\(\(action\) => canOperate\(action\.href\)\)/)
   assert.match(page, /activeScopeLabel/)
   assert.match(page, /Acceso de consulta/)
+  assert.match(page, /groupAdminKpisByDimension\(navigation\.policyContext\)/)
+  assert.match(page, /resolveAdminKpiValues/)
+})
+
+test('restricted scopes never request global KPI sources', async () => {
+  const page = await read('src/features/admin/dashboard/AdminDashboardPage.tsx')
+  const service = await read('src/features/admin/dashboard/admin-dashboard-service.ts')
+  const values = await read('src/features/admin/dashboard/admin-kpi-value-service.ts')
+
+  assert.match(page, /includeGlobalMetrics = activeScope\?\.isUnrestricted \?\? false/)
+  assert.match(service, /if \(options\.includeGlobalMetrics\)/)
+  assert.doesNotMatch(service, /summaryResponse[\s\S]*?options\.includeGlobalMetrics[^\s\S]/)
+  assert.match(values, /if \(!isUnrestricted\)/)
+  assert.match(values, /agregación segura para este alcance todavía no está disponible/i)
+  assert.doesNotMatch(values, /isUnrestricted \? false : true/)
 })
 
 test('dashboard search accurately describes and routes to the people directory only', async () => {
