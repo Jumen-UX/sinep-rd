@@ -23,6 +23,7 @@ export default function AdminWizardProgress({
 }: AdminWizardProgressProps) {
   const progress = steps.length > 0 ? Math.round(((currentStep + 1) / steps.length) * 100) : 0
   const reachableStep = Math.max(currentStep, Math.min(steps.length - 1, maxReachableStep))
+  const currentStepLabel = steps[currentStep]?.label ?? 'Sin paso activo'
 
   return (
     <aside
@@ -32,7 +33,9 @@ export default function AdminWizardProgress({
       <div className="flex items-center justify-between gap-3 px-2 pb-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--primary)]">Progreso</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--text-strong)]">Paso {currentStep + 1} de {steps.length}</p>
+          <p aria-live="polite" className="mt-1 text-sm font-semibold text-[var(--text-strong)]">
+            Paso {currentStep + 1} de {steps.length}: {currentStepLabel}
+          </p>
         </div>
         <StatusBadge tone="institutional">{progress}%</StatusBadge>
       </div>
@@ -44,6 +47,7 @@ export default function AdminWizardProgress({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={progress}
+        aria-valuetext={`Paso ${currentStep + 1} de ${steps.length}: ${currentStepLabel}`}
       >
         <span className="block h-full rounded-full bg-[var(--primary)] transition-[width]" style={{ width: `${progress}%` }} />
       </div>
@@ -76,7 +80,13 @@ export default function AdminWizardProgress({
           return (
             <li key={`${index}-${step.label}`}>
               {canNavigate ? (
-                <button className={className} onClick={() => onStepChange?.(index)} type="button" aria-current={isCurrent ? 'step' : undefined}>
+                <button
+                  aria-current={isCurrent ? 'step' : undefined}
+                  aria-label={`Ir al paso ${index + 1}: ${step.label}`}
+                  className={className}
+                  onClick={() => onStepChange?.(index)}
+                  type="button"
+                >
                   {content}
                 </button>
               ) : (
