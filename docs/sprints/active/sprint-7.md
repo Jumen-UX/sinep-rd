@@ -14,7 +14,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
 2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
-4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **En progreso.**
+4. [ ] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Contrato y política implementados; consultas por alcance en progreso.**
 5. [ ] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual.
 6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos.
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
@@ -52,7 +52,17 @@ El CI confirmó documentación, TypeScript, pruebas y build en verde. El filtrad
 
 ### S7-04 — En progreso
 
-Se inicia el contrato de KPIs contextuales para que cada indicador declare dimensión, permiso de lectura, alcance aplicable, fuente de datos, estado de disponibilidad y destino navegable. La implementación deberá reutilizar el alcance activo de `AdminNavigationProvider`, evitar conteos globales para perfiles restringidos y separar los indicadores territoriales, pastorales, administrativos y colegiales.
+La auditoría confirmó que `public.admin_dashboard_summary` calcula conteos globales y no recibe un alcance. También confirmó que `AdminNavigationProvider` ya diferencia ámbitos globales, nacionales, diocesanos, vicariales, zonales, parroquiales, pastorales y organizativos.
+
+Se implementaron:
+
+- `src/features/admin/dashboard/admin-kpi-contract.ts`, con doce indicadores distribuidos entre las dimensiones territorial, pastoral, administrativa y colegial;
+- permisos explícitos, tipos de valor, alcances admitidos y destinos navegables por indicador;
+- `src/features/admin/dashboard/admin-kpi-policy.ts`, que diferencia `available`, `not_applicable` y `hidden` sin tratar un alcance restringido como global;
+- agrupación de indicadores por dimensión para mantener una UI predecible;
+- `tests/admin-kpi-policy.test.mjs`, que protege dimensiones, permisos, alcances y estados de disponibilidad.
+
+La siguiente capa debe resolver valores por alcance mediante una API única y segura. Hasta que esa fuente contextual exista, los perfiles restringidos no deben recibir como sustituto los conteos globales de `admin_dashboard_summary`.
 
 ## Reglas del sprint
 
@@ -75,4 +85,4 @@ Se inicia el contrato de KPIs contextuales para que cada indicador declare dimen
 
 ## Punto de continuación
 
-Revisar las fuentes actuales de indicadores, el servicio del dashboard y los contratos territoriales, pastorales, administrativos y colegiales para definir una API contextual única. Después implementar filtros por alcance activo, estados de dato no disponible y pruebas que impidan mostrar cifras globales a perfiles restringidos.
+Diseñar e implementar la fuente contextual de valores KPI usando el alcance activo. Debe devolver estados explícitos cuando un dato todavía no tenga soporte, reutilizar la jerarquía territorial existente y evitar cualquier fallback global para perfiles restringidos. Después se conectará el dashboard al contrato por dimensiones y se validará con TypeScript, pruebas y CI.
