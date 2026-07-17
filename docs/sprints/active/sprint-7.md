@@ -17,7 +17,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
 4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
 5. [x] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **Completada con cuatro pantallas representativas y CI verde.**
-6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos. **Fundamentos, dashboard, navegación y primer bloque de asistentes completados; cobertura especializada en progreso.**
+6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos. **Cobertura semántica implementada en shell, dashboard, asistentes, tablas, historiales y capas heredadas; validación final en progreso.**
 7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
 8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
 9. [ ] S7-09 — Reducir duplicación visual y consolidar componentes reutilizables.
@@ -106,7 +106,19 @@ El cuarto bloque completó las superficies principales del dashboard público y 
 - configuración, formularios persistentes, roles, pestañas de entidad, tarjetas de completitud y estados activos del shell administrativo dejaron de fijar fondos claros;
 - los contratos verifican estas superficies y el E2E comprueba persistencia, recarga y Axe con tema oscuro.
 
-[CI #29553574966](https://github.com/Jumen-UX/sinep-rd/actions/runs/29553574966) y [E2E público #29553574996](https://github.com/Jumen-UX/sinep-rd/actions/runs/29553574996) confirmaron el conjunto completo en verde. S7-06 continúa abierto porque todavía deben revisarse tablas, overlays, modales y estilos especializados no cubiertos por el framework compartido.
+[CI #29553574966](https://github.com/Jumen-UX/sinep-rd/actions/runs/29553574966) y [E2E público #29553574996](https://github.com/Jumen-UX/sinep-rd/actions/runs/29553574996) confirmaron el conjunto completo en verde.
+
+El quinto bloque completó la cobertura especializada pendiente:
+
+- se creó `admin-theme-compatibility.css`, cargado después de los estilos de módulos, con alias canónicos para superficies, bordes, texto y marca heredados;
+- tablas compartidas incorporaron hover y `focus-within` mediante `surface-hover`;
+- diálogos y backdrops utilizan superficie, borde, texto y oscurecimiento semánticos;
+- el gestor de nombramientos, el formulario de cargos y las acciones del asistente de diáconos dejaron de depender de blanco fijo o fallbacks HEX;
+- historiales de nombramientos y eventos canónicos, mapas de relaciones, líneas institucionales y navegación fija de fichas usan tokens canónicos;
+- autenticación y componentes heredados de `admin-brand.css` reciben una capa final para tarjetas, indicadores, estados y superficies;
+- `tests/admin-theme-specialized.test.mjs` y `tests/profile-theme-surfaces.test.mjs` protegen el bloque completo.
+
+La validación automatizada del quinto bloque permanece pendiente: GitHub todavía no expone una ejecución asociada al último commit y Vercel reporta únicamente el límite de compilaciones del plan. S7-06 no se cerrará hasta confirmar `pnpm check`, CI y una comprobación visual breve en ambos temas.
 
 ## Estado operativo separado
 
@@ -139,4 +151,4 @@ No bloquean el avance técnico de S7-05, pero deben cerrarse antes de S7-10:
 
 ## Punto de continuación
 
-Continuar S7-06 con tablas, overlays, modales y estilos especializados que todavía contienen colores fijos. Después se cerrará la comprobación visual del modo oscuro y se avanzará a S7-07, acceso flotante a herramientas de accesibilidad. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
+Confirmar `pnpm check`, GitHub Actions y la comprobación visual claro/oscuro del quinto bloque. Si el resultado es verde, cerrar S7-06 e iniciar S7-07 con el acceso flotante a herramientas de accesibilidad. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
