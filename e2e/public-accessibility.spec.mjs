@@ -56,6 +56,39 @@ test('tema oscuro se aplica sin perder persistencia ni accesibilidad', async ({ 
   await expectNoBlockingAccessibilityViolations({ page, expect, testInfo })
 })
 
+test('herramientas de accesibilidad persisten tamaño y contraste', async ({ page }, testInfo) => {
+  const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+  expect(response).not.toBeNull()
+  expect(response.status()).toBeLessThan(400)
+
+  const trigger = page.getByRole('button', { name: 'Abrir herramientas de accesibilidad' })
+  await expect(trigger).toBeVisible()
+  await expect(trigger).toBeEnabled()
+  await trigger.click()
+
+  const panel = page.getByRole('dialog', { name: 'Herramientas de accesibilidad' })
+  await expect(panel).toBeVisible()
+  await panel.getByRole('button', { name: 'Grande' }).click()
+  await panel.getByRole('checkbox', { name: /Alto contraste/ }).check()
+
+  await expect(page.locator('html')).toHaveAttribute('data-text-scale', 'large')
+  await expect(page.locator('html')).toHaveAttribute('data-contrast', 'high')
+  await expect.poll(async () => page.evaluate(() => {
+    const value = localStorage.getItem('sinep-accessibility')
+    return value ? JSON.parse(value) : null
+  })).toMatchObject({ textScale: 'large', highContrast: true })
+
+  await page.keyboard.press('Escape')
+  await expect(panel).toBeHidden()
+  await expect(trigger).toBeFocused()
+
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.locator('html')).toHaveAttribute('data-text-scale', 'large')
+  await expect(page.locator('html')).toHaveAttribute('data-contrast', 'high')
+  await expectNoBlockingAccessibilityViolations({ page, expect, testInfo })
+})
+
 test('inicio territorial mantiene sus secciones en flujo vertical', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1200 })
   const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
