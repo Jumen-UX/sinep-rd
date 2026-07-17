@@ -11,10 +11,50 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',')
 
+const formFieldSelector = 'input:not([type="hidden"]), select, textarea'
+
 function configureLiveRegion(message: HTMLElement, priority: 'assertive' | 'polite', role: 'alert' | 'status') {
   if (!message.hasAttribute('role')) message.setAttribute('role', role)
   message.setAttribute('aria-live', priority)
   message.setAttribute('aria-atomic', 'true')
+}
+
+function appendDescriptionId(field: HTMLElement, descriptionId: string) {
+  const ids = new Set((field.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean))
+  ids.add(descriptionId)
+  field.setAttribute('aria-describedby', Array.from(ids).join(' '))
+}
+
+function removeDescriptionId(field: HTMLElement, descriptionId: string) {
+  const ids = (field.getAttribute('aria-describedby') ?? '')
+    .split(/\s+/)
+    .filter((id) => id && id !== descriptionId)
+
+  if (ids.length > 0) field.setAttribute('aria-describedby', ids.join(' '))
+  else field.removeAttribute('aria-describedby')
+}
+
+function associateLegacyFormErrors(root: ParentNode) {
+  root.querySelectorAll<HTMLFormElement>('form').forEach((form, formIndex) => {
+    const error = form.querySelector<HTMLElement>('.error-box, [role="alert"]')
+      ?? form.parentElement?.querySelector<HTMLElement>(':scope > .error-box, :scope > [role="alert"]')
+    if (!error || !error.textContent?.trim()) return
+
+    const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(formFieldSelector))
+    const invalidField = fields.find((field) => !field.disabled && !field.checkValidity())
+    if (!invalidField) return
+
+    const errorId = error.id || `legacy-form-error-${formIndex + 1}`
+    error.id = errorId
+    invalidField.setAttribute('aria-invalid', 'true')
+    invalidField.dataset.a11yErrorId = errorId
+    appendDescriptionId(invalidField, errorId)
+
+    if (error.dataset.a11yFieldLinked !== 'true') {
+      error.dataset.a11yFieldLinked = 'true'
+      queueMicrotask(() => invalidField.focus())
+    }
+  })
 }
 
 function enhanceLegacyAdmin(root: ParentNode) {
@@ -47,6 +87,8 @@ function enhanceLegacyAdmin(root: ParentNode) {
   root.querySelectorAll<HTMLElement>('[data-loading="true"], [aria-busy="true"]').forEach((region) => {
     region.setAttribute('aria-busy', 'true')
   })
+
+  associateLegacyFormErrors(root)
 }
 
 export function LegacyAdminAccessibilityEnhancements() {
@@ -87,6 +129,19 @@ export function LegacyAdminAccessibilityEnhancements() {
       restoreMobileDialogFocus()
     }
 
+    function handleFieldCorrection(event: Event) {
+      const field = event.target
+      if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)) return
+      if (!field.checkValidity()) return
+
+      const errorId = field.dataset.a11yErrorId
+      if (!errorId) return
+
+      field.removeAttribute('aria-invalid')
+      removeDescriptionId(field, errorId)
+      delete field.dataset.a11yErrorId
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
       const menu = document.querySelector<HTMLElement>('#admin-mobile-menu')
       const dialog = menu?.querySelector<HTMLElement>('[role="dialog"]')
@@ -120,6 +175,8 @@ export function LegacyAdminAccessibilityEnhancements() {
 
     synchronize()
     document.addEventListener('keydown', handleKeyDown)
+    root.addEventListener('input', handleFieldCorrection)
+    root.addEventListener('change', handleFieldCorrection)
 
     const observer = new MutationObserver(synchronize)
     observer.observe(root, {
@@ -131,6 +188,8 @@ export function LegacyAdminAccessibilityEnhancements() {
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      root.removeEventListener('input', handleFieldCorrection)
+      root.removeEventListener('change', handleFieldCorrection)
       observer.disconnect()
     }
   }, [])
