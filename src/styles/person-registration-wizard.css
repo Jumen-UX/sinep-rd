@@ -1,6 +1,6 @@
 /* Controlled presentation for person registration flows migrated away from AutoSectionWizard. */
 
-.admin-lay-wizard .admin-wizard-layout {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-layout {
   align-items: start;
   display: grid;
   gap: 1rem;
@@ -8,7 +8,7 @@
   min-width: 0;
 }
 
-.admin-lay-wizard .admin-wizard-layout > aside[aria-label='Progreso del asistente'] {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-layout > aside[aria-label='Progreso del asistente'] {
   align-self: start;
   grid-column: 1;
   min-width: 0;
@@ -16,28 +16,28 @@
   top: 1rem;
 }
 
-.admin-lay-wizard .admin-wizard-form {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-form {
   grid-column: 2;
   min-width: 0;
 }
 
-.admin-lay-wizard .admin-wizard-form > section:not([hidden]) {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-form > section:not([hidden]) {
   display: grid;
   gap: 1rem;
   max-width: none;
 }
 
-.admin-lay-wizard .admin-wizard-form > section[hidden] {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-form > section[hidden] {
   display: none;
 }
 
-.admin-lay-wizard :is(.admin-form-fields-grid, .admin-review-grid) {
+:is(.admin-lay-wizard, .admin-religious-wizard) :is(.admin-form-fields-grid, .admin-review-grid) {
   display: grid;
   gap: 0.875rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.admin-lay-wizard .person-option-fieldset {
+:is(.admin-lay-wizard, .admin-religious-wizard) .person-option-fieldset {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   display: grid;
@@ -47,23 +47,23 @@
   padding: 1rem;
 }
 
-.admin-lay-wizard .person-option-fieldset legend {
+:is(.admin-lay-wizard, .admin-religious-wizard) .person-option-fieldset legend {
   color: var(--foreground);
   font-weight: 900;
   padding-inline: 0.35rem;
 }
 
-.admin-lay-wizard .person-option-list {
+:is(.admin-lay-wizard, .admin-religious-wizard) .person-option-list {
   display: grid;
   gap: 0.875rem;
   min-width: 0;
 }
 
-.admin-lay-wizard .person-option-list--choices {
+:is(.admin-lay-wizard, .admin-religious-wizard) .person-option-list--choices {
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
 
-.admin-lay-wizard .person-option-list label.role-pill {
+:is(.admin-lay-wizard, .admin-religious-wizard) .person-option-list label.role-pill {
   align-items: flex-start;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -76,34 +76,34 @@
   transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.admin-lay-wizard .person-option-list label.role-pill:hover {
+:is(.admin-lay-wizard, .admin-religious-wizard) .person-option-list label.role-pill:hover {
   background: var(--surface-hover);
   border-color: var(--border-strong);
 }
 
-.admin-lay-wizard .person-option-list label.role-pill:has(input:checked) {
+:is(.admin-lay-wizard, .admin-religious-wizard) .person-option-list label.role-pill:has(input:checked) {
   background: var(--primary-soft);
   border-color: var(--primary);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
-.admin-lay-wizard .person-option-list label.role-pill:focus-within {
+:is(.admin-lay-wizard, .admin-religious-wizard) .person-option-list label.role-pill:focus-within {
   border-color: var(--primary);
   box-shadow: var(--focus-ring);
 }
 
-.admin-lay-wizard .admin-review-grid > * {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-review-grid > * {
   display: grid;
   gap: 0.35rem;
   padding: 1rem;
 }
 
-.admin-lay-wizard .admin-review-grid button {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-review-grid button {
   justify-self: start;
   margin-top: 0.4rem;
 }
 
-.admin-lay-wizard .admin-wizard-actions {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-actions {
   align-items: center;
   display: flex;
   gap: 0.75rem;
@@ -112,7 +112,7 @@
   width: 100%;
 }
 
-.admin-lay-wizard .admin-wizard-actions .button {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-actions .button {
   align-items: center;
   display: inline-flex;
   justify-content: center;
@@ -121,7 +121,7 @@
   padding: 0.7rem 1rem;
 }
 
-.admin-lay-wizard .admin-wizard-actions > span {
+:is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-actions > span {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
@@ -129,54 +129,54 @@
   text-align: center;
 }
 
-.admin-lay-wizard :is(button, a):focus-visible {
+:is(.admin-lay-wizard, .admin-religious-wizard) :is(button, a):focus-visible {
   box-shadow: var(--focus-ring);
   outline: none;
 }
 
 @media (max-width: 900px) {
-  .admin-lay-wizard .admin-wizard-layout {
+  :is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-layout {
     grid-template-columns: 1fr;
   }
 
-  .admin-lay-wizard .admin-wizard-layout > aside[aria-label='Progreso del asistente'],
-  .admin-lay-wizard .admin-wizard-form {
+  :is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-layout > aside[aria-label='Progreso del asistente'],
+  :is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-form {
     grid-column: 1;
     grid-row: auto;
   }
 
-  .admin-lay-wizard .admin-wizard-layout > aside[aria-label='Progreso del asistente'] {
+  :is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-layout > aside[aria-label='Progreso del asistente'] {
     position: static;
   }
 }
 
 @media (max-width: 820px) {
-  .admin-lay-wizard :is(.admin-form-fields-grid, .admin-review-grid),
-  .admin-lay-wizard .person-option-list--choices {
+  :is(.admin-lay-wizard, .admin-religious-wizard) :is(.admin-form-fields-grid, .admin-review-grid),
+  :is(.admin-lay-wizard, .admin-religious-wizard) .person-option-list--choices {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .admin-lay-wizard .admin-wizard-actions {
+  :is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-actions {
     align-items: stretch;
     flex-wrap: wrap;
     position: static;
   }
 
-  .admin-lay-wizard .admin-wizard-actions .button {
+  :is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-actions .button {
     flex: 1 1 9rem;
     min-width: 0;
   }
 
-  .admin-lay-wizard .admin-wizard-actions > span {
+  :is(.admin-lay-wizard, .admin-religious-wizard) .admin-wizard-actions > span {
     flex: 1 0 100%;
     order: -1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .admin-lay-wizard :is(.role-pill, .button) {
+  :is(.admin-lay-wizard, .admin-religious-wizard) :is(.role-pill, .button) {
     transition: none;
   }
 }
