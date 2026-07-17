@@ -36,7 +36,7 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - El contrato de consolidación protege ambas pantallas y evita reintroducir estilos embebidos o superficies claras fijas.
 - CI confirmó el bloque en verde.
 
-## Tercer bloque implementado
+## Tercer bloque implementado y validado
 
 - `EventReviewPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
 - La hoja compartida incorporó tarjetas de revisión, validaciones, participantes, nodos de impacto e incidencias con severidades semánticas.
@@ -46,7 +46,19 @@ Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamen
 - Carga, evento inexistente, errores de acción, resumen y guardado declaran semántica propia.
 - La nota de revisión usa asociación `label`/`textarea`, y la acción de aprobación referencia la guía de impacto mediante `aria-describedby`.
 - El contrato de consolidación protege las tres pantallas migradas.
+- CI confirmó el bloque en verde.
+
+## Cuarto bloque implementado
+
+- `EventActionPlanPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
+- Se creó `src/styles/admin-event-action-plan.css` como módulo del conjunto compartido de eventos para editor relacional, métricas, acciones y conflictos.
+- Las superficies y severidades usan tokens semánticos compatibles con tema claro y oscuro.
+- El editor relacional declara una región etiquetada y estado ocupado durante el guardado.
+- Conflictos bloqueantes se anuncian como alertas y advertencias como estados moderados.
+- Las acciones usan encabezados `h3` bajo la sección principal y los controles de estado declaran `role="group"` y `aria-pressed`.
+- Carga, evento inexistente, errores, plan vacío, resumen y regeneración declaran semántica accesible propia.
+- El contrato de consolidación protege estilos, estructura y comportamiento accesible del plan.
 
 ## Criterio del siguiente bloque
 
-Validar el tercer bloque con CI y migrar plan y contrato de aplicación. Después se consolidarán verificación y pendientes, y se retirarán de `admin-embedded-theme-cleanup.css` los selectores de eventos que ya no sean necesarios.
+Validar el cuarto bloque con CI y migrar `EventApplicationContractPage.tsx`. Después se consolidarán verificación y pendientes, y se retirarán de `admin-embedded-theme-cleanup.css` los selectores de eventos que ya no sean necesarios.
