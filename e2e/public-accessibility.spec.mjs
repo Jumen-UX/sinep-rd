@@ -89,6 +89,28 @@ test('herramientas de accesibilidad persisten tamaño y contraste', async ({ pag
   await expectNoBlockingAccessibilityViolations({ page, expect, testInfo })
 })
 
+test('texto muy grande conserva reflujo sin desbordamiento horizontal global', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+
+  for (const publicPage of publicPages) {
+    const response = await page.goto(publicPage.path, { waitUntil: 'domcontentloaded' })
+    expect(response).not.toBeNull()
+    expect(response.status()).toBeLessThan(400)
+
+    const trigger = page.getByRole('button', { name: 'Abrir herramientas de accesibilidad' })
+    await trigger.click()
+    const panel = page.getByRole('dialog', { name: 'Herramientas de accesibilidad' })
+    await panel.getByRole('button', { name: 'Muy grande', exact: true }).click()
+    await page.keyboard.press('Escape')
+
+    await expect(page.locator('html')).toHaveAttribute('data-text-scale', 'xlarge')
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+      `${publicPage.label} no debe producir desplazamiento horizontal global con texto muy grande.`,
+    ).toBe(true)
+  }
+})
+
 test('inicio territorial mantiene sus secciones en flujo vertical', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1200 })
   const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
