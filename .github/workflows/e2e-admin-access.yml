@@ -50,6 +50,21 @@ jobs:
             fi
             echo "Authenticated matrix skipped on push: configure E2E_ACCESS_PROFILES_JSON as a repository secret."
           else
+            node <<'NODE'
+          const raw = process.env.E2E_ACCESS_PROFILES_JSON
+          let profiles
+          try {
+            profiles = JSON.parse(raw)
+          } catch {
+            console.error('::error::E2E_ACCESS_PROFILES_JSON is not valid JSON. Replace the complete protected secret before rerunning this workflow.')
+            process.exit(1)
+          }
+          if (!Array.isArray(profiles) || profiles.length === 0) {
+            console.error('::error::E2E_ACCESS_PROFILES_JSON must contain a non-empty JSON array.')
+            process.exit(1)
+          }
+          console.log(`Protected access matrix is valid JSON with ${profiles.length} profile(s).`)
+          NODE
             echo "enabled=true" >> "${GITHUB_OUTPUT}"
           fi
 
