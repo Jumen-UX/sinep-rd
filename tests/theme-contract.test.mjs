@@ -98,3 +98,16 @@ test('brand mark keeps a dark foreground over the institutional gold', async () 
   assert.match(systemStyles, /--brand-mark-text:\s*#35100d/)
   assert.match(publicShell, /\.site-header \.brand-mark\s*\{[^}]*color:\s*var\(--brand-mark-text\)/s)
 })
+
+test('public accessibility workflow watches shared theme surfaces', async () => {
+  const workflow = await source('.github/workflows/e2e-public.yml')
+
+  for (const watchedPath of [
+    'src/app/public-shell.css',
+    'src/styles/**',
+    'src/components/theme/**',
+    'src/components/ui/**',
+  ]) {
+    assert.match(workflow, new RegExp(`- '${watchedPath.replaceAll('*', '\\*')}'`))
+  }
+})

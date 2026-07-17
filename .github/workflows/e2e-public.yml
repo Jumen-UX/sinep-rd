@@ -13,6 +13,10 @@ on:
       - 'src/features/public/**'
       - 'src/lib/public/**'
       - 'src/app/globals.css'
+      - 'src/app/public-shell.css'
+      - 'src/styles/**'
+      - 'src/components/theme/**'
+      - 'src/components/ui/**'
 
 permissions:
   contents: read
