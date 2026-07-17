@@ -25,17 +25,6 @@ const kindOptions: Array<{ key: StructureKindKey; label: string }> = [
   { key: 'organic', label: 'Orgánica' },
 ]
 
-const pageStyles = `
-  .level-office-grid { display: grid; gap: 16px; grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr); }
-  .level-office-toolbar { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .level-office-list { display: grid; gap: 10px; }
-  .level-office-row { align-items: center; border: 1px solid var(--border); border-radius: 14px; display: grid; gap: 10px; grid-template-columns: auto 1fr; padding: 12px; }
-  .level-office-row strong { display: block; }
-  .level-office-row span { color: var(--muted); font-size: 13px; }
-  .level-office-summary { background: var(--surface-subtle, #fbf8f1); border: 1px solid var(--border); border-radius: 16px; display: grid; gap: 8px; padding: 14px; }
-  @media (max-width: 900px) { .level-office-grid, .level-office-toolbar { grid-template-columns: 1fr; } }
-`
-
 function levelLabel(level: StructureLevel) {
   return `Nivel ${level.level_order + 1} · ${level.name}`
 }
@@ -181,25 +170,30 @@ export default function LevelOfficeConfigurationPage() {
     }
   }
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando configuración de cargos por nivel...</div></main>
+  if (loading) {
+    return <main className="container"><div className="empty-state" role="status" aria-live="polite">Cargando configuración de cargos por nivel...</div></main>
+  }
 
   return (
-    <main className="container dashboard-page admin-config-page">
-      <style>{pageStyles}</style>
+    <main
+      aria-busy={loadingStructure || saving}
+      aria-labelledby="level-office-title"
+      className="container dashboard-page admin-config-page level-office-page"
+    >
       <div className="detail-backlink"><Link href="/admin">← Volver al panel administrativo</Link></div>
 
       <section className="dashboard-hero card">
         <div>
           <p className="eyebrow">Configuración estructural</p>
-          <h1>Cargos permitidos por nivel</h1>
+          <h1 id="level-office-title">Cargos permitidos por nivel</h1>
           <p className="lead">Define qué cargos pueden usarse en cada nivel de la estructura activa. Esto alimenta el filtro del formulario de asignaciones.</p>
         </div>
       </section>
 
-      {error && <div className="error-box">{error}</div>}
-      {message && <div className="empty-state">{message}</div>}
+      {error && <div className="error-box" role="alert" aria-live="assertive">{error}</div>}
+      {message && <div className="success-box" role="status" aria-live="polite" aria-atomic="true">{message}</div>}
 
-      <section className="card dashboard-section">
+      <section aria-label="Contexto de configuración estructural" className="card dashboard-section">
         <div className="level-office-toolbar">
           <label>
             Diócesis
@@ -227,16 +221,17 @@ export default function LevelOfficeConfigurationPage() {
       </section>
 
       <section className="level-office-grid">
-        <div className="card dashboard-section">
+        <section aria-labelledby="level-office-levels-title" className="card dashboard-section">
           <p className="eyebrow">Nivel estructural</p>
-          <h2>{selectedDiocese?.name ?? 'Sin diócesis'}</h2>
+          <h2 id="level-office-levels-title">{selectedDiocese?.name ?? 'Sin diócesis'}</h2>
           <p className="meta">{selectedTemplate?.name ?? 'Selecciona un catálogo para ver sus niveles.'}</p>
 
-          {loadingStructure ? <div className="empty-state">Cargando estructura...</div> : (
-            <div className="level-office-list">
-              {levels.length === 0 && <div className="empty-state">Este catálogo todavía no tiene niveles configurados.</div>}
+          {loadingStructure ? <div className="empty-state" role="status" aria-live="polite">Cargando estructura...</div> : (
+            <div aria-label="Niveles estructurales disponibles" className="level-office-list" role="group">
+              {levels.length === 0 && <div className="empty-state" role="status">Este catálogo todavía no tiene niveles configurados.</div>}
               {levels.map((level) => (
                 <button
+                  aria-pressed={selectedLevelId === level.id}
                   className={`metric-card metric-button ${selectedLevelId === level.id ? 'active-filter' : ''}`}
                   key={level.id}
                   onClick={() => setSelectedLevelId(level.id)}
@@ -248,40 +243,43 @@ export default function LevelOfficeConfigurationPage() {
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        <form className="card dashboard-section" onSubmit={saveLevelOffices}>
+        <form aria-busy={saving} aria-labelledby="level-office-form-title" className="card dashboard-section" onSubmit={saveLevelOffices}>
           <div className="section-heading">
             <div>
               <p className="eyebrow">Cargos permitidos</p>
-              <h2>{selectedLevel ? levelLabel(selectedLevel) : 'Selecciona un nivel'}</h2>
+              <h2 id="level-office-form-title">{selectedLevel ? levelLabel(selectedLevel) : 'Selecciona un nivel'}</h2>
               <p className="meta">Selecciona uno o varios cargos. El primero guardado se marca como predeterminado para ese nivel.</p>
             </div>
           </div>
 
-          <div className="level-office-summary">
+          <div className="level-office-summary" aria-live="polite" aria-atomic="true">
             <strong>{selectedOfficeIds.length} cargos seleccionados</strong>
             <span>{selectedLevel ? 'Esta configuración se usa en Asignaciones de cargos al seleccionar una entidad de este nivel.' : 'Selecciona un nivel para activar la lista.'}</span>
           </div>
 
-          <div className="level-office-list">
-            {offices.map((office) => (
-              <label className="level-office-row" key={office.id}>
-                <input
-                  checked={selectedOfficeIds.includes(office.id)}
-                  disabled={!selectedLevelId || saving}
-                  onChange={(event) => toggleOffice(office.id, event.target.checked)}
-                  type="checkbox"
-                />
-                <span>
-                  <strong>{office.display_name}</strong>
-                  <span>{office.key}</span>
-                </span>
-              </label>
-            ))}
-          </div>
+          <fieldset className="level-office-fieldset" disabled={!selectedLevelId || saving}>
+            <legend>Cargos disponibles para el nivel</legend>
+            <div className="level-office-list">
+              {offices.length === 0 && <div className="empty-state" role="status">No hay cargos configurados para seleccionar.</div>}
+              {offices.map((office) => (
+                <label className="level-office-row" key={office.id}>
+                  <input
+                    checked={selectedOfficeIds.includes(office.id)}
+                    onChange={(event) => toggleOffice(office.id, event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>
+                    <strong>{office.display_name}</strong>
+                    <span>{office.key}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
-          <button className="button button-primary" disabled={!selectedLevelId || saving}>
+          <button aria-busy={saving} className="button button-primary" disabled={!selectedLevelId || saving} type="submit">
             {saving ? 'Guardando...' : 'Guardar cargos del nivel'}
           </button>
         </form>
