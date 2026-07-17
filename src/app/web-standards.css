@@ -1,7 +1,7 @@
 .skip-link {
-  background: #10233f;
+  background: var(--surface-inverse);
   border-radius: 0 0 12px 12px;
-  color: #ffffff;
+  color: var(--text-inverse);
   font-weight: 900;
   left: 16px;
   padding: 12px 16px;
@@ -14,13 +14,13 @@
 
 .skip-link:focus,
 .skip-link:focus-visible {
-  outline: 3px solid #c8951d;
+  outline: 3px solid var(--gold);
   outline-offset: 3px;
   transform: translateY(0);
 }
 
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 3px solid #1b4f9c;
+  outline: 3px solid var(--gold);
   outline-offset: 3px;
 }
 
@@ -66,9 +66,10 @@
 
 .public-level-card,
 .public-feature-card {
-  background: #ffffff;
-  border: 1px solid var(--public-border, #e5e8ef);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 16px;
+  color: var(--foreground);
   display: grid;
   gap: 12px;
   padding: 16px;
@@ -76,10 +77,10 @@
 
 .public-info-banner {
   align-items: center;
-  background: #f7fbff;
-  border: 1px solid rgba(27, 79, 156, 0.18);
+  background: var(--info-soft);
+  border: 1px solid var(--border-info);
   border-radius: 16px;
-  color: #2e4768;
+  color: var(--info);
   display: flex;
   font-size: 14px;
   font-weight: 800;
@@ -89,9 +90,9 @@
 
 .public-info-banner::before {
   align-items: center;
-  border: 1px solid rgba(27, 79, 156, 0.35);
+  border: 1px solid var(--border-info);
   border-radius: 999px;
-  color: #1b4f9c;
+  color: var(--info);
   content: 'i';
   display: inline-flex;
   flex: 0 0 auto;
