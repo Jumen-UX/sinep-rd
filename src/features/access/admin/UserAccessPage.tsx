@@ -3,6 +3,11 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageState } from '@/components/ui/page-state'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { createClient } from '@/lib/supabase/client'
 import {
   assignUserRole,
@@ -24,6 +29,12 @@ import {
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback
+}
+
+function profileStatusTone(status: string) {
+  if (status === 'active') return 'success' as const
+  if (status === 'suspended') return 'warning' as const
+  return 'danger' as const
 }
 
 export default function UserAccessPage() {
@@ -159,46 +170,56 @@ export default function UserAccessPage() {
     }
   }
 
-  if (loading) return <div className="empty-state">Cargando usuarios, roles y permisos...</div>
+  if (loading) {
+    return (
+      <main className="container">
+        <PageState
+          compact
+          kind="loading"
+          title="Cargando usuarios y permisos"
+          description="Estamos preparando las cuentas, roles, alcances y permisos efectivos."
+        />
+      </main>
+    )
+  }
 
   return (
-    <main className="admin-access-page" id="top">
-      <header className="admin-top-header">
-        <div className="admin-top-title">
-          <span className="admin-mini-mark">ACCESO</span>
-          <strong>Usuarios, roles y permisos</strong>
-        </div>
-        <div className="admin-top-actions">
-          <Link className="button button-secondary" href="/admin">Volver al panel</Link>
-          <Link className="button button-secondary" href="/admin/configuracion">Configuración</Link>
-          <Link className="button button-primary" href="/admin/usuarios/invitar">Invitar usuario</Link>
-        </div>
-      </header>
-
-      <section className="admin-welcome-panel">
-        <div>
-          <p className="eyebrow">Acceso administrativo</p>
-          <h1>Control de usuarios</h1>
-          <p className="lead">Administra quién puede entrar al portal, qué nivel tiene y sobre qué alcance puede trabajar.</p>
-          <div className="role-list admin-role-list">
-            <span className="role-pill">Alcances jerárquicos</span>
-            <span className="role-pill">Roles activos</span>
-            <span className="role-pill">Permisos efectivos</span>
-          </div>
-        </div>
-        <div className="admin-welcome-illustration" aria-hidden="true">♙</div>
-      </section>
+    <main className="container admin-dashboard admin-access-page" id="top">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Administración', href: '/admin' },
+          { label: 'Configuración', href: '/admin/configuracion' },
+          { label: 'Usuarios y permisos' },
+        ]}
+        eyebrow="Acceso administrativo"
+        title="Usuarios, roles y permisos"
+        description="Administra quién puede entrar al portal, qué nivel tiene y sobre qué alcance puede trabajar."
+        metadata={(
+          <>
+            <StatusBadge tone="institutional" dot>{users.length} usuarios</StatusBadge>
+            <StatusBadge tone="success" dot>{metrics.active} listos</StatusBadge>
+            <StatusBadge tone="warning" dot>{metrics.pending} pendientes</StatusBadge>
+            <StatusBadge tone="info" dot>{metrics.assignments} roles activos</StatusBadge>
+          </>
+        )}
+        actions={(
+          <>
+            <Button asChild variant="secondary"><Link href="/admin/configuracion">Configuración</Link></Button>
+            <Button asChild><Link href="/admin/usuarios/invitar">Invitar usuario</Link></Button>
+          </>
+        )}
+      />
 
       <section className="admin-stat-strip" aria-label="Resumen de acceso">
-        <a href="#users"><span>♙</span><strong>{users.length}</strong><small>Usuarios registrados</small></a>
-        <a href="#users"><span>✓</span><strong>{metrics.active}</strong><small>Usuarios activos</small></a>
-        <a href="#users"><span>!</span><strong>{metrics.pending}</strong><small>Pendientes de activación</small></a>
-        <a href="#assign-role"><span>▣</span><strong>{metrics.assignments}</strong><small>Roles activos asignados</small></a>
-        <a href="#roles"><span>◇</span><strong>{roles.length}</strong><small>Roles del sistema</small></a>
+        <a href="#users"><span aria-hidden="true">♙</span><strong>{users.length}</strong><small>Usuarios registrados</small></a>
+        <a href="#users"><span aria-hidden="true">✓</span><strong>{metrics.active}</strong><small>Usuarios activos</small></a>
+        <a href="#users"><span aria-hidden="true">!</span><strong>{metrics.pending}</strong><small>Pendientes de activación</small></a>
+        <a href="#assign-role"><span aria-hidden="true">▣</span><strong>{metrics.assignments}</strong><small>Roles activos asignados</small></a>
+        <a href="#roles"><span aria-hidden="true">◇</span><strong>{roles.length}</strong><small>Roles del sistema</small></a>
       </section>
 
-      {error && <div className="error-box">{error}</div>}
-      {notice && <div className="success-box">{notice}</div>}
+      {error ? <PageState kind="error" title="No se pudo completar la operación" description={error} /> : null}
+      {notice ? <Alert tone="success" title="Operación completada">{notice}</Alert> : null}
 
       <section className="grid two-panel-grid" id="assign-role">
         <article className="card admin-section">
@@ -251,9 +272,9 @@ export default function UserAccessPage() {
               </label>
             )}
 
-            <button className="button button-primary" disabled={saving || users.length === 0 || roles.length === 0} type="submit">
+            <Button disabled={saving || users.length === 0 || roles.length === 0} type="submit">
               {saving ? 'Guardando...' : 'Asignar rol'}
-            </button>
+            </Button>
           </form>
         </article>
 
@@ -284,30 +305,39 @@ export default function UserAccessPage() {
         </div>
 
         <div className="access-user-list">
-          {users.map((user) => (
+          {users.length === 0 ? (
+            <PageState
+              kind="empty"
+              title="No hay usuarios visibles"
+              description="No se encontraron cuentas dentro de tu alcance administrativo."
+              action={<Button asChild><Link href="/admin/usuarios/invitar">Invitar usuario</Link></Button>}
+            />
+          ) : users.map((user) => (
             <article className="access-user-card entity-card" key={user.user_id}>
               <div className="access-user-main">
                 <div>
-                  <p className="entity-type">{getUserStatusLabel(user.profile_status)}</p>
-                  <h2>{user.full_name ?? user.email ?? 'Usuario sin nombre'}</h2>
+                  <StatusBadge tone={profileStatusTone(user.profile_status)} dot>
+                    {getUserStatusLabel(user.profile_status)}
+                  </StatusBadge>
+                  <h3>{user.full_name ?? user.email ?? 'Usuario sin nombre'}</h3>
                   <p className="meta">{user.email ?? 'Correo no registrado'} · Último acceso: {formatUserAccessDate(user.last_sign_in_at)}</p>
                   <p className="meta">{getUserOnboardingLabel(user)}</p>
                 </div>
                 <div className="access-actions actions">
-                  <button className="button button-secondary" disabled={saving || user.profile_status === 'active'} onClick={() => handleStatusChange(user.user_id, 'active')} type="button">Activar</button>
-                  <button className="button button-secondary" disabled={saving || user.profile_status === 'suspended'} onClick={() => handleStatusChange(user.user_id, 'suspended')} type="button">Suspender</button>
-                  <button className="button button-secondary" disabled={saving || ['disabled', 'inactive'].includes(user.profile_status)} onClick={() => handleStatusChange(user.user_id, 'disabled')} type="button">Desactivar</button>
+                  <Button disabled={saving || user.profile_status === 'active'} onClick={() => handleStatusChange(user.user_id, 'active')} size="sm" type="button" variant="secondary">Activar</Button>
+                  <Button disabled={saving || user.profile_status === 'suspended'} onClick={() => handleStatusChange(user.user_id, 'suspended')} size="sm" type="button" variant="secondary">Suspender</Button>
+                  <Button disabled={saving || ['disabled', 'inactive'].includes(user.profile_status)} onClick={() => handleStatusChange(user.user_id, 'disabled')} size="sm" type="button" variant="destructive">Desactivar</Button>
                 </div>
               </div>
 
               <div className="role-list">
                 {user.active_roles.length === 0 ? (
-                  <span className="role-pill">Sin rol activo</span>
+                  <StatusBadge tone="warning">Sin rol activo</StatusBadge>
                 ) : user.active_roles.map((role) => (
-                  <span className="role-pill" key={role.assignment_id}>
+                  <StatusBadge key={role.assignment_id} tone="info">
                     {role.role_name} · {getScopeLabel(role.scope_type)}
-                    <button disabled={saving} onClick={() => handleEndRole(role.assignment_id)} type="button">Cerrar</button>
-                  </span>
+                    <Button disabled={saving} onClick={() => handleEndRole(role.assignment_id)} size="sm" type="button" variant="ghost">Cerrar</Button>
+                  </StatusBadge>
                 ))}
               </div>
 
@@ -327,17 +357,23 @@ export default function UserAccessPage() {
         </div>
 
         <div className="grid admin-modules">
-          {roles.map((role) => (
+          {roles.length === 0 ? (
+            <PageState
+              kind="empty"
+              title="No hay roles configurados"
+              description="El catálogo de roles no devolvió opciones visibles para tu alcance."
+            />
+          ) : roles.map((role) => (
             <article className="entity-card admin-module" key={role.role_id}>
               <p className="entity-type">{role.role_key}</p>
-              <h2>{role.role_name}</h2>
+              <h3>{role.role_name}</h3>
               <p className="meta">{role.description ?? 'Sin descripción registrada.'}</p>
               <p className="meta">{role.active_assignments_count} asignaciones activas · {role.permissions.length} permisos</p>
               <div className="role-list">
                 {role.permissions.slice(0, 8).map((permission) => (
-                  <span className="role-pill" key={permission.key}>{permission.key}</span>
+                  <StatusBadge key={permission.key}>{permission.key}</StatusBadge>
                 ))}
-                {role.permissions.length > 8 && <span className="role-pill">+{role.permissions.length - 8} permisos</span>}
+                {role.permissions.length > 8 ? <StatusBadge tone="info">+{role.permissions.length - 8} permisos</StatusBadge> : null}
               </div>
             </article>
           ))}
