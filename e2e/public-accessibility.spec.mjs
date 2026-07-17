@@ -69,7 +69,7 @@ test('herramientas de accesibilidad persisten tamaño y contraste', async ({ pag
 
   const panel = page.getByRole('dialog', { name: 'Herramientas de accesibilidad' })
   await expect(panel).toBeVisible()
-  await panel.getByRole('button', { name: 'Grande' }).click()
+  await panel.getByRole('button', { name: 'Grande', exact: true }).click()
   await panel.getByRole('checkbox', { name: /Alto contraste/ }).check()
 
   await expect(page.locator('html')).toHaveAttribute('data-text-scale', 'large')
