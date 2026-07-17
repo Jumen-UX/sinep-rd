@@ -9,6 +9,7 @@ const eventDraft = await readFile('src/features/events/admin/EventDraftPage.tsx'
 const eventRegistry = await readFile('src/features/events/admin/EventRegistryPage.tsx', 'utf8')
 const eventReview = await readFile('src/features/events/admin/EventReviewPage.tsx', 'utf8')
 const eventActionPlan = await readFile('src/features/events/admin/EventActionPlanPage.tsx', 'utf8')
+const eventApplicationContract = await readFile('src/features/events/admin/EventApplicationContractPage.tsx', 'utf8')
 
 test('admin layout loads the canonical event workflow style suite', () => {
   assert.match(adminLayout, /admin-event-workflows\.css/)
@@ -30,11 +31,15 @@ test('admin layout loads the canonical event workflow style suite', () => {
   assert.doesNotMatch(sharedStyles, /background:\s*#(?:fff|ffffff|fbf8f1|fff7ed|fef2f2)/i)
 })
 
-test('event action-plan styles use semantic surfaces and responsive grids', () => {
+test('event action-plan and contract styles use semantic surfaces and responsive grids', () => {
   assert.match(actionPlanStyles, /\.event-action-plan-page/)
+  assert.match(actionPlanStyles, /\.event-application-contract-page/)
   assert.match(actionPlanStyles, /\.relationship-editor/)
   assert.match(actionPlanStyles, /\.conflict-panel\.error/)
   assert.match(actionPlanStyles, /\.conflict-panel\.warning/)
+  assert.match(actionPlanStyles, /\.contract-hero/)
+  assert.match(actionPlanStyles, /\.contract-grid/)
+  assert.match(actionPlanStyles, /\.contract-action/)
   assert.match(actionPlanStyles, /var\(--surface\)/)
   assert.match(actionPlanStyles, /var\(--surface-subtle\)/)
   assert.match(actionPlanStyles, /var\(--warning-soft\)/)
@@ -104,4 +109,23 @@ test('event action plan owns editor conflict and status semantics', () => {
   assert.match(eventActionPlan, /aria-pressed=\{action\.status === 'ready'\}/)
   assert.match(eventActionPlan, /<h3 id=\{actionTitleId\}>/)
   assert.match(eventActionPlan, /role="status">Este evento todavía no tiene plan/)
+})
+
+test('event application contract no longer injects page-scoped styles', () => {
+  assert.doesNotMatch(eventApplicationContract, /const pageStyles/)
+  assert.doesNotMatch(eventApplicationContract, /<style>\{pageStyles\}<\/style>/)
+})
+
+test('event application contract owns application feedback and action semantics', () => {
+  assert.match(eventApplicationContract, /event-application-contract-page" aria-busy=\{applying\}/)
+  assert.match(eventApplicationContract, /aria-busy=\{applying\}/)
+  assert.match(eventApplicationContract, /aria-describedby="contract-application-guidance"/)
+  assert.match(eventApplicationContract, /contract-summary" aria-live="polite" aria-atomic="true"/)
+  assert.match(eventApplicationContract, /role="alert" aria-live="assertive"/)
+  assert.match(eventApplicationContract, /success-box" role="status" aria-live="polite" aria-atomic="true"/)
+  assert.match(eventApplicationContract, /aria-label="Resumen del contrato de aplicación"/)
+  assert.match(eventApplicationContract, /aria-label="Acciones incluidas en el contrato"/)
+  assert.match(eventApplicationContract, /<h3>\{action\.action_type_name\}<\/h3>/)
+  assert.match(eventApplicationContract, /role="status">El evento todavía no tiene acciones generadas/)
+  assert.match(eventApplicationContract, /id="contract-application-guidance"/)
 })
