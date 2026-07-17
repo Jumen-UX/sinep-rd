@@ -12,6 +12,7 @@ const eventReview = await readFile('src/features/events/admin/EventReviewPage.ts
 const eventActionPlan = await readFile('src/features/events/admin/EventActionPlanPage.tsx', 'utf8')
 const eventApplicationContract = await readFile('src/features/events/admin/EventApplicationContractPage.tsx', 'utf8')
 const eventWorkflowVerification = await readFile('src/features/events/admin/EventWorkflowVerificationPage.tsx', 'utf8')
+const pendingEvents = await readFile('src/features/events/admin/PendingEventsPage.tsx', 'utf8')
 
 test('admin layout loads the canonical event workflow style suite', () => {
   assert.match(adminLayout, /admin-event-workflows\.css/)
@@ -26,6 +27,9 @@ test('admin layout loads the canonical event workflow style suite', () => {
   assert.match(sharedStyles, /\.event-review-page/)
   assert.match(sharedStyles, /\.review-layout/)
   assert.match(sharedStyles, /\.impact-issue\.error/)
+  assert.match(sharedStyles, /\.pending-events-list/)
+  assert.match(sharedStyles, /\.pending-event-card/)
+  assert.match(sharedStyles, /\.pending-events-page \.mini-badge/)
   assert.match(sharedStyles, /var\(--surface\)/)
   assert.match(sharedStyles, /var\(--surface-subtle\)/)
   assert.match(sharedStyles, /var\(--warning-soft\)/)
@@ -163,4 +167,26 @@ test('event workflow verification owns health checklist and manual-test semantic
   assert.match(eventWorkflowVerification, /aria-label="Condiciones técnicas del flujo"/)
   assert.match(eventWorkflowVerification, /<ol className="test-list" aria-label="Pasos de la prueba funcional manual">/)
   assert.match(eventWorkflowVerification, /role="status"><span className="meta">No hay pasos manuales pendientes/)
+})
+
+test('pending events no longer injects page-scoped styles', () => {
+  assert.doesNotMatch(pendingEvents, /const pageStyles/)
+  assert.doesNotMatch(pendingEvents, /<style>\{pageStyles\}<\/style>/)
+})
+
+test('pending events owns queue status classification and action semantics', () => {
+  assert.match(pendingEvents, /role="status" aria-live="polite">Cargando cola de revisión/)
+  assert.match(pendingEvents, /role="alert" aria-live="assertive"/)
+  assert.match(pendingEvents, /pending-events-page" id="top" aria-labelledby="pending-events-title"/)
+  assert.match(pendingEvents, /id="pending-events-results-title" aria-live="polite" aria-atomic="true"/)
+  assert.match(pendingEvents, /className="pending-events-list" aria-label="Eventos pendientes de aplicación"/)
+  assert.match(pendingEvents, /<article aria-labelledby=\{eventTitleId\} className="pending-event-card"/)
+  assert.match(pendingEvents, /<h3 id=\{eventTitleId\}>\{event\.title\}<\/h3>/)
+  assert.match(pendingEvents, /role="list" aria-label=\{`Estado y clasificación de \$\{event\.title\}`\}/)
+  assert.match(pendingEvents, /role="group" aria-label=\{`Acciones para \$\{event\.title\}`\}/)
+  assert.match(pendingEvents, /aria-label=\{`Revisar \$\{event\.title\}`\}/)
+  assert.match(pendingEvents, /aria-label=\{`Abrir plan de acciones de \$\{event\.title\}`\}/)
+  assert.match(pendingEvents, /role="status">No hay eventos pendientes de revisión/)
+  assert.match(pendingEvents, /workflowStatusLabel\(event\.workflow_status\)/)
+  assert.doesNotMatch(pendingEvents, /<h2>\{event\.title\}<\/h2>/)
 })
