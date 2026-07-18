@@ -68,11 +68,14 @@ test('person and entity profiles expose dynamic canonical metadata', async () =>
 
   assert.match(personLayout, /generateMetadata/)
   assert.match(personLayout, /loadPublicPersonDetail\(slug\)/)
-  assert.match(personLayout, /alternates: \{ canonical: `\/personas\/\$\{person\.slug\}` \}/)
+  assert.match(personLayout, /buildPublicMetadata/)
+  assert.match(personLayout, /path: `\/personas\/\$\{person\.slug\}`/)
   assert.match(personLayout, /type: 'profile'/)
-  assert.match(personLayout, /robots: \{ index: false, follow: false \}/)
+  assert.match(personLayout, /path: `\/personas\/\$\{slug\}`[\s\S]*index: false/)
+
   assert.match(entityLayout, /generateMetadata/)
   assert.match(entityLayout, /loadPublicEntityDetail\(slug\)/)
-  assert.match(entityLayout, /alternates: \{ canonical: `\/entidades\/\$\{entity\.slug\}` \}/)
-  assert.match(entityLayout, /robots: \{ index: false, follow: false \}/)
+  assert.match(entityLayout, /buildPublicMetadata/)
+  assert.match(entityLayout, /path: `\/entidades\/\$\{entity\.slug\}`/)
+  assert.match(entityLayout, /path: `\/entidades\/\$\{slug\}`[\s\S]*index: false/)
 })
