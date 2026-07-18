@@ -5,7 +5,7 @@
 
 Sistema Nacional de Información Eclesiástica y Pastoral de República Dominicana. Combina un portal público, herramientas administrativas y una base canónica e histórica respaldada por Supabase.
 
-> Estado del producto: candidata a beta interna. El sprint funcional activo es Sprint 5 — Eventos y evolución institucional.
+> Estado del producto: candidata a beta interna. El frente técnico activo es Sprint 8 — Rendimiento, indexación y salida mantenible. S7-10 permanece diferido y conserva separadas las validaciones operativas autenticadas y de cierre.
 
 ## Requisitos
 
@@ -52,4 +52,4 @@ Consulta [E2E y accesibilidad](./docs/testing/E2E_Y_ACCESIBILIDAD.md).
 - `tests`: pruebas unitarias, contractuales y de integración.
 - `docs`: documentación canónica, trabajo activo y archivo histórico.
 
-Consulta el [índice de documentación](./docs/README.md), el [Plan Maestro](./docs/product/PLAN_MAESTRO.md) y la [hoja de ruta vigente](./docs/product/ROADMAP.md). Antes de cerrar una pantalla o flujo, aplica los [estándares web](./docs/standards/ESTANDARES_WEB_SINEP_RD.md) y ejecuta `pnpm check`.
+Consulta el [índice de documentación](./docs/README.md), el [Plan Maestro](./docs/product/PLAN_MAESTRO.md), la [hoja de ruta vigente](./docs/product/ROADMAP.md) y el [Sprint 8 activo](./docs/sprints/active/sprint-8.md). Antes de cerrar una pantalla o flujo, aplica los [estándares web](./docs/standards/ESTANDARES_WEB_SINEP_RD.md) y ejecuta `pnpm check`.
