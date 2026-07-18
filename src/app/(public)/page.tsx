@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import PublicDashboardClient from '@/features/public/PublicDashboardClient'
 import { loadDashboardSummary, loadPublicDashboardData, type PublicView } from '@/lib/public/dashboard'
+import { buildPublicMetadata } from '@/lib/public/metadata'
 
-export const metadata: Metadata = {
-  title: 'SINEP RD · Información eclesial y pastoral',
+export const metadata: Metadata = buildPublicMetadata({
+  title: 'Información eclesial y pastoral',
   description: 'Consulta pública de jurisdicciones, personas, estructuras pastorales, administrativas y colegiales de SINEP RD.',
-}
+  path: '/',
+})
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 const allowedViews = new Set<PublicView>(['territorial', 'clero', 'pastoral', 'administrativa', 'colegial'])
