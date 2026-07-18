@@ -13,7 +13,7 @@ const focusableSelector = [
 
 const formFieldSelector = 'input:not([type="hidden"]), select, textarea'
 
-const canonicalEventRootSelector = [
+const modernAdminRootSelector = [
   '.event-assistant-page',
   '.events-page',
   '.event-review-page',
@@ -21,20 +21,33 @@ const canonicalEventRootSelector = [
   '.event-application-contract-page',
   '.event-workflow-verification-page',
   '.pending-events-page',
+  '.level-office-page',
+  '.structure-selector',
+  '.admin-priest-wizard',
+  '.admin-deacon-wizard',
+  '.admin-bishop-wizard',
+  '.admin-religious-wizard',
+  '.admin-lay-wizard',
 ].join(',')
 
-function belongsToCanonicalEventFlow(element: Element) {
-  return Boolean(element.closest(canonicalEventRootSelector))
+function belongsToModernizedAdminFlow(element: Element) {
+  return Boolean(element.closest(modernAdminRootSelector))
 }
 
-function configureLiveRegion(message: HTMLElement, priority: 'assertive' | 'polite', role: 'alert' | 'status') {
+function configureLiveRegion(
+  message: HTMLElement,
+  priority: 'assertive' | 'polite',
+  role: 'alert' | 'status',
+) {
   if (!message.hasAttribute('role')) message.setAttribute('role', role)
   if (!message.hasAttribute('aria-live')) message.setAttribute('aria-live', priority)
   if (!message.hasAttribute('aria-atomic')) message.setAttribute('aria-atomic', 'true')
 }
 
 function appendDescriptionId(field: HTMLElement, descriptionId: string) {
-  const ids = new Set((field.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean))
+  const ids = new Set(
+    (field.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean),
+  )
   ids.add(descriptionId)
   field.setAttribute('aria-describedby', Array.from(ids).join(' '))
 }
@@ -50,12 +63,23 @@ function removeDescriptionId(field: HTMLElement, descriptionId: string) {
 
 function associateLegacyFormErrors(root: ParentNode) {
   root.querySelectorAll<HTMLFormElement>('form').forEach((form, formIndex) => {
-    const error = form.querySelector<HTMLElement>('.error-box, [role="alert"]')
-      ?? form.parentElement?.querySelector<HTMLElement>(':scope > .error-box, :scope > [role="alert"]')
+    if (belongsToModernizedAdminFlow(form)) return
+
+    const error =
+      form.querySelector<HTMLElement>('.error-box, [role="alert"]') ??
+      form.parentElement?.querySelector<HTMLElement>(
+        ':scope > .error-box, :scope > [role="alert"]',
+      )
     if (!error || !error.textContent?.trim()) return
 
-    const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(formFieldSelector))
-    const invalidField = fields.find((field) => !field.disabled && !field.checkValidity())
+    const fields = Array.from(
+      form.querySelectorAll<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >(formFieldSelector),
+    )
+    const invalidField = fields.find(
+      (field) => !field.disabled && !field.checkValidity(),
+    )
     if (!invalidField) return
 
     const errorId = error.id || `legacy-form-error-${formIndex + 1}`
@@ -72,20 +96,30 @@ function associateLegacyFormErrors(root: ParentNode) {
 }
 
 function enhanceLegacyAdmin(root: ParentNode) {
-  root.querySelectorAll<HTMLElement>('.error-box, .admin-navigation-error').forEach((message) => {
-    if (belongsToCanonicalEventFlow(message)) return
-    configureLiveRegion(message, 'assertive', 'alert')
-  })
+  root
+    .querySelectorAll<HTMLElement>('.error-box, .admin-navigation-error')
+    .forEach((message) => {
+      if (belongsToModernizedAdminFlow(message)) return
+      configureLiveRegion(message, 'assertive', 'alert')
+    })
 
-  root.querySelectorAll<HTMLElement>('.empty-state, .success-box, .admin-warning-box, .admin-info-box, .admin-navigation-status').forEach((message) => {
-    if (belongsToCanonicalEventFlow(message)) return
-    configureLiveRegion(message, 'polite', 'status')
-  })
+  root
+    .querySelectorAll<HTMLElement>(
+      '.empty-state, .success-box, .admin-warning-box, .admin-info-box, .admin-navigation-status',
+    )
+    .forEach((message) => {
+      if (belongsToModernizedAdminFlow(message)) return
+      configureLiveRegion(message, 'polite', 'status')
+    })
 
-  root.querySelectorAll<HTMLElement>('[data-loading="true"], [aria-busy="true"]').forEach((region) => {
-    if (belongsToCanonicalEventFlow(region)) return
-    if (region.getAttribute('aria-busy') !== 'true') region.setAttribute('aria-busy', 'true')
-  })
+  root
+    .querySelectorAll<HTMLElement>('[data-loading="true"], [aria-busy="true"]')
+    .forEach((region) => {
+      if (belongsToModernizedAdminFlow(region)) return
+      if (region.getAttribute('aria-busy') !== 'true') {
+        region.setAttribute('aria-busy', 'true')
+      }
+    })
 
   associateLegacyFormErrors(root)
 }
@@ -98,16 +132,25 @@ export function LegacyAdminAccessibilityEnhancements() {
     function openMobileDialog() {
       const menu = document.querySelector<HTMLElement>('#admin-mobile-menu')
       const dialog = menu?.querySelector<HTMLElement>('[role="dialog"]')
-      if (!menu || menu.hidden || !dialog || dialog.dataset.a11yOpen === 'true') return
+      if (!menu || menu.hidden || !dialog || dialog.dataset.a11yOpen === 'true') {
+        return
+      }
 
-      const trigger = document.querySelector<HTMLElement>('[aria-controls="admin-mobile-menu"]')
-      returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : trigger
+      const trigger = document.querySelector<HTMLElement>(
+        '[aria-controls="admin-mobile-menu"]',
+      )
+      returnFocus =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : trigger
       dialog.dataset.a11yOpen = 'true'
       dialog.setAttribute('aria-modal', 'true')
       dialog.setAttribute('tabindex', '-1')
 
       queueMicrotask(() => {
-        const closeButton = dialog.querySelector<HTMLElement>('button[aria-label*="Cerrar"]')
+        const closeButton = dialog.querySelector<HTMLElement>(
+          'button[aria-label*="Cerrar"]',
+        )
         ;(closeButton ?? dialog).focus()
       })
     }
@@ -115,7 +158,13 @@ export function LegacyAdminAccessibilityEnhancements() {
     function restoreMobileDialogFocus() {
       const menu = document.querySelector<HTMLElement>('#admin-mobile-menu')
       const dialog = menu?.querySelector<HTMLElement>('[role="dialog"]')
-      if (!dialog || menu?.hidden !== true || dialog.dataset.a11yOpen !== 'true') return
+      if (
+        !dialog ||
+        menu?.hidden !== true ||
+        dialog.dataset.a11yOpen !== 'true'
+      ) {
+        return
+      }
 
       delete dialog.dataset.a11yOpen
       returnFocus?.focus()
@@ -130,7 +179,15 @@ export function LegacyAdminAccessibilityEnhancements() {
 
     function handleFieldCorrection(event: Event) {
       const field = event.target
-      if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)) return
+      if (
+        !(
+          field instanceof HTMLInputElement ||
+          field instanceof HTMLSelectElement ||
+          field instanceof HTMLTextAreaElement
+        )
+      ) {
+        return
+      }
       if (!field.checkValidity()) return
 
       const errorId = field.dataset.a11yErrorId
@@ -148,13 +205,20 @@ export function LegacyAdminAccessibilityEnhancements() {
 
       if (event.key === 'Escape') {
         event.preventDefault()
-        dialog.querySelector<HTMLButtonElement>('button[aria-label*="Cerrar"]')?.click()
+        dialog
+          .querySelector<HTMLButtonElement>('button[aria-label*="Cerrar"]')
+          ?.click()
         return
       }
 
       if (event.key !== 'Tab') return
-      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector))
-        .filter((element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true')
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(focusableSelector),
+      ).filter(
+        (element) =>
+          !element.hasAttribute('hidden') &&
+          element.getAttribute('aria-hidden') !== 'true',
+      )
       if (focusable.length === 0) {
         event.preventDefault()
         dialog.focus()
@@ -180,7 +244,13 @@ export function LegacyAdminAccessibilityEnhancements() {
     const observer = new MutationObserver(synchronize)
     observer.observe(root, {
       attributes: true,
-      attributeFilter: ['class', 'hidden', 'aria-expanded', 'aria-busy', 'data-loading'],
+      attributeFilter: [
+        'class',
+        'hidden',
+        'aria-expanded',
+        'aria-busy',
+        'data-loading',
+      ],
       childList: true,
       subtree: true,
     })
