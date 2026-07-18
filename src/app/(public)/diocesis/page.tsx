@@ -2,11 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { loadDashboardSummary } from '@/lib/public/dashboard'
 import { loadDioceseDirectory, normalizeDioceseFilter, type DioceseFilter } from '@/lib/public/directories'
+import { buildPublicMetadata } from '@/lib/public/metadata'
 
-export const metadata: Metadata = {
-  title: 'Diócesis y jurisdicciones · SINEP RD',
+export const metadata: Metadata = buildPublicMetadata({
+  title: 'Diócesis y jurisdicciones',
   description: 'Directorio público de arquidiócesis, diócesis y jurisdicciones eclesiásticas registradas en SINEP RD.',
-}
+  path: '/diocesis',
+})
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 const builtinFilters = new Set(['all', 'archdiocese', 'diocese', 'military'])
