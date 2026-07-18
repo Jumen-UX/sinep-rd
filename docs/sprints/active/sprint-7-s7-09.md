@@ -1,181 +1,131 @@
 # Sprint 7 · S7-09 — Consolidación de componentes
 
-> Estado: en progreso
-> Fecha de inicio: 2026-07-17
+> Estado: completada
+> Inicio: 2026-07-17
+> Cierre técnico: 2026-07-18
 > Rama: `main`
 
 ## Objetivo
 
-Reducir duplicación visual, retirar estilos embebidos y sustituir progresivamente las capas de compatibilidad por componentes y hojas compartidas con semántica propia.
+Reducir duplicación visual, retirar estilos y comportamientos embebidos, consolidar componentes reutilizables y limitar las capas de compatibilidad a las pantallas que todavía las necesitan.
 
-## Orden de migración
+## Resultado
 
-1. Flujos administrativos de eventos.
-2. Configuración estructural y selector jerárquico.
-3. Asistentes heredados de clero y personas.
-4. Eliminación gradual de selectores ya innecesarios en `admin-embedded-theme-cleanup.css`.
-5. Reducción y retiro de `LegacyAdminAccessibilityEnhancements` cuando las pantallas declaren semántica, feedback y validación de forma nativa.
+S7-09 quedó completada y validada mediante CI. Los flujos migrados declaran su propia estructura, semántica, feedback, navegación y estados ocupados sin duplicar lógica de dominio.
 
-## Primer bloque implementado y validado
+## Bloques completados
 
-- Se creó `src/styles/admin-event-workflows.css` como capa compartida para formularios, asistentes, tarjetas, steppers, pestañas y layouts de eventos.
-- La hoja se carga desde el layout administrativo antes de las capas de compatibilidad temática.
-- `EventDraftPage.tsx` dejó de declarar `pageStyles` y de inyectar una etiqueta `<style>`.
-- El asistente de eventos declara directamente navegación de pasos, `aria-current`, nombres accesibles, `aria-pressed`, errores assertivos y estado de guardado ocupado.
-- `tests/admin-event-workflow-consolidation.test.mjs` protege la extracción y evita regresar al patrón embebido.
-- CI confirmó el bloque en verde.
+1. `EventDraftPage` y base visual compartida de eventos.
+2. `EventRegistryPage` y registro accesible.
+3. `EventReviewPage` y revisión semántica.
+4. `EventActionPlanPage` y editor relacional.
+5. `EventApplicationContractPage` y contrato de aplicación.
+6. `EventWorkflowVerificationPage` y tablero de verificación.
+7. `PendingEventsPage` y cola administrativa.
+8. Retirada de selectores de eventos de la capa temática heredada.
+9. Reducción inicial de `LegacyAdminAccessibilityEnhancements` para excluir eventos.
+10. Consolidación de configuración estructural y selector jerárquico; eliminación de `admin-embedded-theme-cleanup.css`.
+11. Creación de `clergy-wizard-ui.css` y retirada de hojas específicas por rol.
+12. Consolidación semántica de `BishopWizardPage`.
+13. Consolidación semántica de `PriestWizardPage` y eliminación de su raíz duplicada.
+14. Conversión de `DeaconWizardPage` a seis etapas explícitas.
+15. Conversión de `LayPersonWizardPage` a cinco etapas explícitas.
+16. Conversión de `ReligiousWizardPage` a seis etapas explícitas, conservando la delegación del sacerdote religioso al flujo sacerdotal.
+17. Retirada física de `AutoSectionWizard`, sus selectores CSS, `MutationObserver` y `requestSubmit`; corrección del token de foco compartido.
+18. Reducción del puente global de accesibilidad para excluir eventos, estructura, clero y asistentes de personas.
 
-## Segundo bloque implementado y validado
+## Arquitectura consolidada
 
-- `EventRegistryPage.tsx` dejó de declarar `pageStyles` y de inyectar CSS desde React.
-- La hoja compartida incorporó barra de filtros, pestañas, tarjetas seleccionables, caja de fecha, badges semánticos y adaptación móvil del registro.
-- Se eliminaron blancos y beiges literales del flujo migrado; las superficies y estados usan tokens de tema.
-- Los modos de trabajo y eventos seleccionados declaran `aria-pressed`.
-- Las tarjetas controlan el panel de detalle mediante `aria-controls` y el detalle se anuncia como región viva moderada.
-- Carga, errores, resultados vacíos y cambios en el número de resultados exponen semántica accesible propia.
-- El contrato de consolidación protege ambas pantallas y evita reintroducir estilos embebidos o superficies claras fijas.
-- CI confirmó el bloque en verde.
+### Eventos
 
-## Tercer bloque implementado y validado
+- `admin-event-workflows.css`
+- `admin-event-action-plan.css`
+- `admin-event-verification.css`
 
-- `EventReviewPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
-- La hoja compartida incorporó tarjetas de revisión, validaciones, participantes, nodos de impacto e incidencias con severidades semánticas.
-- Los estados de éxito, advertencia y error usan `success-soft`, `warning-soft`, `danger-soft` y sus bordes canónicos.
-- Las validaciones exponen nombres accesibles con resultado explícito y los iconos visuales se marcan como decorativos.
-- Las incidencias bloqueantes se anuncian como alertas y las advertencias como estados moderados.
-- Carga, evento inexistente, errores de acción, resumen y guardado declaran semántica propia.
-- La nota de revisión usa asociación `label`/`textarea`, y la acción de aprobación referencia la guía de impacto mediante `aria-describedby`.
-- El contrato de consolidación protege las tres pantallas migradas.
-- CI confirmó el bloque en verde.
+Las siete pantallas principales de eventos declaran estados, jerarquía, navegación y feedback de forma nativa.
 
-## Cuarto bloque implementado y validado
+### Estructura
 
-- `EventActionPlanPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
-- Se creó `src/styles/admin-event-action-plan.css` como módulo del conjunto compartido de eventos para editor relacional, métricas, acciones y conflictos.
-- Las superficies y severidades usan tokens semánticos compatibles con tema claro y oscuro.
-- El editor relacional declara una región etiquetada y estado ocupado durante el guardado.
-- Conflictos bloqueantes se anuncian como alertas y advertencias como estados moderados.
-- Las acciones usan encabezados `h3` bajo la sección principal y los controles de estado declaran `role="group"` y `aria-pressed`.
-- Carga, evento inexistente, errores, plan vacío, resumen y regeneración declaran semántica accesible propia.
-- El contrato de consolidación protege estilos, estructura y comportamiento accesible del plan.
-- CI confirmó el bloque en verde.
+- `admin-structure-workflows.css`
+- `LevelOfficeConfigurationPage.tsx`
+- `StructureHierarchySelector.tsx`
 
-## Quinto bloque implementado y validado
+La configuración de cargos y la selección jerárquica ya no dependen de CSS embebido ni de la capa temporal retirada.
 
-- `EventApplicationContractPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
-- `admin-event-action-plan.css` se amplió para compartir métricas, listas, badges y layouts entre plan y contrato sin duplicar una tercera hoja.
-- Las tarjetas, resúmenes y condiciones usan superficies semánticas compatibles con tema claro y oscuro.
-- La aplicación expone `aria-busy`, guía asociada mediante `aria-describedby` y resumen anunciado como región viva moderada.
-- Errores y confirmaciones usan prioridades de anuncio diferenciadas.
-- Las acciones del contrato usan encabezados `h3`, nombres accesibles con su estado contractual y un estado explícito cuando no existen acciones.
-- Métricas, acciones y condiciones declaran nombres de región propios.
-- El contrato de consolidación protege ausencia de estilos embebidos, tokens semánticos y comportamiento accesible.
-- CI confirmó el bloque en verde.
+### Clero
 
-## Sexto bloque implementado y validado
+- `person-wizard-ui.css` como base.
+- `clergy-wizard-ui.css` como extensión común.
+- `AdminWizardProgress` como navegación explícita.
 
-- `EventWorkflowVerificationPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
-- Se creó `src/styles/admin-event-verification.css` para mantener aisladas las reglas específicas del tablero de verificación.
-- El módulo usa superficies y estados semánticos, sin colores claros codificados directamente, y adapta métricas y paneles a una columna.
-- El resumen general se anuncia como región viva moderada.
-- Las métricas declaran nombres de región diferenciados para volumen y estado operativo.
-- El checklist técnico expone el resultado de cada condición mediante nombres accesibles y marca sus iconos como decorativos.
-- El recorrido manual se representa como lista ordenada y declara un estado explícito cuando no existen pasos pendientes.
-- Carga y errores usan `status` y `alert` con prioridad adecuada.
-- El contrato de consolidación protege estilos, responsive, semántica y ausencia de CSS embebido.
-- CI confirmó el bloque en verde.
+Sacerdote, diácono y obispo conservan sus contratos canónicos, servicios y payloads sin hojas visuales específicas por rol.
 
-## Séptimo bloque implementado y validado
+### Personas y vida consagrada
 
-- `PendingEventsPage.tsx` dejó de declarar `pageStyles` y de inyectar estilos desde React.
-- `admin-event-workflows.css` incorporó la lista, tarjetas y badges de la cola sin crear otro módulo para una pantalla pequeña.
-- Las superficies y estados usan tokens semánticos compatibles con tema claro y oscuro.
-- La cola traduce los estados internos a etiquetas legibles y diferencia visualmente aprobación, advertencia y cancelación.
-- Carga, error, resumen de resultados y estado vacío declaran prioridades de anuncio propias.
-- Las métricas decorativas ocultan sus símbolos al lector de pantalla.
-- Cada evento usa `article`, encabezado `h3`, lista accesible de clasificación y grupo de acciones con nombres contextualizados.
-- El contrato de consolidación protege la extracción, la jerarquía y la semántica de la cola.
-- CI confirmó el bloque en verde.
+- `person-registration-wizard.css` como extensión compartida.
+- `AdminWizardProgress` como navegación explícita.
+- `PersonWizardContextRail` como contexto lateral común.
 
-## Octavo bloque implementado y validado
+Persona laica y vida consagrada mantienen identidad única, carga y reversión de fotografías, filtrado de cargos, visibilidad y persistencia canónica.
 
-- `admin-embedded-theme-cleanup.css` dejó de contener raíces, tarjetas, badges, campos y estados del flujo de eventos.
-- Se retiraron también nombres heredados que ya no correspondían a las raíces actuales del contrato y la verificación.
-- La hoja temporal conserva exclusivamente configuración estructural todavía no consolidada: `level-office-*` y `structure-selector*`.
-- Los `!important` ya no pueden sobrescribir superficies, severidades, foco o estados activos de las siete pantallas de eventos.
-- `tests/admin-event-legacy-cleanup.test.mjs` impide reintroducir selectores de eventos y confirma que las hojas canónicas permanecen cargadas antes de la compatibilidad temporal.
-- `tests/legacy-theme-surface-audit.test.mjs` se alineó con el nuevo alcance estructural del guard final.
-- CI confirmó el bloque en verde.
+## Elementos retirados
 
-## Noveno bloque implementado y validado
+- `admin-embedded-theme-cleanup.css`
+- `priest-wizard-ui.css`
+- `deacon-wizard-ui.css`
+- `deacon-wizard-polish.css`
+- `AutoSectionWizard.tsx`
+- selectores `.auto-section-wizard*`
+- navegación inferida mediante lectura del DOM
+- ocultación imperativa de etapas
+- submit indirecto mediante `requestSubmit`
 
-- `LegacyAdminAccessibilityEnhancements` dejó de recorrer `.assistant-stepper`, `.step-card` y botones `.mode-card`; estas semánticas pertenecen ahora al asistente de eventos.
-- Las siete raíces canónicas de eventos quedan excluidas de la normalización genérica de mensajes y regiones ocupadas.
-- El puente ya no sobrescribe `role`, `aria-live` o `aria-atomic` cuando un componente moderno ya los declara.
-- Se conserva la asociación progresiva entre errores y controles inválidos para formularios todavía no migrados.
-- Se conserva la gestión de foco, Escape y trampa de tabulación del diálogo móvil administrativo.
-- `tests/legacy-admin-accessibility-enhancements.test.mjs` protege la exclusión de eventos y las responsabilidades que todavía deben permanecer en el puente.
-- CI confirmó el bloque en verde.
+La auditoría final no encontró imports ni selectores ejecutables de estos elementos. Las menciones restantes se limitan a historial documental y pruebas que protegen su ausencia.
 
-## Décimo bloque implementado y validado
+## Compatibilidad heredada controlada
 
-- Se creó `src/styles/admin-structure-workflows.css` como hoja canónica para configuración de cargos por nivel y selección jerárquica.
-- `LevelOfficeConfigurationPage.tsx` dejó de declarar `pageStyles`; carga, errores, confirmación, selección de nivel y guardado declaran semántica propia.
-- Los cargos disponibles se agrupan mediante `fieldset` y `legend`, y el resumen seleccionado se anuncia como región viva moderada.
-- `StructureHierarchySelector.tsx` dejó de declarar `componentStyles` y usa `useId` para evitar colisiones cuando existen varias instancias.
-- Diócesis, catálogo y unidad padre tienen asociaciones `label`/`id`; errores y ruta seleccionada declaran prioridades de anuncio propias.
-- `admin-embedded-theme-cleanup.css` y su import se eliminaron por completo; ya no existen reglas administrativas de superficie con `!important` en esa capa.
-- `tests/admin-structure-consolidation.test.mjs` protege estilos, responsive, semántica y ausencia de CSS embebido.
-- Los contratos de auditoría se actualizaron para exigir la desaparición física de la capa heredada.
-- CI confirmó el bloque en verde.
+`LegacyAdminAccessibilityEnhancements` permanece temporalmente porque todavía existen formularios administrativos no migrados que dependen de:
 
-## Undécimo bloque implementado y validado
+- normalización de mensajes heredados;
+- asociación del error con el primer control inválido;
+- limpieza progresiva de `aria-invalid`;
+- sincronización de estados heredados.
 
-- Se creó `src/styles/clergy-wizard-ui.css` como extensión compartida para sacerdote, diácono y obispo.
-- Los tres layouts de ruta cargan `person-wizard-ui.css` y la nueva extensión de clero.
-- Se eliminaron `priest-wizard-ui.css`, `deacon-wizard-ui.css` y `deacon-wizard-polish.css`.
-- La extensión conserva el layout de asistentes controlados, la navegación automática inicial del diácono, el resumen de revisión, el éxito del sacerdote y los estados responsive.
-- El foco usa `--focus-ring` como valor de `box-shadow`, de acuerdo con la definición canónica del token; no se replica su uso inválido como `outline`.
-- `tests/clergy-wizard-style-consolidation.test.mjs` impide volver a hojas específicas por rol.
-- `tests/admin-theme-specialized.test.mjs` valida el contraste del diácono mediante `clergy-wizard-ui.css` y `admin-modules.css`, sin depender de una hoja retirada.
-- CI confirmó el bloque en verde.
+El puente también conserva la gestión del diálogo móvil administrativo: foco inicial, Escape, ciclo de tabulación y retorno del foco.
 
-## Duodécimo bloque implementado y validado
+El puente ya no interviene en eventos, estructura, sacerdote, diácono, obispo, persona laica ni vida consagrada.
 
-- `BishopWizardPage.tsx` conserva las cinco etapas montadas y el mismo payload canónico, pero ahora declara directamente carga, error, éxito y guardado ocupado.
-- El contenido principal y el formulario exponen `aria-busy`; el error se anuncia como alerta assertiva y la confirmación como estado moderado y atómico.
-- Se eliminaron todos los controles identificados únicamente mediante `placeholder`; identidad, historia sacramental, función, estado, jurisdicción, cargo y fuentes usan etiquetas explícitas.
-- Sucesión apostólica y dignidades se agrupan con `fieldset` y `legend`, usando reglas compartidas de `clergy-wizard-ui.css`.
-- La ruta estructural y el filtrado de cargos se anuncian como estados dinámicos.
-- La navegación declara un grupo accesible, desactiva acciones durante el guardado y usa un submit explícito con `aria-busy`.
-- `tests/bishop-wizard-accessibility-consolidation.test.mjs` protege semántica, etiquetas, agrupación, navegación y permanencia de las cinco etapas montadas.
-- CI confirmó el bloque en verde.
+## Contratos relevantes
 
-## Decimotercer bloque implementado y validado
+- `admin-event-workflow-consolidation.test.mjs`
+- `admin-structure-consolidation.test.mjs`
+- `clergy-wizard-style-consolidation.test.mjs`
+- `bishop-wizard-accessibility-consolidation.test.mjs`
+- `priest-wizard-accessibility-consolidation.test.mjs`
+- `deacon-wizard-accessibility-consolidation.test.mjs`
+- `lay-person-wizard-accessibility-consolidation.test.mjs`
+- `religious-wizard-accessibility-consolidation.test.mjs`
+- `auto-section-wizard-retirement.test.mjs`
+- `legacy-admin-accessibility-enhancements.test.mjs`
 
-- `PriestWizardPage.tsx` dejó de repetir `.admin-priest-wizard`; la única raíz visual del flujo permanece en el layout de ruta.
-- El mensaje de éxito dejó de escribir contenido mediante referencias y `textContent`; ahora se renderiza con React como región viva moderada y atómica.
-- Carga, error, contenido y formulario declaran `status`, `alert`, `aria-busy`, título asociado y relación con el error activo.
-- El tipo de sacerdote y los datos no identificados se agrupan mediante `fieldset` y `legend` compartidos.
-- Nombre visible, incardinación, servicio seleccionado y filtro de cargos se anuncian como estados dinámicos.
-- La revisión usa cuatro `article` dentro de un resumen identificado, y la barra de navegación declara un grupo accesible con estado ocupado.
-- Se conservaron las cinco etapas montadas, el borrador local, la continuidad de la identidad diaconal y el filtrado estricto de cargos por nivel.
-- `tests/priest-wizard-accessibility-consolidation.test.mjs` protege raíz única, semántica, agrupación, navegación y contratos canónicos.
-- CI confirmó el bloque en verde.
+## Deuda trasladada
 
-## Decimocuarto bloque implementado
+No bloquea S7-09 y debe tratarse después de S7-10 o en un sprint específico:
 
-- `DeaconWizardPage.tsx` dejó de depender de la inferencia de etapas por DOM y controla seis etapas explícitas mediante `AdminWizardProgress`.
-- El layout de la ruta ya no monta `AutoSectionWizard`; el componente permanece temporalmente para laico y vida consagrada.
-- Las seis etapas relevantes permanecen montadas mediante `hidden`, de modo que el submit final conserva el mismo `FormData` y payload canónico.
-- Carga, error, confirmación, contenido, formulario y guardado declaran estados accesibles propios.
-- Se eliminaron controles identificados solo con `placeholder`; identidad, documentos, contacto, ordenación, servicio, cargo y revisión usan etiquetas explícitas.
-- El tipo de diácono usa `aria-pressed`; documentos, biografía, asignación y datos no identificados se agrupan mediante `fieldset` y `legend`.
-- Incardinación, servicio, entidad del cargo y filtro de cargos se anuncian como estados dinámicos.
-- La revisión usa artículos semánticos y la barra inferior expone navegación y submit nativos, sin `MutationObserver` ni `requestSubmit`.
-- `clergy-wizard-ui.css` dejó de contener selectores de `auto-section-wizard` y aplica el mismo layout controlado a sacerdote, diácono y obispo.
-- `tests/deacon-wizard-accessibility-consolidation.test.mjs`, `tests/clergy-wizard-style-consolidation.test.mjs` y `tests/admin-theme-specialized.test.mjs` protegen la nueva separación.
+- migrar los formularios administrativos heredados restantes;
+- trasladar la gestión del diálogo móvil desde el puente hacia `AdminShell` o un componente de diálogo reutilizable;
+- retirar completamente `LegacyAdminAccessibilityEnhancements` cuando no tenga consumidores reales.
 
-## Criterio del siguiente bloque
+## Criterios de cierre verificados
 
-Validar el decimocuarto bloque con CI. Después se consolidarán los asistentes de laico y vida consagrada, los únicos consumidores restantes de `AutoSectionWizard`, antes de evaluar su retiro y reducir nuevamente `LegacyAdminAccessibilityEnhancements`.
+- No quedan estilos embebidos en los flujos incluidos en S7-09.
+- No quedan hojas específicas de sacerdote o diácono.
+- No queda navegación de asistentes inferida desde el DOM.
+- Los asistentes migrados mantienen sus servicios y contratos canónicos.
+- Los estados usan tokens compatibles con modo claro y oscuro.
+- Navegación, foco, etiquetas y feedback tienen contratos de regresión.
+- CI confirmó cada bloque en verde.
+
+## Punto de continuación
+
+S7-09 queda cerrada. El siguiente trabajo es S7-10: reconciliación operativa, pruebas autenticadas, validación visual, accesibilidad, seguridad y cierre completo del Sprint 7.
