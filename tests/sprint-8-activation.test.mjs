@@ -3,15 +3,28 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const sprint = await readFile('docs/sprints/active/sprint-8.md', 'utf8')
+const deferredSprint = await readFile('docs/sprints/active/sprint-7.md', 'utf8')
 const roadmap = await readFile('docs/product/ROADMAP.md', 'utf8')
 const readme = await readFile('README.md', 'utf8')
 const nextConfig = await readFile('next.config.ts', 'utf8')
+const manifest = JSON.parse(
+  await readFile('docs/DOCUMENTATION_MANIFEST.json', 'utf8'),
+)
 
 test('sprint 8 is the active non-operational workstream', () => {
   assert.match(sprint, /> Estado: activo/)
+  assert.match(deferredSprint, /> Estado: diferido/)
   assert.match(sprint, /S8-01 — Auditar configuración de Next\.js/)
   assert.match(sprint, /S7-10 permanece diferido/)
   assert.match(sprint, /No introducir caché sobre datos privados/)
+})
+
+test('documentation manifest points to the only active sprint', () => {
+  assert.equal(
+    manifest.canonical_documents.active_sprint,
+    'docs/sprints/active/sprint-8.md',
+  )
+  assert.ok(manifest.metadata.allowed_statuses.includes('diferido'))
 })
 
 test('roadmap and README point to sprint 8 without closing deferred S7-10', () => {
@@ -29,5 +42,8 @@ test('roadmap and README point to sprint 8 without closing deferred S7-10', () =
 test('initial performance inventory records the empty Next.js configuration', () => {
   assert.match(nextConfig, /const nextConfig: NextConfig = \{\}/)
   assert.match(sprint, /`next\.config\.ts` no declara todavía políticas/)
-  assert.match(sprint, /metadata, sitemap, robots, caché, búsqueda, monitoreo y documentación/)
+  assert.match(
+    sprint,
+    /metadata, sitemap, robots, caché, búsqueda, monitoreo y documentación/,
+  )
 })
