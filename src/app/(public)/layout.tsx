@@ -9,15 +9,15 @@ import {
 
 export const metadata: Metadata = {
   metadataBase: getPublicMetadataBase(),
-  title: {
-    default: PUBLIC_SITE_NAME,
-    template: `%s | ${PUBLIC_SITE_NAME}`,
-  },
   ...buildPublicMetadata({
     title: PUBLIC_SITE_NAME,
     description: PUBLIC_SITE_DESCRIPTION,
     path: '/',
   }),
+  title: {
+    default: PUBLIC_SITE_NAME,
+    template: `%s | ${PUBLIC_SITE_NAME}`,
+  },
 }
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
