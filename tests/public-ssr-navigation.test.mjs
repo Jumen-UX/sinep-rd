@@ -5,7 +5,7 @@ import test from 'node:test'
 const repoRoot = new URL('../', import.meta.url)
 const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
-test('public home renders dashboard data on the server before hydration', async () => {
+test('public home renders one consolidated dashboard bundle before hydration', async () => {
   const [page, client, loader] = await Promise.all([
     readRepoFile('src/app/(public)/page.tsx'),
     Promise.all([
@@ -16,12 +16,15 @@ test('public home renders dashboard data on the server before hydration', async 
   ])
 
   assert.doesNotMatch(page, /['"]use client['"]/) 
-  assert.match(page, /loadPublicDashboardData\(\)/)
-  assert.match(page, /loadDashboardSummary\(\)/)
+  assert.match(page, /loadPublicDashboardBundle\(\)/)
+  assert.doesNotMatch(page, /Promise\.all\(\[loadPublicDashboardData\(\), loadDashboardSummary\(\)\]\)/)
+  assert.match(page, /data: initialData, summary: initialSummary/)
   assert.match(page, /initialData=\{initialData\}/)
   assert.match(page, /initialSummary=\{initialSummary\}/)
   assert.match(client, /useState<PublicView>\(initialView\)/)
   assert.doesNotMatch(client, /fetch\(['"]\/api\/dashboard/)
+  assert.match(loader, /export async function loadPublicDashboardBundle/)
+  assert.match(loader, /buildDashboardSummary\(data\.dioceses, data\.parishes\.length, historicalPeople\)/)
   assert.match(loader, /person_public_directory/)
   assert.match(loader, /public_position_assignments_with_hierarchy/)
 })
