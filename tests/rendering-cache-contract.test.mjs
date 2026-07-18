@@ -54,12 +54,13 @@ test('administrative rendering stays dynamic and uncached', () => {
   assert.match(contract, /Caché compartida: prohibida/)
 })
 
-test('sprint 8 records rendering metadata and guarded indexing before query consolidation', () => {
-  for (const item of ['S8-01', 'S8-02', 'S8-03', 'S8-04']) {
+test('sprint 8 records guarded indexing and consolidated public loading before index review', () => {
+  for (const item of ['S8-01', 'S8-02', 'S8-03', 'S8-04', 'S8-05']) {
     assert.match(sprint, new RegExp(`\\[x\\] ${item}`))
   }
   assert.match(sprint, /RENDERING_CACHE_CONTRACT\.md/)
   assert.match(sprint, /PUBLIC_INDEXING_ENABLED/)
-  assert.match(sprint, /Después auditar las consultas públicas repetitivas/)
+  assert.match(sprint, /loadPublicDashboardBundle\(\)/)
+  assert.match(sprint, /Después revisar índices y planes/)
   assert.match(sprint, /S7-10 continúa diferido/)
 })
