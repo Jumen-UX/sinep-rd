@@ -54,10 +54,11 @@ test('administrative rendering stays dynamic and uncached', () => {
   assert.match(contract, /Caché compartida: prohibida/)
 })
 
-test('sprint 8 records completed inventory and the next isolated metadata block', () => {
+test('sprint 8 records completed rendering and metadata blocks before sitemap audit', () => {
   assert.match(sprint, /\[x\] S8-01/)
   assert.match(sprint, /\[x\] S8-02/)
+  assert.match(sprint, /\[x\] S8-03/)
   assert.match(sprint, /RENDERING_CACHE_CONTRACT\.md/)
-  assert.match(sprint, /Después implementar metadata canónica y Open Graph compartidos/)
+  assert.match(sprint, /Después auditar `sitemap\.ts` y `robots\.ts`/)
   assert.match(sprint, /S7-10 continúa diferido/)
 })
