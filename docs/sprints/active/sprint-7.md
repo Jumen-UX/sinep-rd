@@ -1,6 +1,6 @@
 # Sprint 7 — Portal administrativo y experiencia de usuario
 
-> Estado: activo
+> Estado: diferido
 > Inicio: 2026-07-16
 > Actualizada: 2026-07-18
 > Rama operativa: `main`
@@ -21,7 +21,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 7. [x] S7-07 — Acceso flotante a herramientas de accesibilidad.
 8. [x] S7-08 — Responsive, teclado, foco, contraste y lectores de pantalla.
 9. [x] S7-09 — Consolidación de componentes, asistentes y capas heredadas.
-10. [ ] S7-10 — Validación operativa, pruebas autenticadas y cierre.
+10. [ ] S7-10 — Validación operativa, pruebas autenticadas y cierre. **Diferida por decisión operativa.**
 
 ## Estado resumido
 
@@ -71,9 +71,9 @@ Se consolidaron eventos, configuración estructural, asistentes de clero, person
 
 El detalle de los 18 bloques se mantiene en `docs/sprints/active/sprint-7-s7-09.md`.
 
-## S7-10 — Alcance de cierre
+## S7-10 — Alcance de cierre diferido
 
-S7-10 debe cerrar conjuntamente validación, operación y evidencia:
+S7-10 debe cerrar conjuntamente validación, operación y evidencia cuando sea reactivado:
 
 1. Reparar `E2E_ACCESS_PROFILES_JSON` y ejecutar la matriz autenticada.
 2. Demostrar aislamiento bidireccional entre dos diócesis.
@@ -115,4 +115,4 @@ No bloquea S7-10 salvo que una prueba demuestre una regresión:
 
 ## Punto de continuación
 
-Iniciar S7-10 por la reparación del perfil E2E autenticado. Después ejecutar la matriz de acceso, aislamiento entre diócesis, KPIs restringidos, revisión visual claro/oscuro, accesibilidad y cierre documental del Sprint 7.
+S7-10 permanece diferido. Cuando se reactive, iniciar S7-10 por la reparación del perfil E2E autenticado. Después ejecutar la matriz de acceso, aislamiento entre diócesis, KPIs restringidos, revisión visual claro/oscuro, accesibilidad y cierre documental del Sprint 7.
