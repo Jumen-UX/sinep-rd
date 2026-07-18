@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { getAppBaseUrl } from '@/lib/appBaseUrl'
+import { isPublicIndexingEnabled } from '@/lib/public/indexing'
 import { fetchSupabaseJson } from '@/lib/supabase/rest'
 
 type SitemapRecord = {
@@ -16,6 +17,8 @@ function validDate(value: string | null) {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (!isPublicIndexingEnabled()) return []
+
   const baseUrl = getAppBaseUrl()
   const generatedAt = new Date()
 
