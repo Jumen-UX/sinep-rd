@@ -1,29 +1,31 @@
 # Hoja de ruta de SINEP RD
 
 > Estado: vigente
-> Actualizada: 2026-07-17
+> Actualizada: 2026-07-18
 > Rama operativa: `main`
 > Propietario: producto y arquitectura
 
 ## Estado consolidado
 
-SINEP RD es candidata a beta interna. Los Sprints 0–6 están cerrados técnicamente. Sprint 3 conserva abierto únicamente el bloque operativo S3-06, que requiere cuentas diferenciadas y evidencia autenticada. El sprint funcional activo es Sprint 7 — Portal administrativo y experiencia de usuario.
+SINEP RD es candidata a beta interna. Los Sprints 0–6 están cerrados técnicamente. Sprint 7 completó S7-01 a S7-09; S7-10 permanece diferido por decisión operativa y conserva separadas sus validaciones autenticadas, visuales y de cierre.
 
-La aplicación cuenta con identidad canónica de personas, dimensiones clericales, estructuras configurables, organización interna separada, permisos por alcance, auditoría, importaciones controladas, eventos históricos, portal público y compuertas de calidad en CI.
+La aplicación cuenta con identidad canónica de personas, dimensiones clericales, estructuras configurables, organización interna separada, permisos por alcance, auditoría, importaciones controladas, eventos históricos, portal público, portal administrativo consolidado, tema claro/oscuro/automático y compuertas de calidad en CI.
 
 ## Sprint activo
 
+[Sprint 8 — Rendimiento, indexación y salida mantenible](../sprints/active/sprint-8.md).
+
+Estado: S8-01 iniciado. El primer bloque audita configuración de Next.js, límites servidor/cliente, metadata, sitemap, robots, caché, búsqueda, observabilidad y documentación. No absorbe el cierre operativo diferido de S7-10.
+
+## Sprint 7
+
 [Sprint 7 — Portal administrativo y experiencia de usuario](../sprints/active/sprint-7.md).
 
-Estado: S7-01 a S7-05 están completados técnicamente. S7-06 está en progreso: la preferencia clara, oscura y automática sin destello, los tokens semánticos y los componentes compartidos ya están implementados; falta migrar estilos administrativos especializados. Las validaciones E2E autenticadas de navegación y la comprobación manual de KPIs con alcance restringido permanecen como deuda operativa explícita para S7-10.
+- S7-01 a S7-09: completadas y confirmadas por CI.
+- S7-10: diferida.
+- La deuda operativa autenticada y de cierre se mantiene explícita y no se considera resuelta por iniciar Sprint 8.
 
-## Programa transversal UX
-
-[UX](./UX.md) define los criterios permanentes. [El backlog UX activo](../sprints/active/ux-backlog.md) mantiene la ejecución.
-
-Los fundamentos P0 de UX —tokens, tema claro/oscuro/automático, acceso a herramientas de accesibilidad, contraste AA, componentes básicos y pruebas visuales de los shells— se ejecutan dentro de S7-05 a S7-10 y no como un sprint paralelo separado.
-
-## Controles operativos de beta
+## Controles operativos de beta diferidos
 
 Permanecen abiertos:
 
@@ -40,18 +42,18 @@ Permanecen abiertos:
 - [ ] Definir canal, severidad y responsables de incidentes de beta.
 - [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal antes de apertura pública.
 
-El portal público y su accesibilidad ya cuentan con una ejecución E2E verde sobre la línea actual de trabajo. La matriz autenticada no está fallando por código: su última ejecución se detuvo porque el secreto JSON estaba truncado. El workflow valida ahora ese formato antes de preparar el navegador.
+El portal público y su accesibilidad cuentan con ejecución E2E verde. La matriz autenticada permanece diferida y no debe ejecutarse contra producción.
 
 ## Orden vigente de ejecución
 
-1. Continuar Sprint 7 desde S7-06, migrando los colores fijos del dashboard, la navegación y los estilos administrativos especializados sobre la infraestructura de tema ya validada.
-2. Completar S7-07 a S7-09: herramientas de accesibilidad, responsive/teclado/foco/contraste y reducción de duplicación visual.
-3. Reparar el secreto protegido y ejecutar la matriz E2E autenticada antes de S7-10.
-4. Validar manualmente los KPIs restringidos y registrar la evidencia operativa.
-5. Ejecutar S7-10 con pruebas visuales, accesibilidad, `pnpm check`, CI y cierre.
-6. Revisar y aprobar de forma controlada unidades organizativas; publicar solo después y por separado.
-7. Cerrar protección de credenciales, restauración y respuesta a incidentes.
-8. Abrir una ronda limitada de beta interna con registro formal de incidencias.
+1. Completar S8-01 con inventario y contrato de renderizado, caché y revalidación.
+2. Implementar metadata, sitemap y robots respetando el estado no público.
+3. Reducir consultas repetitivas mediante servicios o endpoints agregados.
+4. Revisar índices con evidencia de consultas reales.
+5. Implementar búsqueda interna canónica y controles de privacidad.
+6. Añadir health checks y observabilidad mínima sin exponer información sensible.
+7. Completar README técnico, manual administrativo y procedimientos operativos.
+8. Mantener S7-10 diferido hasta nueva instrucción.
 
 ## Importación controlada
 
@@ -69,4 +71,4 @@ No se promoverá una candidata pública mientras exista una incidencia P0/P1 abi
 
 ## Historial
 
-Los cierres y evidencias terminados se mantienen en `docs/archive/sprints` o en los documentos de sprint marcados como completados. No deben usarse como estado actual ni duplicar esta hoja de ruta.
+Los cierres y evidencias terminados se mantienen en `docs/archive/sprints` o en documentos de sprint marcados como completados. No deben usarse como estado actual ni duplicar esta hoja de ruta.
