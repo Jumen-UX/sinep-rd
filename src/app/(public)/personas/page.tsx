@@ -2,11 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { loadDashboardSummary } from '@/lib/public/dashboard'
 import { loadPeopleDirectory, normalizePersonFilter, type PersonFilter } from '@/lib/public/directories'
+import { buildPublicMetadata } from '@/lib/public/metadata'
 
-export const metadata: Metadata = {
-  title: 'Personas · SINEP RD',
+export const metadata: Metadata = buildPublicMetadata({
+  title: 'Personas',
   description: 'Directorio público de obispos, sacerdotes, diáconos, personas consagradas y laicos registrados en SINEP RD.',
-}
+  path: '/personas',
+})
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 const firstValue = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value
