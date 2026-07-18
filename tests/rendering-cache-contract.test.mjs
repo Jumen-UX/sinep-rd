@@ -54,11 +54,12 @@ test('administrative rendering stays dynamic and uncached', () => {
   assert.match(contract, /Caché compartida: prohibida/)
 })
 
-test('sprint 8 records completed rendering and metadata blocks before sitemap audit', () => {
-  assert.match(sprint, /\[x\] S8-01/)
-  assert.match(sprint, /\[x\] S8-02/)
-  assert.match(sprint, /\[x\] S8-03/)
+test('sprint 8 records rendering metadata and guarded indexing before query consolidation', () => {
+  for (const item of ['S8-01', 'S8-02', 'S8-03', 'S8-04']) {
+    assert.match(sprint, new RegExp(`\\[x\\] ${item}`))
+  }
   assert.match(sprint, /RENDERING_CACHE_CONTRACT\.md/)
-  assert.match(sprint, /Después auditar `sitemap\.ts` y `robots\.ts`/)
+  assert.match(sprint, /PUBLIC_INDEXING_ENABLED/)
+  assert.match(sprint, /Después auditar las consultas públicas repetitivas/)
   assert.match(sprint, /S7-10 continúa diferido/)
 })
