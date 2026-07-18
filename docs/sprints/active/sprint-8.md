@@ -21,8 +21,8 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 1. [x] S8-01 — Auditar configuración de Next.js, límites servidor/cliente, metadata, sitemap, robots, caché, búsqueda, monitoreo y documentación.
 2. [x] S8-02 — Definir el contrato de renderizado, caché y revalidación por tipo de ruta pública. **Validado con CI verde.**
 3. [x] S8-03 — Implementar metadata canónica y Open Graph para páginas públicas principales y fichas. **Validado con CI verde.**
-4. [x] S8-04 — Auditar y endurecer sitemap y robots de acuerdo con el estado no público y la futura apertura controlada. **Implementado; CI pendiente.**
-5. [ ] S8-05 — Consolidar endpoints o servicios agregados para evitar consultas públicas repetitivas.
+4. [x] S8-04 — Auditar y endurecer sitemap y robots de acuerdo con el estado no público y la futura apertura controlada. **Validado con CI verde.**
+5. [x] S8-05 — Consolidar endpoints o servicios agregados para evitar consultas públicas repetitivas. **Implementado; CI pendiente.**
 6. [ ] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible.
 7. [ ] S8-07 — Diseñar e implementar la primera búsqueda interna canónica.
 8. [ ] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles.
@@ -51,24 +51,35 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 
 ## S8-04 — Indexación pública controlada
 
-Hallazgo: `robots.ts` permitía rastrear el portal y `sitemap.ts` exponía rutas estáticas y fichas públicas en cualquier despliegue accesible, aunque el producto aún no está aprobado para apertura pública.
+- `src/lib/public/indexing.ts` define la compuerta servidor `PUBLIC_INDEXING_ENABLED`, cerrada por defecto.
+- Con indexación desactivada, `robots.txt` bloquea todo rastreo y el sitemap no expone rutas ni consulta Supabase.
+- Con indexación activada, robots mantiene bloqueados `/admin/` y `/api/`, mientras el sitemap incluye únicamente contenido público elegible.
+- `.env.example` documenta la aprobación operacional requerida antes de habilitar la indexación.
+- `tests/public-sitemap-contract.test.mjs` protege ambos modos y la degradación segura.
+
+## S8-05 — Consultas públicas consolidadas
+
+Hallazgo demostrado: la portada ejecutaba en paralelo `loadPublicDashboardData()` y `loadDashboardSummary()`. Ambos servicios consultaban de nuevo `public_dioceses` y `person_public_directory`, y además construían el universo parroquial mediante dos lecturas diferentes.
 
 Implementación:
 
-- `src/lib/public/indexing.ts` define una compuerta servidor `PUBLIC_INDEXING_ENABLED`.
-- La compuerta es cerrada por defecto; solo acepta valores positivos explícitos.
-- Con indexación desactivada, `robots.txt` devuelve `Disallow: /` para todos los agentes.
-- Con indexación desactivada, el sitemap devuelve una lista vacía y no consulta Supabase.
-- Con indexación activada, robots permite el portal pero mantiene bloqueados `/admin/` y `/api/`.
-- Con indexación activada, el sitemap incluye únicamente rutas públicas estáticas, personas del directorio público y entidades activas con visibilidad pública.
-- `.env.example` documenta `PUBLIC_INDEXING_ENABLED=false` y exige aprobación de apertura antes de habilitarlo.
-- `tests/public-sitemap-contract.test.mjs` protege ambos modos y la degradación segura cuando Supabase no está disponible.
+- `src/lib/public/dashboard.ts` expone `loadPublicDashboardBundle()` como servicio agregado específico para la portada.
+- La carga principal de países, diócesis, parroquias, personas activas, asignaciones y organización se realiza una sola vez.
+- El resumen reutiliza `data.dioceses` y `data.parishes`; solo añade una lectura histórica de `person_public_directory` para conservar los totales que incluyen registros públicos no activos.
+- `buildDashboardSummary()` centraliza el cálculo de métricas para el servicio agregado y el endpoint de resumen existente.
+- La portada dejó de ejecutar dos cargadores completos mediante `Promise.all` y consume un único bundle tipado.
+- `tests/public-ssr-navigation.test.mjs` protege la carga agregada y evita regresar al patrón duplicado.
+
+Decisión de alcance:
+
+- Los directorios `/personas` y `/diocesis` todavía combinan listado filtrado y resumen global. No se migran a filtrado en memoria porque podría aumentar transferencia y costo conforme crezcan los datos.
+- Su optimización futura requiere evidencia de consulta y plan de ejecución para elegir entre RPC agregada, vista materializada, caché pública o índices; esta decisión se conecta con S8-06.
 
 ## Riesgos y deuda detectados
 
 - Habilitar indexación es una decisión operativa de publicación; no debe activarse en previews ni entornos internos.
 - Un cambio de slug debe invalidar la ruta anterior y la nueva.
-- Los directorios públicos requieren auditoría propia antes de aplicar caché compartida.
+- Los directorios requieren medición antes de aplicar caché o agregación compartida.
 - No existe todavía una imagen social institucional por defecto.
 - Las advertencias documentales sobre metadata y documentos posiblemente huérfanos siguen siendo deuda no bloqueante.
 
@@ -85,4 +96,4 @@ Implementación:
 
 ## Criterio del siguiente bloque
 
-Validar S8-04 con CI. Después auditar las consultas públicas repetitivas y consolidar únicamente aquellas cuya duplicación esté demostrada.
+Validar S8-05 con CI. Después revisar índices y planes de las consultas públicas y administrativas más costosas, sin crear índices especulativos ni duplicados.
