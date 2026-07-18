@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { loadPublicPersonDetail } from '@/lib/public/cache'
+import { buildPublicMetadata } from '@/lib/public/metadata'
 
 type LayoutProps = {
   children: ReactNode
@@ -24,29 +25,26 @@ export async function generateMetadata({ params }: Omit<LayoutProps, 'children'>
   const person = data?.person
 
   if (!person) {
-    return {
+    return buildPublicMetadata({
       title: 'Persona no encontrada',
       description: 'La ficha solicitada no está disponible públicamente.',
-      robots: { index: false, follow: false },
-    }
+      path: `/personas/${slug}`,
+      index: false,
+    })
   }
 
   const type = personTypeLabel(data.ecclesial_state?.effective_person_type ?? person.person_type)
   const description = person.biography_public?.trim()
     || `Ficha pública de ${person.display_name}, ${type.toLowerCase()}, en SINEP RD.`
 
-  return {
+  return buildPublicMetadata({
     title: person.display_name,
     description,
-    alternates: { canonical: `/personas/${person.slug}` },
-    openGraph: {
-      title: person.display_name,
-      description,
-      type: 'profile',
-      url: `/personas/${person.slug}`,
-      images: person.photo_url ? [{ url: person.photo_url, alt: person.display_name }] : undefined,
-    },
-  }
+    path: `/personas/${person.slug}`,
+    image: person.photo_url,
+    imageAlt: person.display_name,
+    type: 'profile',
+  })
 }
 
 export default function PersonDetailLayout({ children }: LayoutProps) {
