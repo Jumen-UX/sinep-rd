@@ -2,156 +2,117 @@
 
 > Estado: activo
 > Inicio: 2026-07-16
-> Actualizada: 2026-07-17
+> Actualizada: 2026-07-18
 > Rama operativa: `main`
 > Propietario: portal administrativo, diseño de interfaz y accesibilidad
 
 ## Objetivo
 
-Consolidar el portal administrativo como una experiencia coherente, accesible, responsive y orientada al trabajo por rol, reutilizando los contratos funcionales ya estabilizados y sin duplicar lógica de negocio.
+Consolidar el portal administrativo como una experiencia coherente, accesible, responsive y orientada al trabajo por rol, reutilizando los contratos funcionales estabilizados y sin duplicar lógica de negocio.
 
-## Cola inicial
+## Cola vigente
 
-1. [x] S7-01 — Auditar el plan UX vigente, la implementación actual y los pendientes reales antes de modificar pantallas.
-2. [x] S7-02 — Definir la arquitectura de información y navegación administrativa por rol, permiso y alcance. **Implementación y contratos completados; validación E2E autenticada diferida y registrada como deuda de validación.**
-3. [x] S7-03 — Consolidar el dashboard administrativo y sus acciones prioritarias. **Completada y confirmada con CI verde.**
-4. [x] S7-04 — Integrar KPIs contextuales por dimensión territorial, pastoral, administrativa y colegial. **Implementación, migración y CI completados; validación manual con un perfil restringido registrada como deuda funcional.**
-5. [x] S7-05 — Normalizar encabezados, breadcrumbs, estados vacíos, feedback y jerarquía visual. **Completada con cinco pantallas representativas y CI verde; refuerzo posterior pendiente de CI.**
-6. [ ] S7-06 — Completar modo oscuro sobre todos los componentes administrativos. **Cobertura semántica implementada en shell, dashboard, asistentes, tablas, historiales y capas heredadas; validación final en progreso.**
-7. [ ] S7-07 — Implementar y validar el acceso flotante a herramientas de accesibilidad.
-8. [ ] S7-08 — Revisar responsive, teclado, foco, contraste y lectores de pantalla.
-9. [ ] S7-09 — Reducir duplicación visual y consolidar componentes reutilizables.
-10. [ ] S7-10 — Ejecutar pruebas visuales, accesibilidad, `pnpm check`, CI y cierre.
+1. [x] S7-01 — Auditoría del plan UX, implementación y pendientes reales.
+2. [x] S7-02 — Arquitectura de información y navegación por rol, permiso y alcance.
+3. [x] S7-03 — Dashboard administrativo y acciones prioritarias.
+4. [x] S7-04 — KPIs contextuales territoriales, pastorales, administrativos y colegiales.
+5. [x] S7-05 — Encabezados, breadcrumbs, estados, feedback y jerarquía visual.
+6. [x] S7-06 — Modo oscuro y tokens semánticos. **Validación técnica completada; revisión visual administrativa autenticada trasladada a S7-10.**
+7. [x] S7-07 — Acceso flotante a herramientas de accesibilidad.
+8. [x] S7-08 — Responsive, teclado, foco, contraste y lectores de pantalla.
+9. [x] S7-09 — Consolidación de componentes, asistentes y capas heredadas.
+10. [ ] S7-10 — Validación operativa, pruebas autenticadas y cierre.
 
-## Estado de ejecución
+## Estado resumido
 
 ### S7-01 — Completada
 
-Se contrastó el plan UX vigente con la implementación actual. El levantamiento identificó fundamentos existentes y brechas en navegación por permisos, alcance visible, modo oscuro, accesibilidad, búsqueda, navegación móvil y regresión visual.
+Se contrastó el plan UX con la implementación real y se establecieron las brechas de navegación, alcance, tema, accesibilidad, responsive y regresión visual.
 
-### S7-02 — Completada con validación diferida
+### S7-02 — Completada con validación operativa diferida
 
-Se creó `docs/product/ADMIN_NAVIGATION_ARCHITECTURE.md` como contrato canónico para navegación por permiso y alcance, estados de disponibilidad, registro único de rutas, selector de alcance, navegación móvil y responsabilidades técnicas.
-
-La implementación quedó cubierta por TypeScript, pruebas unitarias y contractuales. La ejecución real de `E2E / Admin access matrix` quedó diferida porque el secreto protegido contenía JSON truncado. El workflow valida ahora el formato antes de preparar el navegador. La matriz deberá ejecutarse con perfiles estables antes de S7-10.
+Se definió la arquitectura canónica de navegación por permisos y alcance, incluida la matriz de disponibilidad y el selector de ámbito. La ejecución autenticada quedó trasladada a S7-10 porque el secreto `E2E_ACCESS_PROFILES_JSON` necesita reparación.
 
 ### S7-03 — Completada
 
-Se consolidó el dashboard administrativo con el mismo contexto canónico de navegación, acceso a datos mediante servicio, acciones filtradas por disponibilidad, alcance activo visible, búsqueda precisa y pruebas contractuales. CI confirmó documentación, TypeScript, pruebas y build en verde.
+El dashboard administrativo usa el contexto canónico de navegación, acciones filtradas por disponibilidad, alcance visible, búsqueda precisa y contratos de regresión.
 
-### S7-04 — Completada con validación manual diferida
+### S7-04 — Completada con validación funcional diferida
 
-Se implementaron el contrato, política y adaptador de KPIs contextuales, la agrupación visual por dimensión, el bloqueo de fuentes globales para alcances restringidos y la RPC `public.get_admin_contextual_kpis(text, uuid)`. La migración fue aplicada correctamente en Supabase y CI confirmó documentación, TypeScript, pruebas y build en verde.
-
-Queda registrada como deuda funcional la validación manual con un perfil restringido real para confirmar que las políticas RLS permiten leer todos los descendientes autorizados sin producir conteos parciales.
+Se implementaron KPIs contextuales y la RPC `public.get_admin_contextual_kpis(text, uuid)`. CI quedó en verde. La validación con un perfil restringido real se ejecutará en S7-10.
 
 ### S7-05 — Completada
 
-La auditoría inicial confirmó que conviven componentes compartidos modernos con clases heredadas como `page-heading`, `empty-state`, `error-box`, `admin-topbar`, `admin-top-header` y botones definidos únicamente por clases CSS.
+Se normalizaron encabezados, breadcrumbs, estados de página, alertas, badges, botones, filtros y jerarquía en pantallas administrativas representativas. La duplicación transversal restante se resolvió en S7-09.
+
+### S7-06 — Completada técnicamente
 
 Se implementaron:
 
-- `src/components/ui/page-state.tsx`, que normaliza estados de carga, error y vacío con semántica accesible;
-- migración de `RequestsPage.tsx` a `PageHeader`, breadcrumbs canónicos, `PageState`, `StatusBadge` y `Button`;
-- migración de `AdministrativeActivityPage.tsx` al mismo contrato compartido;
-- migración de `PersonListPage.tsx`, eliminando su cabecera paralela y el panel de bienvenida duplicado;
-- breadcrumbs `Administración → Personas`, badges de resumen, botones compartidos y estados de carga, error y vacío;
-- filtros con `aria-pressed` y jerarquía `h1 → h2 → h3` en el directorio de personas;
-- migración de `UserAccessPage.tsx` a `PageHeader`, breadcrumbs, `PageState`, `Alert`, `StatusBadge` y `Button`;
-- corrección de la jerarquía de usuarios y roles para que las tarjetas usen `h3` bajo sus secciones `h2`;
-- estados vacíos explícitos para catálogos de usuarios y roles;
-- migración de `ReviewQueuePage.tsx` a `PageHeader`, `PageState`, `Alert`, `StatusBadge` y `Button`, con filtros etiquetados y jerarquía `h1 → h2 → h3`;
-- ampliación de `tests/admin-page-state-hierarchy.test.mjs` para proteger las cinco pantallas y evitar el retorno de patrones heredados.
+- apariencia clara, oscura y automática;
+- persistencia y aplicación previa a hidratación;
+- tokens semánticos para superficies, texto, bordes, foco y estados;
+- cobertura pública y administrativa;
+- contratos de tema y E2E público.
 
-Los dos primeros bloques fueron confirmados con CI verde. El CI del tercer bloque detectó una regresión independiente en `package.json`: se habían perdido los scripts recientes de automatización documental, auditoría de migraciones y pruebas afectadas. El contrato completo fue restaurado sin modificar la funcionalidad de las pantallas.
+La inspección visual administrativa autenticada en ambos temas queda como criterio de S7-10.
 
-La ejecución [CI #29551515252](https://github.com/Jumen-UX/sinep-rd/actions/runs/29551515252) confirmó en verde la cuarta migración: documentación, automatizaciones, TypeScript, 462 pruebas, build y CodeQL.
+### S7-07 — Completada
 
-Como refuerzo posterior al cierre, el centro de revisión fue incorporado al mismo contrato visual y accesible. Este cambio no reabre S7-05 ni desplaza S7-06; queda pendiente de `pnpm check` y CI sobre los commits del refuerzo.
+El acceso flotante a herramientas de accesibilidad quedó integrado y protegido por contratos, compatible con escritorio y móvil.
 
-El inventario restante todavía contiene clases heredadas en asistentes y pantallas especializadas. No bloquea S7-05 porque la capa canónica, la semántica y el contrato de adopción ya quedaron demostrados en solicitudes, auditoría, personas, acceso y revisión. La eliminación transversal de duplicación visual continuará en S7-09, coordinada con modo oscuro y accesibilidad para evitar retrabajo.
+### S7-08 — Completada
 
-### S7-06 — En progreso
+Se consolidaron responsive, navegación por teclado, foco visible, contraste, regiones vivas y semántica de formularios y diálogos. Los hallazgos estructurales restantes se trataron en S7-09.
 
-El inventario inicial confirmó que el sistema solo declaraba `color-scheme: light`, no conservaba una preferencia de apariencia y mantenía colores claros fijos en superficies y estados compartidos.
+### S7-09 — Completada
 
-El primer bloque implementó:
+Se consolidaron eventos, configuración estructural, asistentes de clero, persona laica y vida consagrada. Se retiraron hojas específicas, CSS embebido y `AutoSectionWizard`. `LegacyAdminAccessibilityEnhancements` quedó limitado a formularios heredados todavía no migrados y al diálogo móvil global.
 
-- preferencia `Claro`, `Oscuro` y `Automático`, persistida en `localStorage`;
-- resolución de la preferencia del sistema mediante `prefers-color-scheme`;
-- script `beforeInteractive` en el layout raíz para aplicar el tema antes del render y evitar destellos;
-- control compartido disponible en el encabezado público y en la navegación administrativa;
-- sincronización inmediata entre controles y reacción a cambios del sistema;
-- tokens oscuros para superficies, texto, bordes, foco, sombras y estados semánticos;
-- bordes semánticos temáticos en `Alert` y `StatusBadge`;
-- sustitución de superficies claras fijas en el shell público y en los módulos administrativos compartidos;
-- `tests/theme-contract.test.mjs`, que protege arranque, persistencia, opciones, exposición en ambos shells y uso de tokens semánticos.
+El detalle de los 18 bloques se mantiene en `docs/sprints/active/sprint-7-s7-09.md`.
 
-La ejecución [CI #29552207127](https://github.com/Jumen-UX/sinep-rd/actions/runs/29552207127) confirmó documentación, auditorías, TypeScript, 465 pruebas, build y CodeQL. El primer intento detectó una expectativa heredada que exigía hexadecimales claros literales; el contrato fue actualizado para comprobar los tokens de contraste en ambos temas.
+## S7-10 — Alcance de cierre
 
-El primer E2E público del bloque detectó contraste insuficiente en el emblema porque la capa de marca sustituye el primario por amarillo. Se incorporó un token oscuro específico para texto sobre la marca y se amplió el filtro del workflow para observar `public-shell.css`, tokens, controles de tema y componentes compartidos. [CI #29552428659](https://github.com/Jumen-UX/sinep-rd/actions/runs/29552428659) y [E2E público #29552428639](https://github.com/Jumen-UX/sinep-rd/actions/runs/29552428639) confirmaron la corrección en verde.
+S7-10 debe cerrar conjuntamente validación, operación y evidencia:
 
-El segundo bloque migró las superficies y estados especializados del dashboard y la navegación administrativa a tokens semánticos. Incluyó métricas, paneles, avisos, búsqueda, navegación móvil, selector de alcance y contraste de elementos activos.
+1. Reparar `E2E_ACCESS_PROFILES_JSON` y ejecutar la matriz autenticada.
+2. Demostrar aislamiento bidireccional entre dos diócesis.
+3. Validar KPIs contextuales con un perfil restringido real.
+4. Ejecutar revisión visual administrativa en modo claro y oscuro.
+5. Ejecutar accesibilidad autenticada sobre los flujos críticos.
+6. Activar protección contra contraseñas filtradas en Supabase Auth.
+7. Ejecutar `pnpm check`, workflows aplicables y CodeQL.
+8. Conservar evidencia operativa sin secretos.
+9. Reconciliar documentación final y cerrar Sprint 7.
 
-El tercer bloque inició la cobertura de formularios y asistentes:
+## Deuda posterior controlada
 
-- `admin-framework.css` dejó de fijar superficies blancas en progreso, tarjetas, árboles, vistas de jurisdicción y selectores;
-- avisos e información usan ahora `warning-soft`, `info-soft` y sus bordes semánticos;
-- estados activos y completados usan tokens de foco, éxito y contraste sobre primario;
-- `person-wizard-unified.css` eliminó el fallback blanco de la barra de acciones persistente;
-- `tests/theme-contract.test.mjs` protege estas superficies y evita reintroducir fondos blancos fijos.
+No bloquea S7-10 salvo que una prueba demuestre una regresión:
 
-El cuarto bloque completó las superficies principales del dashboard público y del shell administrativo:
-
-- el dashboard público expone el control de apariencia en escritorio y móvil, aunque sustituya el encabezado global;
-- la preferencia no puede modificarse antes de que React haya hidratado el control, evitando que una selección temprana se pierda;
-- paneles, filtros, métricas, listados y navegación móvil del dashboard público heredan superficies y texto semánticos;
-- configuración, formularios persistentes, roles, pestañas de entidad, tarjetas de completitud y estados activos del shell administrativo dejaron de fijar fondos claros;
-- los contratos verifican estas superficies y el E2E comprueba persistencia, recarga y Axe con tema oscuro.
-
-[CI #29553574966](https://github.com/Jumen-UX/sinep-rd/actions/runs/29553574966) y [E2E público #29553574996](https://github.com/Jumen-UX/sinep-rd/actions/runs/29553574996) confirmaron el conjunto completo en verde.
-
-El quinto bloque completó la cobertura especializada pendiente:
-
-- se creó `admin-theme-compatibility.css`, cargado después de los estilos de módulos, con alias canónicos para superficies, bordes, texto y marca heredados;
-- tablas compartidas incorporaron hover y `focus-within` mediante `surface-hover`;
-- diálogos y backdrops utilizan superficie, borde, texto y oscurecimiento semánticos;
-- el gestor de nombramientos, el formulario de cargos y las acciones del asistente de diáconos dejaron de depender de blanco fijo o fallbacks HEX;
-- historiales de nombramientos y eventos canónicos, mapas de relaciones, líneas institucionales y navegación fija de fichas usan tokens canónicos;
-- autenticación y componentes heredados de `admin-brand.css` reciben una capa final para tarjetas, indicadores, estados y superficies;
-- `tests/admin-theme-specialized.test.mjs` y `tests/profile-theme-surfaces.test.mjs` protegen el bloque completo.
-
-[CI #29554083148](https://github.com/Jumen-UX/sinep-rd/actions/runs/29554083148) confirmó documentación, TypeScript, pruebas, build y CodeQL. [E2E público #29554014925](https://github.com/Jumen-UX/sinep-rd/actions/runs/29554014925) confirmó navegación pública y Axe con la preferencia oscura persistida. S7-06 queda técnicamente validado; su cierre formal espera únicamente una comprobación visual administrativa autenticada en ambos temas, coordinada con la reparación del perfil E2E operativo ya registrada para S7-10.
-
-## Estado operativo separado
-
-No bloquean el avance técnico de S7-05, pero deben cerrarse antes de S7-10:
-
-- corregir el secreto `E2E_ACCESS_PROFILES_JSON` y ejecutar la matriz autenticada;
-- demostrar aislamiento bidireccional entre dos diócesis;
-- validar manualmente los KPIs contextuales con un perfil restringido;
-- activar protección contra contraseñas filtradas en Supabase Auth;
-- conservar evidencia sin secretos de las pruebas operativas.
+- migrar formularios administrativos heredados restantes;
+- trasladar la gestión de foco del menú móvil hacia `AdminShell` o un diálogo reutilizable;
+- retirar completamente `LegacyAdminAccessibilityEnhancements` cuando quede sin consumidores.
 
 ## Reglas del sprint
 
-- Antes de rediseñar se debe revisar el plan UX ya existente y contrastarlo con el código actual.
-- La UI no debe contener acceso directo a datos cuando exista un servicio de dominio.
-- La navegación y las acciones visibles deben respetar permisos y alcance.
-- Todos los cambios deben funcionar en modo claro y oscuro.
-- Las mejoras deben mantener navegación por teclado, foco visible, contraste suficiente y etiquetas accesibles.
-- No se deben introducir componentes duplicados para resolver variantes que puedan componerse desde una base común.
-- Las rutas administrativas seguirán delegando en sus respectivas features.
+- La UI no accede directamente a datos cuando existe un servicio de dominio.
+- Navegación y acciones respetan permisos y alcance.
+- Todos los cambios funcionan en modo claro y oscuro.
+- Teclado, foco, contraste y etiquetas accesibles son obligatorios.
+- No se introducen componentes duplicados para variantes componibles.
+- Las rutas administrativas delegan en sus features.
+- Las evidencias de validación no exponen credenciales ni secretos.
 
 ## Criterios de cierre
 
 - El portal administrativo presenta una estructura coherente y predecible.
 - Cada rol ve acciones, alertas y KPIs relevantes para su alcance.
-- Las pantallas principales funcionan correctamente en escritorio, tableta y móvil.
-- Modo oscuro y accesibilidad quedan cubiertos por contratos y pruebas.
+- Los flujos críticos funcionan en escritorio, tableta y móvil.
+- Tema y accesibilidad están cubiertos por contratos y pruebas autenticadas.
 - No se introducen accesos directos a datos ni duplicación de lógica de negocio.
-- CI valida documentación, TypeScript, pruebas y build.
+- CI valida documentación, TypeScript, pruebas, build y seguridad.
+- Las deudas operativas de acceso, aislamiento, KPIs y contraseñas quedan cerradas con evidencia.
 
 ## Punto de continuación
 
-Confirmar `pnpm check`, GitHub Actions y la comprobación visual claro/oscuro del quinto bloque. Si el resultado es verde, cerrar S7-06 e iniciar S7-07 con el acceso flotante a herramientas de accesibilidad. Las deudas operativas se mantienen separadas y deberán resolverse como parte de S7-10.
+Iniciar S7-10 por la reparación del perfil E2E autenticado. Después ejecutar la matriz de acceso, aislamiento entre diócesis, KPIs restringidos, revisión visual claro/oscuro, accesibilidad y cierre documental del Sprint 7.
