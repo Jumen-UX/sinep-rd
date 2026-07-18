@@ -127,6 +127,11 @@ export type DashboardSummary = {
   }
 }
 
+export type PublicDashboardBundle = {
+  data: PublicDashboardData
+  summary: DashboardSummary
+}
+
 function normalizeText(value?: string | null) {
   return (value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
@@ -151,6 +156,39 @@ async function safeFetch<T>(table: string, params: Record<string, string>) {
   } catch (error) {
     console.warn(`Public dashboard optional source unavailable: ${table}`, error)
     return []
+  }
+}
+
+function buildDashboardSummary(dioceses: Diocese[], parishCount: number, people: Person[]): DashboardSummary {
+  const provinceMap = dioceses.reduce((map, item) => {
+    if (item.ecclesiastical_province_name) map.set(item.ecclesiastical_province_name, (map.get(item.ecclesiastical_province_name) ?? 0) + 1)
+    return map
+  }, new Map<string, number>())
+  const provinces = Array.from(provinceMap, ([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name, 'es'))
+  const countPeople = (type: string) => people.filter((item) => item.person_type === type).length
+
+  return {
+    dioceses: {
+      total: dioceses.length,
+      archdioceses: dioceses.filter(isArchdiocese).length,
+      dioceses: dioceses.filter(isDiocese).length,
+      military: dioceses.filter(isMilitary).length,
+      provinces,
+      total_catholics: dioceses.reduce((sum, item) => sum + (item.catholics_total ?? 0), 0),
+      total_population: dioceses.reduce((sum, item) => sum + (item.population_total ?? 0), 0),
+      total_parishes: parishCount,
+      loaded_parishes: parishCount,
+      reported_parishes: parishCount,
+    },
+    people: {
+      total: people.length,
+      bishops: countPeople('bishop'),
+      priests: countPeople('priest'),
+      deacons: countPeople('deacon'),
+      religious: people.filter((item) => item.is_religious).length,
+      laypeople: countPeople('layperson'),
+      active: people.filter((item) => item.status === 'active' && !item.death_date).length,
+    },
   }
 }
 
@@ -183,34 +221,19 @@ export async function loadDashboardSummary(): Promise<DashboardSummary> {
     fetchSupabaseJson<Person[]>('person_public_directory', { select: 'id,display_name,slug,person_type,is_religious,status,death_date' }),
   ])
 
-  const provinceMap = dioceses.reduce((map, item) => {
-    if (item.ecclesiastical_province_name) map.set(item.ecclesiastical_province_name, (map.get(item.ecclesiastical_province_name) ?? 0) + 1)
-    return map
-  }, new Map<string, number>())
-  const provinces = Array.from(provinceMap, ([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name, 'es'))
-  const countPeople = (type: string) => people.filter((item) => item.person_type === type).length
+  return buildDashboardSummary(dioceses, parishes.length, people)
+}
+
+export async function loadPublicDashboardBundle(): Promise<PublicDashboardBundle> {
+  const [data, historicalPeople] = await Promise.all([
+    loadPublicDashboardData(),
+    fetchSupabaseJson<Person[]>('person_public_directory', {
+      select: 'id,display_name,slug,person_type,is_religious,status,death_date',
+    }),
+  ])
 
   return {
-    dioceses: {
-      total: dioceses.length,
-      archdioceses: dioceses.filter(isArchdiocese).length,
-      dioceses: dioceses.filter(isDiocese).length,
-      military: dioceses.filter(isMilitary).length,
-      provinces,
-      total_catholics: dioceses.reduce((sum, item) => sum + (item.catholics_total ?? 0), 0),
-      total_population: dioceses.reduce((sum, item) => sum + (item.population_total ?? 0), 0),
-      total_parishes: parishes.length,
-      loaded_parishes: parishes.length,
-      reported_parishes: parishes.length,
-    },
-    people: {
-      total: people.length,
-      bishops: countPeople('bishop'),
-      priests: countPeople('priest'),
-      deacons: countPeople('deacon'),
-      religious: people.filter((item) => item.is_religious).length,
-      laypeople: countPeople('layperson'),
-      active: people.filter((item) => item.status === 'active' && !item.death_date).length,
-    },
+    data,
+    summary: buildDashboardSummary(data.dioceses, data.parishes.length, historicalPeople),
   }
 }
