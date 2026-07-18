@@ -22,62 +22,60 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 2. [x] S8-02 — Definir el contrato de renderizado, caché y revalidación por tipo de ruta pública. **Validado con CI verde.**
 3. [x] S8-03 — Implementar metadata canónica y Open Graph para páginas públicas principales y fichas. **Validado con CI verde.**
 4. [x] S8-04 — Auditar y endurecer sitemap y robots de acuerdo con el estado no público y la futura apertura controlada. **Validado con CI verde.**
-5. [x] S8-05 — Consolidar endpoints o servicios agregados para evitar consultas públicas repetitivas. **Implementado; CI pendiente.**
-6. [ ] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible.
+5. [x] S8-05 — Consolidar endpoints o servicios agregados para evitar consultas públicas repetitivas. **Validado con CI verde.**
+6. [x] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible. **Implementado y aplicado; CI pendiente.**
 7. [ ] S8-07 — Diseñar e implementar la primera búsqueda interna canónica.
 8. [ ] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles.
 9. [ ] S8-09 — Completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración.
 10. [ ] S8-10 — Validar el alcance técnico propio de Sprint 8 con pruebas contractuales y CI, sin absorber el cierre operativo diferido de S7-10.
 
-## S8-01 — Inventario completado
+## S8-01 a S8-04 — Base técnica validada
 
-- `next.config.ts` no declara todavía políticas globales de rendimiento; no se modificará sin evidencia concreta.
-- El README, la hoja de ruta y el manifiesto reconocen Sprint 8 como único sprint activo y Sprint 7 como diferido.
-- Las fichas públicas ya cuentan con caché versionada, etiquetas, deduplicación por solicitud e invalidación explícita.
-- El layout administrativo fuerza renderizado dinámico y ausencia de caché compartida.
-- Sitemap, robots y health checks existían parcialmente y requieren contratos explícitos, no reimplementación indiscriminada.
-
-## S8-02 — Contrato validado
-
-`docs/architecture/RENDERING_CACHE_CONTRACT.md` clasifica rutas públicas, administrativas y operativas; prohíbe compartir datos dependientes de sesión o alcance; exige invalidación explícita y evita cambios globales sin evidencia.
-
-## S8-03 — Metadata pública validada
-
-- `src/lib/public/metadata.ts` centraliza metadata pública, canonical, Open Graph, Twitter y robots.
-- El grupo `(public)` tiene `metadataBase` e identidad de sitio propias.
-- Inicio, directorios y fichas dinámicas usan el mismo constructor.
-- Las fichas inexistentes quedan fuera de índices.
-- Metadata y HTML reutilizan los mismos cargadores cacheados.
-
-## S8-04 — Indexación pública controlada
-
-- `src/lib/public/indexing.ts` define la compuerta servidor `PUBLIC_INDEXING_ENABLED`, cerrada por defecto.
-- Con indexación desactivada, `robots.txt` bloquea todo rastreo y el sitemap no expone rutas ni consulta Supabase.
-- Con indexación activada, robots mantiene bloqueados `/admin/` y `/api/`, mientras el sitemap incluye únicamente contenido público elegible.
-- `.env.example` documenta la aprobación operacional requerida antes de habilitar la indexación.
-- `tests/public-sitemap-contract.test.mjs` protege ambos modos y la degradación segura.
+- `docs/architecture/RENDERING_CACHE_CONTRACT.md` separa rutas públicas, administrativas y operativas.
+- `src/lib/public/metadata.ts` centraliza canonical, Open Graph, Twitter y robots para el portal público.
+- `PUBLIC_INDEXING_ENABLED` mantiene cerrado por defecto el rastreo y el sitemap durante la beta interna.
+- Las fichas públicas reutilizan cargadores cacheados y las rutas administrativas permanecen dinámicas y sin caché compartida.
 
 ## S8-05 — Consultas públicas consolidadas
 
-Hallazgo demostrado: la portada ejecutaba en paralelo `loadPublicDashboardData()` y `loadDashboardSummary()`. Ambos servicios consultaban de nuevo `public_dioceses` y `person_public_directory`, y además construían el universo parroquial mediante dos lecturas diferentes.
+- `loadPublicDashboardBundle()` eliminó la doble carga de diócesis, personas y universo parroquial en la portada.
+- `buildDashboardSummary()` reutiliza los datos ya cargados y conserva una lectura histórica separada de personas para mantener los totales públicos.
+- Los directorios no se migraron a filtrado íntegro en memoria porque el volumen y la transferencia deben medirse antes.
 
-Implementación:
+## S8-06 — Índices revisados y aplicados
 
-- `src/lib/public/dashboard.ts` expone `loadPublicDashboardBundle()` como servicio agregado específico para la portada.
-- La carga principal de países, diócesis, parroquias, personas activas, asignaciones y organización se realiza una sola vez.
-- El resumen reutiliza `data.dioceses` y `data.parishes`; solo añade una lectura histórica de `person_public_directory` para conservar los totales que incluyen registros públicos no activos.
-- `buildDashboardSummary()` centraliza el cálculo de métricas para el servicio agregado y el endpoint de resumen existente.
-- La portada dejó de ejecutar dos cargadores completos mediante `Promise.all` y consume un único bundle tipado.
-- `tests/public-ssr-navigation.test.mjs` protege la carga agregada y evita regresar al patrón duplicado.
+### Evidencia
 
-Decisión de alcance:
+Se compararon los filtros reales de `public_dioceses`, `public_organization_units`, `person_public_directory` y las relaciones jerárquicas con `pg_indexes` del proyecto Supabase.
 
-- Los directorios `/personas` y `/diocesis` todavía combinan listado filtrado y resumen global. No se migran a filtrado en memoria porque podría aumentar transferencia y costo conforme crezcan los datos.
-- Su optimización futura requiere evidencia de consulta y plan de ejecución para elegir entre RPC agregada, vista materializada, caché pública o índices; esta decisión se conecta con S8-06.
+Se confirmó que ya existían:
+
+- claves primarias y únicas por `slug`;
+- índices individuales de estado, visibilidad, tipo y nombre;
+- índices de claves foráneas de personas, entidades, organigramas, unidades y asignaciones;
+- índices parciales de asignaciones vigentes y reglas de cardinalidad.
+
+Por ello no se añadieron índices redundantes sobre `persons.display_name`, `status` o `visibility`.
+
+### Migración
+
+`supabase/migrations/20260718160000_optimize_public_query_indexes.sql` incorpora tres índices parciales e idempotentes:
+
+1. `ecclesiastical_entities_public_active_type_name_idx` para entidades públicas activas por tipo y nombre.
+2. `entity_relationships_current_active_child_idx` para localizar relaciones jerárquicas vigentes desde la entidad hija.
+3. `organization_units_public_current_chart_order_idx` para recorrer unidades públicas vigentes por organigrama y orden visual.
+
+La migración fue aplicada mediante el canal de migraciones de Supabase y los tres índices se verificaron en `pg_indexes`.
+
+`tests/public-query-indexes.test.mjs` protege nombres, columnas, predicados parciales, idempotencia y ausencia de índices globales redundantes.
+
+### Limitación de la evidencia
+
+El volumen actual es todavía reducido y PostgreSQL puede preferir recorridos secuenciales. Los índices se justifican por la forma estable de las consultas y el crecimiento esperado, no por una mejora de latencia concluyente en la muestra actual. S8-10 deberá volver a revisar métricas reales antes de declarar una optimización cuantificada.
 
 ## Riesgos y deuda detectados
 
-- Habilitar indexación es una decisión operativa de publicación; no debe activarse en previews ni entornos internos.
+- Habilitar indexación web sigue siendo una decisión operativa de publicación.
 - Un cambio de slug debe invalidar la ruta anterior y la nueva.
 - Los directorios requieren medición antes de aplicar caché o agregación compartida.
 - No existe todavía una imagen social institucional por defecto.
@@ -96,4 +94,4 @@ Decisión de alcance:
 
 ## Criterio del siguiente bloque
 
-Validar S8-05 con CI. Después revisar índices y planes de las consultas públicas y administrativas más costosas, sin crear índices especulativos ni duplicados.
+Validar S8-06 con CI. Después diseñar la primera búsqueda interna canónica sobre fuentes públicas y administrativas separadas, sin mezclar visibilidad ni alcance.
