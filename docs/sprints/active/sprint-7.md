@@ -115,4 +115,4 @@ No bloquea S7-10 salvo que una prueba demuestre una regresión:
 
 ## Punto de continuación
 
-S7-10 permanece diferido. Cuando se reactive, iniciar S7-10 por la reparación del perfil E2E autenticado. Después ejecutar la matriz de acceso, aislamiento entre diócesis, KPIs restringidos, revisión visual claro/oscuro, accesibilidad y cierre documental del Sprint 7.
+S7-10 permanece diferido. Iniciar S7-10 por la reparación del perfil E2E autenticado cuando se reactive. Después ejecutar la matriz de acceso, aislamiento entre diócesis, KPIs restringidos, revisión visual claro/oscuro, accesibilidad y cierre documental del Sprint 7.
