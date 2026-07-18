@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { loadPublicEntityDetail } from '@/lib/public/cache'
+import { buildPublicMetadata } from '@/lib/public/metadata'
 
 type LayoutProps = {
   children: ReactNode
@@ -13,11 +14,12 @@ export async function generateMetadata({ params }: Omit<LayoutProps, 'children'>
   const entity = data?.entity
 
   if (!entity) {
-    return {
+    return buildPublicMetadata({
       title: 'Entidad no encontrada',
       description: 'La ficha solicitada no está disponible públicamente.',
-      robots: { index: false, follow: false },
-    }
+      path: `/entidades/${slug}`,
+      index: false,
+    })
   }
 
   const title = entity.official_name || entity.name
@@ -26,17 +28,11 @@ export async function generateMetadata({ params }: Omit<LayoutProps, 'children'>
       ? `${title}. Sede: ${entity.cathedral_name}. Consulta su ficha institucional en SINEP RD.`
       : `Ficha institucional pública de ${title} en SINEP RD.`)
 
-  return {
+  return buildPublicMetadata({
     title,
     description,
-    alternates: { canonical: `/entidades/${entity.slug}` },
-    openGraph: {
-      title,
-      description,
-      type: 'website',
-      url: `/entidades/${entity.slug}`,
-    },
-  }
+    path: `/entidades/${entity.slug}`,
+  })
 }
 
 export default function EntityDetailLayout({ children }: LayoutProps) {
