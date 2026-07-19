@@ -39,9 +39,10 @@ test('roadmap and README point to sprint 8 without closing deferred S7-10', () =
   assert.doesNotMatch(readme, /sprint funcional activo es Sprint 5/)
 })
 
-test('initial performance inventory records the empty Next.js configuration', () => {
+test('initial performance inventory keeps Next.js configuration intentionally minimal', () => {
   assert.match(nextConfig, /const nextConfig: NextConfig = \{\}/)
-  assert.match(sprint, /`next\.config\.ts` no declara todavía políticas/)
+  assert.match(sprint, /`next\.config\.ts` no declara todavía políticas globales de rendimiento/)
+  assert.match(sprint, /no se modificará sin evidencia concreta/)
   assert.match(
     sprint,
     /metadata, sitemap, robots, caché, búsqueda, monitoreo y documentación/,
