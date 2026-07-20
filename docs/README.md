@@ -27,6 +27,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 | Verificar salud y observabilidad | [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md) |
 | Desplegar, migrar o restaurar | [Guía de despliegue, migración y restauración](./operations/DESPLIEGUE_MIGRACION_RESTAURACION.md) |
 | Ejecutar E2E o accesibilidad | [E2E y accesibilidad](./testing/E2E_Y_ACCESIBILIDAD.md) |
+| Consultar todos los documentos | [Índice documental generado](./INDEX.generated.md) |
 
 ## Documentación vigente
 

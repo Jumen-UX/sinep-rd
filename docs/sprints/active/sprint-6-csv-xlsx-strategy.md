@@ -1,5 +1,8 @@
 # Sprint 6 — Estrategia CSV y XLSX
 
+> Estado: referencia técnica vigente
+> Última revisión: 2026-07-20
+
 ## Decisión
 
 CSV UTF-8 es el único formato procesable durante S6-03. XLSX y XLS permanecen reconocidos como formatos de origen habituales, pero deben exportarse a CSV UTF-8 antes de cargarse.

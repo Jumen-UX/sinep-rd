@@ -53,6 +53,8 @@ for (const row of rows) {
 const lines = [
   '# Índice documental generado',
   '',
+  '> Estado: generado',
+  '',
   '> Generado automáticamente por `pnpm docs:index`. No editar manualmente.',
   '',
 ]

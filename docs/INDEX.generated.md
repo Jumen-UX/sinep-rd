@@ -1,5 +1,7 @@
 # Índice documental generado
 
+> Estado: generado
+
 > Generado automáticamente por `pnpm docs:index`. No editar manualmente.
 
 ## architecture
@@ -51,18 +53,18 @@
 
 - [Documentación de SINEP RD](./README.md) — vigente
 - [Operación y recuperación de SINEP RD](./OPERACION_Y_RECUPERACION.md) — activo
-- [Pruebas E2E y accesibilidad](./PRUEBAS_E2E.md) — sin clasificar
+- [Pruebas E2E y accesibilidad](./PRUEBAS_E2E.md) — vigente
 - [Sprint 3 — resultados operativos de acceso](./SPRINT_3_OPERATIONAL_RESULTS.md) — contrato de base validado; recorrido web con cuentas diferenciadas pendiente
 
 ## sprints
 
-- [Auditoría del flujo actual de importaciones](./sprints/active/sprint-6-import-audit.md) — sin clasificar
+- [Auditoría del flujo actual de importaciones](./sprints/active/sprint-6-import-audit.md) — referencia técnica vigente
 - [Auditoría inicial del modelo de eventos — Sprint 5](./sprints/active/sprint-5-event-model-audit.md) — completado
 - [Backlog UX activo](./sprints/active/ux-backlog.md) — backlog vigente
 - [Sprint 4 — Auditoría de flujos de personas](./sprints/active/sprint-4-person-flows-audit.md) — S4-01 completado
 - [Sprint 4 — Personas, cargos y nombramientos](./sprints/active/sprint-4.md) — completado
 - [Sprint 5 — Eventos y evolución institucional](./sprints/active/sprint-5.md) — completado
-- [Sprint 6 — Estrategia CSV y XLSX](./sprints/active/sprint-6-csv-xlsx-strategy.md) — sin clasificar
+- [Sprint 6 — Estrategia CSV y XLSX](./sprints/active/sprint-6-csv-xlsx-strategy.md) — referencia técnica vigente
 - [Sprint 6 — Importaciones y calidad de datos](./sprints/active/sprint-6.md) — completado
 - [Sprint 7 — Portal administrativo y experiencia de usuario](./sprints/active/sprint-7.md) — diferido
 - [Sprint 7 · S7-07 — Herramientas de accesibilidad](./sprints/active/sprint-7-s7-07.md) — completada y validada

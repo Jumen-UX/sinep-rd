@@ -1,5 +1,8 @@
 # Auditoría del flujo actual de importaciones
 
+> Estado: referencia técnica vigente
+> Última revisión: 2026-07-20
+
 ## Alcance revisado
 
 Se revisaron la entrada administrativa `/admin/importar`, la página principal de carga, el servicio cliente de lotes, el parser CSV y la ruta API de preparación.
