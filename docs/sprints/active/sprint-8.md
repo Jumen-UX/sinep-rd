@@ -23,14 +23,15 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 3. [x] S8-03 — Implementar metadata canónica y Open Graph para páginas públicas principales y fichas. **Validado con CI verde.**
 4. [x] S8-04 — Auditar y endurecer sitemap y robots de acuerdo con el estado no público y la futura apertura controlada. **Validado con CI verde.**
 5. [x] S8-05 — Consolidar endpoints o servicios agregados para evitar consultas públicas repetitivas. **Validado con CI verde.**
-6. [x] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible. **Implementado y aplicado; CI pendiente.**
-7. [ ] S8-07 — Diseñar e implementar la primera búsqueda interna canónica.
+6. [x] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible. **Validado con CI verde y aplicado en Supabase.**
+7. [x] S8-07 — Diseñar e implementar la primera búsqueda interna canónica. **Implementado y aplicado; CI pendiente.**
 8. [ ] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles.
 9. [ ] S8-09 — Completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración.
 10. [ ] S8-10 — Validar el alcance técnico propio de Sprint 8 con pruebas contractuales y CI, sin absorber el cierre operativo diferido de S7-10.
 
 ## S8-01 a S8-04 — Base técnica validada
 
+- `next.config.ts` no declara todavía políticas globales de rendimiento; no se modificará sin evidencia concreta.
 - `docs/architecture/RENDERING_CACHE_CONTRACT.md` separa rutas públicas, administrativas y operativas.
 - `src/lib/public/metadata.ts` centraliza canonical, Open Graph, Twitter y robots para el portal público.
 - `PUBLIC_INDEXING_ENABLED` mantiene cerrado por defecto el rastreo y el sitemap durante la beta interna.
@@ -44,40 +45,40 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 
 ## S8-06 — Índices revisados y aplicados
 
-### Evidencia
-
-Se compararon los filtros reales de `public_dioceses`, `public_organization_units`, `person_public_directory` y las relaciones jerárquicas con `pg_indexes` del proyecto Supabase.
-
-Se confirmó que ya existían:
-
-- claves primarias y únicas por `slug`;
-- índices individuales de estado, visibilidad, tipo y nombre;
-- índices de claves foráneas de personas, entidades, organigramas, unidades y asignaciones;
-- índices parciales de asignaciones vigentes y reglas de cardinalidad.
-
-Por ello no se añadieron índices redundantes sobre `persons.display_name`, `status` o `visibility`.
-
-### Migración
+Se compararon los filtros reales de `public_dioceses`, `public_organization_units`, `person_public_directory` y relaciones jerárquicas con `pg_indexes`.
 
 `supabase/migrations/20260718160000_optimize_public_query_indexes.sql` incorpora tres índices parciales e idempotentes:
 
-1. `ecclesiastical_entities_public_active_type_name_idx` para entidades públicas activas por tipo y nombre.
-2. `entity_relationships_current_active_child_idx` para localizar relaciones jerárquicas vigentes desde la entidad hija.
-3. `organization_units_public_current_chart_order_idx` para recorrer unidades públicas vigentes por organigrama y orden visual.
+1. `ecclesiastical_entities_public_active_type_name_idx`.
+2. `entity_relationships_current_active_child_idx`.
+3. `organization_units_public_current_chart_order_idx`.
 
-La migración fue aplicada mediante el canal de migraciones de Supabase y los tres índices se verificaron en `pg_indexes`.
+La migración fue aplicada en Supabase y verificada en `pg_indexes`. No se añadieron índices redundantes sobre `persons.display_name`, `status` o `visibility`. El volumen actual todavía no permite afirmar una mejora cuantificada de latencia.
 
-`tests/public-query-indexes.test.mjs` protege nombres, columnas, predicados parciales, idempotencia y ausencia de índices globales redundantes.
+## S8-07 — Búsqueda administrativa canónica
 
-### Limitación de la evidencia
+Hallazgo: la búsqueda principal del dashboard solo redirigía al directorio de personas y no representaba una búsqueda transversal del portal.
 
-El volumen actual es todavía reducido y PostgreSQL puede preferir recorridos secuenciales. Los índices se justifican por la forma estable de las consultas y el crecimiento esperado, no por una mejora de latencia concluyente en la muestra actual. S8-10 deberá volver a revisar métricas reales antes de declarar una optimización cuantificada.
+Implementación:
+
+- `supabase/migrations/20260718234000_create_canonical_admin_search.sql` crea `app_private.admin_search_catalog()` y la fachada invocadora `public.admin_search_catalog()`.
+- La función privada exige autenticación, término mínimo de dos caracteres y límite máximo de 60 resultados.
+- Personas reutilizan `app_private.admin_list_people()`, preservando `people.view` y alcance existentes.
+- Entidades exigen `entities.view` y comprobación de alcance mediante `current_user_can()`.
+- Unidades organizativas exigen `pastorals.view` y comprobación de alcance territorial u organizativo.
+- La implementación privada no es ejecutable por clientes; la fachada pública se concede únicamente a `authenticated`.
+- `src/app/api/admin/search/route.ts` valida acceso administrativo, longitud y límite, y no expone errores internos.
+- `/admin/buscar` presenta resultados tipados con destinos administrativos explícitos y solicitudes `no-store`.
+- `tests/admin-canonical-search.test.mjs` protege permisos, alcance, separación de dominios, límites y accesibilidad básica.
+
+La migración fue aplicada correctamente en Supabase. La primera versión no incluye documentos, eventos ni importaciones; esos dominios requieren contratos de permisos y destinos propios antes de incorporarse.
 
 ## Riesgos y deuda detectados
 
 - Habilitar indexación web sigue siendo una decisión operativa de publicación.
 - Un cambio de slug debe invalidar la ruta anterior y la nueva.
 - Los directorios requieren medición antes de aplicar caché o agregación compartida.
+- La búsqueda canónica todavía debe integrarse como entrada principal del dashboard o navegación después de validar CI.
 - No existe todavía una imagen social institucional por defecto.
 - Las advertencias documentales sobre metadata y documentos posiblemente huérfanos siguen siendo deuda no bloqueante.
 
@@ -94,4 +95,4 @@ El volumen actual es todavía reducido y PostgreSQL puede preferir recorridos se
 
 ## Criterio del siguiente bloque
 
-Validar S8-06 con CI. Después diseñar la primera búsqueda interna canónica sobre fuentes públicas y administrativas separadas, sin mezclar visibilidad ni alcance.
+Validar S8-07 con CI. Después endurecer el contrato mínimo de observabilidad y health checks sin exponer secretos, versiones sensibles, datos privados ni trazas internas.
