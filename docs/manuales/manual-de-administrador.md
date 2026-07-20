@@ -1,8 +1,8 @@
 # Manual de administrador — SINEP RD
 
-**Estado:** Documento vivo en elaboración  
-**Última actualización:** 16 de julio de 2026  
-**Aplicación:** Sistema de Información Nacional Eclesial y Pastoral de la República Dominicana
+> Estado: vigente para beta interna
+> Última actualización: 20 de julio de 2026
+> Aplicación: Sistema Nacional de Información Eclesiástica y Pastoral de República Dominicana
 
 ## 1. Propósito
 
@@ -70,6 +70,10 @@ El panel debe resumir:
 - Cargos vacantes o conflictos detectados.
 
 Los indicadores no sustituyen la revisión detallada de cada módulo.
+
+### 6.1 Búsqueda interna
+
+La búsqueda del panel consulta personas, entidades y unidades organizativas dentro de los permisos y alcances del usuario. Utilice al menos dos caracteres y abra siempre el destino administrativo explícito del resultado. La ausencia de un resultado no autoriza a crear un duplicado sin revisar los catálogos y flujos especializados.
 
 ## 7. Gestión de usuarios
 
@@ -387,7 +391,7 @@ Ante un error grave:
 
 1. Detenga nuevas operaciones relacionadas.
 2. Registre fecha, usuario, pantalla y acción.
-3. Conserve mensajes e identificadores de error.
+3. Conserve mensajes, hora e identificadores de solicitud o `request_id`.
 4. Determine si hubo modificación parcial.
 5. Revise auditoría y estado de datos.
 6. Escale al responsable técnico.
@@ -428,3 +432,4 @@ Estas operaciones deben documentarse en una guía técnica de operación.
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 0.1 | 16 de julio de 2026 | Estructura inicial del manual. |
+| 0.2 | 20 de julio de 2026 | Búsqueda administrativa, correlación de incidentes y estado de beta. |

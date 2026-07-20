@@ -1,5 +1,8 @@
 # Manuales de SINEP RD
 
+> Estado: vigente para beta interna
+> Última revisión: 2026-07-20
+
 Esta carpeta contiene la documentación operativa del sistema.
 
 ## Documentos

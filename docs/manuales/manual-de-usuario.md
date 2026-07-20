@@ -1,8 +1,8 @@
 # Manual de usuario — SINEP RD
 
-**Estado:** Documento vivo en elaboración  
-**Última actualización:** 16 de julio de 2026  
-**Aplicación:** Sistema de Información Nacional Eclesial y Pastoral de la República Dominicana
+> Estado: vigente para beta interna
+> Última actualización: 20 de julio de 2026
+> Aplicación: Sistema Nacional de Información Eclesiástica y Pastoral de República Dominicana
 
 ## 1. Propósito
 
@@ -236,3 +236,4 @@ Conserve la información ingresada, copie el identificador de error si aparece e
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 0.1 | 16 de julio de 2026 | Estructura inicial del manual. |
+| 0.2 | 20 de julio de 2026 | Estado documental alineado con la beta interna. |

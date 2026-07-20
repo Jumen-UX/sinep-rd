@@ -30,13 +30,14 @@
 
 ## manuales
 
-- [Manual de administrador — SINEP RD](./manuales/manual-de-administrador.md) — sin clasificar
-- [Manual de usuario — SINEP RD](./manuales/manual-de-usuario.md) — sin clasificar
-- [Manuales de SINEP RD](./manuales/README.md) — sin clasificar
+- [Manual de administrador — SINEP RD](./manuales/manual-de-administrador.md) — vigente para beta interna
+- [Manual de usuario — SINEP RD](./manuales/manual-de-usuario.md) — vigente para beta interna
+- [Manuales de SINEP RD](./manuales/README.md) — vigente para beta interna
 
 ## operations
 
 - [Automatización documental y preventiva](./operations/AUTOMATIZACION_DOCUMENTAL.md) — activo
+- [Guía de despliegue, migración y restauración](./operations/DESPLIEGUE_MIGRACION_RESTAURACION.md) — vigente para beta interna
 - [Operación del acceso administrativo](./operations/ACCESO_ADMINISTRATIVO.md) — vigente
 
 ## product

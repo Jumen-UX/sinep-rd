@@ -20,6 +20,8 @@ Sistema Nacional de Información Eclesiástica y Pastoral de República Dominica
 3. Inicia el entorno con `pnpm dev`.
 4. Abre `http://localhost:3000`.
 
+Las variables públicas se limitan a la URL y clave publicable de Supabase. `SUPABASE_SERVICE_ROLE_KEY`, credenciales E2E y secretos de bypass son exclusivos del servidor o de la automatización protegida. `PUBLIC_INDEXING_ENABLED` debe permanecer en `false` durante la beta interna.
+
 ## Calidad
 
 - `pnpm typecheck`: valida TypeScript.
@@ -40,7 +42,7 @@ Las pruebas de integración y los escenarios E2E mutantes no deben ejecutarse co
 
 La aplicación se despliega en Vercel. Mientras el entorno no sea público debe conservar protección de despliegue o controles equivalentes. Los secretos y variables se configuran fuera del repositorio.
 
-Consulta [E2E y accesibilidad](./docs/testing/E2E_Y_ACCESIBILIDAD.md).
+Consulta [E2E y accesibilidad](./docs/testing/E2E_Y_ACCESIBILIDAD.md), [Operación y recuperación](./docs/OPERACION_Y_RECUPERACION.md), el [contrato de observabilidad](./docs/architecture/OBSERVABILITY_CONTRACT.md) y la [guía de despliegue, migración y restauración](./docs/operations/DESPLIEGUE_MIGRACION_RESTAURACION.md).
 
 ## Organización
 

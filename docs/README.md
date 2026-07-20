@@ -25,6 +25,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 | Registrar o validar una fuente | [Fuentes del proyecto](./standards/FUENTES_DEL_PROYECTO.md) |
 | Operar acceso administrativo | [Acceso administrativo](./operations/ACCESO_ADMINISTRATIVO.md) |
 | Verificar salud y observabilidad | [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md) |
+| Desplegar, migrar o restaurar | [Guía de despliegue, migración y restauración](./operations/DESPLIEGUE_MIGRACION_RESTAURACION.md) |
 | Ejecutar E2E o accesibilidad | [E2E y accesibilidad](./testing/E2E_Y_ACCESIBILIDAD.md) |
 
 ## Documentación vigente
@@ -57,7 +58,9 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 ### Operación y pruebas
 
 - [Acceso administrativo](./operations/ACCESO_ADMINISTRATIVO.md).
+- [Guía de despliegue, migración y restauración](./operations/DESPLIEGUE_MIGRACION_RESTAURACION.md).
 - [Operación y recuperación](./OPERACION_Y_RECUPERACION.md).
+- [Manuales](./manuales/README.md).
 - [E2E y accesibilidad](./testing/E2E_Y_ACCESIBILIDAD.md).
 
 ### Trabajo activo
