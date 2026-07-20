@@ -24,7 +24,7 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 4. [x] S8-04 — Auditar y endurecer sitemap y robots de acuerdo con el estado no público y la futura apertura controlada. **Validado con CI verde.**
 5. [x] S8-05 — Consolidar endpoints o servicios agregados para evitar consultas públicas repetitivas. **Validado con CI verde.**
 6. [x] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible. **Validado con CI verde y aplicado en Supabase.**
-7. [x] S8-07 — Diseñar e implementar la primera búsqueda interna canónica. **Implementado y aplicado; CI pendiente.**
+7. [x] S8-07 — Diseñar e implementar la primera búsqueda interna canónica. **Validado con CI verde; integración principal pendiente de CI.**
 8. [ ] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles.
 9. [ ] S8-09 — Completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración.
 10. [ ] S8-10 — Validar el alcance técnico propio de Sprint 8 con pruebas contractuales y CI, sin absorber el cierre operativo diferido de S7-10.
@@ -69,7 +69,9 @@ Implementación:
 - La implementación privada no es ejecutable por clientes; la fachada pública se concede únicamente a `authenticated`.
 - `src/app/api/admin/search/route.ts` valida acceso administrativo, longitud y límite, y no expone errores internos.
 - `/admin/buscar` presenta resultados tipados con destinos administrativos explícitos y solicitudes `no-store`.
-- `tests/admin-canonical-search.test.mjs` protege permisos, alcance, separación de dominios, límites y accesibilidad básica.
+- El encabezado del dashboard dirige ahora a `/admin/buscar` y solo muestra la entrada cuando el perfil puede consultar al menos uno de los tres dominios.
+- El campo principal exige dos caracteres, limita a 120 y describe correctamente personas, entidades y unidades organizativas.
+- `tests/admin-canonical-search.test.mjs` protege permisos, alcance, separación de dominios, límites, accesibilidad básica e integración del dashboard.
 
 La migración fue aplicada correctamente en Supabase. La primera versión no incluye documentos, eventos ni importaciones; esos dominios requieren contratos de permisos y destinos propios antes de incorporarse.
 
@@ -78,7 +80,6 @@ La migración fue aplicada correctamente en Supabase. La primera versión no inc
 - Habilitar indexación web sigue siendo una decisión operativa de publicación.
 - Un cambio de slug debe invalidar la ruta anterior y la nueva.
 - Los directorios requieren medición antes de aplicar caché o agregación compartida.
-- La búsqueda canónica todavía debe integrarse como entrada principal del dashboard o navegación después de validar CI.
 - No existe todavía una imagen social institucional por defecto.
 - Las advertencias documentales sobre metadata y documentos posiblemente huérfanos siguen siendo deuda no bloqueante.
 
@@ -95,4 +96,4 @@ La migración fue aplicada correctamente en Supabase. La primera versión no inc
 
 ## Criterio del siguiente bloque
 
-Validar S8-07 con CI. Después endurecer el contrato mínimo de observabilidad y health checks sin exponer secretos, versiones sensibles, datos privados ni trazas internas.
+Validar la integración principal de S8-07 con CI. Después endurecer el contrato mínimo de observabilidad y health checks sin exponer secretos, versiones sensibles, datos privados ni trazas internas.
