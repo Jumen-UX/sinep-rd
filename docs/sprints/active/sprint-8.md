@@ -26,7 +26,7 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 6. [x] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible. **Validado con CI verde y aplicado en Supabase.**
 7. [x] S8-07 — Diseñar e implementar la primera búsqueda interna canónica. **Implementación e integración principal validadas con CI verde.**
 8. [x] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles. **Validado con CI verde.**
-9. [ ] S8-09 — Completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración.
+9. [x] S8-09 — Completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración. **Validado con CI verde.**
 10. [ ] S8-10 — Validar el alcance técnico propio de Sprint 8 con pruebas contractuales y CI, sin absorber el cierre operativo diferido de S7-10.
 
 ## S8-01 a S8-04 — Base técnica validada
@@ -89,6 +89,18 @@ La integración del dashboard y sus contratos quedaron confirmados por [CI #2976
 
 El bloque quedó confirmado por [CI #29762048444](https://github.com/Jumen-UX/sinep-rd/actions/runs/29762048444) sobre `3afb423`.
 
+## S8-09 — Documentación técnica y operativa
+
+- `README.md` documenta requisitos, entorno, calidad, despliegue y límites de secretos.
+- `docs/README.md` enlaza el sprint activo, manuales, observabilidad y operación.
+- Los manuales de usuario y administrador declaran estado vigente para beta interna.
+- El manual administrativo incorpora búsqueda transversal y correlación mediante `request_id`.
+- `docs/operations/DESPLIEGUE_MIGRACION_RESTAURACION.md` conecta commit, migraciones, despliegue, retroceso, restauración y evidencia.
+- `docs/INDEX.generated.md` refleja el inventario documental actual.
+- `tests/sprint-8-documentation-contract.test.mjs` protege las referencias y límites operativos.
+
+El bloque quedó confirmado por [CI #29762403699](https://github.com/Jumen-UX/sinep-rd/actions/runs/29762403699) sobre `7daa2e4`.
+
 ## Pendientes operativos de beta
 
 Estos controles permanecen separados del cierre técnico de S8-07 y del trabajo de S8-08:
@@ -122,4 +134,4 @@ Ninguno debe marcarse como completado mediante pruebas contractuales o CI sin la
 
 ## Criterio del siguiente bloque
 
-Iniciar S8-09 y completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración sin declarar resueltos los controles operativos que todavía requieren evidencia real.
+Iniciar S8-10 y ejecutar la validación técnica integral de rendimiento, indexación, búsqueda, observabilidad y documentación. El cierre debe conservar S7-10 y las comprobaciones operativas de beta como pendientes separados.

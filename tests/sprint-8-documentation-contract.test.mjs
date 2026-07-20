@@ -7,11 +7,13 @@ const [
   docsIndex,
   adminManual,
   operationsGuide,
+  sprint,
 ] = await Promise.all([
   readFile('README.md', 'utf8'),
   readFile('docs/README.md', 'utf8'),
   readFile('docs/manuales/manual-de-administrador.md', 'utf8'),
   readFile('docs/operations/DESPLIEGUE_MIGRACION_RESTAURACION.md', 'utf8'),
+  readFile('docs/sprints/active/sprint-8.md', 'utf8'),
 ])
 
 test('technical README links the canonical operational documentation', () => {
@@ -52,3 +54,9 @@ test('documentation index links manuals and the deployment guide', () => {
   assert.match(docsIndex, /DESPLIEGUE_MIGRACION_RESTAURACION\.md/)
 })
 
+test('sprint 8 closes documentation while keeping operational beta evidence separate', () => {
+  assert.match(sprint, /\[x\] S8-09/)
+  assert.match(sprint, /CI #29762403699/)
+  assert.match(sprint, /Iniciar S8-10/)
+  assert.match(sprint, /Pendientes operativos de beta/)
+})
