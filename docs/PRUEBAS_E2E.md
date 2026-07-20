@@ -1,5 +1,7 @@
 # Pruebas E2E y accesibilidad
 
+> Estado: vigente
+
 La suite de navegador es manual para evitar descargar Chromium y consumir minutos en cada `push`. No forma parte de `pnpm check`.
 
 ## Preparación inicial
@@ -120,7 +122,7 @@ La suite usa:
 
 El workflow `CI` mantiene el flujo directo sobre `main`:
 
-- cada `push` ejecuta TypeScript, pruebas unitarias, contratos estructurales, build y CodeQL;
+- cada `push` a `main` y cada pull request dirigido a `main` ejecuta TypeScript, pruebas unitarias, contratos estructurales, build y CodeQL;
 - cada lunes ejecuta CodeQL y una auditoría de vulnerabilidades críticas en dependencias de producción;
 - la prueba de navegador contra producción se inicia manualmente para no consumir minutos ni generar tráfico en cada cambio.
 
@@ -135,3 +137,10 @@ La ejecución prueba las rutas públicas con Playwright y Axe. Si existen los se
 El reporte HTML, las capturas, los videos y las trazas se conservan como artefactos durante 14 días.
 
 Los escaneos automáticos no sustituyen la revisión manual con teclado, lector de pantalla ni pruebas con usuarios.
+
+El workflow `E2E / Public accessibility` ejecuta dos variantes del mismo portal:
+
+- `disabled`: representa la beta privada, exige `robots.txt` restrictivo y un sitemap sin fichas dinámicas;
+- `enabled`: representa el lanzamiento indexable y exige fichas navegables de personas y entidades en el sitemap.
+
+Así, desactivar `PUBLIC_INDEXING_ENABLED` durante la beta no se interpreta como una regresión del portal público.

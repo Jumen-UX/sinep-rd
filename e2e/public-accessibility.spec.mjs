@@ -7,6 +7,8 @@ const publicPages = [
   { path: '/personas', label: 'directorio de personas' },
 ]
 
+const publicIndexingEnabled = process.env.E2E_PUBLIC_INDEXING_MODE === 'enabled'
+
 async function expectAccessiblePublicPage({ page, testInfo, path }) {
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' })
 
@@ -145,6 +147,8 @@ test('inicio territorial mantiene sus secciones en flujo vertical', async ({ pag
 })
 
 test('ficha de entidad conserva la presentación pública completa', async ({ page, request }) => {
+  test.skip(!publicIndexingEnabled, 'Las fichas indexables se validan con la indexación habilitada.')
+
   const entityPath = await entityPathFromSitemap(request)
   expect(entityPath, 'El sitemap debe publicar al menos una ficha de entidad.').not.toBeNull()
 
@@ -182,6 +186,8 @@ test('ficha de entidad conserva la presentación pública completa', async ({ pa
 })
 
 test('sitemap publica fichas navegables de personas y entidades', async ({ page, request }, testInfo) => {
+  test.skip(!publicIndexingEnabled, 'El sitemap dinámico solo se publica con la indexación habilitada.')
+
   const sitemapResponse = await request.get('/sitemap.xml')
   expect(sitemapResponse.ok(), 'El sitemap público debe responder correctamente.').toBe(true)
 
@@ -196,6 +202,26 @@ test('sitemap publica fichas navegables de personas y entidades', async ({ page,
   for (const path of detailPaths) {
     await expectAccessiblePublicPage({ page, testInfo, path })
   }
+})
+
+test('beta privada bloquea indexación y no publica fichas en el sitemap', async ({ request }) => {
+  test.skip(publicIndexingEnabled, 'El contrato de beta privada se valida con la indexación deshabilitada.')
+
+  const [sitemapResponse, robotsResponse] = await Promise.all([
+    request.get('/sitemap.xml'),
+    request.get('/robots.txt'),
+  ])
+
+  expect(sitemapResponse.ok(), 'El sitemap privado debe responder correctamente.').toBe(true)
+  expect(robotsResponse.ok(), 'robots.txt debe responder correctamente.').toBe(true)
+
+  const [sitemap, robots] = await Promise.all([
+    sitemapResponse.text(),
+    robotsResponse.text(),
+  ])
+
+  expect(sitemap).not.toMatch(/<url>/)
+  expect(robots).toMatch(/Disallow:\s*\//)
 })
 
 test('inicio conserva navegación y semántica en viewport móvil', async ({ page }, testInfo) => {

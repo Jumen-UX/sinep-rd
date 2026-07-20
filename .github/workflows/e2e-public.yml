@@ -29,12 +29,20 @@ concurrency:
 
 jobs:
   accessibility:
-    name: Chromium + Axe
+    name: Chromium + Axe (${{ matrix.indexing }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        indexing:
+          - disabled
+          - enabled
 
     env:
       CI: 'true'
+      E2E_PUBLIC_INDEXING_MODE: ${{ matrix.indexing }}
+      PUBLIC_INDEXING_ENABLED: ${{ matrix.indexing == 'enabled' && 'true' || 'false' }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://hrvgpceqaxujlttpimdz.supabase.co' }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
@@ -71,7 +79,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-public-report
+          name: playwright-public-report-${{ matrix.indexing }}
           path: |
             playwright-report
             test-results
