@@ -32,6 +32,14 @@ test('canonical workflow display names remain stable', async () => {
   assert.match(workflowContents['e2e-public.yml'], /^name: E2E \/ Public accessibility$/m)
 })
 
+test('canonical CI validates pull requests targeting main', async () => {
+  const workflow = await readWorkflow('ci.yml')
+
+  assert.match(workflow, /pull_request:\s*\n\s+branches:\s*\n\s+- main/)
+  assert.match(workflow, /name: Typecheck, tests and build/)
+  assert.match(workflow, /run: pnpm check/)
+})
+
 test('manual authenticated access validation fails closed without protected profiles', async () => {
   const accessWorkflow = await readWorkflow('e2e-admin-access.yml')
 
