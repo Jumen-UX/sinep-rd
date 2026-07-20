@@ -11,8 +11,9 @@ const manifest = JSON.parse(
   await readFile('docs/DOCUMENTATION_MANIFEST.json', 'utf8'),
 )
 
-test('sprint 8 is the active non-operational workstream', () => {
+test('sprint 8 remains the active reference after technical completion', () => {
   assert.match(sprint, /> Estado: activo/)
+  assert.match(sprint, /> Alcance técnico: completado/)
   assert.match(deferredSprint, /> Estado: diferido/)
   assert.match(sprint, /S8-01 — Auditar configuración de Next\.js/)
   assert.match(sprint, /S7-10 permanece diferido/)
@@ -27,15 +28,15 @@ test('documentation manifest points to the only active sprint', () => {
   assert.ok(manifest.metadata.allowed_statuses.includes('diferido'))
 })
 
-test('roadmap and README point to sprint 8 without closing deferred S7-10', () => {
+test('roadmap and README record sprint 8 technical completion without closing deferred S7-10', () => {
   assert.match(roadmap, /Sprint 8 — Rendimiento, indexación y salida mantenible/)
   assert.match(roadmap, /S7-10: diferida/)
   assert.match(roadmap, /Mantener S7-10 diferido hasta nueva instrucción/)
   assert.doesNotMatch(roadmap, /Continuar Sprint 7 desde S7-06/)
 
-  assert.match(readme, /El frente técnico activo es Sprint 8/)
+  assert.match(readme, /Sprint 8 completó su alcance técnico/)
   assert.match(readme, /S7-10 permanece diferido/)
-  assert.match(readme, /Sprint 8 activo/)
+  assert.match(readme, /cierre técnico de Sprint 8/)
   assert.doesNotMatch(readme, /sprint funcional activo es Sprint 5/)
 })
 

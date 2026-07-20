@@ -1,6 +1,7 @@
 # Sprint 8 — Rendimiento, indexación y salida mantenible
 
 > Estado: activo
+> Alcance técnico: completado
 > Inicio: 2026-07-18
 > Actualizada: 2026-07-20
 > Rama operativa: `main`
@@ -27,7 +28,7 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 7. [x] S8-07 — Diseñar e implementar la primera búsqueda interna canónica. **Implementación e integración principal validadas con CI verde.**
 8. [x] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles. **Validado con CI verde.**
 9. [x] S8-09 — Completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración. **Validado con CI verde.**
-10. [ ] S8-10 — Validar el alcance técnico propio de Sprint 8 con pruebas contractuales y CI, sin absorber el cierre operativo diferido de S7-10.
+10. [x] S8-10 — Validar el alcance técnico propio de Sprint 8 con pruebas contractuales y CI, sin absorber el cierre operativo diferido de S7-10. **Validado con CI verde.**
 
 ## S8-01 a S8-04 — Base técnica validada
 
@@ -101,6 +102,19 @@ El bloque quedó confirmado por [CI #29762048444](https://github.com/Jumen-UX/si
 
 El bloque quedó confirmado por [CI #29762403699](https://github.com/Jumen-UX/sinep-rd/actions/runs/29762403699) sobre `7daa2e4`.
 
+## S8-10 — Validación técnica integral
+
+[CI #29762568671](https://github.com/Jumen-UX/sinep-rd/actions/runs/29762568671) sobre `a7ac881` confirmó:
+
+- TypeScript, pruebas contractuales y build de producción;
+- CodeQL para JavaScript y TypeScript;
+- contratos de renderizado, caché, metadata, robots, sitemap e indexación;
+- búsqueda administrativa canónica y límites de permisos;
+- health check, correlación y documentación operativa;
+- integridad y terminología documental.
+
+La auditoría crítica de dependencias y Playwright/Axe de producción fueron omitidos por las condiciones del workflow. Sus ejecuciones programadas o manuales continúan separadas y no se presentan como evidencia de este run.
+
 ## Pendientes operativos de beta
 
 Estos controles permanecen separados del cierre técnico de S8-07 y del trabajo de S8-08:
@@ -132,6 +146,6 @@ Ninguno debe marcarse como completado mediante pruebas contractuales o CI sin la
 - La búsqueda debe respetar visibilidad, publicación, privacidad y estado canónico.
 - S7-10 continúa diferido y no puede marcarse como completado desde este sprint.
 
-## Criterio del siguiente bloque
+## Estado de cierre
 
-Iniciar S8-10 y ejecutar la validación técnica integral de rendimiento, indexación, búsqueda, observabilidad y documentación. El cierre debe conservar S7-10 y las comprobaciones operativas de beta como pendientes separados.
+S8-01 a S8-10 están completados técnicamente. Este documento permanece como referencia activa hasta que se autorice el siguiente frente. S7-10 y las comprobaciones operativas de beta continúan diferidas y requieren cuentas, entornos, responsables y evidencia real.

@@ -57,6 +57,8 @@ test('documentation index links manuals and the deployment guide', () => {
 test('sprint 8 closes documentation while keeping operational beta evidence separate', () => {
   assert.match(sprint, /\[x\] S8-09/)
   assert.match(sprint, /CI #29762403699/)
-  assert.match(sprint, /Iniciar S8-10/)
+  assert.match(sprint, /\[x\] S8-10/)
+  assert.match(sprint, /CI #29762568671/)
+  assert.match(sprint, /S8-01 a S8-10 están completados técnicamente/)
   assert.match(sprint, /Pendientes operativos de beta/)
 })

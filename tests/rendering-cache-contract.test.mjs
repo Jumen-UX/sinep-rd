@@ -54,8 +54,8 @@ test('administrative rendering stays dynamic and uncached', () => {
   assert.match(contract, /Caché compartida: prohibida/)
 })
 
-test('sprint 8 records performance search observability and documentation before final validation', () => {
-  for (const item of ['S8-01', 'S8-02', 'S8-03', 'S8-04', 'S8-05', 'S8-06', 'S8-07', 'S8-08', 'S8-09']) {
+test('sprint 8 records completed performance search observability documentation and validation', () => {
+  for (const item of ['S8-01', 'S8-02', 'S8-03', 'S8-04', 'S8-05', 'S8-06', 'S8-07', 'S8-08', 'S8-09', 'S8-10']) {
     assert.match(sprint, new RegExp(`\\[x\\] ${item}`))
   }
   assert.match(sprint, /RENDERING_CACHE_CONTRACT\.md/)
@@ -64,6 +64,7 @@ test('sprint 8 records performance search observability and documentation before
   assert.match(sprint, /20260718160000_optimize_public_query_indexes\.sql/)
   assert.match(sprint, /20260718234000_create_canonical_admin_search\.sql/)
   assert.match(sprint, /OBSERVABILITY_CONTRACT\.md/)
-  assert.match(sprint, /Iniciar S8-10 y ejecutar la validación técnica integral/)
+  assert.match(sprint, /CI #29762568671/)
+  assert.match(sprint, /S8-01 a S8-10 están completados técnicamente/)
   assert.match(sprint, /S7-10 continúa diferido/)
 })

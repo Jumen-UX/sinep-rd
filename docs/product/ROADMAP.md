@@ -15,7 +15,7 @@ La aplicación cuenta con identidad canónica de personas, dimensiones clericale
 
 [Sprint 8 — Rendimiento, indexación y salida mantenible](../sprints/active/sprint-8.md).
 
-Estado: S8-01 a S8-09 completados y validados. S8-10 es el bloque activo para validación técnica integral y cierre del Sprint 8. Sprint 8 no absorbe el cierre operativo diferido de S7-10.
+Estado: S8-01 a S8-10 completados y validados técnicamente. El documento de Sprint 8 permanece como referencia activa hasta autorizar el siguiente frente. Este cierre no absorbe S7-10 ni los controles operativos de beta.
 
 ## Sprint 7
 
@@ -46,8 +46,8 @@ El portal público y su accesibilidad cuentan con ejecución E2E verde. La matri
 
 ## Orden vigente de ejecución
 
-1. Ejecutar S8-10 para validar el alcance técnico propio del Sprint 8.
-2. Mantener S7-10 diferido hasta nueva instrucción y conservar separados los controles operativos de beta hasta contar con evidencia real.
+1. Mantener S7-10 diferido hasta nueva instrucción y conservar separados los controles operativos de beta hasta contar con evidencia real.
+2. Definir el siguiente frente técnico u operativo antes de iniciar otro sprint.
 
 ## Importación controlada
 
