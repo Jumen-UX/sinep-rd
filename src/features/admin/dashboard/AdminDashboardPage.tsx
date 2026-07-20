@@ -42,6 +42,8 @@ const dimensionTones = {
   collegial: 'alert',
 } as const
 
+const searchPermissions = new Set(['people.view', 'entities.view', 'pastorals.view'])
+
 type DashboardAction = {
   href: string
   icon: string
@@ -136,6 +138,7 @@ export default function AdminDashboardPage() {
   const activeScope = navigation.context?.activeScope
   const includeGlobalMetrics = activeScope?.isUnrestricted ?? false
   const includeActivity = canVisit('/admin/actividad')
+  const canSearch = navigation.context?.permissionKeys.some((permission) => searchPermissions.has(permission)) ?? false
 
   const kpiGroups = useMemo(
     () => groupAdminKpisByDimension(navigation.policyContext),
@@ -190,9 +193,9 @@ export default function AdminDashboardPage() {
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const query = search.trim()
-    if (!query || !canVisit('/admin/personas')) return
-    window.location.assign(`/admin/personas?search=${encodeURIComponent(query)}`)
+    const query = search.trim().replace(/\s+/g, ' ')
+    if (query.length < 2 || !canSearch) return
+    window.location.assign(`/admin/buscar?q=${encodeURIComponent(query)}`)
   }
 
   async function handleSignOut() {
@@ -223,11 +226,11 @@ export default function AdminDashboardPage() {
   return (
     <div className="admin-dashboard" id="top">
       <header className="admin-dashboard-topbar">
-        {canVisit('/admin/personas') ? (
+        {canSearch ? (
           <form className="admin-dashboard-search" onSubmit={handleSearch}>
-            <label htmlFor="admin-dashboard-search-input">Buscar personas</label>
-            <input id="admin-dashboard-search-input" onChange={(event) => setSearch(event.target.value)} placeholder="Buscar personas por nombre" type="search" value={search} />
-            <button type="submit">Buscar</button>
+            <label htmlFor="admin-dashboard-search-input">Buscar en el directorio interno</label>
+            <input id="admin-dashboard-search-input" minLength={2} maxLength={120} onChange={(event) => setSearch(event.target.value)} placeholder="Persona, entidad o unidad organizativa" type="search" value={search} />
+            <button disabled={search.trim().length < 2} type="submit">Buscar</button>
           </form>
         ) : <span />}
         <div className="admin-dashboard-user">
