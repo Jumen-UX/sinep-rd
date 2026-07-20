@@ -2,7 +2,7 @@
 
 > Estado: activo
 > Inicio: 2026-07-18
-> Actualizada: 2026-07-18
+> Actualizada: 2026-07-20
 > Rama operativa: `main`
 > Propietario: rendimiento, indexación, observabilidad y documentación
 
@@ -24,7 +24,7 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 4. [x] S8-04 — Auditar y endurecer sitemap y robots de acuerdo con el estado no público y la futura apertura controlada. **Validado con CI verde.**
 5. [x] S8-05 — Consolidar endpoints o servicios agregados para evitar consultas públicas repetitivas. **Validado con CI verde.**
 6. [x] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible. **Validado con CI verde y aplicado en Supabase.**
-7. [x] S8-07 — Diseñar e implementar la primera búsqueda interna canónica. **Validado con CI verde; integración principal pendiente de CI.**
+7. [x] S8-07 — Diseñar e implementar la primera búsqueda interna canónica. **Implementación e integración principal validadas con CI verde.**
 8. [ ] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles.
 9. [ ] S8-09 — Completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración.
 10. [ ] S8-10 — Validar el alcance técnico propio de Sprint 8 con pruebas contractuales y CI, sin absorber el cierre operativo diferido de S7-10.
@@ -75,6 +75,20 @@ Implementación:
 
 La migración fue aplicada correctamente en Supabase. La primera versión no incluye documentos, eventos ni importaciones; esos dominios requieren contratos de permisos y destinos propios antes de incorporarse.
 
+La integración del dashboard y sus contratos quedaron confirmados por [CI #29761638740](https://github.com/Jumen-UX/sinep-rd/actions/runs/29761638740) sobre `b8b72fa`.
+
+## Pendientes operativos de beta
+
+Estos controles permanecen separados del cierre técnico de S8-07 y del trabajo de S8-08:
+
+- S7-10: matriz autenticada, aislamiento entre diócesis, revisión visual y accesibilidad administrativa.
+- S3-06: validación con URL autorizada y cuentas reales diferenciadas.
+- Protección contra contraseñas filtradas en Supabase Auth.
+- Copia de seguridad, restauración documentada y responsables de incidentes.
+- Validación institucional y jurídica previa a una apertura pública.
+
+Ninguno debe marcarse como completado mediante pruebas contractuales o CI sin la evidencia operativa correspondiente.
+
 ## Riesgos y deuda detectados
 
 - Habilitar indexación web sigue siendo una decisión operativa de publicación.
@@ -96,4 +110,4 @@ La migración fue aplicada correctamente en Supabase. La primera versión no inc
 
 ## Criterio del siguiente bloque
 
-Validar la integración principal de S8-07 con CI. Después endurecer el contrato mínimo de observabilidad y health checks sin exponer secretos, versiones sensibles, datos privados ni trazas internas.
+Iniciar S8-08 y endurecer el contrato mínimo de observabilidad y health checks sin exponer secretos, versiones sensibles, datos privados ni trazas internas.

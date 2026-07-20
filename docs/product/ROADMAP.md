@@ -1,7 +1,7 @@
 # Hoja de ruta de SINEP RD
 
 > Estado: vigente
-> Actualizada: 2026-07-18
+> Actualizada: 2026-07-20
 > Rama operativa: `main`
 > Propietario: producto y arquitectura
 
@@ -15,7 +15,7 @@ La aplicación cuenta con identidad canónica de personas, dimensiones clericale
 
 [Sprint 8 — Rendimiento, indexación y salida mantenible](../sprints/active/sprint-8.md).
 
-Estado: S8-01 iniciado. El primer bloque audita configuración de Next.js, límites servidor/cliente, metadata, sitemap, robots, caché, búsqueda, observabilidad y documentación. No absorbe el cierre operativo diferido de S7-10.
+Estado: S8-01 a S8-07 completados y validados. S8-08 es el bloque activo para health checks y observabilidad mínima. Sprint 8 no absorbe el cierre operativo diferido de S7-10.
 
 ## Sprint 7
 
@@ -46,14 +46,10 @@ El portal público y su accesibilidad cuentan con ejecución E2E verde. La matri
 
 ## Orden vigente de ejecución
 
-1. Completar S8-01 con inventario y contrato de renderizado, caché y revalidación.
-2. Implementar metadata, sitemap y robots respetando el estado no público.
-3. Reducir consultas repetitivas mediante servicios o endpoints agregados.
-4. Revisar índices con evidencia de consultas reales.
-5. Implementar búsqueda interna canónica y controles de privacidad.
-6. Añadir health checks y observabilidad mínima sin exponer información sensible.
-7. Completar README técnico, manual administrativo y procedimientos operativos.
-8. Mantener S7-10 diferido hasta nueva instrucción.
+1. Completar S8-08 con health checks y observabilidad mínima sin exponer información sensible.
+2. Completar S8-09 con README técnico, manual administrativo y procedimientos operativos.
+3. Ejecutar S8-10 para validar el alcance técnico propio del Sprint 8.
+4. Mantener S7-10 diferido hasta nueva instrucción y conservar separados los controles operativos de beta hasta contar con evidencia real.
 
 ## Importación controlada
 
