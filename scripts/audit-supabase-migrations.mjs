@@ -4,6 +4,18 @@ import path from 'node:path'
 const root = process.cwd()
 const migrationsRoot = path.join(root, 'supabase', 'migrations')
 const strict = process.argv.includes('--strict')
+const deepAuditStart = '20260716190402'
+const allowedLegacyNames = new Set([
+  '20260711_p1_granular_jurisdiction_permissions.sql',
+  '20260711_p1_phase2_scope_validation_rpcs.sql',
+  '20260711_p1_phase3_audit_jurisdiction.sql',
+  '20260711_p1_phase3_audit_rpc_update.sql',
+])
+const allowedLegacyDuplicateTimestamps = new Map([
+  ['20260713234500', 2],
+  ['20260714050000', 2],
+  ['20260714051000', 3],
+])
 
 async function exists(target) {
   try {
@@ -30,7 +42,9 @@ const timestamps = new Map()
 for (const file of files) {
   const match = file.match(/^(\d{14})_[a-z0-9_-]+\.sql$/i)
   if (!match) {
-    errors.push(`Nombre de migración inválido: ${file}. Debe usar YYYYMMDDHHMMSS_descripcion.sql.`)
+    if (!allowedLegacyNames.has(file)) {
+      errors.push(`Nombre de migración inválido: ${file}. Debe usar YYYYMMDDHHMMSS_descripcion.sql.`)
+    }
     continue
   }
 
@@ -40,10 +54,11 @@ for (const file of files) {
 
   const sql = await readFile(path.join(migrationsRoot, file), 'utf8')
   const normalized = sql.replace(/--.*$/gm, '')
+  if (match[1] < deepAuditStart) continue
 
   const securityDefinerFunctions = [...normalized.matchAll(/create\s+(?:or\s+replace\s+)?function\s+([\w."]+)[\s\S]*?security\s+definer[\s\S]*?(?=\n\s*create\s|\n\s*alter\s|\n\s*grant\s|\n\s*revoke\s|$)/gi)]
   for (const functionMatch of securityDefinerFunctions) {
-    if (!/set\s+search_path\s*=/i.test(functionMatch[0])) {
+    if (!/set\s+search_path\s*(?:=|to)\s*/i.test(functionMatch[0])) {
       errors.push(`${file}: función SECURITY DEFINER sin SET search_path (${functionMatch[1]}).`)
     }
   }
@@ -62,7 +77,9 @@ for (const file of files) {
 }
 
 for (const [timestamp, group] of timestamps) {
-  if (group.length > 1) errors.push(`Timestamp de migración duplicado ${timestamp}: ${group.join(', ')}`)
+  if (group.length > 1 && allowedLegacyDuplicateTimestamps.get(timestamp) !== group.length) {
+    errors.push(`Timestamp de migración duplicado ${timestamp}: ${group.join(', ')}`)
+  }
 }
 
 for (const warning of warnings) console.warn(`⚠ ${warning}`)

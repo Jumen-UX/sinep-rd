@@ -15,6 +15,7 @@ test('package scripts expose migration documentation impact and selective E2E au
   assert.equal(scripts['e2e:affected'], 'node scripts/select-affected-e2e.mjs')
   assert.match(scripts['check:affected'], /docs:affected/)
   assert.match(scripts['check:affected'], /audit:migrations/)
+  assert.match(scripts.check, /audit:migrations/)
 })
 
 test('migration audit protects naming security definer and public execution boundaries', async () => {
@@ -22,6 +23,9 @@ test('migration audit protects naming security definer and public execution boun
 
   assert.match(audit, /\^\(\\d\{14\}\)_/)
   assert.match(audit, /SECURITY DEFINER sin SET search_path/)
+  assert.match(audit, /deepAuditStart/)
+  assert.match(audit, /allowedLegacyNames/)
+  assert.match(audit, /\(\?:=\|to\)/)
   assert.match(audit, /anon\|public/)
   assert.match(audit, /Timestamp de migración duplicado/)
 })

@@ -15,7 +15,7 @@
     "audit:structures:strict": "node scripts/audit-structural-model-consumers.mjs --strict",
     "automation:check": "pnpm docs:check && pnpm docs:terminology && pnpm audit:migrations && pnpm e2e:affected",
     "check:legacy": "node scripts/check-no-legacy-pastoral.mjs",
-    "check": "pnpm check:legacy && pnpm docs:check && pnpm docs:terminology && pnpm audit:routes && pnpm audit:structures:strict && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm check:legacy && pnpm docs:check && pnpm docs:terminology && pnpm audit:migrations && pnpm audit:routes && pnpm audit:structures:strict && pnpm typecheck && pnpm test && pnpm build",
     "check:affected": "pnpm docs:check && pnpm docs:terminology && pnpm docs:affected && pnpm audit:migrations && pnpm typecheck && node scripts/run-affected-tests.mjs",
     "docs:affected": "node scripts/report-affected-documentation.mjs",
     "docs:check": "node scripts/check-documentation.mjs",
