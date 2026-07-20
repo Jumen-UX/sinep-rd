@@ -63,6 +63,6 @@ test('sprint 8 records query indexes and canonical search before observability',
   assert.match(sprint, /loadPublicDashboardBundle\(\)/)
   assert.match(sprint, /20260718160000_optimize_public_query_indexes\.sql/)
   assert.match(sprint, /20260718234000_create_canonical_admin_search\.sql/)
-  assert.match(sprint, /Después endurecer el contrato mínimo de observabilidad/)
+  assert.match(sprint, /Iniciar S8-08 y endurecer el contrato mínimo de observabilidad/)
   assert.match(sprint, /S7-10 continúa diferido/)
 })

@@ -20,17 +20,26 @@ try {
     signal: controller.signal,
   })
   const payload = await response.json().catch(() => null)
+  const requestId = response.headers.get('x-request-id')
 
-  if (!response.ok || payload?.status !== 'ok' || payload?.checks?.database !== 'ok') {
+  if (
+    !response.ok
+    || payload?.status !== 'ok'
+    || payload?.checks?.application !== 'ok'
+    || payload?.checks?.database !== 'ok'
+    || !requestId
+    || payload?.request_id !== requestId
+  ) {
     console.error('Health check degradado.', {
       status: response.status,
-      payload,
+      request_id: requestId,
     })
     process.exit(1)
   }
 
   console.log('Health check correcto.', {
     endpoint,
+    request_id: requestId,
     response_time_ms: payload.response_time_ms,
     checked_at: payload.checked_at,
   })

@@ -58,3 +58,16 @@ export async function fetchSupabaseJson<T>(table: string, params: QueryParams = 
 
   return response.json() as Promise<T>
 }
+
+export async function probeSupabaseRestAvailability() {
+  const response = await fetch(buildSupabaseRestUrl('entity_types', {
+    select: 'id',
+    limit: '1',
+  }), {
+    headers: getSupabaseRestHeaders(),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(5_000),
+  })
+
+  return response.ok
+}
