@@ -1,7 +1,7 @@
 # Documentación de SINEP RD
 
 > Estado: vigente
-> Última revisión: 2026-07-15
+> Última revisión: 2026-07-20
 
 Este índice apunta a documentación canónica y activa. Los cierres y resultados históricos se conservan bajo `archive` y no definen el estado actual.
 
@@ -11,7 +11,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 |---|---|
 | Entender el propósito del sistema | [Plan Maestro](./product/PLAN_MAESTRO.md) |
 | Consultar prioridades y estado | [Hoja de ruta](./product/ROADMAP.md) |
-| Continuar el sprint activo | [Sprint 4](./sprints/active/sprint-4.md) |
+| Continuar el sprint activo | [Sprint 8](./sprints/active/sprint-8.md) |
 | Entender la arquitectura | [Arquitectura](./architecture/ARQUITECTURA.md) |
 | Crear o mover módulos | [Convención de módulos](./architecture/CONVENCION_MODULOS.md) |
 | Implementar estructuras | [Modelo estructural canónico](./architecture/MODELO_ESTRUCTURAL_CANONICO.md) |
@@ -24,6 +24,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 | Planificar UX | [UX](./product/UX.md) y [backlog UX activo](./sprints/active/ux-backlog.md) |
 | Registrar o validar una fuente | [Fuentes del proyecto](./standards/FUENTES_DEL_PROYECTO.md) |
 | Operar acceso administrativo | [Acceso administrativo](./operations/ACCESO_ADMINISTRATIVO.md) |
+| Verificar salud y observabilidad | [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md) |
 | Ejecutar E2E o accesibilidad | [E2E y accesibilidad](./testing/E2E_Y_ACCESIBILIDAD.md) |
 
 ## Documentación vigente
@@ -43,6 +44,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 - [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md).
 - [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md).
 - [Autorización y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md).
+- [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md).
 - [Stack oficial](./architecture/STACK_OFICIAL.md).
 
 ### Interfaz y estándares
@@ -60,8 +62,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 
 ### Trabajo activo
 
-- [Sprint 4](./sprints/active/sprint-4.md).
-- [Auditoría de flujos de personas](./sprints/active/sprint-4-person-flows-audit.md).
+- [Sprint 8](./sprints/active/sprint-8.md).
 - [Backlog UX](./sprints/active/ux-backlog.md).
 
 ## Archivo histórico

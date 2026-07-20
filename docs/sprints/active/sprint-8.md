@@ -25,7 +25,7 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 5. [x] S8-05 — Consolidar endpoints o servicios agregados para evitar consultas públicas repetitivas. **Validado con CI verde.**
 6. [x] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible. **Validado con CI verde y aplicado en Supabase.**
 7. [x] S8-07 — Diseñar e implementar la primera búsqueda interna canónica. **Implementación e integración principal validadas con CI verde.**
-8. [ ] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles.
+8. [x] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles. **Validado con CI verde.**
 9. [ ] S8-09 — Completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración.
 10. [ ] S8-10 — Validar el alcance técnico propio de Sprint 8 con pruebas contractuales y CI, sin absorber el cierre operativo diferido de S7-10.
 
@@ -77,6 +77,18 @@ La migración fue aplicada correctamente en Supabase. La primera versión no inc
 
 La integración del dashboard y sus contratos quedaron confirmados por [CI #29761638740](https://github.com/Jumen-UX/sinep-rd/actions/runs/29761638740) sobre `b8b72fa`.
 
+## S8-08 — Salud y observabilidad mínima
+
+- `/api/health` diferencia disponibilidad de aplicación y base de datos.
+- La sonda de Supabase está acotada a cinco segundos y no registra el error original.
+- `request_id` y `X-Request-Id` permiten correlacionar monitor y plataforma sin exponer infraestructura.
+- Las respuestas son dinámicas, no cacheables y usan `200` o `503`.
+- `scripts/verify-health.mjs` valida estado, ambas comprobaciones y correlación.
+- `docs/architecture/OBSERVABILITY_CONTRACT.md` define campos permitidos, límites de seguridad, alerta y evidencia operativa pendiente.
+- `docs/OPERACION_Y_RECUPERACION.md` conserva el procedimiento de monitoreo, incidentes, respaldo y restauración.
+
+El bloque quedó confirmado por [CI #29762048444](https://github.com/Jumen-UX/sinep-rd/actions/runs/29762048444) sobre `3afb423`.
+
 ## Pendientes operativos de beta
 
 Estos controles permanecen separados del cierre técnico de S8-07 y del trabajo de S8-08:
@@ -110,4 +122,4 @@ Ninguno debe marcarse como completado mediante pruebas contractuales o CI sin la
 
 ## Criterio del siguiente bloque
 
-Iniciar S8-08 y endurecer el contrato mínimo de observabilidad y health checks sin exponer secretos, versiones sensibles, datos privados ni trazas internas.
+Iniciar S8-09 y completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración sin declarar resueltos los controles operativos que todavía requieren evidencia real.

@@ -15,7 +15,7 @@ La aplicación cuenta con identidad canónica de personas, dimensiones clericale
 
 [Sprint 8 — Rendimiento, indexación y salida mantenible](../sprints/active/sprint-8.md).
 
-Estado: S8-01 a S8-07 completados y validados. S8-08 es el bloque activo para health checks y observabilidad mínima. Sprint 8 no absorbe el cierre operativo diferido de S7-10.
+Estado: S8-01 a S8-08 completados y validados. S8-09 es el bloque activo para documentación técnica, administrativa y operativa. Sprint 8 no absorbe el cierre operativo diferido de S7-10.
 
 ## Sprint 7
 
@@ -46,10 +46,9 @@ El portal público y su accesibilidad cuentan con ejecución E2E verde. La matri
 
 ## Orden vigente de ejecución
 
-1. Completar S8-08 con health checks y observabilidad mínima sin exponer información sensible.
-2. Completar S8-09 con README técnico, manual administrativo y procedimientos operativos.
-3. Ejecutar S8-10 para validar el alcance técnico propio del Sprint 8.
-4. Mantener S7-10 diferido hasta nueva instrucción y conservar separados los controles operativos de beta hasta contar con evidencia real.
+1. Completar S8-09 con README técnico, manual administrativo y procedimientos operativos.
+2. Ejecutar S8-10 para validar el alcance técnico propio del Sprint 8.
+3. Mantener S7-10 diferido hasta nueva instrucción y conservar separados los controles operativos de beta hasta contar con evidencia real.
 
 ## Importación controlada
 

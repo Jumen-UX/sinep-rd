@@ -54,8 +54,8 @@ test('administrative rendering stays dynamic and uncached', () => {
   assert.match(contract, /Caché compartida: prohibida/)
 })
 
-test('sprint 8 records query indexes and canonical search before observability', () => {
-  for (const item of ['S8-01', 'S8-02', 'S8-03', 'S8-04', 'S8-05', 'S8-06', 'S8-07']) {
+test('sprint 8 records performance search and observability before documentation', () => {
+  for (const item of ['S8-01', 'S8-02', 'S8-03', 'S8-04', 'S8-05', 'S8-06', 'S8-07', 'S8-08']) {
     assert.match(sprint, new RegExp(`\\[x\\] ${item}`))
   }
   assert.match(sprint, /RENDERING_CACHE_CONTRACT\.md/)
@@ -63,6 +63,7 @@ test('sprint 8 records query indexes and canonical search before observability',
   assert.match(sprint, /loadPublicDashboardBundle\(\)/)
   assert.match(sprint, /20260718160000_optimize_public_query_indexes\.sql/)
   assert.match(sprint, /20260718234000_create_canonical_admin_search\.sql/)
-  assert.match(sprint, /Iniciar S8-08 y endurecer el contrato mínimo de observabilidad/)
+  assert.match(sprint, /OBSERVABILITY_CONTRACT\.md/)
+  assert.match(sprint, /Iniciar S8-09 y completar README técnico/)
   assert.match(sprint, /S7-10 continúa diferido/)
 })

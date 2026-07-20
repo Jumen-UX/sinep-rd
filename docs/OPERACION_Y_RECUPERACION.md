@@ -2,7 +2,7 @@
 
 > Estado: activo
 > Documento canónico: sí
-> Última revisión: 2026-07-15
+> Última revisión: 2026-07-20
 > Responsable: operaciones y plataforma
 
 ## Objetivo
@@ -23,7 +23,8 @@ Respuesta saludable:
 {
   "status": "ok",
   "service": "sinep-rd",
-  "checks": { "database": "ok" },
+  "request_id": "00000000-0000-4000-8000-000000000000",
+  "checks": { "application": "ok", "database": "ok" },
   "response_time_ms": 100,
   "checked_at": "2026-07-14T00:00:00.000Z"
 }
@@ -34,7 +35,9 @@ Códigos esperados:
 - `200`: aplicación y base de datos disponibles.
 - `503`: aplicación disponible, pero Supabase degradado o inaccesible.
 
-El endpoint usa `no-store` y no expone claves, URL internas ni detalles SQL.
+El endpoint usa `no-store`, limita la sonda de base de datos a cinco segundos y no expone claves, URL internas ni detalles SQL. `X-Request-Id` coincide con `request_id` para correlacionar una alerta con los logs seguros de plataforma.
+
+El contrato de campos, registro y monitor se define en [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md).
 
 Verificación manual:
 
@@ -63,6 +66,8 @@ Alertar cuando ocurra cualquiera de estas condiciones:
 - nuevo grupo de errores de runtime en Vercel.
 
 No incluir credenciales en la URL del monitor. Para despliegues protegidos, usar un encabezado de bypass almacenado como secreto del proveedor de monitoreo.
+
+La selección del proveedor, el canal de alerta y sus responsables continúa siendo una comprobación operativa de beta; no se considera resuelta por CI.
 
 ## Respuesta a incidentes
 
