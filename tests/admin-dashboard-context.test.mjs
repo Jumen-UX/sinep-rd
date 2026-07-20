@@ -53,10 +53,11 @@ test('restricted scopes use contextual RPC and never request global KPI sources'
   assert.match(values, /descendientes autorizados/i)
 })
 
-test('dashboard search accurately describes and routes to the people directory only', async () => {
+test('dashboard search delegates to the canonical internal directory', async () => {
   const page = await read('src/features/admin/dashboard/AdminDashboardPage.tsx')
 
-  assert.match(page, /Buscar personas/)
-  assert.match(page, /\/admin\/personas\?search=/)
-  assert.doesNotMatch(page, /Buscar personas, entidades o documentos/)
+  assert.match(page, /canSearch/)
+  assert.match(page, /Buscar en el directorio interno/)
+  assert.match(page, /\/admin\/buscar\?q=/)
+  assert.doesNotMatch(page, /\/admin\/personas\?search=/)
 })
