@@ -6,6 +6,7 @@ const migration = await readFile('supabase/migrations/20260718234000_create_cano
 const route = await readFile('src/app/api/admin/search/route.ts', 'utf8')
 const page = await readFile('src/features/admin/search/AdminSearchPage.tsx', 'utf8')
 const routePage = await readFile('src/app/(admin)/admin/buscar/page.tsx', 'utf8')
+const dashboard = await readFile('src/features/admin/dashboard/AdminDashboardPage.tsx', 'utf8')
 
 test('canonical admin search separates domains permissions and scope', () => {
   assert.match(migration, /app_private\.admin_search_catalog/)
@@ -43,4 +44,14 @@ test('search page exposes accessible query and explicit result destinations', ()
   assert.match(page, /resultLabels/)
   assert.match(page, /result\.href/)
   assert.match(page, /Sin resultados disponibles/)
+})
+
+test('dashboard routes authorized users to the canonical search instead of the people directory', () => {
+  assert.match(dashboard, /searchPermissions = new Set\(\['people\.view', 'entities\.view', 'pastorals\.view'\]\)/)
+  assert.match(dashboard, /permissionKeys\.some\(\(permission\) => searchPermissions\.has\(permission\)\)/)
+  assert.match(dashboard, /\/admin\/buscar\?q=\$\{encodeURIComponent\(query\)\}/)
+  assert.match(dashboard, /Buscar en el directorio interno/)
+  assert.match(dashboard, /Persona, entidad o unidad organizativa/)
+  assert.doesNotMatch(dashboard, /\/admin\/personas\?search=/)
+  assert.doesNotMatch(dashboard, /Buscar personas por nombre/)
 })
