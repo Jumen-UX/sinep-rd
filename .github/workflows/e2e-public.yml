@@ -78,7 +78,7 @@ jobs:
         shell: bash
         run: |
           if [[ "$E2E_PUBLIC_INDEXING_MODE" == "disabled" ]]; then
-            pnpm exec playwright test e2e/public-accessibility.spec.mjs e2e/visual-evidence.spec.mjs --update-snapshots
+            pnpm exec playwright test e2e/public-accessibility.spec.mjs e2e/visual-evidence.spec.mjs
           else
             pnpm exec playwright test e2e/public-accessibility.spec.mjs
           fi
@@ -91,6 +91,5 @@ jobs:
           path: |
             playwright-report
             test-results
-            e2e/visual-evidence.spec.mjs-snapshots
           if-no-files-found: ignore
           retention-days: 7
