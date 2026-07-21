@@ -21,7 +21,7 @@ La cobertura visual se controla mediante la [matriz de validación UX](../../des
 | Herramientas de accesibilidad | Completado | Panel flotante, foco restaurado, tamaño de texto y alto contraste persistentes. |
 | Contraste WCAG AA | Parcial | Axe cubre rutas públicas y existen tokens de contraste; falta revisión visual autenticada y comprobación manual de estados no alcanzables sin datos. |
 | Componentes básicos compartidos | Parcial | `Button`, `PageHeader`, `DataTable`, estados vacíos y badges ya se usan en módulos prioritarios; quedan vistas antiguas por migrar. |
-| Evidencia y regresión visual | Parcial | Se capturan shells públicos y de acceso administrativo por tema y viewport; falta promover las capturas aprobadas a baselines comparables y cubrir rutas autenticadas. |
+| Evidencia y regresión visual | Parcial | Los shells públicos y de acceso tienen comparaciones bloqueantes de sus regiones estables en claro y oscuro, móvil, tableta y escritorio. Las páginas completas se conservan como evidencia diagnóstica; falta cubrir rutas autenticadas. |
 
 ## Sprint UX 0.2 — navegación y contexto
 
@@ -63,13 +63,12 @@ La cobertura visual se controla mediante la [matriz de validación UX](../../des
 
 ## Orden de cierre vigente
 
-1. Capturar evidencia reproducible de los shells público y de acceso administrativo en claro y oscuro.
-2. Aprobar baselines visuales y convertir la evidencia en comparaciones automáticas.
-3. Ejecutar revisión visual autenticada con cuentas protegidas y datos representativos.
-4. Migrar vistas heredadas a primitivas compartidas y retirar `LegacyAdminAccessibilityEnhancements` por secciones verificadas.
-5. Implementar resumen navegable de errores y el patrón común de impacto.
-6. Validar lector de pantalla, zoom 400 %, touch e impresión.
-7. Ejecutar pruebas moderadas con usuarios representativos.
+1. Ejecutar revisión visual autenticada con cuentas protegidas y datos representativos.
+2. Ampliar los baselines a superficies autenticadas estables, enmascarando datos personales y variables.
+3. Migrar vistas heredadas a primitivas compartidas y retirar `LegacyAdminAccessibilityEnhancements` por secciones verificadas.
+4. Implementar resumen navegable de errores y el patrón común de impacto.
+5. Validar lector de pantalla, zoom 400 %, touch e impresión.
+6. Ejecutar pruebas moderadas con usuarios representativos.
 
 ## Regla de prioridad
 

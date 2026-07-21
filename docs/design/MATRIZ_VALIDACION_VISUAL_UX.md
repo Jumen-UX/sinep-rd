@@ -15,17 +15,17 @@ Definir qué combinaciones de ruta, tema, viewport y estado deben revisarse ante
 3. **Regresión aprobada:** captura comparada contra un baseline revisado por producto y frontend.
 4. **Aceptación operativa:** recorrido manual o automatizado con cuenta, permisos, alcance y datos representativos.
 
-Una captura generada no es un baseline aprobado. Una ruta autenticada no se considera aceptada cuando la prueba se omite por falta de secretos.
+Una captura generada no es por sí sola un baseline aprobado. Las regiones estables de los shells público y de acceso fueron revisadas y promovidas desde Ubuntu/Chromium a comparaciones bloqueantes. Una ruta autenticada no se considera aceptada cuando la prueba se omite por falta de secretos.
 
 ## Matriz automática sin secretos
 
 | Superficie | Ruta | Estado | Temas | Viewports | Evidencia inicial |
 |---|---|---|---|---|---|
-| Portal público | `/` | Dashboard territorial cargado | claro, oscuro | 390×844, 768×1024, 1440×1200 | captura completa y comprobación de desbordamiento |
-| Acceso administrativo | `/admin/login` | formulario inicial | claro, oscuro | 390×844, 768×1024, 1440×1200 | captura completa, encabezado y formulario visibles |
-| Recuperación | `/admin/recuperar/solicitar` | formulario inicial | claro, oscuro | 390×844, 768×1024, 1440×1200 | captura completa, encabezado y formulario visibles |
+| Portal público | `/` | Dashboard territorial cargado | claro, oscuro | 390×844, 768×1024, 1440×1200 | captura completa diagnóstica y baseline bloqueante del encabezado móvil o barra lateral de escritorio |
+| Acceso administrativo | `/admin/login` | formulario inicial | claro, oscuro | 390×844, 768×1024, 1440×1200 | captura completa diagnóstica y baseline bloqueante de la tarjeta de acceso |
+| Recuperación | `/admin/recuperar/solicitar` | formulario inicial | claro, oscuro | 390×844, 768×1024, 1440×1200 | captura completa diagnóstica y baseline bloqueante de la tarjeta de recuperación |
 
-Estas rutas no requieren credenciales. Los datos públicos pueden cambiar; por eso su primera fase produce evidencia revisable y no una comparación de píxeles bloqueante.
+Estas rutas no requieren credenciales. Los datos públicos pueden cambiar; por eso la página completa se conserva como evidencia revisable y la comparación de píxeles se limita a superficies estables. Los 18 baselines vigentes fueron generados en Ubuntu/Chromium por el run `29870240928`, sobre el commit `595afe1`, y revisados antes de incorporarse al repositorio.
 
 ## Matriz autenticada protegida
 
@@ -62,7 +62,7 @@ La comparación de screenshots se activa cuando:
 4. la diferencia tolerada está documentada y no oculta cambios de layout;
 5. el workflow publica el diff cuando una comparación falla.
 
-Hasta entonces, la captura automática se registra como evidencia visual, no como regresión aprobada.
+Las superficies estables de la matriz pública ya cumplen este umbral. Las páginas completas con datos vivos y las rutas autenticadas continúan como evidencia visual hasta disponer de datos controlados o enmascarados y perfiles protegidos.
 
 ## Criterio de aceptación UX de beta
 

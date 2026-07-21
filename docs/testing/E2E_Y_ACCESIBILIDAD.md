@@ -33,7 +33,9 @@ pnpm test:e2e:visual
 
 Genera capturas reproducibles de `/`, `/admin/login` y `/admin/recuperar/solicitar` en temas claro y oscuro, con viewports móvil, tableta y escritorio. También comprueba encabezado, superficie principal y ausencia de desbordamiento horizontal.
 
-El workflow ejecuta esta suite una sola vez, en la variante con indexación deshabilitada, y conserva las imágenes dentro del reporte y `test-results`. Estas capturas son evidencia temporal: no se consideran baselines aprobados hasta que producto y frontend las revisen y se promuevan a comparaciones automáticas según la [matriz de validación visual UX](../design/MATRIZ_VALIDACION_VISUAL_UX.md).
+El workflow ejecuta esta suite una sola vez, en la variante con indexación deshabilitada. Conserva las capturas completas dentro del reporte y `test-results` como evidencia diagnóstica, y compara las regiones estables de los shells contra 18 baselines aprobados de Ubuntu/Chromium. El dashboard público compara su encabezado móvil o barra lateral de escritorio; login y recuperación comparan la tarjeta del formulario. Así, los datos públicos vivos no convierten cambios legítimos de contenido en falsos fallos visuales. Consulta la [matriz de validación visual UX](../design/MATRIZ_VALIDACION_VISUAL_UX.md).
+
+Los baselines versionados no deben regenerarse durante una ejecución ordinaria. Una actualización deliberada requiere ejecutar Playwright con `--update-snapshots` en Ubuntu/Chromium, revisar las 18 imágenes y publicar el cambio como un commit temático.
 
 Las rutas autenticadas no forman parte de esta suite porque requieren perfiles protegidos y datos representativos.
 
