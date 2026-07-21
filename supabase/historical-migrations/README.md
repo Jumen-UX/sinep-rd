@@ -8,7 +8,7 @@ Este directorio conserva SQL aplicado al proyecto de Supabase antes de que el hi
 - Primer registro conservado por Supabase: `20260702194346_019_grant_public_view_dependencies`.
 - Último registro anterior al primer bloque originalmente versionado en GitHub: `20260703042555_053_public_change_suggestions`.
 - Total: **54 migraciones registradas**.
-- SQL registrado: **146,436 bytes** al incluir los separadores históricos por archivo.
+- El historial remoto no contiene una migración numerada como 028; el salto de 027d a 029a es parte del registro original y no una omisión de esta copia.
 
 Los archivos SQL de este directorio son una **copia histórica de referencia**. No forman parte de `supabase/migrations` porque ya fueron aplicados y algunos dependen de un esquema base anterior. Copiarlos como migraciones nuevas o ejecutarlos sobre producción podría repetir cargas, permisos y modificaciones de datos.
 
@@ -16,11 +16,13 @@ Los archivos SQL de este directorio son una **copia histórica de referencia**. 
 
 | Archivo | Rango | Migraciones | MD5 del contenido SQL extraído |
 |---|---|---:|---|
-| `20260702_initial_history_part_1_019_to_033.sql` | 019–033 | 28 | `0145be2574d295b748bc209b0e8c2aa4` |
+| `20260702_initial_history_part_1a_019_to_025.sql` | 019–025 | 7 | `48b3567e6d74a1cc82531e1b0973b012` |
+| `20260702_initial_history_part_1b_026a_to_027d.sql` | 026a–027d | 7 | `639378715f4c262ec992a0458c3e4983` |
+| `20260702_initial_history_part_1c_029a_to_033.sql` | 029a–033 | 14 | `b11d74828c41cafa666de8f4f4eca6e1` |
 | `20260702_initial_history_part_2_034_to_036c.sql` | 034–036c | 8 | `5cb44b06252ea005305587f92fc9de22` |
 | `20260702_initial_history_part_3_037a_to_053.sql` | 037a–053 | 18 | `fa03d34b0f07c1ed5cce96533c29fd37` |
 
-Los hashes anteriores corresponden al contenido de `statements` concatenado por versión, antes de añadir los comentarios `BEGIN MIGRATION` y `END MIGRATION` usados para separar cada registro dentro de los archivos históricos.
+Los hashes anteriores corresponden al contenido de `statements` concatenado por versión, antes de añadir el encabezado de seguridad y los comentarios `BEGIN MIGRATION` y `END MIGRATION` usados para separar cada registro dentro de los archivos históricos.
 
 ## Brecha anterior a 019
 
