@@ -17,7 +17,7 @@ test('el contrato declara las cuatro dimensiones KPI requeridas', () => {
 })
 
 test('cada KPI declara permisos y alcances admitidos', () => {
-  const definitions = contractSource.split(/\n\s*\{\n/).filter((chunk) => chunk.includes("id: '"))
+  const definitions = contractSource.split(/\r?\n\s*\{\r?\n/).filter((chunk) => chunk.includes("id: '"))
   assert.ok(definitions.length >= 12)
 
   for (const definition of definitions) {

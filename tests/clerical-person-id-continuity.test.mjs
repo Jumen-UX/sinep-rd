@@ -55,7 +55,7 @@ test('clerical transitions enforce sacramental prerequisites without creating an
   )
 
   const existingBranch = migration.match(
-    /if v_mode = 'existing' then([\s\S]*?)else\n\s+v_first_name :=/,
+    /if v_mode = 'existing' then([\s\S]*?)else\r?\n\s+v_first_name :=/,
   )?.[1] ?? ''
 
   assert.match(existingBranch, /v_person_id/)

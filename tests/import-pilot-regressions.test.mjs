@@ -19,7 +19,7 @@ async function read(path) {
 }
 
 function sha256(value) {
-  return createHash('sha256').update(value, 'utf8').digest('hex')
+  return createHash('sha256').update(value.replace(/\r\n/g, '\n'), 'utf8').digest('hex')
 }
 
 test('structure imports classify exact contextual entities as noop', async () => {
