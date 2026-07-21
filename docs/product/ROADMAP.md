@@ -42,7 +42,7 @@ Permanecen abiertos:
 - [ ] Definir canal, severidad y responsables de incidentes de beta.
 - [ ] Validar institucional y jurídicamente privacidad, cookies y aviso legal antes de apertura pública.
 
-El portal público y su accesibilidad conservan cobertura E2E. La última ejecución falló porque validaba un sitemap indexable mientras la beta tenía `PUBLIC_INDEXING_ENABLED=false`; el workflow ya separa los contratos de beta privada e indexación habilitada y requiere una nueva ejecución verde. La matriz autenticada permanece diferida y no debe ejecutarse contra producción.
+El portal público y su accesibilidad conservan cobertura E2E. El workflow separa los contratos de beta privada e indexación habilitada; ambas variantes quedaron aprobadas en [E2E / Public accessibility #79](https://github.com/Jumen-UX/sinep-rd/actions/runs/29866854822). El mismo estado quedó respaldado por [CI #1773](https://github.com/Jumen-UX/sinep-rd/actions/runs/29866854893). La matriz autenticada permanece diferida y no debe ejecutarse contra producción.
 
 ## Orden vigente de ejecución
 

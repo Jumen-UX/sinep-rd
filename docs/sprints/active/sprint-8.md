@@ -37,7 +37,7 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 - `docs/architecture/RENDERING_CACHE_CONTRACT.md` separa rutas públicas, administrativas y operativas.
 - `src/lib/public/metadata.ts` centraliza canonical, Open Graph, Twitter y robots para el portal público.
 - `PUBLIC_INDEXING_ENABLED` mantiene cerrado por defecto el rastreo y el sitemap durante la beta interna.
-- El E2E público valida por separado la beta privada y el modo indexable; la nueva matriz requiere confirmación verde antes de registrar evidencia operativa.
+- El E2E público valida por separado la beta privada y el modo indexable; ambas variantes quedaron confirmadas en [E2E / Public accessibility #79](https://github.com/Jumen-UX/sinep-rd/actions/runs/29866854822), junto con [CI #1773](https://github.com/Jumen-UX/sinep-rd/actions/runs/29866854893).
 - Las fichas públicas reutilizan cargadores cacheados y las rutas administrativas permanecen dinámicas y sin caché compartida.
 
 ## S8-05 — Consultas públicas consolidadas
