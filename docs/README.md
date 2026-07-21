@@ -20,7 +20,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 | Revisar privacidad o RLS | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
 | Revisar permisos, alcance o auditoría | [Autorización y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md) |
 | Confirmar tecnologías | [Stack oficial](./architecture/STACK_OFICIAL.md) |
-| Crear o rediseñar una pantalla | [Sistema de diseño](./design/SISTEMA_DE_DISENO.md) y [Estándares web](./standards/ESTANDARES_WEB_SINEP_RD.md) |
+| Crear o rediseñar una pantalla | [Sistema de diseño](./design/SISTEMA_DE_DISENO.md), [matriz de validación visual](./design/MATRIZ_VALIDACION_VISUAL_UX.md) y [Estándares web](./standards/ESTANDARES_WEB_SINEP_RD.md) |
 | Planificar UX | [UX](./product/UX.md) y [backlog UX activo](./sprints/active/ux-backlog.md) |
 | Registrar o validar una fuente | [Fuentes del proyecto](./standards/FUENTES_DEL_PROYECTO.md) |
 | Operar acceso administrativo | [Acceso administrativo](./operations/ACCESO_ADMINISTRATIVO.md) |
@@ -52,6 +52,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 ### Interfaz y estándares
 
 - [Sistema de diseño](./design/SISTEMA_DE_DISENO.md).
+- [Matriz de validación visual UX](./design/MATRIZ_VALIDACION_VISUAL_UX.md).
 - [Parámetros de interfaz](./design/SINEP_UI_PARAMETERS.json).
 - [Estándares web](./standards/ESTANDARES_WEB_SINEP_RD.md).
 - [Fuentes del proyecto](./standards/FUENTES_DEL_PROYECTO.md).
