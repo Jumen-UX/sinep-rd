@@ -15,6 +15,7 @@ test('Playwright commands are versioned and remain outside the default check', a
   assert.match(packageJson.scripts['test:e2e'], /@playwright\/test@1\.61\.0/)
   assert.match(packageJson.scripts['test:e2e'], /@axe-core\/playwright@4\.10\.2/)
   assert.match(packageJson.scripts['test:e2e:public'], /public-accessibility\.spec\.mjs/)
+  assert.match(packageJson.scripts['test:e2e:visual'], /visual-evidence\.spec\.mjs/)
   assert.match(packageJson.scripts['test:e2e:admin'], /admin-import\.spec\.mjs/)
   assert.match(packageJson.scripts['test:e2e:access'], /admin-access-matrix\.spec\.mjs/)
   assert.match(packageJson.scripts['test:e2e:admin:mutation'], /admin-import-mixed-person\.spec\.mjs/)
@@ -91,6 +92,24 @@ test('mixed person mutation E2E is explicit, non-production and verifies idempot
   assert.match(spec, /Aplicar lote de personas/)
   assert.match(spec, /idempotent_replay/)
   assert.match(spec, /Descargar reporte final CSV/)
+})
+
+test('visual evidence covers public and administrative access shells without secrets', async () => {
+  const spec = await read('e2e/visual-evidence.spec.mjs')
+
+  assert.match(spec, /path: '\/'/)
+  assert.match(spec, /path: '\/admin\/login'/)
+  assert.match(spec, /path: '\/admin\/recuperar\/solicitar'/)
+  assert.match(spec, /'light', 'dark'/)
+  assert.match(spec, /width: 390, height: 844/)
+  assert.match(spec, /width: 768, height: 1024/)
+  assert.match(spec, /width: 1440, height: 1200/)
+  assert.match(spec, /reducedMotion: 'reduce'/)
+  assert.match(spec, /page\.screenshot/)
+  assert.match(spec, /testInfo\.attach/)
+  assert.match(spec, /bottomNavigation\.y - 8/)
+  assert.doesNotMatch(spec, /E2E_ADMIN_PASSWORD/)
+  assert.doesNotMatch(spec, /SERVICE_ROLE/)
 })
 
 test('access matrix E2E keeps credentials external and verifies bidirectional scope isolation', async () => {

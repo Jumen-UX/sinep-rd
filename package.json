@@ -33,6 +33,7 @@
     "test:e2e:install": "pnpm dlx @playwright/test@1.61.0 install chromium",
     "test:e2e": "pnpm dlx --package=@playwright/test@1.61.0 --package=@axe-core/playwright@4.10.2 playwright test",
     "test:e2e:public": "pnpm dlx --package=@playwright/test@1.61.0 --package=@axe-core/playwright@4.10.2 playwright test e2e/public-accessibility.spec.mjs",
+    "test:e2e:visual": "pnpm dlx --package=@playwright/test@1.61.0 playwright test e2e/visual-evidence.spec.mjs",
     "test:e2e:admin": "pnpm dlx --package=@playwright/test@1.61.0 --package=@axe-core/playwright@4.10.2 playwright test e2e/admin-import.spec.mjs",
     "test:e2e:access": "pnpm dlx --package=@playwright/test@1.61.0 playwright test e2e/admin-access-matrix.spec.mjs",
     "test:e2e:admin:mutation": "pnpm dlx --package=@playwright/test@1.61.0 --package=@axe-core/playwright@4.10.2 playwright test e2e/admin-import-mixed-person.spec.mjs",

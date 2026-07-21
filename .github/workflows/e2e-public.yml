@@ -19,6 +19,8 @@ on:
       - 'src/components/accessibility/**'
       - 'src/components/theme/**'
       - 'src/components/ui/**'
+      - 'src/features/access/admin/AdminLoginPage.tsx'
+      - 'src/features/access/admin/RequestPasswordRecoveryPage.tsx'
 
 permissions:
   contents: read
@@ -72,8 +74,14 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install chromium --with-deps
 
-      - name: Run public accessibility suite
-        run: pnpm exec playwright test e2e/public-accessibility.spec.mjs
+      - name: Run public accessibility and visual evidence suites
+        shell: bash
+        run: |
+          if [[ "$E2E_PUBLIC_INDEXING_MODE" == "disabled" ]]; then
+            pnpm exec playwright test e2e/public-accessibility.spec.mjs e2e/visual-evidence.spec.mjs
+          else
+            pnpm exec playwright test e2e/public-accessibility.spec.mjs
+          fi
 
       - name: Upload Playwright report
         if: always()

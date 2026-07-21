@@ -1,7 +1,7 @@
 # E2E y accesibilidad
 
-> Estado: vigente  
-> Última revisión: 2026-07-16  
+> Estado: vigente
+> Última revisión: 2026-07-21
 > Propietario: ingeniería y frontend
 
 ## Objetivo
@@ -24,6 +24,18 @@ pnpm test:e2e:public
 ```
 
 Cubre rutas públicas seleccionadas, navegación básica, teclado y comprobaciones Axe. El workflow `E2E / Public accessibility` se ejecuta automáticamente cuando cambian rutas públicas cubiertas y también admite ejecución manual.
+
+## Evidencia visual sin credenciales
+
+```bash
+pnpm test:e2e:visual
+```
+
+Genera capturas reproducibles de `/`, `/admin/login` y `/admin/recuperar/solicitar` en temas claro y oscuro, con viewports móvil, tableta y escritorio. También comprueba encabezado, superficie principal y ausencia de desbordamiento horizontal.
+
+El workflow ejecuta esta suite una sola vez, en la variante con indexación deshabilitada, y conserva las imágenes dentro del reporte y `test-results`. Estas capturas son evidencia temporal: no se consideran baselines aprobados hasta que producto y frontend las revisen y se promuevan a comparaciones automáticas según la [matriz de validación visual UX](../design/MATRIZ_VALIDACION_VISUAL_UX.md).
+
+Las rutas autenticadas no forman parte de esta suite porque requieren perfiles protegidos y datos representativos.
 
 ## Suite E2E general
 
