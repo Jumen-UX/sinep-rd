@@ -44,7 +44,7 @@ test('floating tools expose persistent keyboard-operable preferences', async () 
   assert.match(component, /catch \{[\s\S]*El cambio solo estará activo durante esta sesión/s)
 })
 
-test('accessibility presentation supports contrast text motion links and mobile admin offset', async () => {
+test('accessibility presentation supports contrast text motion links and mobile navigation offsets', async () => {
   const styles = await source('src/styles/accessibility-tools.css')
 
   assert.match(styles, /html\[data-text-scale='large'\]\s*\{[^}]*font-size:\s*112\.5%/s)
@@ -56,5 +56,6 @@ test('accessibility presentation supports contrast text motion links and mobile 
   assert.match(styles, /\.accessibility-tools\s*\{[^}]*position:\s*fixed/s)
   assert.match(styles, /\.accessibility-tools__trigger\s*\{[^}]*min-height:\s*3rem/s)
   assert.match(styles, /\.accessibility-tools__panel\s*\{[^}]*max-height:/s)
+  assert.match(styles, /body:has\(\.public-dashboard-layout\) \.accessibility-tools\s*\{[^}]*bottom:\s*calc\(5\.5rem/s)
   assert.match(styles, /body:has\(\.admin-area\) \.accessibility-tools\s*\{[^}]*bottom:\s*calc\(5\.5rem/s)
 })

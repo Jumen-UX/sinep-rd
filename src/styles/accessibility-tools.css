@@ -297,6 +297,10 @@ html[data-reduce-motion='true'] *::after {
 }
 
 @media (max-width: 860px) {
+  body:has(.public-dashboard-layout) .accessibility-tools {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+
   body:has(.admin-area) .accessibility-tools {
     bottom: calc(5.5rem + env(safe-area-inset-bottom));
   }
