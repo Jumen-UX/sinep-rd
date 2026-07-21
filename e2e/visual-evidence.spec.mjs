@@ -12,16 +12,21 @@ const surfaces = [
     key: 'public-home',
     path: '/',
     ready: (page) => page.locator('.public-dashboard-layout'),
+    baseline: (page, viewport) => viewport.key === 'desktop'
+      ? page.locator('.public-sidebar')
+      : page.locator('.public-mobile-header'),
   },
   {
     key: 'admin-login',
     path: '/admin/login',
     ready: (page) => page.locator('.auth-card form'),
+    baseline: (page) => page.locator('.auth-card'),
   },
   {
     key: 'admin-password-recovery',
     path: '/admin/recuperar/solicitar',
     ready: (page) => page.locator('.auth-card form'),
+    baseline: (page) => page.locator('.auth-card'),
   },
 ]
 
@@ -90,6 +95,12 @@ for (const surface of surfaces) {
         await testInfo.attach(`evidencia-${surface.key}-${theme}-${viewport.key}`, {
           contentType: 'image/png',
           path: artifactPath,
+        })
+
+        await expect(surface.baseline(page, viewport)).toHaveScreenshot(artifactName, {
+          animations: 'disabled',
+          caret: 'hide',
+          maxDiffPixelRatio: 0.001,
         })
       })
     }
