@@ -69,31 +69,6 @@
   grid-template-columns: minmax(0, 1fr) minmax(340px, 0.92fr);
 }
 
-.public-diocese-content-grid {
-  grid-template-columns: minmax(260px, 0.72fr) minmax(280px, 0.78fr) minmax(420px, 1.5fr);
-}
-
-.public-diocese-structure-card {
-  min-width: 0;
-}
-
-.public-level-grid {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.public-level-card,
-.public-feature-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  color: var(--foreground);
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-}
-
 .public-info-banner {
   align-items: center;
   background: var(--info-soft);
@@ -132,13 +107,8 @@
 }
 
 @media (max-width: 1240px) {
-  .public-province-content-grid,
-  .public-diocese-content-grid {
+  .public-province-content-grid {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .public-diocese-structure-card {
-    grid-column: 1 / -1;
   }
 }
 
@@ -147,14 +117,8 @@
     gap: 12px;
   }
 
-  .public-province-content-grid,
-  .public-diocese-content-grid,
-  .public-level-grid {
+  .public-province-content-grid {
     grid-template-columns: 1fr;
-  }
-
-  .public-diocese-structure-card {
-    grid-column: auto;
   }
 
   .public-info-banner {
