@@ -49,7 +49,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         .order('recorded_at', { ascending: true }),
       auth.supabase
         .from('import_batch_reversals')
-        .select('status, reason, requested_at, processed_at, result, audit_log_id')
+        .select('status, reason, requested_at, processed_at, reversal_plan, audit_log_id')
         .eq('batch_id', batchId)
         .order('requested_at', { ascending: false })
         .limit(1),
@@ -79,7 +79,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       ['# resumen_aplicacion', batch.application_summary],
       ['# estado_reversion', latestReversal?.status],
       ['# motivo_reversion', latestReversal?.reason],
-      ['# resultado_reversion', latestReversal?.result],
+      ['# plan_reversion', latestReversal?.reversal_plan],
       ['# auditoria_reversion', latestReversal?.audit_log_id],
     ].map((values) => values.map(csvCell).join(','))
 
