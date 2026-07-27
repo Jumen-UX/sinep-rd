@@ -25,6 +25,7 @@
     "docs:terminology:strict": "node scripts/check-documentation-terminology.mjs --strict",
     "e2e:affected": "node scripts/select-affected-e2e.mjs",
     "e2e:affected:run": "node scripts/select-affected-e2e.mjs --run",
+    "e2e:access:provision": "node scripts/provision-e2e-access-profiles.mjs",
     "health:check": "node scripts/verify-health.mjs",
     "test": "node scripts/run-tests.mjs unit",
     "test:affected": "node scripts/run-affected-tests.mjs",
