@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const matrixPath = 'e2e/admin-access-matrix.spec.mjs'
+const validatorPath = 'e2e/support/access-profile-matrix.mjs'
 const workflowPath = '.github/workflows/ci.yml'
 
 const mojibakeMarkers = [/Ã./, /Â./, /â€”/, /â€“/, /â€™/, /â€œ/, /â€/]
@@ -14,12 +15,18 @@ function assertUtf8Text(content, source) {
 }
 
 test('administrative access E2E keeps Spanish labels in valid UTF-8', async () => {
-  const matrix = await readFile(matrixPath, 'utf8')
+  const [matrix, validator] = await Promise.all([
+    readFile(matrixPath, 'utf8'),
+    readFile(validatorPath, 'utf8'),
+  ])
 
   assertUtf8Text(matrix, matrixPath)
+  assertUtf8Text(validator, validatorPath)
   assert.match(matrix, /Correo electrónico/)
   assert.match(matrix, /Contraseña/)
-  assert.match(matrix, /está incompleto o tiene un estado no válido/)
+  assert.match(matrix, /no debe ver la entidad prohibida/)
+  assert.match(validator, /tiene un estado no válido/)
+  assert.match(validator, /aislamiento bidireccional/)
 })
 
 test('CI workflow metadata remains readable and the access matrix stays secret-backed', async () => {
