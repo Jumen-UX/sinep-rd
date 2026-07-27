@@ -91,6 +91,7 @@ export type InviteUserInput = {
   email: string
   fullName: string
   phone: string
+  countryEntityId: string
   roleId: string
   scopeType: string
   scopeEntityId: string | null
@@ -273,6 +274,7 @@ export async function inviteUser(input: InviteUserInput): Promise<InviteUserResu
       email: input.email,
       full_name: input.fullName,
       phone: input.phone,
+      country_entity_id: input.countryEntityId,
       role_id: input.roleId || undefined,
       scope_type: input.roleId ? input.scopeType : undefined,
       scope_entity_id: input.roleId && scopeNeedsEntity(input.scopeType)
