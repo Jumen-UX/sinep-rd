@@ -5,7 +5,7 @@
 
 Sistema Nacional de Información Eclesiástica y Pastoral de República Dominicana. Combina un portal público, herramientas administrativas y una base canónica e histórica respaldada por Supabase.
 
-> Estado del producto: candidata a beta interna. Sprint 8 completó su alcance técnico; su documento permanece como referencia activa hasta autorizar el siguiente frente. S7-10 permanece diferido y conserva separadas las validaciones operativas autenticadas y de cierre.
+> Estado del producto: candidata a beta interna. Sprint 8 completó su alcance técnico y S7-10 está reactivado para cerrar las validaciones operativas autenticadas, visuales y de seguridad.
 
 ## Requisitos
 
@@ -20,7 +20,7 @@ Sistema Nacional de Información Eclesiástica y Pastoral de República Dominica
 3. Inicia el entorno con `pnpm dev`.
 4. Abre `http://localhost:3000`.
 
-Las variables públicas se limitan a la URL y clave publicable de Supabase. `SUPABASE_SERVICE_ROLE_KEY`, credenciales E2E y secretos de bypass son exclusivos del servidor o de la automatización protegida. `PUBLIC_INDEXING_ENABLED` debe permanecer en `false` durante la beta interna.
+Las variables públicas se limitan a la URL y clave publicable de Supabase. `SUPABASE_SERVICE_ROLE_KEY`, credenciales E2E y secretos de bypass son exclusivos del servidor o de la automatización protegida. Durante la beta, `PUBLIC_INDEXING_ENABLED` y `PUBLIC_LAUNCH_APPROVED` deben permanecer en `false`; la indexación solo se abre cuando ambos valores son `true`.
 
 ## Calidad
 
