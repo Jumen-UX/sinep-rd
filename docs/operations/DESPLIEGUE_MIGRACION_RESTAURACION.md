@@ -1,7 +1,7 @@
 # Guía de despliegue, migración y restauración
 
 > Estado: vigente para beta interna
-> Última revisión: 2026-07-20
+> Última revisión: 2026-07-27
 > Responsable: operaciones y plataforma
 
 ## Alcance
@@ -28,7 +28,8 @@ Antes de promover un cambio:
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | pública | clave publicable del cliente |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | pública, compatibilidad | alternativa heredada a la clave publicable |
 | `APP_BASE_URL` | servidor | origen canónico y redirecciones |
-| `PUBLIC_INDEXING_ENABLED` | servidor | apertura controlada de robots y sitemap |
+| `PUBLIC_INDEXING_ENABLED` | servidor | habilitación técnica de robots, metadata y sitemap |
+| `PUBLIC_LAUNCH_APPROVED` | servidor | aprobación institucional independiente para apertura pública |
 | `SUPABASE_SERVICE_ROLE_KEY` | secreto de servidor | invitación y recuperación administrativa |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | secreto de operación | health check de despliegues protegidos |
 
@@ -56,9 +57,40 @@ Una migración fallida se corrige con una migración posterior reproducible. No 
 5. Ejecutar `HEALTH_BASE_URL=<url> pnpm health:check`.
 6. Ejecutar el E2E público y Axe contra la URL autorizada.
 7. Realizar un recorrido administrativo no mutante con una cuenta de prueba.
-8. Registrar URL, commit, resultado, hora y artefactos.
+8. Verificar metadata, `/robots.txt` y `/sitemap.xml`.
+9. Registrar URL, commit, resultado, hora y artefactos.
 
-`PUBLIC_INDEXING_ENABLED` permanece en `false` hasta una decisión formal de apertura.
+## Apertura a buscadores
+
+La indexación es **fail-closed**. El portal solo emite `index, follow`, permite rastreo y genera sitemap cuando se cumplen simultáneamente:
+
+```text
+PUBLIC_INDEXING_ENABLED=true
+PUBLIC_LAUNCH_APPROVED=true
+```
+
+`PUBLIC_INDEXING_ENABLED` representa la habilitación técnica. `PUBLIC_LAUNCH_APPROVED` representa una decisión institucional independiente. Ninguno de los dos valores, por sí solo, abre la indexación.
+
+Antes de activar ambos controles deben existir:
+
+1. aprobación institucional documentada;
+2. revisión legal y de privacidad;
+3. datos públicos depurados, sin registros QA visibles;
+4. E2E público y accesibilidad en verde;
+5. sitemap revisado;
+6. dominio canónico definitivo;
+7. responsables de contenido y corrección;
+8. evidencia de backup y restauración.
+
+Después del despliegue de apertura, verificar explícitamente:
+
+- páginas públicas: `index, follow`;
+- páginas faltantes o privadas: `noindex`;
+- `/robots.txt`: permite rutas públicas y bloquea `/admin/` y `/api/`;
+- `/sitemap.xml`: contiene únicamente rutas aprobadas;
+- canonical: apunta al dominio institucional definitivo.
+
+Para volver a beta cerrada basta con establecer cualquiera de los dos controles en `false` y redesplegar. La comprobación posterior es obligatoria; no debe inferirse el estado solo desde el Dashboard de Vercel.
 
 ## Retroceso
 
@@ -94,8 +126,8 @@ La ejecución detallada y sus criterios de aceptación se mantienen en [Operaci�
 - resultado de CI;
 - resultado de health check y `request_id`;
 - E2E ejecutados y artefactos;
+- estado de metadata, robots y sitemap;
 - punto de restauración o respaldo;
 - incidencias, decisión de retroceso y resultado.
 
 La ausencia de una prueba real de restauración, canal de incidentes o cuentas diferenciadas permanece como pendiente operativo de beta.
-
