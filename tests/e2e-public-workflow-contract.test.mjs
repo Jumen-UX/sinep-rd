@@ -18,6 +18,7 @@ test('public E2E workflow runs Chromium and Axe without privileged credentials',
   assert.match(workflow, /indexing:\s*\n\s+- disabled\s*\n\s+- enabled/)
   assert.match(workflow, /E2E_PUBLIC_INDEXING_MODE: \$\{\{ matrix\.indexing \}\}/)
   assert.match(workflow, /PUBLIC_INDEXING_ENABLED: \$\{\{ matrix\.indexing == 'enabled'/)
+  assert.match(workflow, /PUBLIC_LAUNCH_APPROVED: \$\{\{ matrix\.indexing == 'enabled'/)
   assert.match(workflow, /uses:\s+actions\/upload-artifact@v\d+/)
   assert.match(workflow, /if: always\(\)/)
   assert.match(workflow, /timeout-minutes: 20/)
