@@ -26,6 +26,7 @@ export default function InviteUserPage() {
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
+  const [countryEntityId, setCountryEntityId] = useState('')
   const [roleId, setRoleId] = useState('')
   const [scopeType, setScopeType] = useState('national')
   const [scopeEntityId, setScopeEntityId] = useState('')
@@ -35,12 +36,19 @@ export default function InviteUserPage() {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
+  const countryOptions = useMemo(
+    () => scopeOptions.filter((option) => option.scope_type === 'national'),
+    [scopeOptions],
+  )
   const visibleScopes = useMemo(
     () => scopeOptions.filter((option) => option.scope_type === scopeType),
     [scopeOptions, scopeType],
   )
   const selectedRole = roles.find((role) => role.role_id === roleId) ?? null
-  const selectedScope = visibleScopes.find((option) => option.scope_entity_id === scopeEntityId) ?? null
+  const selectedCountry = countryOptions.find((option) => option.scope_entity_id === countryEntityId) ?? null
+  const selectedScope = scopeType === 'national'
+    ? selectedCountry
+    : visibleScopes.find((option) => option.scope_entity_id === scopeEntityId) ?? null
 
   useEffect(() => {
     let cancelled = false
@@ -70,9 +78,22 @@ export default function InviteUserPage() {
   }, [router, supabase])
 
   useEffect(() => {
+    setCountryEntityId((current) => {
+      if (current && countryOptions.some((option) => option.scope_entity_id === current)) return current
+      return countryOptions[0]?.scope_entity_id ?? ''
+    })
+  }, [countryOptions])
+
+  useEffect(() => {
     setAccessConfirmed(false)
-    if (!scopeNeedsEntity(scopeType)) {
+
+    if (!roleId || !scopeNeedsEntity(scopeType)) {
       setScopeEntityId('')
+      return
+    }
+
+    if (scopeType === 'national') {
+      setScopeEntityId(countryEntityId)
       return
     }
 
@@ -80,13 +101,25 @@ export default function InviteUserPage() {
       if (current && visibleScopes.some((option) => option.scope_entity_id === current)) return current
       return visibleScopes[0]?.scope_entity_id ?? ''
     })
-  }, [scopeType, visibleScopes])
+  }, [countryEntityId, roleId, scopeType, visibleScopes])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
     setError(null)
     setNotice(null)
+
+    if (!countryEntityId) {
+      setSaving(false)
+      setError('Selecciona el país administrativo de la cuenta invitada.')
+      return
+    }
+
+    if (roleId && scopeNeedsEntity(scopeType) && !scopeEntityId) {
+      setSaving(false)
+      setError('Selecciona la entidad concreta donde aplicará el rol inicial.')
+      return
+    }
 
     if (roleId && !accessConfirmed) {
       setSaving(false)
@@ -99,6 +132,7 @@ export default function InviteUserPage() {
         email,
         fullName,
         phone,
+        countryEntityId,
         roleId,
         scopeType,
         scopeEntityId: roleId && scopeNeedsEntity(scopeType) ? scopeEntityId : null,
@@ -107,11 +141,14 @@ export default function InviteUserPage() {
       setNotice(result.warning
         ? `El acceso requiere revisión: ${result.warning}`
         : result.existingUser
-          ? 'El usuario ya existía; sus datos y acceso inicial fueron revisados.'
-          : 'Invitación enviada correctamente. El usuario continuará por onboarding.')
+          ? 'El usuario ya existía; su membresía de país y su acceso inicial fueron revisados.'
+          : 'Invitación enviada correctamente. El usuario continuará por onboarding dentro del país seleccionado.')
       setEmail('')
       setFullName('')
       setPhone('')
+      setRoleId('')
+      setScopeType('national')
+      setScopeEntityId(countryEntityId)
       setAccessConfirmed(false)
     } catch (inviteError) {
       setError(errorMessage(inviteError, 'No se pudo enviar la invitación.'))
@@ -130,7 +167,7 @@ export default function InviteUserPage() {
         <div>
           <p className="eyebrow">Usuarios</p>
           <h1>Invitar usuario</h1>
-          <p className="lead">Envía una invitación segura y, opcionalmente, deja asignado su primer rol administrativo.</p>
+          <p className="lead">Envía una invitación segura, registra el país administrativo y, opcionalmente, asigna el primer rol.</p>
         </div>
         <Link className="button button-secondary" href="/admin/usuarios">Volver a usuarios</Link>
       </div>
@@ -153,6 +190,21 @@ export default function InviteUserPage() {
           <label>
             Teléfono
             <input autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} />
+          </label>
+
+          <label>
+            País administrativo
+            <select value={countryEntityId} onChange={(event) => {
+              setCountryEntityId(event.target.value)
+              setAccessConfirmed(false)
+            }} required>
+              {countryOptions.length === 0 ? (
+                <option value="">No hay países disponibles dentro de tu alcance</option>
+              ) : countryOptions.map((country) => (
+                <option key={country.scope_entity_id} value={country.scope_entity_id}>{country.label}</option>
+              ))}
+            </select>
+            <span className="meta">La cuenta permanecerá asociada a este país incluso antes de recibir un rol.</span>
           </label>
 
           <label>
@@ -182,7 +234,7 @@ export default function InviteUserPage() {
             </label>
           )}
 
-          {roleId && scopeNeedsEntity(scopeType) && (
+          {roleId && scopeNeedsEntity(scopeType) && scopeType !== 'national' && (
             <label>
               Entidad del alcance
               <select value={scopeEntityId} onChange={(event) => {
@@ -205,6 +257,7 @@ export default function InviteUserPage() {
                 {selectedRole?.role_name ?? 'Rol seleccionado'} · {scopeNeedsEntity(scopeType)
                   ? selectedScope?.label ?? 'Selecciona una entidad válida'
                   : userScopeTypes.find((scope) => scope.value === scopeType)?.label ?? scopeType}
+                {' · '}{selectedCountry?.label ?? 'País pendiente'}
               </p>
               <label>
                 <input
@@ -213,12 +266,16 @@ export default function InviteUserPage() {
                   required
                   type="checkbox"
                 />
-                Confirmo que este rol y alcance corresponden al usuario invitado.
+                Confirmo que este rol, alcance y país corresponden al usuario invitado.
               </label>
             </div>
           )}
 
-          <button className="button button-primary" disabled={saving || Boolean(roleId && !accessConfirmed)} type="submit">
+          <button
+            className="button button-primary"
+            disabled={saving || !countryEntityId || Boolean(roleId && !accessConfirmed)}
+            type="submit"
+          >
             {saving ? 'Enviando...' : 'Enviar invitación'}
           </button>
         </form>
