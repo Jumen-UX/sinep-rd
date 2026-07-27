@@ -6,9 +6,10 @@ const repoRoot = new URL('../', import.meta.url)
 const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
 test('multi-country territorial rendering stays inside the typed React dashboard', async () => {
-  const [layout, scopeBuilder, territorialView] = await Promise.all([
+  const [layout, scopeBuilder, dashboardModel, territorialView] = await Promise.all([
     readRepoFile('src/app/layout.tsx'),
     readRepoFile('src/features/public/buildPublicDashboardScope.ts'),
+    readRepoFile('src/features/public/usePublicDashboardModel.ts'),
     readRepoFile('src/features/public/PublicTerritorialView.tsx'),
   ])
 
@@ -22,6 +23,10 @@ test('multi-country territorial rendering stays inside the typed React dashboard
   assert.match(scopeBuilder, /scopedParishes = initialData\.parishes\.filter\(\(item\) => inTerritorialScope/)
   assert.match(scopeBuilder, /scopedPastoral = initialData\.organization_units\.filter\(\(item\) => inTerritorialScope/)
   assert.match(scopeBuilder, /\.filter\(\(item\) => assignmentMatches\(item, scopedSlugs\)\)/)
+
+  assert.match(dashboardModel, /initialData\.countries\.some\(\(item\) => item\.key === 'DO'\)/)
+  assert.match(dashboardModel, /scope\.scopeFiltered \|\| country !== 'DO'/)
+  assert.match(dashboardModel, /territoriallyLinkedPeople/)
 
   await assert.rejects(
     access(new URL('src/features/public/components/public-multi-country-dashboard.tsx', repoRoot)),
