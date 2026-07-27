@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { access, readFile } from 'node:fs/promises'
+import { access, readFile, readdir } from 'node:fs/promises'
 import test from 'node:test'
 
 const repoRoot = new URL('../', import.meta.url)
@@ -13,7 +13,10 @@ test('multi-country territorial rendering stays inside the typed React dashboard
     readRepoFile('src/features/public/PublicTerritorialView.tsx'),
   ])
 
-  assert.doesNotMatch(layout, /PublicMultiCountryDashboard|public-multi-country-dashboard/)
+  assert.doesNotMatch(
+    layout,
+    /PublicMultiCountryDashboard|PublicTerritorialLevelEnhancements|public-multi-country-dashboard|public-territorial-level-enhancements/,
+  )
   assert.doesNotMatch(territorialView, /innerHTML|MutationObserver|setInterval|document\.createElement/)
   assert.match(territorialView, /scopedDioceses\.filter\(isSpecial\)/)
   assert.match(territorialView, /aria-label=\{`Resumen territorial de \$\{scopeTitle\}`\}/)
@@ -28,8 +31,29 @@ test('multi-country territorial rendering stays inside the typed React dashboard
   assert.match(dashboardModel, /scope\.scopeFiltered \|\| country !== 'DO'/)
   assert.match(dashboardModel, /territoriallyLinkedPeople/)
 
-  await assert.rejects(
-    access(new URL('src/features/public/components/public-multi-country-dashboard.tsx', repoRoot)),
-    (error) => error?.code === 'ENOENT',
-  )
+  const retiredBridges = [
+    'src/features/public/components/public-multi-country-dashboard.tsx',
+    'src/features/public/components/public-territorial-level-enhancements.tsx',
+  ]
+  for (const path of retiredBridges) {
+    await assert.rejects(
+      access(new URL(path, repoRoot)),
+      (error) => error?.code === 'ENOENT',
+    )
+  }
+})
+
+test('public feature code does not interpolate data through raw HTML sinks', async () => {
+  const publicFeatureRoot = new URL('src/features/public/', repoRoot)
+  const files = (await readdir(publicFeatureRoot, { recursive: true }))
+    .filter((path) => path.endsWith('.tsx'))
+
+  for (const path of files) {
+    const source = await readFile(new URL(path, publicFeatureRoot), 'utf8')
+    assert.doesNotMatch(
+      source,
+      /\.innerHTML\s*=|insertAdjacentHTML|dangerouslySetInnerHTML/,
+      `${path} must render untrusted data through React text nodes, not raw HTML sinks`,
+    )
+  }
 })
