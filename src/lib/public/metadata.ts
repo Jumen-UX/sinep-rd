@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Metadata } from 'next'
 import { getAppBaseUrl } from '@/lib/appBaseUrl'
+import { isPublicIndexingEnabled } from '@/lib/public/indexing'
 
 export const PUBLIC_SITE_NAME = 'SINEP RD'
 export const PUBLIC_SITE_DESCRIPTION =
@@ -39,12 +40,13 @@ export function buildPublicMetadata({
   const images = image
     ? [{ url: image, alt: imageAlt || title }]
     : undefined
+  const allowIndexing = index && isPublicIndexingEnabled()
 
   return {
     title,
     description,
     alternates: { canonical: canonicalPath },
-    robots: { index, follow: index },
+    robots: { index: allowIndexing, follow: allowIndexing },
     openGraph: {
       title,
       description,
