@@ -9,10 +9,17 @@ type Payload = {
   email?: string
   full_name?: string
   phone?: string
+  country_entity_id?: string
   role_id?: string
   role_key?: string
   scope_type?: string
   scope_entity_id?: string
+}
+
+type ValidatedCountry = {
+  country_entity_id: string
+  country_iso2: string
+  country_name: string
 }
 
 type ValidatedAccess = {
@@ -22,6 +29,7 @@ type ValidatedAccess = {
   scope_type: string
   scope_entity_id: string | null
   scope_label: string
+  country_iso2: string | null
 }
 
 export async function POST(request: Request) {
@@ -38,12 +46,27 @@ export async function POST(request: Request) {
     const email = requiredEmail(payload.email)
     const fullName = optionalText(payload.full_name, 180)
     const phone = optionalText(payload.phone, 80)
+    const countryEntityId = optionalText(payload.country_entity_id, 36)
     const roleId = optionalText(payload.role_id, 36)
     const roleKey = optionalText(payload.role_key, 80)
     const scopeType = optionalText(payload.scope_type, 80) || 'national'
     const scopeEntityId = optionalText(payload.scope_entity_id, 36)
 
+    if (!countryEntityId) {
+      return NextResponse.json({ error: 'Debes seleccionar el país administrativo.' }, { status: 400 })
+    }
+
+    const { data: countryData, error: countryError } = await auth.supabase.rpc('validate_admin_country_scope', {
+      payload: { country_entity_id: countryEntityId },
+    })
+
+    if (countryError) {
+      return NextResponse.json({ error: countryError.message || 'El país administrativo seleccionado no es válido.' }, { status: 400 })
+    }
+
+    const validatedCountry = countryData as ValidatedCountry
     let validatedAccess: ValidatedAccess | null = null
+
     if (roleId || roleKey) {
       const { data, error } = await auth.supabase.rpc('validate_admin_role_scope', {
         payload: {
@@ -57,7 +80,14 @@ export async function POST(request: Request) {
       if (error) {
         return NextResponse.json({ error: error.message || 'El rol o alcance seleccionado no es válido.' }, { status: 400 })
       }
+
       validatedAccess = data as ValidatedAccess
+
+      if (validatedAccess.country_iso2 && validatedAccess.country_iso2 !== validatedCountry.country_iso2) {
+        return NextResponse.json({
+          error: `El alcance del rol pertenece a ${validatedAccess.country_iso2}, pero la cuenta fue asignada a ${validatedCountry.country_iso2}.`,
+        }, { status: 400 })
+      }
     }
 
     const admin = createAdminClient()
@@ -88,13 +118,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: inviteError?.message ?? 'No se pudo invitar el usuario.' }, { status: 400 })
     }
 
-    if (existingUser) {
-      await admin
+    const profileMutation = existingUser
+      ? admin
         .from('profiles')
         .update({ email, full_name: fullName || email, phone: phone || null })
         .eq('id', userId)
-    } else {
-      await admin.from('profiles').upsert({
+      : admin.from('profiles').upsert({
         id: userId,
         email,
         full_name: fullName || email,
@@ -103,6 +132,40 @@ export async function POST(request: Request) {
         onboarding_step: 'profile',
         onboarding_completed_at: null,
       })
+
+    const { error: profileError } = await profileMutation
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message || 'No se pudo preparar el perfil administrativo.' }, { status: 500 })
+    }
+
+    const { data: membership, error: membershipError } = await auth.supabase.rpc(
+      'admin_register_user_country_membership',
+      {
+        payload: {
+          user_id: userId,
+          country_entity_id: validatedCountry.country_entity_id,
+          source_type: 'invitation',
+        },
+      },
+    )
+
+    if (membershipError) {
+      await recordAdminAudit(auth.supabase, {
+        action: 'users.invite',
+        targetTable: 'profiles',
+        targetId: userId,
+        metadata: {
+          email_domain: emailDomain(email),
+          existing_user: existingUser,
+          membership_error: membershipError.message,
+          country_entity_id: validatedCountry.country_entity_id,
+          country_iso2: validatedCountry.country_iso2,
+        },
+      })
+
+      return NextResponse.json({
+        error: membershipError.message || 'La cuenta fue creada, pero no se pudo registrar su país administrativo.',
+      }, { status: 500 })
     }
 
     let assignment = null
@@ -129,10 +192,18 @@ export async function POST(request: Request) {
             role_id: validatedAccess.role_id,
             scope_type: validatedAccess.scope_type,
             scope_entity_id: validatedAccess.scope_entity_id,
+            country_entity_id: validatedCountry.country_entity_id,
+            country_iso2: validatedCountry.country_iso2,
           },
         })
 
-        return NextResponse.json({ user_id: userId, email, existing_user: existingUser, warning: error.message }, { status: 201 })
+        return NextResponse.json({
+          user_id: userId,
+          email,
+          existing_user: existingUser,
+          membership,
+          warning: error.message,
+        }, { status: 201 })
       }
 
       assignment = data
@@ -146,6 +217,8 @@ export async function POST(request: Request) {
         email_domain: emailDomain(email),
         existing_user: existingUser,
         onboarding_state: existingUser ? 'existing_user' : 'pending_invitation',
+        country_entity_id: validatedCountry.country_entity_id,
+        country_iso2: validatedCountry.country_iso2,
         role_assigned: Boolean(validatedAccess),
         role_id: validatedAccess?.role_id ?? null,
         scope_type: validatedAccess?.scope_type ?? null,
@@ -157,7 +230,9 @@ export async function POST(request: Request) {
       user_id: userId,
       email,
       existing_user: existingUser,
+      membership,
       assignment,
+      country_preview: validatedCountry,
       access_preview: validatedAccess,
     }, { status: 201 })
   } catch (error) {
