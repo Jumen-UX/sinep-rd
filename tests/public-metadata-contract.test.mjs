@@ -20,12 +20,14 @@ test('public metadata boundary defines one canonical site identity', () => {
   assert.match(helper, /alternates: \{ canonical: canonicalPath \}/)
 })
 
-test('shared metadata builder provides Open Graph Twitter and robot semantics', () => {
+test('shared metadata builder provides Open Graph Twitter and fail-closed robot semantics', () => {
   assert.match(helper, /siteName: PUBLIC_SITE_NAME/)
   assert.match(helper, /locale: 'es_DO'/)
   assert.match(helper, /twitter:/)
   assert.match(helper, /summary_large_image/)
-  assert.match(helper, /robots: \{ index, follow: index \}/)
+  assert.match(helper, /isPublicIndexingEnabled/)
+  assert.match(helper, /const allowIndexing = index && isPublicIndexingEnabled\(\)/)
+  assert.match(helper, /robots: \{ index: allowIndexing, follow: allowIndexing \}/)
 })
 
 test('main public pages use the shared metadata builder and canonical paths', () => {
