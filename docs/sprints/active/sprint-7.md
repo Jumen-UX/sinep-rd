@@ -21,7 +21,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 7. [x] S7-07 — Acceso flotante a herramientas de accesibilidad.
 8. [x] S7-08 — Responsive, teclado, foco, contraste y lectores de pantalla.
 9. [x] S7-09 — Consolidación de componentes, asistentes y capas heredadas.
-10. [ ] S7-10 — Validación operativa, pruebas autenticadas y cierre. **Reactivada el 2026-07-27.**
+10. [ ] S7-10 — Validación operativa, pruebas autenticadas y cierre. **Reactivada el 2026-07-27; aprovisionamiento técnico preparado, ejecución protegida pendiente.**
 
 ## Estado resumido
 
@@ -31,7 +31,7 @@ Se contrastó el plan UX con la implementación real y se establecieron las brec
 
 ### S7-02 — Completada con validación operativa diferida
 
-Se definió la arquitectura canónica de navegación por permisos y alcance, incluida la matriz de disponibilidad y el selector de ámbito. La ejecución autenticada quedó trasladada a S7-10 porque el secreto `E2E_ACCESS_PROFILES_JSON` necesita reparación.
+Se definió la arquitectura canónica de navegación por permisos y alcance, incluida la matriz de disponibilidad y el selector de ámbito. El contrato protegido de `E2E_ACCESS_PROFILES_JSON` y el ciclo de vida de sus cuentas técnicas están versionados; la ejecución autenticada continúa en S7-10 porque requiere `service_role` y escritura manual del secreto de GitHub Actions.
 
 ### S7-03 — Completada
 
@@ -75,15 +75,16 @@ El detalle de los 18 bloques se mantiene en `docs/sprints/active/sprint-7-s7-09.
 
 S7-10 debe cerrar conjuntamente validación, operación y evidencia:
 
-1. Reparar `E2E_ACCESS_PROFILES_JSON` y ejecutar la matriz autenticada.
-2. Demostrar aislamiento bidireccional entre dos diócesis.
-3. Validar KPIs contextuales con un perfil restringido real.
-4. Ejecutar revisión visual administrativa en modo claro y oscuro.
-5. Ejecutar accesibilidad autenticada sobre los flujos críticos.
-6. Resolver el control de contraseñas filtradas: actualizar Supabase a Pro o superior y activarlo, o registrar formalmente la aceptación temporal del riesgo. El plan Free actual no ofrece esta función.
-7. Ejecutar `pnpm check`, workflows aplicables y CodeQL sobre el commit candidato.
-8. Conservar evidencia operativa sin secretos.
-9. Reconciliar documentación final y cerrar Sprint 7.
+1. Ejecutar `pnpm e2e:access:provision` con la confirmación QA y la clave protegida `service_role`.
+2. Guardar el JSON generado como secreto `E2E_ACCESS_PROFILES_JSON` sin incorporarlo al repositorio.
+3. Ejecutar la matriz autenticada y demostrar aislamiento bidireccional entre dos diócesis.
+4. Validar KPIs contextuales con un perfil restringido real.
+5. Ejecutar revisión visual administrativa en modo claro y oscuro.
+6. Ejecutar accesibilidad autenticada sobre los flujos críticos.
+7. Suspender las cuentas técnicas después de la ronda mediante `pnpm e2e:access:deprovision`.
+8. Resolver el control de contraseñas filtradas: actualizar Supabase a Pro o superior y activarlo, o registrar formalmente la aceptación temporal del riesgo. El plan Free actual no ofrece esta función.
+9. Ejecutar `pnpm check`, workflows aplicables y CodeQL sobre el commit candidato.
+10. Conservar evidencia operativa sin secretos, reconciliar documentación final y cerrar Sprint 7.
 
 ### Avance de reactivación — 2026-07-27
 
@@ -92,7 +93,11 @@ S7-10 debe cerrar conjuntamente validación, operación y evidencia:
 - Se corrigió el reporte final de importaciones para leer `reversal_plan`, que es el campo canónico existente.
 - Se añadió y aplicó la política RLS `import_batch_reversals_select_scoped`; las escrituras permanecen exclusivamente detrás de la RPC auditada.
 - El advisor de seguridad de Supabase ya no reporta la tabla de reversiones. Permanece únicamente la advertencia de contraseñas filtradas, bloqueada por el plan Free.
-- El despliegue Vercel del commit `da6d95c081121abe6c58dce926cf1380a7acc871` completó el build en estado `READY`.
+- Se centralizó la validación de `E2E_ACCESS_PROFILES_JSON`: exige cuatro estados, roles de navegación administrador/consulta y aislamiento A↔B.
+- `scripts/provision-e2e-access-profiles.mjs` crea o actualiza cinco cuentas técnicas mediante la API oficial de Supabase Auth, rota contraseñas, configura perfiles y roles, audita y genera el secreto con permisos `0600`.
+- `scripts/deprovision-e2e-access-profiles.mjs` suspende perfiles y retira roles de forma predeterminada; la eliminación física requiere una segunda confirmación explícita.
+- `.secrets/` está excluido de Git y los contratos prohíben imprimir o persistir contraseñas en auditoría.
+- Los cambios técnicos de aprovisionamiento compilaron en Vercel. La ejecución real sobre Auth, la escritura del secreto y la matriz Playwright siguen pendientes porque requieren credenciales operativas no disponibles en los conectores.
 - La ejecución completa de GitHub CI, CodeQL y E2E autenticado sigue pendiente; un build Vercel correcto no sustituye esas evidencias.
 
 ## Deuda posterior controlada
@@ -126,4 +131,4 @@ No bloquea S7-10 salvo que una prueba demuestre una regresión:
 
 ## Punto de continuación
 
-Continuar S7-10 por la reparación de `E2E_ACCESS_PROFILES_JSON`. Después ejecutar la matriz de acceso, aislamiento entre diócesis, KPIs restringidos, revisión visual claro/oscuro, accesibilidad, CI/CodeQL y cierre documental. La decisión de plan Supabase debe resolverse antes del cierre final o quedar aceptada formalmente como riesgo temporal.
+Ejecutar el aprovisionador con `service_role`, guardar `E2E_ACCESS_PROFILES_JSON`, correr la matriz de acceso y conservar la evidencia A↔B. Después validar KPIs restringidos, revisión visual claro/oscuro, accesibilidad, CI/CodeQL y suspender las cuentas técnicas. La decisión de plan Supabase debe resolverse antes del cierre final o quedar aceptada formalmente como riesgo temporal.
