@@ -9,6 +9,7 @@ import ts from 'typescript'
 const repoRoot = new URL('../', import.meta.url)
 const contextMigration = '20260727204813_add_country_context_to_authorization.sql'
 const writerMigration = '20260727205540_enforce_country_anchored_role_assignments.sql'
+const membershipMigration = '20260727214448_user_country_memberships.sql'
 
 async function compileTypeScriptModule(relativePath, outputName) {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'sinep-country-authorization-'))
@@ -122,6 +123,7 @@ test('repository keeps the exact applied country authorization migration version
 
   assert.equal(files.includes(contextMigration), true)
   assert.equal(files.includes(writerMigration), true)
+  assert.equal(files.includes(membershipMigration), true)
   assert.equal(files.includes('20260727210000_add_country_context_to_authorization.sql'), false)
 })
 
@@ -159,6 +161,25 @@ test('role writers require a country entity and deny global scope to non-super r
   assert.match(migration, /scope_entity_id,country_iso2,diocese_id/)
   assert.match(migration, /'country_iso2',v_country_iso2/)
   assert.match(migration, /app_private\.current_user_has_role\(array\['super_admin'\]\)/)
+})
+
+test('user country membership persists invitation and role sources outside the Data API', async () => {
+  const migration = await readFile(
+    new URL(`supabase/migrations/${membershipMigration}`, repoRoot),
+    'utf8',
+  )
+
+  assert.match(migration, /create table if not exists app_private\.user_country_memberships/)
+  assert.match(migration, /create table if not exists app_private\.user_country_membership_sources/)
+  assert.match(migration, /source_type in \('invitation', 'role_assignment', 'backfill', 'manual'\)/)
+  assert.match(migration, /alter table app_private\.user_country_memberships enable row level security/)
+  assert.match(migration, /revoke all on table app_private\.user_country_memberships from public, anon, authenticated/)
+  assert.match(migration, /ensure_user_country_membership/)
+  assert.match(migration, /sync_role_assignment_country_membership/)
+  assert.match(migration, /current_user_can_manage_user/)
+  assert.match(migration, /admin_register_user_country_membership/)
+  assert.match(migration, /where app_private\.current_user_can_manage_user\(auth_user\.id\)/)
+  assert.match(migration, /role_row\.key <> 'super_admin'/)
 })
 
 test('country-backed national administrator is restricted and labeled with its country', async () => {
@@ -212,11 +233,12 @@ test('navigation query includes country context and no longer globalizes nationa
   assert.doesNotMatch(source, /\['super_admin', 'national_admin'\]/)
 })
 
-test('user access and invitation flows require a country selector for national roles', async () => {
-  const [accessPage, invitePage, serviceSource] = await Promise.all([
+test('invitation flow requires and persists an administrative country before optional role assignment', async () => {
+  const [accessPage, invitePage, serviceSource, routeSource] = await Promise.all([
     readFile(new URL('src/features/access/admin/UserAccessPage.tsx', repoRoot), 'utf8'),
     readFile(new URL('src/features/access/admin/InviteUserPage.tsx', repoRoot), 'utf8'),
     readFile(new URL('src/features/access/services/user-access-admin-service.ts', repoRoot), 'utf8'),
+    readFile(new URL('src/app/api/admin/users/create-invite/route.ts', repoRoot), 'utf8'),
   ])
 
   assert.equal(scopeNeedsEntity('national'), true)
@@ -224,7 +246,13 @@ test('user access and invitation flows require a country selector for national r
   assert.equal(scopeNeedsEntity('global'), false)
   assert.equal(userScopeTypes.find((scope) => scope.value === 'national')?.label, 'País')
   assert.match(accessPage, /scopeNeedsEntity\(selectedScopeType\)/)
-  assert.match(invitePage, /scopeNeedsEntity\(scopeType\)/)
+  assert.match(invitePage, /País administrativo/)
+  assert.match(invitePage, /countryOptions\.filter|scopeOptions\.filter/)
+  assert.match(invitePage, /countryEntityId/)
+  assert.match(serviceSource, /country_entity_id: input\.countryEntityId/)
   assert.match(serviceSource, /scope_entity_id: input\.roleId && scopeNeedsEntity\(input\.scopeType\)/)
+  assert.match(routeSource, /validate_admin_country_scope/)
+  assert.match(routeSource, /admin_register_user_country_membership/)
+  assert.match(routeSource, /validatedAccess\.country_iso2 !== validatedCountry\.country_iso2/)
   assert.doesNotMatch(serviceSource, /!\['national', 'global'\]\.includes\(scopeType\)/)
 })
