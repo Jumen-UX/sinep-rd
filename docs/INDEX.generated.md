@@ -7,6 +7,7 @@
 ## architecture
 
 - [Arquitectura de SINEP RD](./architecture/ARQUITECTURA.md) — vigente
+- [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md) — fase 1 aplicada; fase 2 pendiente
 - [Autorización, alcance y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md) — vigente
 - [Contrato de renderizado, caché y revalidación](./architecture/RENDERING_CACHE_CONTRACT.md) — activo
 - [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md) — vigente
@@ -66,7 +67,7 @@
 - [Sprint 5 — Eventos y evolución institucional](./sprints/active/sprint-5.md) — completado
 - [Sprint 6 — Estrategia CSV y XLSX](./sprints/active/sprint-6-csv-xlsx-strategy.md) — referencia técnica vigente
 - [Sprint 6 — Importaciones y calidad de datos](./sprints/active/sprint-6.md) — completado
-- [Sprint 7 — Portal administrativo y experiencia de usuario](./sprints/active/sprint-7.md) — diferido
+- [Sprint 7 — Portal administrativo y experiencia de usuario](./sprints/active/sprint-7.md) — en progreso
 - [Sprint 7 · S7-07 — Herramientas de accesibilidad](./sprints/active/sprint-7-s7-07.md) — completada y validada
 - [Sprint 7 · S7-08 — Responsive y accesibilidad transversal](./sprints/active/sprint-7-s7-08.md) — completada y validada
 - [Sprint 7 · S7-09 — Consolidación de componentes](./sprints/active/sprint-7-s7-09.md) — completada
