@@ -7,7 +7,9 @@ export function buildPublicDashboardScope(
   province: string,
   jurisdictionId: string,
 ) {
-  const countryDioceses = initialData.dioceses.filter((item) => !item.country_iso2 || item.country_iso2 === country)
+  const countryDioceses = initialData.dioceses.filter((item) => (
+    item.country_iso2 ? item.country_iso2 === country : country === 'DO'
+  ))
   const provinceMap = new Map<string, number>()
   countryDioceses.filter((item) => !isSpecial(item)).forEach((item) => {
     const name = item.ecclesiastical_province_name
@@ -23,11 +25,11 @@ export function buildPublicDashboardScope(
   const scopedIds = new Set(scopedDioceses.map((item) => item.id))
   const scopedSlugs = new Set(scopedDioceses.map((item) => item.slug))
   const scopeFiltered = Boolean(province || selectedJurisdiction)
-  const inScope = (dioceseId: string | null, dioceseSlug: string | null) => !scopeFiltered || Boolean(
+  const inTerritorialScope = (dioceseId: string | null, dioceseSlug: string | null) => Boolean(
     (dioceseId && scopedIds.has(dioceseId)) || (dioceseSlug && scopedSlugs.has(dioceseSlug)),
   )
-  const scopedParishes = initialData.parishes.filter((item) => inScope(item.diocese_id, item.diocese_slug))
-  const scopedPastoral = initialData.organization_units.filter((item) => inScope(item.ecclesiastical_entity_id, item.ecclesiastical_entity_slug))
+  const scopedParishes = initialData.parishes.filter((item) => inTerritorialScope(item.diocese_id, item.diocese_slug))
+  const scopedPastoral = initialData.organization_units.filter((item) => inTerritorialScope(item.ecclesiastical_entity_id, item.ecclesiastical_entity_slug))
   const pastoralGroups = Array.from(scopedPastoral.reduce((map, item) => {
     const name = item.organization_chart_name ?? 'Sin organigrama configurado'
     const group = map.get(name) ?? {
@@ -43,7 +45,7 @@ export function buildPublicDashboardScope(
     .sort((a, b) => a.order - b.order)
 
   const assignmentPeople = Array.from(new Map(initialData.assignments
-    .filter((item) => !scopeFiltered || assignmentMatches(item, scopedSlugs))
+    .filter((item) => assignmentMatches(item, scopedSlugs))
     .map((item) => [item.person_id, {
       id: item.person_id,
       name: item.person_name ?? 'Persona sin nombre',
