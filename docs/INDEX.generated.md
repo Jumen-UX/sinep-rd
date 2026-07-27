@@ -7,7 +7,7 @@
 ## architecture
 
 - [Arquitectura de SINEP RD](./architecture/ARQUITECTURA.md) — vigente
-- [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md) — fase 2 en progreso; usuarios y acceso migrados
+- [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md) — fase 2 en progreso; usuarios y autorización base de entidades migrados
 - [Autorización, alcance y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md) — vigente
 - [Contrato de renderizado, caché y revalidación](./architecture/RENDERING_CACHE_CONTRACT.md) — activo
 - [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md) — vigente
