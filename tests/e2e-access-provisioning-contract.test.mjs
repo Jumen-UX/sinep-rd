@@ -32,7 +32,8 @@ test('generated credentials remain outside version control and are not printed',
   assert.match(script, /mode: 0o600/)
   assert.match(script, /chmod\(absolutePath, 0o600\)/)
   assert.match(gitignore, /^\.secrets\/$/m)
-  assert.doesNotMatch(script, /console\.log\([^\n]*(password|JSON\.stringify\(matrix)/i)
+  assert.doesNotMatch(script, /console\.log\([^\n]*password/i)
+  assert.doesNotMatch(script, /console\.log\([^\n]*JSON\.stringify\(matrix/i)
 })
 
 test('provisioned matrix covers every access state and bidirectional roles', () => {
