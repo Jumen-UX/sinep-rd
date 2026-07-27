@@ -16,11 +16,13 @@ const [
   readFile('docs/sprints/active/sprint-8.md', 'utf8'),
 ])
 
-test('technical README links the canonical operational documentation', () => {
+test('technical README links canonical operations and the dual launch gate', () => {
   assert.match(readme, /OPERACION_Y_RECUPERACION\.md/)
   assert.match(readme, /OBSERVABILITY_CONTRACT\.md/)
   assert.match(readme, /DESPLIEGUE_MIGRACION_RESTAURACION\.md/)
   assert.match(readme, /PUBLIC_INDEXING_ENABLED/)
+  assert.match(readme, /PUBLIC_LAUNCH_APPROVED/)
+  assert.match(readme, /S7-10 está reactivado/)
 })
 
 test('administrator manual reflects canonical search and incident correlation', () => {
@@ -30,11 +32,12 @@ test('administrator manual reflects canonical search and incident correlation', 
   assert.match(adminManual, /request_id/)
 })
 
-test('deployment guide separates release migration rollback and restoration evidence', () => {
+test('deployment guide separates release migration rollback restoration and indexing evidence', () => {
   for (const section of [
     '## Precondiciones',
     '## Migraciones de Supabase',
     '## Despliegue de la aplicación',
+    '## Apertura a buscadores',
     '## Retroceso',
     '## Restauración',
     '## Evidencia mínima',
@@ -44,6 +47,8 @@ test('deployment guide separates release migration rollback and restoration evid
 
   assert.match(operationsGuide, /pnpm audit:migrations:strict/)
   assert.match(operationsGuide, /pnpm health:check/)
+  assert.match(operationsGuide, /PUBLIC_INDEXING_ENABLED=true/)
+  assert.match(operationsGuide, /PUBLIC_LAUNCH_APPROVED=true/)
   assert.match(operationsGuide, /entorno aislado/)
   assert.match(operationsGuide, /pendiente operativo de beta/)
   assert.doesNotMatch(operationsGuide, /sb_secret|postgres:\/\/|SUPABASE_SERVICE_ROLE_KEY=/i)
@@ -54,11 +59,12 @@ test('documentation index links manuals and the deployment guide', () => {
   assert.match(docsIndex, /DESPLIEGUE_MIGRACION_RESTAURACION\.md/)
 })
 
-test('sprint 8 closes documentation while keeping operational beta evidence separate', () => {
+test('sprint 8 keeps technical closure separate from active operational evidence', () => {
   assert.match(sprint, /\[x\] S8-09/)
-  assert.match(sprint, /CI #29762403699/)
   assert.match(sprint, /\[x\] S8-10/)
-  assert.match(sprint, /CI #29762568671/)
   assert.match(sprint, /S8-01 a S8-10 están completados técnicamente/)
+  assert.match(sprint, /S7-10 permanece en progreso/)
   assert.match(sprint, /Pendientes operativos de beta/)
+  assert.match(sprint, /PUBLIC_LAUNCH_APPROVED/)
+  assert.match(sprint, /requieren una nueva evidencia CI\/E2E/)
 })
