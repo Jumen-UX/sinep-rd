@@ -1,7 +1,7 @@
 # Documentación de SINEP RD
 
 > Estado: vigente
-> Última revisión: 2026-07-20
+> Última revisión: 2026-07-27
 
 Este índice apunta a documentación canónica y activa. Los cierres y resultados históricos se conservan bajo `archive` y no definen el estado actual.
 
@@ -11,7 +11,8 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 |---|---|
 | Entender el propósito del sistema | [Plan Maestro](./product/PLAN_MAESTRO.md) |
 | Consultar prioridades y estado | [Hoja de ruta](./product/ROADMAP.md) |
-| Continuar el sprint activo | [Sprint 8](./sprints/active/sprint-8.md) |
+| Continuar el cierre operativo activo | [Sprint 7](./sprints/active/sprint-7.md) |
+| Consultar la referencia técnica de rendimiento | [Sprint 8](./sprints/active/sprint-8.md) |
 | Entender la arquitectura | [Arquitectura](./architecture/ARQUITECTURA.md) |
 | Crear o mover módulos | [Convención de módulos](./architecture/CONVENCION_MODULOS.md) |
 | Implementar estructuras | [Modelo estructural canónico](./architecture/MODELO_ESTRUCTURAL_CANONICO.md) |
@@ -19,6 +20,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 | Cambiar PostgreSQL o Supabase | [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md) |
 | Revisar privacidad o RLS | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
 | Revisar permisos, alcance o auditoría | [Autorización y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md) |
+| Implementar administración multi-país | [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md) |
 | Confirmar tecnologías | [Stack oficial](./architecture/STACK_OFICIAL.md) |
 | Crear o rediseñar una pantalla | [Sistema de diseño](./design/SISTEMA_DE_DISENO.md), [matriz de validación visual](./design/MATRIZ_VALIDACION_VISUAL_UX.md) y [Estándares web](./standards/ESTANDARES_WEB_SINEP_RD.md) |
 | Planificar UX | [UX](./product/UX.md) y [backlog UX activo](./sprints/active/ux-backlog.md) |
@@ -46,6 +48,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 - [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md).
 - [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md).
 - [Autorización y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md).
+- [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md).
 - [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md).
 - [Stack oficial](./architecture/STACK_OFICIAL.md).
 
@@ -67,7 +70,8 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 
 ### Trabajo activo
 
-- [Sprint 8](./sprints/active/sprint-8.md).
+- [Sprint 7](./sprints/active/sprint-7.md).
+- [Sprint 8](./sprints/active/sprint-8.md) como referencia técnica del bloque completado.
 - [Backlog UX](./sprints/active/ux-backlog.md).
 
 ## Archivo histórico
@@ -91,7 +95,7 @@ Una discrepancia entre código y norma vigente debe resolverse; no se considera 
 
 - Todo documento normativo o activo debe declarar estado y fecha de revisión.
 - Solo existe una hoja de ruta vigente.
-- Solo un sprint funcional aparece como activo.
+- Solo un sprint funcional aparece como activo; documentos técnicos completados pueden mantenerse como referencia.
 - Los resultados puntuales se archivan al cerrar el sprint.
 - No crear archivos `COMPLETE`, `FINAL` o `SUMMARY` en la raíz de `docs`.
 - Actualizar este índice al añadir o sustituir una referencia vigente.
