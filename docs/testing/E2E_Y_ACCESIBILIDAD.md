@@ -1,7 +1,7 @@
 # E2E y accesibilidad
 
 > Estado: vigente
-> Última revisión: 2026-07-21
+> Última revisión: 2026-07-27
 > Propietario: ingeniería y frontend
 
 ## Objetivo
@@ -61,50 +61,80 @@ Se usa para recorridos administrativos preparados para pruebas. Debe ejecutarse 
 pnpm test:e2e:access
 ```
 
-Requiere `E2E_ACCESS_PROFILES_JSON`. La matriz verifica estado de acceso, navegación autorizada y aislamiento de alcance sin escribir secretos en el repositorio.
+Requiere `E2E_ACCESS_PROFILES_JSON`. La matriz verifica:
 
-Cuando la variable está configurada debe incluir, como mínimo, dos perfiles `ready` no productivos:
+- estado efectivo de acceso y redirección;
+- navegación visible y oculta por rol;
+- módulos identificados como `Consulta`;
+- etiqueta del ámbito activo;
+- entidad propia visible;
+- entidad ajena no visible;
+- aislamiento bidireccional entre dos ámbitos.
 
-- un administrador representativo con `navigationRole: "administrator"`;
-- un perfil de consulta con `navigationRole: "viewer"`.
+Antes de instalar Playwright puede validarse únicamente el contrato del secreto:
 
-Cada perfil `ready` debe declarar `expectedNavigation` con estas listas:
+```bash
+node scripts/validate-e2e-access-profiles.mjs
+```
 
-- `visible`: rutas que deben aparecer en la navegación lateral;
-- `hidden`: rutas que no deben renderizarse;
-- `readOnly`: rutas visibles que deben mostrar el estado `Consulta`.
+El comando lee `E2E_ACCESS_PROFILES_JSON`, no imprime correos ni contraseñas y falla si la cobertura es incompleta.
 
-`readOnly` debe ser subconjunto de `visible`, y una ruta no puede aparecer simultáneamente en `visible` y `hidden`. `expectedScopeLabel` permite comprobar el alcance activo mostrado al usuario.
+### Cobertura obligatoria
 
-Ejemplo estructural sin credenciales reales:
+La matriz completa debe incluir los cuatro estados:
+
+- `ready`;
+- `onboarding`;
+- `no_role`;
+- `blocked`.
+
+Entre los perfiles `ready` debe existir:
+
+- al menos un perfil con `navigationRole: "administrator"`;
+- al menos un perfil con `navigationRole: "viewer"`;
+- una pareja A↔B donde `ownEntityId` de cada perfil sea `forbiddenEntityId` del otro;
+- `expectedScopeLabel`;
+- `expectedNavigation.visible`;
+- `expectedNavigation.hidden`;
+- `expectedNavigation.readOnly`.
+
+`readOnly` debe ser subconjunto de `visible`, y una ruta no puede aparecer simultáneamente en `visible` y `hidden`. Las rutas admitidas deben comenzar por `/admin`. Los IDs deben ser UUID válidos y pertenecer al mismo entorno contra el que se ejecuta la prueba.
+
+### Ejemplo estructural
+
+El siguiente ejemplo no contiene credenciales ni IDs reales:
 
 ```json
 [
   {
-    "label": "Administrador nacional E2E",
-    "email": "admin-e2e@example.invalid",
+    "label": "Administrador diócesis A",
+    "email": "admin-a-e2e@example.invalid",
     "password": "REEMPLAZAR_EN_SECRETO",
     "expectedState": "ready",
     "navigationRole": "administrator",
-    "expectedScopeLabel": "Ámbito nacional",
+    "expectedScopeLabel": "Diócesis A",
     "expectedNavigation": {
       "visible": [
         "/admin/nuevo",
         "/admin/personas",
-        "/admin/usuarios",
+        "/admin/jurisdicciones"
+      ],
+      "hidden": [
         "/admin/configuracion"
       ],
-      "hidden": [],
       "readOnly": []
     },
+    "ownEntityId": "11111111-1111-4111-8111-111111111111",
+    "forbiddenEntityId": "22222222-2222-4222-8222-222222222222",
     "minimumVisibleDioceses": 1
   },
   {
-    "label": "Consulta interna E2E",
-    "email": "viewer-e2e@example.invalid",
+    "label": "Consulta diócesis B",
+    "email": "viewer-b-e2e@example.invalid",
     "password": "REEMPLAZAR_EN_SECRETO",
     "expectedState": "ready",
     "navigationRole": "viewer",
+    "expectedScopeLabel": "Diócesis B",
     "expectedNavigation": {
       "visible": [
         "/admin/jurisdicciones",
@@ -120,12 +150,47 @@ Ejemplo estructural sin credenciales reales:
         "/admin/jurisdicciones",
         "/admin/personas"
       ]
-    }
+    },
+    "ownEntityId": "22222222-2222-4222-8222-222222222222",
+    "forbiddenEntityId": "11111111-1111-4111-8111-111111111111",
+    "minimumVisibleDioceses": 1
+  },
+  {
+    "label": "Onboarding pendiente",
+    "email": "onboarding-e2e@example.invalid",
+    "password": "REEMPLAZAR_EN_SECRETO",
+    "expectedState": "onboarding"
+  },
+  {
+    "label": "Perfil sin rol",
+    "email": "no-role-e2e@example.invalid",
+    "password": "REEMPLAZAR_EN_SECRETO",
+    "expectedState": "no_role"
+  },
+  {
+    "label": "Perfil bloqueado",
+    "email": "blocked-e2e@example.invalid",
+    "password": "REEMPLAZAR_EN_SECRETO",
+    "expectedState": "blocked"
   }
 ]
 ```
 
-Las rutas del ejemplo deben ajustarse a los permisos y alcances reales de las cuentas de prueba. El secreto completo solo debe almacenarse como `E2E_ACCESS_PROFILES_JSON` en GitHub Actions o en un entorno local protegido.
+Las rutas, etiquetas e IDs deben ajustarse a los permisos y alcances reales de las cuentas de prueba. El secreto completo solo debe almacenarse como `E2E_ACCESS_PROFILES_JSON` en GitHub Actions o en un entorno local protegido.
+
+### Prerequisito de datos
+
+La existencia del secreto no crea cuentas ni alcances. Antes de configurarlo deben existir cuentas técnicas dedicadas y no productivas con:
+
+1. onboarding completo para los perfiles `ready`;
+2. roles diferentes para navegación administrativa y consulta;
+3. dos alcances territoriales mutuamente excluyentes;
+4. un perfil en onboarding;
+5. un perfil autenticable sin rol activo;
+6. un perfil suspendido o bloqueado;
+7. contraseñas conocidas únicamente por quien administra el secreto.
+
+La revisión del 2026-07-27 encontró cuentas nacionales activas, pero ninguna asignación con alcance diocesano. Por tanto, el aislamiento A↔B requiere aprovisionar primero dos cuentas o reasignaciones técnicas en diócesis distintas. No debe simularse modificando el test para aceptar alcance nacional.
 
 ## Escenarios mutantes
 
@@ -143,7 +208,9 @@ Los workflows canónicos son:
 - `E2E / Public accessibility`: Playwright, Chromium y Axe sobre rutas públicas cubiertas;
 - `E2E / Admin access matrix`: navegación autenticada y aislamiento de alcance para perfiles protegidos.
 
-`E2E / Admin access matrix` levanta la aplicación localmente cuando cambian el shell, la navegación, el acceso o la propia matriz. En ejecuciones automáticas por `push`, la ausencia de `E2E_ACCESS_PROFILES_JSON` registra una omisión controlada sin instalar Chromium. En una ejecución manual, la ausencia del secreto falla explícitamente para impedir que un resultado verde se interprete como una validación autenticada real.
+`E2E / Admin access matrix` levanta la aplicación localmente cuando cambian el shell, la navegación, el acceso, el validador o la propia matriz. En ejecuciones automáticas por `push`, la ausencia de `E2E_ACCESS_PROFILES_JSON` registra una omisión controlada sin instalar Chromium. En una ejecución manual, la ausencia del secreto falla explícitamente para impedir que un resultado verde se interprete como una validación autenticada real.
+
+Cuando el secreto existe, el workflow valida su esquema y cobertura antes de instalar dependencias. Un JSON sintácticamente correcto pero incompleto falla de forma explícita.
 
 La matriz también puede ejecutarse manualmente desde `CI` indicando `base_url`. Ese job usa el mismo secreto protegido y permite validar un despliegue específico.
 
