@@ -1,0 +1,185 @@
+import assert from 'node:assert/strict'
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import test from 'node:test'
+import { pathToFileURL } from 'node:url'
+import ts from 'typescript'
+
+const repoRoot = new URL('../', import.meta.url)
+const expectedMigration = '20260727204813_add_country_context_to_authorization.sql'
+
+async function compileNavigationService() {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'sinep-country-navigation-'))
+  const source = await readFile(
+    new URL('src/features/admin/navigation/admin-navigation-service.ts', repoRoot),
+    'utf8',
+  )
+  const output = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText
+  const outputPath = path.join(temporaryDirectory, 'admin-navigation-service.mjs')
+  await writeFile(outputPath, output, 'utf8')
+
+  return {
+    module: await import(pathToFileURL(outputPath).href),
+    cleanup: () => rm(temporaryDirectory, { recursive: true, force: true }),
+  }
+}
+
+function queryResult(value) {
+  return Promise.resolve({ data: value, error: null })
+}
+
+function assignmentQuery(assignments) {
+  let filters = 0
+  const query = {
+    select() {
+      return query
+    },
+    eq() {
+      filters += 1
+      return filters >= 2 ? queryResult(assignments) : query
+    },
+  }
+  return query
+}
+
+function namedQuery(rows) {
+  return {
+    select() {
+      return {
+        in() {
+          return queryResult(rows)
+        },
+      }
+    },
+  }
+}
+
+function fakeSupabase(assignments) {
+  return {
+    auth: {
+      getUser: async () => ({
+        data: { user: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' } },
+        error: null,
+      }),
+    },
+    rpc: async () => ({
+      data: {
+        user_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        profile_status: 'active',
+        access_state: 'ready',
+      },
+      error: null,
+    }),
+    from(table) {
+      if (table === 'user_role_assignments') return assignmentQuery(assignments)
+      if (table === 'ecclesiastical_entities') {
+        return namedQuery([
+          {
+            id: '60000000-0000-4000-8000-000000000001',
+            name: 'República Dominicana',
+          },
+        ])
+      }
+      return namedQuery([])
+    },
+  }
+}
+
+const fixture = await compileNavigationService()
+test.after(async () => fixture.cleanup())
+
+const { loadAdminNavigationContext } = fixture.module
+
+function role(key, name) {
+  return {
+    key,
+    name,
+    role_permissions: [
+      { permissions: [{ key: 'entities.view', module: 'entities' }] },
+    ],
+  }
+}
+
+test('repository keeps the exact applied country-context migration version', async () => {
+  const migrationDirectory = new URL('supabase/migrations/', repoRoot)
+  const files = await readdir(migrationDirectory)
+
+  assert.equal(files.includes(expectedMigration), true)
+  assert.equal(files.includes('20260727210000_add_country_context_to_authorization.sql'), false)
+})
+
+test('country migration derives and audits canonical country context without globalizing super admin', async () => {
+  const migration = await readFile(
+    new URL(`supabase/migrations/${expectedMigration}`, repoRoot),
+    'utf8',
+  )
+
+  assert.match(migration, /add column if not exists country_iso2 char\(2\)/)
+  assert.match(migration, /references public\.country_catalog\(iso2\)/)
+  assert.match(migration, /resolve_entity_country_iso2/)
+  assert.match(migration, /resolve_scope_country_iso2/)
+  assert.match(migration, /current_user_country_iso2s/)
+  assert.match(migration, /current_user_can_access_country/)
+  assert.match(migration, /role_row\.key <> 'super_admin'/)
+  assert.match(migration, /role_row\.key = 'super_admin'/)
+  assert.match(migration, /new\.country_iso2 := null/)
+  assert.match(migration, /derive_role_assignment_country_context/)
+  assert.match(migration, /derive_audit_country_context/)
+})
+
+test('country-backed national administrator is restricted and labeled with its country', async () => {
+  const context = await loadAdminNavigationContext(fakeSupabase([
+    {
+      role_id: '11111111-1111-4111-8111-111111111111',
+      scope_type: 'national',
+      scope_entity_id: '60000000-0000-4000-8000-000000000001',
+      country_iso2: 'DO',
+      starts_at: '2026-01-01',
+      ends_at: null,
+      status: 'active',
+      roles: role('national_admin', 'Administrador nacional'),
+    },
+  ]))
+
+  assert.equal(context.activeScope.type, 'national')
+  assert.equal(context.activeScope.label, 'República Dominicana')
+  assert.equal(context.activeScope.isUnrestricted, false)
+  assert.equal(context.roles[0].isUnrestricted, false)
+})
+
+test('super administrator remains the only role treated as globally unrestricted', async () => {
+  const context = await loadAdminNavigationContext(fakeSupabase([
+    {
+      role_id: '22222222-2222-4222-8222-222222222222',
+      scope_type: 'national',
+      scope_entity_id: null,
+      country_iso2: null,
+      starts_at: '2026-01-01',
+      ends_at: null,
+      status: 'active',
+      roles: role('super_admin', 'Superadministrador'),
+    },
+  ]))
+
+  assert.equal(context.activeScope.label, 'Ámbito nacional')
+  assert.equal(context.activeScope.isUnrestricted, true)
+  assert.equal(context.roles[0].isUnrestricted, true)
+})
+
+test('navigation query includes country context and no longer globalizes national_admin by role name', async () => {
+  const source = await readFile(
+    new URL('src/features/admin/navigation/admin-navigation-service.ts', repoRoot),
+    'utf8',
+  )
+
+  assert.match(source, /scope_entity_id,country_iso2,diocese_id/)
+  assert.match(source, /const unrestrictedRoleKeys = new Set\(\['super_admin'\]\)/)
+  assert.match(source, /scopeType === 'national' && !countryIso2/)
+  assert.doesNotMatch(source, /\['super_admin', 'national_admin'\]/)
+})
