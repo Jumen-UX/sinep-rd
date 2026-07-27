@@ -121,7 +121,41 @@ Ejemplo estructural sin credenciales reales:
 
 La prueba no muta datos ni imprime correos o contraseñas. Comprueba redirección, navegación por rol, etiqueta de alcance, módulos de consulta y visibilidad territorial.
 
-La existencia del secreto no crea cuentas. Deben aprovisionarse previamente cuentas técnicas en un entorno autorizado. La revisión del 2026-07-27 encontró cuentas nacionales activas, pero ninguna asignación con alcance diocesano; por tanto, el aislamiento A↔B sigue bloqueado hasta crear o reasignar dos cuentas técnicas en diócesis distintas.
+### Aprovisionamiento seguro de cuentas técnicas
+
+Las cuentas se crean mediante la API administrativa oficial de Supabase Auth. No se insertan filas directamente en `auth.users`. El comando requiere una clave `service_role` exclusivamente en el servidor y falla si no se confirma de forma explícita que el destino es un entorno QA autorizado.
+
+Variables por defecto:
+
+- dominio reservado `example.test`;
+- entidad A `test-arquidiocesis-ozama`;
+- entidad B `test-diocesis-monte-azul`;
+- salida `.secrets/e2e-access-profiles.json`, ignorada por Git y con permisos `0600`.
+
+Ejecución:
+
+```bash
+E2E_PROVISION_CONFIRM=PROVISION_NON_PRODUCTION_E2E \
+pnpm e2e:access:provision
+```
+
+El aprovisionador:
+
+1. resuelve las dos diócesis y los roles `diocesan_admin` e `internal_viewer`;
+2. crea o actualiza cinco cuentas dedicadas y rota sus contraseñas;
+3. configura los cuatro estados de entrada administrativa;
+4. reemplaza de forma idempotente las asignaciones de rol;
+5. registra la operación en `audit_logs` sin persistir contraseñas;
+6. verifica perfiles y alcances antes de generar el JSON protegido.
+
+Después de ejecutarlo:
+
+1. abre **GitHub → Settings → Secrets and variables → Actions**;
+2. crea o reemplaza `E2E_ACCESS_PROFILES_JSON` con el contenido completo del archivo generado;
+3. elimina el archivo local cuando el secreto haya sido guardado;
+4. ejecuta manualmente `E2E / Admin access matrix`.
+
+Nunca ejecutes el aprovisionador contra datos institucionales reales ni habilites `E2E_ALLOW_NON_TEST_ENTITIES=true` sin una decisión de operación registrada. La revisión actual mantiene S7-10 pendiente hasta ejecutar este procedimiento y conservar la evidencia del workflow.
 
 ## Piloto mutante `create + noop` de personas
 
