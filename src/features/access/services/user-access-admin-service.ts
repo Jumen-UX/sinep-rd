@@ -7,6 +7,7 @@ export type RoleAssignment = {
   role_name: string
   scope_type: string
   scope_entity_id: string | null
+  country_iso2: string | null
   diocese_id: string | null
   pastoral_area_id: string | null
   organization_unit_id: string | null
@@ -101,7 +102,7 @@ export type InviteUserResult = {
 }
 
 export const userScopeTypes = [
-  { value: 'national', label: 'Nacional' },
+  { value: 'national', label: 'País' },
   { value: 'diocese', label: 'Diócesis' },
   { value: 'vicariate', label: 'Vicaría' },
   { value: 'zone', label: 'Zona pastoral' },
@@ -150,7 +151,7 @@ export function getUserOnboardingLabel(user: UserRow) {
 }
 
 export function scopeNeedsEntity(scopeType: string) {
-  return !['national', 'global'].includes(scopeType)
+  return scopeType !== 'global'
 }
 
 export function getScopeLabel(scopeType: string) {
