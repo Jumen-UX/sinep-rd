@@ -54,6 +54,7 @@ type RawAssignment = {
   role_id?: string
   scope_type?: string
   scope_entity_id?: string | null
+  country_iso2?: string | null
   diocese_id?: string | null
   pastoral_area_id?: string | null
   organization_unit_id?: string | null
@@ -68,7 +69,7 @@ type NamedRow = {
   name: string | null
 }
 
-const unrestrictedRoleKeys = new Set(['super_admin', 'national_admin'])
+const unrestrictedRoleKeys = new Set(['super_admin'])
 
 const scopeLabels: Record<string, string> = {
   global: 'Ámbito global',
@@ -131,6 +132,15 @@ function scopePriority(scope: AdminNavigationScope) {
   return priorities[scope.type] ?? 100
 }
 
+function assignmentIsUnrestricted(
+  roleKey: string,
+  scopeType: string,
+  countryIso2: string | null | undefined,
+) {
+  if (unrestrictedRoleKeys.has(roleKey) || scopeType === 'global') return true
+  return scopeType === 'national' && !countryIso2
+}
+
 async function loadNames(
   supabase: SupabaseClient,
   table: 'ecclesiastical_entities' | 'structure_nodes' | 'pastoral_areas' | 'organization_units',
@@ -168,6 +178,7 @@ async function resolveScopeNames(
     if (!entityId) continue
 
     switch (assignment.scope_type) {
+      case 'national':
       case 'diocese':
       case 'parish':
         idsBySource.ecclesiastical_entities.add(entityId)
@@ -232,7 +243,7 @@ export async function loadAdminNavigationContext(
     supabase.rpc('get_my_admin_entry_context'),
     supabase
       .from('user_role_assignments')
-      .select('role_id,scope_type,scope_entity_id,diocese_id,pastoral_area_id,organization_unit_id,starts_at,ends_at,status,roles(key,name,role_permissions(permissions(key,module)))')
+      .select('role_id,scope_type,scope_entity_id,country_iso2,diocese_id,pastoral_area_id,organization_unit_id,starts_at,ends_at,status,roles(key,name,role_permissions(permissions(key,module)))')
       .eq('user_id', userData.user.id)
       .eq('status', 'active'),
   ])
@@ -258,7 +269,7 @@ export async function loadAdminNavigationContext(
     const roleKey = role?.key ?? 'administrative_role'
     const scopeType = assignment.scope_type || 'entity'
     const entityId = assignmentEntityId(assignment)
-    const isUnrestricted = unrestrictedRoleKeys.has(roleKey) || ['global', 'national'].includes(scopeType)
+    const isUnrestricted = assignmentIsUnrestricted(roleKey, scopeType, assignment.country_iso2)
     const label = isUnrestricted
       ? fallbackScopeLabel(scopeType, null)
       : names.get(entityId ?? '') ?? fallbackScopeLabel(scopeType, entityId)
