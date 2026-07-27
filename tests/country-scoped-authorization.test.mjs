@@ -7,7 +7,8 @@ import { pathToFileURL } from 'node:url'
 import ts from 'typescript'
 
 const repoRoot = new URL('../', import.meta.url)
-const expectedMigration = '20260727204813_add_country_context_to_authorization.sql'
+const contextMigration = '20260727204813_add_country_context_to_authorization.sql'
+const writerMigration = '20260727205540_enforce_country_anchored_role_assignments.sql'
 
 async function compileNavigationService() {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'sinep-country-navigation-'))
@@ -106,17 +107,18 @@ function role(key, name) {
   }
 }
 
-test('repository keeps the exact applied country-context migration version', async () => {
+test('repository keeps the exact applied country authorization migration versions', async () => {
   const migrationDirectory = new URL('supabase/migrations/', repoRoot)
   const files = await readdir(migrationDirectory)
 
-  assert.equal(files.includes(expectedMigration), true)
+  assert.equal(files.includes(contextMigration), true)
+  assert.equal(files.includes(writerMigration), true)
   assert.equal(files.includes('20260727210000_add_country_context_to_authorization.sql'), false)
 })
 
-test('country migration derives and audits canonical country context without globalizing super admin', async () => {
+test('country context migration derives and audits country without globalizing super admin', async () => {
   const migration = await readFile(
-    new URL(`supabase/migrations/${expectedMigration}`, repoRoot),
+    new URL(`supabase/migrations/${contextMigration}`, repoRoot),
     'utf8',
   )
 
@@ -131,6 +133,23 @@ test('country migration derives and audits canonical country context without glo
   assert.match(migration, /new\.country_iso2 := null/)
   assert.match(migration, /derive_role_assignment_country_context/)
   assert.match(migration, /derive_audit_country_context/)
+})
+
+test('role writers require a country entity and deny global scope to non-super roles', async () => {
+  const migration = await readFile(
+    new URL(`supabase/migrations/${writerMigration}`, repoRoot),
+    'utf8',
+  )
+
+  assert.match(migration, /El alcance nacional requiere una entidad país activa/)
+  assert.match(migration, /Solo super_admin puede conservar un alcance global/)
+  assert.match(migration, /Debes seleccionar el país del alcance nacional/)
+  assert.match(migration, /type_row\.key = 'country'/)
+  assert.match(migration, /current_user_can_access_country/)
+  assert.match(migration, /select 'national'::text, ee\.id, ee\.name::text/)
+  assert.match(migration, /scope_entity_id,country_iso2,diocese_id/)
+  assert.match(migration, /'country_iso2',v_country_iso2/)
+  assert.match(migration, /app_private\.current_user_has_role\(array\['super_admin'\]\)/)
 })
 
 test('country-backed national administrator is restricted and labeled with its country', async () => {
