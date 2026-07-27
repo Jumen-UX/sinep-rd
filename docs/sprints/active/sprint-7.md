@@ -1,8 +1,8 @@
 # Sprint 7 — Portal administrativo y experiencia de usuario
 
-> Estado: diferido
+> Estado: en progreso
 > Inicio: 2026-07-16
-> Actualizada: 2026-07-18
+> Actualizada: 2026-07-27
 > Rama operativa: `main`
 > Propietario: portal administrativo, diseño de interfaz y accesibilidad
 
@@ -21,7 +21,7 @@ Consolidar el portal administrativo como una experiencia coherente, accesible, r
 7. [x] S7-07 — Acceso flotante a herramientas de accesibilidad.
 8. [x] S7-08 — Responsive, teclado, foco, contraste y lectores de pantalla.
 9. [x] S7-09 — Consolidación de componentes, asistentes y capas heredadas.
-10. [ ] S7-10 — Validación operativa, pruebas autenticadas y cierre. **Diferida por decisión operativa.**
+10. [ ] S7-10 — Validación operativa, pruebas autenticadas y cierre. **Reactivada el 2026-07-27.**
 
 ## Estado resumido
 
@@ -39,7 +39,7 @@ El dashboard administrativo usa el contexto canónico de navegación, acciones f
 
 ### S7-04 — Completada con validación funcional diferida
 
-Se implementaron KPIs contextuales y la RPC `public.get_admin_contextual_kpis(text, uuid)`. CI quedó en verde. La validación con un perfil restringido real se ejecutará en S7-10.
+Se implementaron KPIs contextuales y la RPC `public.get_admin_contextual_kpis(text, uuid)`. La validación con un perfil restringido real se ejecutará en S7-10.
 
 ### S7-05 — Completada
 
@@ -71,19 +71,29 @@ Se consolidaron eventos, configuración estructural, asistentes de clero, person
 
 El detalle de los 18 bloques se mantiene en `docs/sprints/active/sprint-7-s7-09.md`.
 
-## S7-10 — Alcance de cierre diferido
+## S7-10 — Alcance de cierre reactivado
 
-S7-10 debe cerrar conjuntamente validación, operación y evidencia cuando sea reactivado:
+S7-10 debe cerrar conjuntamente validación, operación y evidencia:
 
 1. Reparar `E2E_ACCESS_PROFILES_JSON` y ejecutar la matriz autenticada.
 2. Demostrar aislamiento bidireccional entre dos diócesis.
 3. Validar KPIs contextuales con un perfil restringido real.
 4. Ejecutar revisión visual administrativa en modo claro y oscuro.
 5. Ejecutar accesibilidad autenticada sobre los flujos críticos.
-6. Activar protección contra contraseñas filtradas en Supabase Auth.
-7. Ejecutar `pnpm check`, workflows aplicables y CodeQL.
+6. Resolver el control de contraseñas filtradas: actualizar Supabase a Pro o superior y activarlo, o registrar formalmente la aceptación temporal del riesgo. El plan Free actual no ofrece esta función.
+7. Ejecutar `pnpm check`, workflows aplicables y CodeQL sobre el commit candidato.
 8. Conservar evidencia operativa sin secretos.
 9. Reconciliar documentación final y cerrar Sprint 7.
+
+### Avance de reactivación — 2026-07-27
+
+- Se retiraron los renderizadores públicos heredados que interpolaban contenido mediante `innerHTML`, `MutationObserver` y temporizadores.
+- El alcance territorial multi-país quedó integrado en el modelo React tipado y se añadió una prueba que prohíbe sumideros HTML crudos en `src/features/public`.
+- Se corrigió el reporte final de importaciones para leer `reversal_plan`, que es el campo canónico existente.
+- Se añadió y aplicó la política RLS `import_batch_reversals_select_scoped`; las escrituras permanecen exclusivamente detrás de la RPC auditada.
+- El advisor de seguridad de Supabase ya no reporta la tabla de reversiones. Permanece únicamente la advertencia de contraseñas filtradas, bloqueada por el plan Free.
+- El despliegue Vercel del commit `da6d95c081121abe6c58dce926cf1380a7acc871` completó el build en estado `READY`.
+- La ejecución completa de GitHub CI, CodeQL y E2E autenticado sigue pendiente; un build Vercel correcto no sustituye esas evidencias.
 
 ## Deuda posterior controlada
 
@@ -111,8 +121,9 @@ No bloquea S7-10 salvo que una prueba demuestre una regresión:
 - Tema y accesibilidad están cubiertos por contratos y pruebas autenticadas.
 - No se introducen accesos directos a datos ni duplicación de lógica de negocio.
 - CI valida documentación, TypeScript, pruebas, build y seguridad.
-- Las deudas operativas de acceso, aislamiento, KPIs y contraseñas quedan cerradas con evidencia.
+- Las deudas operativas de acceso, aislamiento y KPIs quedan cerradas con evidencia.
+- La protección frente a contraseñas filtradas queda activada o documentada como riesgo temporal aceptado con responsable y fecha de revisión.
 
 ## Punto de continuación
 
-S7-10 permanece diferido. Iniciar S7-10 por la reparación del perfil E2E autenticado cuando se reactive. Después ejecutar la matriz de acceso, aislamiento entre diócesis, KPIs restringidos, revisión visual claro/oscuro, accesibilidad y cierre documental del Sprint 7.
+Continuar S7-10 por la reparación de `E2E_ACCESS_PROFILES_JSON`. Después ejecutar la matriz de acceso, aislamiento entre diócesis, KPIs restringidos, revisión visual claro/oscuro, accesibilidad, CI/CodeQL y cierre documental. La decisión de plan Supabase debe resolverse antes del cierre final o quedar aceptada formalmente como riesgo temporal.
