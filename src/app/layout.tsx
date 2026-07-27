@@ -8,7 +8,6 @@ import { PublicCountryFlagEnhancements } from '../features/public/components/pub
 import { PublicDashboardEntityCards } from '../features/public/components/public-dashboard-entity-cards'
 import { PublicJurisdictionStructureNavigation } from '../features/public/components/public-jurisdiction-structure-navigation'
 import { PublicPastoralEnhancements } from '../features/public/components/public-pastoral-enhancements'
-import { PublicTerritorialLevelEnhancements } from '../features/public/components/public-territorial-level-enhancements'
 import { ScopeBackControls } from '../features/public/components/scope-back-controls'
 import './globals.css'
 import './web-standards.css'
@@ -128,7 +127,6 @@ export default function RootLayout({
         <PublicDashboardEntityCards />
         <PublicJurisdictionStructureNavigation />
         <PublicPastoralEnhancements />
-        <PublicTerritorialLevelEnhancements />
         <ScopeBackControls />
         <AccessibilityTools />
         <Script
