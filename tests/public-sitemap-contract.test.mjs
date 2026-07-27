@@ -7,19 +7,22 @@ const robotsPath = new URL('../src/app/robots.ts', import.meta.url)
 const indexingPath = new URL('../src/lib/public/indexing.ts', import.meta.url)
 const envPath = new URL('../.env.example', import.meta.url)
 
-test('public indexing is disabled by default and requires an explicit flag', async () => {
+test('public indexing is fail-closed and requires two explicit approvals', async () => {
   const [indexing, env] = await Promise.all([
     readFile(indexingPath, 'utf8'),
     readFile(envPath, 'utf8'),
   ])
 
   assert.match(indexing, /PUBLIC_INDEXING_ENABLED/)
-  assert.match(indexing, /return value \? ENABLED_VALUES\.has\(value\) : false/)
+  assert.match(indexing, /PUBLIC_LAUNCH_APPROVED/)
+  assert.match(indexing, /isEnabled\(process\.env\.PUBLIC_INDEXING_ENABLED\)/)
+  assert.match(indexing, /&& isEnabled\(process\.env\.PUBLIC_LAUNCH_APPROVED\)/)
   assert.match(env, /PUBLIC_INDEXING_ENABLED=false/)
-  assert.match(env, /Enable only after public-launch approval/)
+  assert.match(env, /PUBLIC_LAUNCH_APPROVED=false/)
+  assert.match(env, /Both values must be true/)
 })
 
-test('robots blocks all crawlers until public indexing is enabled', async () => {
+test('robots blocks all crawlers until the complete launch gate is enabled', async () => {
   const source = await readFile(robotsPath, 'utf8')
 
   assert.match(source, /if \(!isPublicIndexingEnabled\(\)\)/)
@@ -28,7 +31,7 @@ test('robots blocks all crawlers until public indexing is enabled', async () => 
   assert.match(source, /sitemap: `\$\{baseUrl\}\/sitemap\.xml`/)
 })
 
-test('public sitemap exposes only approved public profiles after indexing is enabled', async () => {
+test('public sitemap exposes only approved public profiles after launch approval', async () => {
   const source = await readFile(sitemapPath, 'utf8')
 
   assert.match(source, /export default async function sitemap/)
