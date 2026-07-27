@@ -10,19 +10,16 @@ const repoRoot = new URL('../', import.meta.url)
 const contextMigration = '20260727204813_add_country_context_to_authorization.sql'
 const writerMigration = '20260727205540_enforce_country_anchored_role_assignments.sql'
 
-async function compileNavigationService() {
-  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'sinep-country-navigation-'))
-  const source = await readFile(
-    new URL('src/features/admin/navigation/admin-navigation-service.ts', repoRoot),
-    'utf8',
-  )
+async function compileTypeScriptModule(relativePath, outputName) {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'sinep-country-authorization-'))
+  const source = await readFile(new URL(relativePath, repoRoot), 'utf8')
   const output = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.ES2022,
       target: ts.ScriptTarget.ES2022,
     },
   }).outputText
-  const outputPath = path.join(temporaryDirectory, 'admin-navigation-service.mjs')
+  const outputPath = path.join(temporaryDirectory, outputName)
   await writeFile(outputPath, output, 'utf8')
 
   return {
@@ -92,10 +89,22 @@ function fakeSupabase(assignments) {
   }
 }
 
-const fixture = await compileNavigationService()
-test.after(async () => fixture.cleanup())
+const navigationFixture = await compileTypeScriptModule(
+  'src/features/admin/navigation/admin-navigation-service.ts',
+  'admin-navigation-service.mjs',
+)
+const accessFixture = await compileTypeScriptModule(
+  'src/features/access/services/user-access-admin-service.ts',
+  'user-access-admin-service.mjs',
+)
 
-const { loadAdminNavigationContext } = fixture.module
+test.after(async () => {
+  await navigationFixture.cleanup()
+  await accessFixture.cleanup()
+})
+
+const { loadAdminNavigationContext } = navigationFixture.module
+const { scopeNeedsEntity, userScopeTypes } = accessFixture.module
 
 function role(key, name) {
   return {
@@ -201,4 +210,21 @@ test('navigation query includes country context and no longer globalizes nationa
   assert.match(source, /const unrestrictedRoleKeys = new Set\(\['super_admin'\]\)/)
   assert.match(source, /scopeType === 'national' && !countryIso2/)
   assert.doesNotMatch(source, /\['super_admin', 'national_admin'\]/)
+})
+
+test('user access and invitation flows require a country selector for national roles', async () => {
+  const [accessPage, invitePage, serviceSource] = await Promise.all([
+    readFile(new URL('src/features/access/admin/UserAccessPage.tsx', repoRoot), 'utf8'),
+    readFile(new URL('src/features/access/admin/InviteUserPage.tsx', repoRoot), 'utf8'),
+    readFile(new URL('src/features/access/services/user-access-admin-service.ts', repoRoot), 'utf8'),
+  ])
+
+  assert.equal(scopeNeedsEntity('national'), true)
+  assert.equal(scopeNeedsEntity('diocese'), true)
+  assert.equal(scopeNeedsEntity('global'), false)
+  assert.equal(userScopeTypes.find((scope) => scope.value === 'national')?.label, 'País')
+  assert.match(accessPage, /scopeNeedsEntity\(selectedScopeType\)/)
+  assert.match(invitePage, /scopeNeedsEntity\(scopeType\)/)
+  assert.match(serviceSource, /scope_entity_id: input\.roleId && scopeNeedsEntity\(input\.scopeType\)/)
+  assert.doesNotMatch(serviceSource, /!\['national', 'global'\]\.includes\(scopeType\)/)
 })
