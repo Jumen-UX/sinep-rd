@@ -157,6 +157,33 @@ Después de ejecutarlo:
 
 Nunca ejecutes el aprovisionador contra datos institucionales reales ni habilites `E2E_ALLOW_NON_TEST_ENTITIES=true` sin una decisión de operación registrada. La revisión actual mantiene S7-10 pendiente hasta ejecutar este procedimiento y conservar la evidencia del workflow.
 
+### Suspensión y eliminación de cuentas técnicas
+
+La operación normal después de una ronda E2E es suspender las cuentas y retirar sus roles:
+
+```bash
+E2E_DEPROVISION_CONFIRM=DEPROVISION_NON_PRODUCTION_E2E \
+pnpm e2e:access:deprovision
+```
+
+El modo `suspend` identifica únicamente usuarios marcados con `app_metadata.e2e_access_profile=true` y pertenecientes al dominio reservado configurado. Luego:
+
+1. cambia el perfil a `suspended`;
+2. elimina todas sus asignaciones de rol;
+3. registra la baja en `audit_logs`;
+4. verifica que ninguna cuenta conserve acceso administrativo.
+
+El aprovisionador puede reactivar posteriormente estas mismas cuentas y rotar sus contraseñas. La eliminación física de Supabase Auth es excepcional:
+
+```bash
+E2E_DEPROVISION_CONFIRM=DEPROVISION_NON_PRODUCTION_E2E \
+E2E_DEPROVISION_MODE=delete \
+E2E_DELETE_CONFIRM=DELETE_NON_PRODUCTION_E2E_USERS \
+pnpm e2e:access:deprovision
+```
+
+La eliminación se ejecuta solo después de suspender el perfil y retirar sus roles. Los tokens de acceso ya emitidos pueden conservar validez criptográfica hasta su expiración; sin embargo, la entrada administrativa de SINEP queda bloqueada por la ausencia de un perfil activo y de asignaciones vigentes. No utilices `delete` como limpieza rutinaria.
+
 ## Piloto mutante `create + noop` de personas
 
 Este recorrido solo debe ejecutarse contra una rama de desarrollo de Supabase o una base no productiva que pueda restablecerse. Nunca habilites `E2E_ALLOW_MUTATIONS=true` contra producción.
