@@ -7,7 +7,6 @@ import { ThemeControl } from '../components/theme/ThemeControl'
 import { PublicCountryFlagEnhancements } from '../features/public/components/public-country-flag-enhancements'
 import { PublicDashboardEntityCards } from '../features/public/components/public-dashboard-entity-cards'
 import { PublicJurisdictionStructureNavigation } from '../features/public/components/public-jurisdiction-structure-navigation'
-import { PublicMultiCountryDashboard } from '../features/public/components/public-multi-country-dashboard'
 import { PublicPastoralEnhancements } from '../features/public/components/public-pastoral-enhancements'
 import { PublicTerritorialLevelEnhancements } from '../features/public/components/public-territorial-level-enhancements'
 import { ScopeBackControls } from '../features/public/components/scope-back-controls'
@@ -128,7 +127,6 @@ export default function RootLayout({
         <PublicCountryFlagEnhancements />
         <PublicDashboardEntityCards />
         <PublicJurisdictionStructureNavigation />
-        <PublicMultiCountryDashboard />
         <PublicPastoralEnhancements />
         <PublicTerritorialLevelEnhancements />
         <ScopeBackControls />
