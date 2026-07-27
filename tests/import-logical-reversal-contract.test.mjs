@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import test from 'node:test'
 
 const migration = fs.readFileSync('supabase/migrations/20260716062000_add_audited_import_logical_reversal.sql', 'utf8')
-const readPolicyMigration = fs.readFileSync('supabase/migrations/20260727200000_secure_import_batch_reversal_reads.sql', 'utf8')
+const readPolicyMigration = fs.readFileSync('supabase/migrations/20260727195424_secure_import_batch_reversal_reads.sql', 'utf8')
 const route = fs.readFileSync('src/app/api/admin/importaciones/[batchId]/revertir/route.ts', 'utf8')
 const service = fs.readFileSync('src/features/importaciones/services/import-reversal-admin-service.ts', 'utf8')
 
