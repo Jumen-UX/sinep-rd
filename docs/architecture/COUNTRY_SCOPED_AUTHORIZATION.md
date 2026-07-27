@@ -1,6 +1,6 @@
 # Autorización administrativa por país
 
-> Estado: fase 2 en progreso; usuarios y acceso migrados
+> Estado: fase 2 en progreso; usuarios y autorización base de entidades migrados
 > Última revisión: 2026-07-27
 > Alcance: roles administrativos, navegación, auditoría y transición multi-país
 
@@ -25,6 +25,7 @@ Además, las asignaciones históricas de roles nacionales no almacenaban una ent
 5. **Una cuenta puede pertenecer a varios países.** La pertenencia administrativa se modela como relación usuario↔país y no como una columna única en `profiles`.
 6. **La transición es incremental.** No se retira de una vez el atajo heredado porque decenas de RPC lo consumen; cada escritor y lector debe migrarse con pruebas.
 7. **La ausencia de país falla cerrada.** No se permiten nuevas asignaciones nacionales ni invitaciones administrativas sin una entidad país activa.
+8. **El país se hereda de la jerarquía.** Una entidad subordinada no puede declarar un país distinto del de su entidad superior.
 
 ## Fase 1 — Contexto canónico y escritores seguros
 
@@ -141,7 +142,7 @@ Las asignaciones históricas se convirtieron en fuentes de membresía. Las cuent
 
 ### Invitaciones y onboarding
 
-La invitación ahora exige un **país administrativo** incluso cuando todavía no se asigna un rol. El flujo:
+La invitación exige un **país administrativo** incluso cuando todavía no se asigna un rol. El flujo:
 
 1. valida que el actor pueda administrar el país;
 2. valida opcionalmente el rol y su alcance;
@@ -171,13 +172,83 @@ Con este helper:
 
 La verificación directa de producción confirmó que el administrador nacional de República Dominicana enumera una sola cuenta y no puede enumerar al superadministrador, mientras el superadministrador conserva visibilidad de ambas cuentas existentes.
 
-## Fase 2B — Eliminación del bypass en dominios restantes
+## Fase 2B — Autorización base de entidades y jurisdicciones
 
-**Pendiente.** La migración del dominio de usuarios no autoriza a declarar terminada la separación multi-país.
+Aplicada parcialmente mediante:
 
-Los consumidores restantes deben clasificarse y migrarse en este orden:
+- `20260727220252_scope_entity_management_by_country.sql`.
 
-1. entidades y estructuras territoriales;
+### Helper territorial
+
+`current_user_can_manage_entity(text, uuid)` dejó de retornar acceso irrestricto por poseer el rol `national_admin`.
+
+El comportamiento vigente es:
+
+- `super_admin` conserva acceso global;
+- los demás actores requieren perfil activo;
+- la entidad objetivo debe tener un país resoluble;
+- el actor debe tener acceso a ese país;
+- una asignación activa del mismo país debe conceder el permiso solicitado;
+- el alcance debe ser nacional del país, la propia entidad, su diócesis o un nodo ascendente de la estructura.
+
+La condición heredada `scope_type in ('global','national')` fue sustituida por un alcance nacional con `assignment.country_iso2` coincidente. Los alcances globales no superadministradores dejan de participar en la autorización territorial.
+
+### Creación de entidades
+
+La fachada de `admin_save_ecclesiastical_entity` ahora:
+
+- exige permiso efectivo o `super_admin`;
+- exige una entidad superior para actores no globales;
+- valida que la entidad superior esté dentro del alcance administrable;
+- deriva el país desde la entidad superior;
+- rechaza un `country_iso2` contradictorio;
+- inyecta el país canónico antes de invocar el escritor interno;
+- conserva país y alcance en auditoría.
+
+### Creación de jurisdicciones
+
+La fachada de `admin_save_jurisdiction` ahora:
+
+- reserva la creación de una entidad de tipo `country` a `super_admin`;
+- exige código ISO explícito para una nueva entidad país;
+- exige una jurisdicción superior para cualquier otro tipo;
+- comprueba que la jurisdicción superior esté dentro del alcance del actor;
+- hereda y valida el país de la jurisdicción superior;
+- rechaza provincias, arquidiócesis, diócesis u otras jurisdicciones vinculadas al país equivocado.
+
+### Importaciones
+
+`import_entity_matches(text)` ya no combina el buscador con `current_user_is_super_or_national()`. Todas las coincidencias pasan por `current_user_can_manage_entity('imports.prepare', entity_id)`, por lo que un administrador nacional solo obtiene resultados de su país.
+
+### Evidencia directa
+
+Con el contexto autenticado del administrador nacional de República Dominicana:
+
+- `entities.create_proposal` sobre la entidad país `DO`: `true`;
+- `entities.create_proposal` sobre la entidad país `CO`: `false`;
+- `imports.prepare` sobre `DO`: `true`;
+- `imports.prepare` sobre `CO`: `false`.
+
+Con el contexto de `super_admin`, la misma comprobación retorna `true` para `DO` y `CO`.
+
+### Alcance todavía pendiente dentro del dominio
+
+Este subbloque no declara finalizada la migración territorial. Todavía deben revisarse:
+
+- lectores administrativos de entidades y árboles;
+- edición, publicación, revisión y movimientos;
+- eventos estructurales y unidades organizativas;
+- lotes de importación completos, no solo el buscador de coincidencias;
+- búsqueda administrativa y reportes territoriales;
+- funciones que autorizan por diócesis pero no conservan país explícito.
+
+## Fase 2C — Eliminación del bypass en dominios restantes
+
+**Pendiente.** La migración de usuarios y la autorización base de entidades no autorizan a declarar terminada la separación multi-país.
+
+Los consumidores restantes deben migrarse en este orden:
+
+1. completar entidades, estructuras territoriales y unidades organizativas;
 2. personas, nombramientos y cargos;
 3. unidades pastorales, administrativas y colegiales;
 4. eventos y calendarios;
@@ -224,13 +295,14 @@ La arquitectura solo podrá considerarse cerrada cuando exista evidencia de que:
 
 ## Riesgos y deuda controlada
 
-- El bypass heredado continúa activo en dominios todavía no migrados; esta es la principal deuda de seguridad de la fase 2B.
+- El bypass heredado continúa activo en dominios todavía no migrados; esta es la principal deuda de seguridad de la fase 2C.
 - `pastoral_areas` necesita una relación territorial canónica antes de habilitarse para administradores nacionales.
 - Las cuentas existentes recibieron una fuente `backfill` en República Dominicana; antes de operar otros países debe revisarse si corresponde conservarla para cada cuenta.
+- Los escritores internos todavía poseen defaults históricos de República Dominicana; las fachadas migradas los neutralizan derivando país, pero los demás escritores deben revisarse individualmente.
 - Los índices nuevos aparecen inicialmente como no utilizados por el bajo volumen y la ausencia de carga; no deben eliminarse sin estadísticas representativas.
 - Los registros de auditoría antiguos solo reciben país cuando su alcance histórico permite derivarlo con certeza.
 - El alcance `national` sin país se conserva únicamente para compatibilidad de lectura y debe desaparecer en la fase 3.
 
 ## Regla de operación
 
-Hasta completar la fase 2B, no se deben crear administradores nacionales de otros países para uso real. Pueden utilizarse cuentas QA controladas con entidades `test-*`, siempre con pruebas A↔B, contraseñas rotadas y suspensión posterior.
+Hasta completar la fase 2C, no se deben crear administradores nacionales de otros países para uso real. Pueden utilizarse cuentas QA controladas con entidades `test-*`, siempre con pruebas A↔B, contraseñas rotadas y suspensión posterior.
