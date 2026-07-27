@@ -50,6 +50,17 @@ test('manual authenticated access validation fails closed without protected prof
   assert.match(accessWorkflow, /Authenticated matrix skipped on push/)
 })
 
+test('authenticated access workflow validates coverage before installing Playwright', async () => {
+  const accessWorkflow = await readWorkflow('e2e-admin-access.yml')
+  const validationPosition = accessWorkflow.indexOf('node scripts/validate-e2e-access-profiles.mjs')
+  const installPosition = accessWorkflow.indexOf('pnpm install --frozen-lockfile')
+
+  assert.match(accessWorkflow, /e2e\/support\/access-profile-matrix\.mjs/)
+  assert.match(accessWorkflow, /scripts\/validate-e2e-access-profiles\.mjs/)
+  assert.ok(validationPosition >= 0, 'The protected matrix validator must be invoked.')
+  assert.ok(installPosition > validationPosition, 'Profile validation must happen before dependency installation.')
+})
+
 test('authenticated access workflow installs Playwright in the project before running tests', async () => {
   const accessWorkflow = await readWorkflow('e2e-admin-access.yml')
 
