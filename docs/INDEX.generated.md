@@ -10,6 +10,7 @@
 - [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md) — fase 2 en progreso; usuarios, entidades, estructuras, unidades organizativas, revisión, eventos, personas, importaciones, calendario y datos administrativos migrados
 - [Alcances canónicos de autorización](./architecture/CANONICAL_AUTHORIZATION_SCOPES.md) — implementado en base de datos y navegación administrativa
 - [Lugares, instituciones, obras y medios eclesiales](./architecture/ECCLESIAL_PLACES_INSTITUTIONS_MEDIA.md) — fundamento canónico implementado y validado
+- [Interfaz administrativa del registro eclesial](./architecture/ECCLESIAL_REGISTRY_ADMIN_UI.md) — primera versión implementada; validación final pendiente
 - [Revisión administrativa por país](./architecture/COUNTRY_SCOPED_REVIEW.md) — implementado y validado como parte de la fase 2E
 - [Eventos administrativos por país](./architecture/COUNTRY_SCOPED_EVENTS.md) — implementado y validado como parte de la fase 2E
 - [Personas y nombramientos por país](./architecture/COUNTRY_SCOPED_PEOPLE.md) — primer bloque implementado y validado como parte de la fase 2E
