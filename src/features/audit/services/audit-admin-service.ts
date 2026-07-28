@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { createCsv, downloadCsv } from '@/lib/csv'
 
 export type ActivityRow = {
   id: string
@@ -25,4 +26,23 @@ export async function loadRecentAdministrativeActivity(
 
   if (error) throw new Error(error.message)
   return (data ?? []) as ActivityRow[]
+}
+
+export function createAdministrativeActivityCsv(rows: readonly ActivityRow[]) {
+  return createCsv(
+    ['Fecha', 'Usuario', 'Correo', 'Acción', 'Tabla', 'Identificador'],
+    rows.map((row) => [
+      row.created_at,
+      row.actor_name,
+      row.actor_email,
+      row.action,
+      row.target_table,
+      row.target_id,
+    ]),
+  )
+}
+
+export function downloadAdministrativeActivityCsv(rows: readonly ActivityRow[]) {
+  const date = new Date().toISOString().slice(0, 10)
+  downloadCsv(`actividad-administrativa-${date}.csv`, createAdministrativeActivityCsv(rows))
 }
