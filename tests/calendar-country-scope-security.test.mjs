@@ -11,10 +11,17 @@ const migrations = {
   roleFix: '20260728163206_fix_event_reminder_role_catalog_validation.sql',
   generator: '20260728163434_generate_calendar_occurrences_by_scope.sql',
   notificationRls: '20260728164733_optimize_calendar_notification_rls.sql',
+  scopeOptions: '20260728165626_create_calendar_scope_options.sql',
+  pastoral: '20260728170753_support_pastoral_calendar_scopes.sql',
+  pastoralReaderFix: '20260728170915_fix_pastoral_calendar_reader_columns.sql',
 }
 
 async function readMigration(fileName) {
   return readFile(new URL(`supabase/migrations/${fileName}`, repoRoot), 'utf8')
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 function functionBody(source, functionName) {
@@ -43,7 +50,7 @@ test('calendar records resolve all canonical scopes without a global admin bypas
     'app_private.current_user_can_manage_calendar_record',
     'app_private.current_user_can_view_calendar_record',
   ]) {
-    assert.match(migration, new RegExp(`function ${helper.replaceAll('.', '\.')}`))
+    assert.match(migration, new RegExp(`function ${escapeRegExp(helper)}`))
   }
 
   assert.match(migration, /person_scope_entities/)
@@ -102,19 +109,64 @@ test('organization unit occurrences are accepted and policy helper grants stay m
   assert.doesNotMatch(grants, /event_occurrence_scope_entities/)
 })
 
-test('administrative calendar reader is an invoker facade backed by a scoped definer', async () => {
-  const migration = await readMigration(migrations.reader)
-  const privateBody = functionBody(migration, 'app_private.rpc_definer__admin_list_calendar_events')
-  const publicBody = functionBody(migration, 'public.admin_list_calendar_events')
+test('calendar scope catalog is a scoped invoker facade', async () => {
+  const migration = await readMigration(migrations.scopeOptions)
+  const privateBody = functionBody(migration, 'app_private.rpc_definer__admin_list_calendar_scope_options')
+  const publicBody = functionBody(migration, 'public.admin_list_calendar_scope_options')
+
+  assert.match(privateBody, /current_user_has_permission\('events\.view'\)/)
+  assert.match(privateBody, /calendar_entity_in_scope\(entity_row\.id, v_root_entity_id\)/)
+  assert.match(privateBody, /resolve_entity_country_iso2\(entity_row\.id\)/)
+  assert.match(publicBody, /security invoker/)
+  assert.match(publicBody, /rpc_definer__admin_list_calendar_scope_options/)
+  assert.doesNotMatch(migration, /current_user_is_admin|current_user_is_super_or_national/)
+})
+
+test('administrative calendar reader is an invoker facade backed by the effective scoped definer', async () => {
+  const facadeMigration = await readMigration(migrations.reader)
+  const effectiveMigration = await readMigration(migrations.pastoralReaderFix)
+  const publicBody = functionBody(facadeMigration, 'public.admin_list_calendar_events')
+  const privateBody = functionBody(effectiveMigration, 'app_private.rpc_definer__admin_list_calendar_events')
 
   assert.match(privateBody, /security definer/)
   assert.match(privateBody, /current_user_has_permission\('events\.view'\)/)
-  assert.match(privateBody, /current_user_can_manage_entity\('events\.view', v_scope_entity_id\)/)
-  assert.match(privateBody, /calendar_entity_in_scope\(scope_row\.entity_id, v_scope_entity_id\)/)
+  assert.match(privateBody, /current_user_can_access_calendar_scope_entity\('events\.view', v_scope_entity_id\)/)
+  assert.match(privateBody, /current_user_can_manage_calendar_record/)
+  assert.match(privateBody, /occurrence\.occurrence_date as event_date/)
+  assert.match(privateBody, /occurrence\.id as event_id/)
+  assert.match(privateBody, /calendar_row\.event_date/)
   assert.match(privateBody, /events\.view_private/)
   assert.match(privateBody, /p_to > p_from \+ interval '5 years'/)
   assert.match(publicBody, /security invoker/)
   assert.match(publicBody, /rpc_definer__admin_list_calendar_events/)
+  assert.doesNotMatch(effectiveMigration, /current_user_is_admin|current_user_is_super_or_national/)
+})
+
+test('pastoral and organization-unit scopes remain narrower than their backing diocese', async () => {
+  const migration = await readMigration(migrations.pastoral)
+  const recordAccess = functionBody(migration, 'app_private.current_user_can_manage_calendar_record')
+  const unitAccess = functionBody(migration, 'app_private.current_user_can_manage_calendar_unit')
+  const scopeCatalog = functionBody(migration, 'app_private.rpc_definer__admin_list_calendar_scope_options')
+
+  for (const helper of [
+    'app_private.event_occurrence_scope_units',
+    'app_private.commemorative_event_scope_units',
+    'app_private.event_reminder_scope_units',
+    'app_private.event_notification_log_scope_units',
+    'app_private.calendar_record_scope_units',
+    'app_private.current_user_can_manage_calendar_unit',
+    'app_private.current_user_can_access_calendar_scope_entity',
+  ]) {
+    assert.match(migration, new RegExp(`function ${escapeRegExp(helper)}`))
+  }
+
+  assert.match(unitAccess, /with recursive unit_lineage/)
+  assert.match(unitAccess, /assignment\.organization_unit_id in/)
+  assert.match(unitAccess, /assignment\.pastoral_area_id = v_pastoral_area_id/)
+  assert.match(unitAccess, /assignment\.country_iso2 = v_country_iso2/)
+  assert.match(recordAccess, /calendar_record_scope_units/)
+  assert.match(recordAccess, /current_user_can_manage_calendar_unit/)
+  assert.match(scopeCatalog, /current_user_can_access_calendar_scope_entity/)
   assert.doesNotMatch(migration, /current_user_is_admin|current_user_is_super_or_national/)
 })
 
