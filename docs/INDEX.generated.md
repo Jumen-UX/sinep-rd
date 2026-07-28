@@ -7,12 +7,13 @@
 ## architecture
 
 - [Arquitectura de SINEP RD](./architecture/ARQUITECTURA.md) — vigente
-- [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md) — fase 2 en progreso; usuarios, entidades, estructuras, unidades organizativas, revisión, eventos, personas y ciclo de importaciones migrados
+- [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md) — fase 2 en progreso; usuarios, entidades, estructuras, unidades organizativas, revisión, eventos, personas, importaciones y calendario migrados
 - [Revisión administrativa por país](./architecture/COUNTRY_SCOPED_REVIEW.md) — implementado y validado como parte de la fase 2E
 - [Eventos administrativos por país](./architecture/COUNTRY_SCOPED_EVENTS.md) — implementado y validado como parte de la fase 2E
 - [Personas y nombramientos por país](./architecture/COUNTRY_SCOPED_PEOPLE.md) — primer bloque implementado y validado como parte de la fase 2E
 - [Importaciones y diagnósticos de personas por país](./architecture/COUNTRY_SCOPED_PEOPLE_IMPORTS.md) — implementado y validado como parte de la fase 2E
 - [Ciclo de importaciones por país](./architecture/COUNTRY_SCOPED_IMPORT_LIFECYCLE.md) — implementado y validado como parte de la fase 2E
+- [Calendario administrativo por país](./architecture/COUNTRY_SCOPED_CALENDAR.md) — implementado y validado como parte de la fase 2E
 - [Autorización, alcance y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md) — vigente
 - [Contrato de renderizado, caché y revalidación](./architecture/RENDERING_CACHE_CONTRACT.md) — activo
 - [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md) — vigente
