@@ -11,6 +11,7 @@ const migrations = {
   reports: '20260728194100_scope_admin_reports_by_country.sql',
   pastoralDocuments: '20260728194950_support_pastoral_document_roots.sql',
   escalationFix: '20260728195113_prevent_pastoral_scope_entity_escalation.sql',
+  documentRls: '20260728200434_consolidate_document_select_rls.sql',
 }
 
 async function readMigration(fileName) {
@@ -68,6 +69,7 @@ test('documents resolve entity and unit scopes and expose only read RPCs', async
   const migration = await readMigration(migrations.documents)
   const pastoral = await readMigration(migrations.pastoralDocuments)
   const grants = await readMigration(migrations.rpcGrants)
+  const finalRls = await readMigration(migrations.documentRls)
   const reader = functionBody(pastoral, 'app_private.rpc_definer__admin_list_documents')
 
   for (const helper of [
@@ -79,14 +81,18 @@ test('documents resolve entity and unit scopes and expose only read RPCs', async
     assert.match(migration, new RegExp(`function ${helper.replaceAll('.', '\\.')}`))
   }
 
-  assert.match(migration, /create policy documents_select_public/)
-  assert.match(migration, /create policy documents_select_scoped_authenticated/)
   assert.match(migration, /revoke insert, update, delete on table public\.documents from anon, authenticated/)
   assert.match(reader, /v_scope_kind = 'organization_unit'/)
   assert.match(reader, /v_scope_kind = 'pastoral_area'/)
   assert.match(reader, /organization_unit_in_scope/)
   assert.match(reader, /current_user_can_view_document/)
   assert.match(grants, /grant execute on function app_private\.rpc_definer__admin_list_documents/)
+  assert.match(finalRls, /create policy documents_select_public_anon/)
+  assert.match(finalRls, /to anon/)
+  assert.match(finalRls, /create policy documents_select_authenticated/)
+  assert.match(finalRls, /to authenticated/)
+  assert.match(finalRls, /or app_private\.current_user_can_view_document/)
+  assert.doesNotMatch(finalRls, /to anon, authenticated/)
   assert.doesNotMatch(migration, /current_user_is_super_or_national/)
 })
 
