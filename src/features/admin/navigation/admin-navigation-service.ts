@@ -54,6 +54,7 @@ type RawAssignment = {
   role_id?: string
   scope_type?: string
   scope_entity_id?: string | null
+  structure_node_id?: string | null
   country_iso2?: string | null
   diocese_id?: string | null
   pastoral_area_id?: string | null
@@ -100,12 +101,24 @@ function isActiveAssignment(assignment: RawAssignment, today: string) {
   return true
 }
 
-function assignmentEntityId(assignment: RawAssignment) {
-  if (assignment.scope_entity_id) return assignment.scope_entity_id
-  if (assignment.scope_type === 'diocese') return assignment.diocese_id ?? null
-  if (assignment.scope_type === 'pastoral_area') return assignment.pastoral_area_id ?? null
-  if (assignment.scope_type === 'organization_unit') return assignment.organization_unit_id ?? null
-  return null
+function assignmentScopeId(assignment: RawAssignment) {
+  switch (assignment.scope_type) {
+    case 'global':
+      return null
+    case 'vicariate':
+    case 'zone':
+      return assignment.structure_node_id ?? null
+    case 'pastoral_area':
+      return assignment.pastoral_area_id ?? null
+    case 'organization_unit':
+      return assignment.organization_unit_id ?? null
+    case 'diocese':
+      return assignment.scope_entity_id ?? assignment.diocese_id ?? null
+    case 'entity':
+      return assignment.structure_node_id ?? assignment.scope_entity_id ?? null
+    default:
+      return assignment.scope_entity_id ?? null
+  }
 }
 
 function fallbackScopeLabel(scopeType: string, entityId: string | null) {
@@ -132,13 +145,8 @@ function scopePriority(scope: AdminNavigationScope) {
   return priorities[scope.type] ?? 100
 }
 
-function assignmentIsUnrestricted(
-  roleKey: string,
-  scopeType: string,
-  countryIso2: string | null | undefined,
-) {
-  if (unrestrictedRoleKeys.has(roleKey) || scopeType === 'global') return true
-  return scopeType === 'national' && !countryIso2
+function assignmentIsUnrestricted(roleKey: string, scopeType: string) {
+  return unrestrictedRoleKeys.has(roleKey) || scopeType === 'global'
 }
 
 async function loadNames(
@@ -174,28 +182,31 @@ async function resolveScopeNames(
   }
 
   for (const assignment of assignments) {
-    const entityId = assignmentEntityId(assignment)
-    if (!entityId) continue
+    const scopeId = assignmentScopeId(assignment)
+    if (!scopeId) continue
 
     switch (assignment.scope_type) {
       case 'national':
       case 'diocese':
       case 'parish':
-        idsBySource.ecclesiastical_entities.add(entityId)
+        idsBySource.ecclesiastical_entities.add(scopeId)
         break
       case 'vicariate':
       case 'zone':
-        idsBySource.structure_nodes.add(entityId)
+        idsBySource.structure_nodes.add(scopeId)
         break
       case 'pastoral_area':
-        idsBySource.pastoral_areas.add(entityId)
+        idsBySource.pastoral_areas.add(scopeId)
         break
       case 'organization_unit':
-        idsBySource.organization_units.add(entityId)
+        idsBySource.organization_units.add(scopeId)
         break
       case 'entity':
-        idsBySource.ecclesiastical_entities.add(entityId)
-        idsBySource.structure_nodes.add(entityId)
+        if (assignment.structure_node_id) {
+          idsBySource.structure_nodes.add(scopeId)
+        } else {
+          idsBySource.ecclesiastical_entities.add(scopeId)
+        }
         break
     }
   }
@@ -243,7 +254,7 @@ export async function loadAdminNavigationContext(
     supabase.rpc('get_my_admin_entry_context'),
     supabase
       .from('user_role_assignments')
-      .select('role_id,scope_type,scope_entity_id,country_iso2,diocese_id,pastoral_area_id,organization_unit_id,starts_at,ends_at,status,roles(key,name,role_permissions(permissions(key,module)))')
+      .select('role_id,scope_type,scope_entity_id,structure_node_id,country_iso2,diocese_id,pastoral_area_id,organization_unit_id,starts_at,ends_at,status,roles(key,name,role_permissions(permissions(key,module)))')
       .eq('user_id', userData.user.id)
       .eq('status', 'active'),
   ])
@@ -268,15 +279,15 @@ export async function loadAdminNavigationContext(
     const role = asArray(assignment.roles)[0]
     const roleKey = role?.key ?? 'administrative_role'
     const scopeType = assignment.scope_type || 'entity'
-    const entityId = assignmentEntityId(assignment)
-    const isUnrestricted = assignmentIsUnrestricted(roleKey, scopeType, assignment.country_iso2)
+    const scopeId = assignmentScopeId(assignment)
+    const isUnrestricted = assignmentIsUnrestricted(roleKey, scopeType)
     const label = isUnrestricted
       ? fallbackScopeLabel(scopeType, null)
-      : names.get(entityId ?? '') ?? fallbackScopeLabel(scopeType, entityId)
+      : names.get(scopeId ?? '') ?? fallbackScopeLabel(scopeType, scopeId)
     const scope: AdminNavigationScope = {
-      key: scopeKey(scopeType, entityId),
+      key: scopeKey(scopeType, scopeId),
       type: scopeType,
-      entityId,
+      entityId: scopeId,
       label,
       isUnrestricted,
     }
@@ -286,7 +297,7 @@ export async function loadAdminNavigationContext(
       key: roleKey,
       name: role?.name ?? 'Rol administrativo',
       scopeType,
-      scopeEntityId: entityId,
+      scopeEntityId: scopeId,
       scopeLabel: label,
       isUnrestricted,
     })
