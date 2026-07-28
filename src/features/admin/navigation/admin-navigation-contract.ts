@@ -37,6 +37,8 @@ const proposalPermissions = [
   'pastorals.create_proposal',
   'appointments.create_proposal',
   'events.create_proposal',
+  'places.create_proposal',
+  'institutions.create_proposal',
 ] as const
 
 const nationalScopeTypes = ['global', 'national'] as const
@@ -107,6 +109,27 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
       'pastorals.publish',
     ],
     mobilePriority: 55,
+  },
+  {
+    id: 'ecclesial-registry',
+    href: '/admin/registro-eclesial',
+    icon: '⌂',
+    label: 'Registro eclesial',
+    sublabel: 'Lugares, obras y medios',
+    section: 'directories',
+    entryPermissions: ['places.view', 'institutions.view', 'communications.view'],
+    operationPermissions: [
+      'places.create_proposal',
+      'places.update_proposal',
+      'places.approve',
+      'places.publish',
+      'institutions.create_proposal',
+      'institutions.update_proposal',
+      'institutions.approve',
+      'institutions.publish',
+      'communications.update_proposal',
+    ],
+    mobilePriority: 58,
   },
   {
     id: 'people',
