@@ -11,6 +11,7 @@ const migrations = {
   labels: '20260728203435_expose_canonical_role_scope_labels.sql',
   rls: '20260728203626_remove_broad_national_rls_shortcuts.sql',
   catalogs: '20260728203749_simplify_access_catalog_read_policies.sql',
+  rlsGrant: '20260728204636_grant_scoped_user_assignment_rls_helper.sql',
 }
 
 async function readMigration(fileName) {
@@ -98,12 +99,15 @@ test('role payloads and onboarding expose canonical ids and human labels', async
 
 test('corrected RLS policies contain no broad national-admin shortcut', async () => {
   const migration = await readMigration(migrations.rls)
+  const grant = await readMigration(migrations.rlsGrant)
 
   assert.match(migration, /current_user_can_manage_entity\('imports\.prepare'/)
   assert.match(migration, /current_user_can_manage_organization_unit\(/)
   assert.match(migration, /current_user_can_manage_user\(user_id\)/)
   assert.match(migration, /revoke insert,update,delete on table public\.user_role_assignments/)
   assert.doesNotMatch(migration, /current_user_is_super_or_national|current_user_is_admin/)
+  assert.match(grant, /grant execute on function app_private\.current_user_can_manage_user\(uuid\) to authenticated/)
+  assert.doesNotMatch(grant, /grant (select|insert|update|delete)/)
 })
 
 test('navigation resolves each scope from its canonical identifier', async () => {
