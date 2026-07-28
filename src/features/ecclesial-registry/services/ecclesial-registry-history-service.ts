@@ -180,7 +180,7 @@ function normalizeError(error: { message?: string } | null, fallback: string) {
 }
 
 function optional(value?: string) {
-  return value?.trim() || undefined
+  return value?.trim() ?? ''
 }
 
 function targetPayload(kind: RegistryAffiliationTargetKind, id: string) {
