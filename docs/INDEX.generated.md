@@ -8,6 +8,7 @@
 
 - [Arquitectura de SINEP RD](./architecture/ARQUITECTURA.md) — vigente
 - [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md) — fase 2 en progreso; usuarios, entidades, estructuras, unidades organizativas, revisión, eventos, personas, importaciones, calendario y datos administrativos migrados
+- [Alcances canónicos de autorización](./architecture/CANONICAL_AUTHORIZATION_SCOPES.md) — implementado en base de datos y navegación administrativa
 - [Revisión administrativa por país](./architecture/COUNTRY_SCOPED_REVIEW.md) — implementado y validado como parte de la fase 2E
 - [Eventos administrativos por país](./architecture/COUNTRY_SCOPED_EVENTS.md) — implementado y validado como parte de la fase 2E
 - [Personas y nombramientos por país](./architecture/COUNTRY_SCOPED_PEOPLE.md) — primer bloque implementado y validado como parte de la fase 2E
