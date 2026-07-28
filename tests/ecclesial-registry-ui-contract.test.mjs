@@ -106,3 +106,14 @@ test('public reader facades are invoker functions unavailable to anonymous clien
     assert.match(migration, new RegExp(`revoke all on function public\\.${name}`))
   }
 })
+
+test('channels owned by places or institutions inherit active affiliation scope', async () => {
+  const migration = await read('supabase/migrations/20260728221407_align_registry_channel_scope_with_owner_affiliations.sql')
+
+  assert.match(migration, /owner_place_id is not null/)
+  assert.match(migration, /registry_place_in_scope/)
+  assert.match(migration, /registry_institution_in_scope/)
+  assert.match(migration, /owner_organization_unit_id/)
+  assert.match(migration, /registry_entity_in_scope/)
+  assert.match(migration, /revoke all on function app_private\.registry_channel_in_scope/)
+})
