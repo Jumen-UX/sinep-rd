@@ -132,6 +132,21 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     mobilePriority: 58,
   },
   {
+    id: 'ecclesial-registry-history',
+    href: '/admin/relaciones-eclesiales',
+    icon: '↺',
+    label: 'Edición e historial',
+    sublabel: 'Fichas, afiliaciones y vigencia',
+    section: 'directories',
+    entryPermissions: ['places.view', 'institutions.view', 'communications.view'],
+    operationPermissions: [
+      'places.update_proposal',
+      'institutions.update_proposal',
+      'communications.update_proposal',
+    ],
+    mobilePriority: 57,
+  },
+  {
     id: 'people',
     href: '/admin/personas',
     icon: '◉',
