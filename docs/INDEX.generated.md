@@ -11,7 +11,7 @@
 - [Alcances canónicos de autorización](./architecture/CANONICAL_AUTHORIZATION_SCOPES.md) — implementado en base de datos y navegación administrativa
 - [Lugares, instituciones, obras y medios eclesiales](./architecture/ECCLESIAL_PLACES_INSTITUTIONS_MEDIA.md) — fundamento canónico implementado y validado
 - [Interfaz administrativa del registro eclesial](./architecture/ECCLESIAL_REGISTRY_ADMIN_UI.md) — primera versión implementada y compilada; E2E multinivel pendiente
-- [Edición e historial del registro eclesial](./architecture/ECCLESIAL_REGISTRY_HISTORY.md) — implementado en base de datos e interfaz; compilación y E2E pendientes
+- [Edición e historial del registro eclesial](./architecture/ECCLESIAL_REGISTRY_HISTORY.md) — implementado y compilado; E2E multinivel pendiente
 - [Revisión administrativa por país](./architecture/COUNTRY_SCOPED_REVIEW.md) — implementado y validado como parte de la fase 2E
 - [Eventos administrativos por país](./architecture/COUNTRY_SCOPED_EVENTS.md) — implementado y validado como parte de la fase 2E
 - [Personas y nombramientos por país](./architecture/COUNTRY_SCOPED_PEOPLE.md) — primer bloque implementado y validado como parte de la fase 2E
