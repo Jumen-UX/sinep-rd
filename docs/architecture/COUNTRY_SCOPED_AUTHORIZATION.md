@@ -1,6 +1,6 @@
 # Autorización administrativa por país
 
-> Estado: fase 2 en progreso; usuarios, entidades base, estructuras y unidades organizativas migrados
+> Estado: fase 2 en progreso; usuarios, entidades, estructuras y unidades organizativas migrados
 > Última revisión: 2026-07-28
 > Alcance: roles administrativos, navegación, auditoría y transición multi-país
 
@@ -27,6 +27,8 @@ Además, las asignaciones históricas de roles nacionales no almacenaban una ent
 7. **La ausencia de país falla cerrada.** No se permiten nuevas asignaciones nacionales ni invitaciones administrativas sin una entidad país activa.
 8. **El país se hereda de la jerarquía.** Una entidad subordinada no puede declarar un país distinto del de su entidad superior.
 9. **La edición ordinaria no cambia el contexto estructural.** Los traslados de diócesis, plantilla, entidad u organigrama requieren un evento canónico y auditado.
+10. **Lo público y lo administrativo usan contratos distintos.** Las vistas públicas exponen columnas sanitizadas; las tablas base y RPC administrativas aplican RLS territorial.
+11. **Los helpers de autorización devuelven booleanos estrictos.** La ausencia de claims nunca debe convertirse en `NULL` y debilitar una condición negativa.
 
 ## Fase 1 — Contexto canónico y escritores seguros
 
@@ -171,7 +173,7 @@ Con este helper:
 - `admin_update_user_profile_status` no permite modificar cuentas de otro país;
 - `admin_end_user_role` no permite cerrar asignaciones de otro país.
 
-La verificación directa de producción confirmó que el administrador nacional de República Dominicana enumera una sola cuenta y no puede enumerar al superadministrador, mientras el superadministrador conserva visibilidad de ambas cuentas existentes.
+La verificación directa confirmó que el administrador nacional de República Dominicana enumera una sola cuenta y no puede enumerar al superadministrador, mientras el superadministrador conserva visibilidad de ambas cuentas existentes.
 
 ## Fase 2B — Autorización base de entidades y jurisdicciones
 
@@ -194,28 +196,17 @@ El comportamiento vigente es:
 
 La condición heredada `scope_type in ('global','national')` fue sustituida por un alcance nacional con `assignment.country_iso2` coincidente. Los alcances globales no superadministradores dejan de participar en la autorización territorial.
 
-### Creación de entidades
+### Creación de entidades y jurisdicciones
 
-La fachada de `admin_save_ecclesiastical_entity`:
+Las fachadas `admin_save_ecclesiastical_entity` y `admin_save_jurisdiction`:
 
-- exige permiso efectivo o `super_admin`;
-- exige una entidad superior para actores no globales;
-- valida que la entidad superior esté dentro del alcance administrable;
-- deriva el país desde la entidad superior;
-- rechaza un `country_iso2` contradictorio;
-- inyecta el país canónico antes de invocar el escritor interno;
-- conserva país y alcance en auditoría.
-
-### Creación de jurisdicciones
-
-La fachada de `admin_save_jurisdiction`:
-
-- reserva la creación de una entidad de tipo `country` a `super_admin`;
-- exige código ISO explícito para una nueva entidad país;
-- exige una jurisdicción superior para cualquier otro tipo;
-- comprueba que la jurisdicción superior esté dentro del alcance del actor;
-- hereda y valida el país de la jurisdicción superior;
-- rechaza provincias, arquidiócesis, diócesis u otras jurisdicciones vinculadas al país equivocado.
+- exigen permiso efectivo o `super_admin`;
+- exigen entidad o jurisdicción superior para actores no globales;
+- validan que la entidad superior esté dentro del alcance administrable;
+- derivan el país desde la jerarquía;
+- rechazan un `country_iso2` contradictorio;
+- reservan la creación de una entidad `country` a `super_admin`;
+- conservan país y alcance en auditoría.
 
 ### Importaciones
 
@@ -225,12 +216,12 @@ La fachada de `admin_save_jurisdiction`:
 
 Con el contexto autenticado del administrador nacional de República Dominicana:
 
-- `entities.create_proposal` sobre la entidad país `DO`: `true`;
-- `entities.create_proposal` sobre la entidad país `CO`: `false`;
+- `entities.create_proposal` sobre `DO`: `true`;
+- `entities.create_proposal` sobre `CO`: `false`;
 - `imports.prepare` sobre `DO`: `true`;
 - `imports.prepare` sobre `CO`: `false`.
 
-Con el contexto de `super_admin`, la misma comprobación retorna `true` para `DO` y `CO`.
+Con el contexto de `super_admin`, las mismas comprobaciones retornan `true` para ambos países.
 
 ## Fase 2C — Estructuras y unidades organizativas
 
@@ -243,7 +234,7 @@ Aplicada mediante:
 
 ### Lecturas internas y públicas
 
-Las políticas RLS distinguen ahora entre datos públicos y administrativos:
+Las políticas RLS distinguen entre datos públicos y administrativos:
 
 - una unidad organizativa activa y pública continúa visible públicamente;
 - una unidad interna, privada, en borrador o archivada requiere `pastorals.view` dentro de su entidad y alcance territorial;
@@ -254,9 +245,9 @@ Las políticas RLS distinguen ahora entre datos públicos y administrativos:
 - los nodos autenticados o internos requieren `entities.view`, `pastorals.view` o `structures.manage` dentro del alcance efectivo;
 - una arista solo es visible si sus nodos padre e hijo son visibles.
 
-Los helpers RLS de propósito específico reciben `EXECUTE` únicamente para los roles que necesitan evaluarlos. El helper general `current_user_can_manage_entity(text, uuid)` no fue expuesto directamente para resolver esta política.
+Los helpers RLS de propósito específico reciben `EXECUTE` únicamente para los roles que necesitan evaluarlos. El helper general `current_user_can_manage_entity(text, uuid)` no fue expuesto directamente.
 
-La RPC administrativa `get_structure_node_detail(uuid)` ya no utiliza la visibilidad pública como bypass administrativo. Un usuario autenticado debe tener alcance sobre el nodo, aunque ese nodo también tenga una representación pública en otro canal.
+La RPC administrativa `get_structure_node_detail(uuid)` exige alcance sobre el nodo aunque ese nodo tenga una representación pública en otro canal.
 
 ### Guardas contra IDOR y cambios de contexto
 
@@ -270,58 +261,117 @@ Las fachadas ordinarias bloquean cambios que antes podían intentarse combinando
 - una entidad o unidad vinculada debe pertenecer al mismo país;
 - cuando la diócesis vinculada puede resolverse, también debe coincidir con la diócesis de la plantilla.
 
-Las implementaciones anteriores fueron renombradas como funciones `*_unscoped` y permanecen sin `EXECUTE` para `anon` y `authenticated`. Las nuevas fachadas validan el contexto antes de delegar al escritor canónico.
+Las implementaciones anteriores fueron renombradas como funciones `*_unscoped` y permanecen sin `EXECUTE` para clientes. Las nuevas fachadas validan el contexto antes de delegar al escritor canónico.
 
-### Eventos de unidades organizativas
+### Eventos y auditoría
 
-`admin_apply_organization_unit_event` exige ahora:
+`admin_apply_organization_unit_event` exige sesión, permiso `events.apply` o `super_admin`, alcance territorial resoluble y permiso efectivo sobre la autoridad del evento.
 
-- sesión autenticada;
-- permiso `events.apply` o `super_admin`;
-- alcance territorial resoluble para cualquier actor no global;
-- permiso efectivo sobre la entidad de autoridad del evento.
-
-La ausencia de alcance ya no puede ser suplida por el antiguo bypass nacional.
-
-### Auditoría
-
-El contrato `audit_logs_scope_type_check` incorporó `organization_unit`, que ya era emitido por `resolve_audit_scope`. Sin este ajuste, una edición legítima de unidad alcanzaba el escritor pero fallaba al registrar auditoría.
-
-El alcance `pastoral_entity` se conserva temporalmente por compatibilidad histórica; `organization_unit` es la dimensión canónica vigente.
+El contrato `audit_logs_scope_type_check` incorporó `organization_unit`, que ya era emitido por `resolve_audit_scope`. `pastoral_entity` se conserva temporalmente por compatibilidad histórica.
 
 ### Evidencia transaccional
 
 Las pruebas directas, ejecutadas con datos temporales y `ROLLBACK`, confirmaron:
 
-- un administrador DO ve una unidad interna DO;
-- no ve una unidad interna CO;
-- sí conserva acceso a una unidad pública CO;
+- un administrador DO ve una unidad interna DO y no una interna CO;
+- conserva acceso a unidades y nodos públicos CO por el contrato público;
 - no ve una plantilla inactiva, nivel ni nodo interno CO;
-- sí ve un nodo público CO por el contrato público;
-- la RPC administrativa de detalle rechaza ese nodo público CO por falta de alcance;
+- la RPC administrativa de detalle rechaza un nodo público CO por falta de alcance;
 - los intentos de trasladar una unidad, plantilla, nivel o nodo mediante payload cruzado son rechazados;
 - una edición legítima de plantilla y unidad DO, junto con su auditoría, completa el flujo.
 
-Los datos temporales no se conservaron.
+## Fase 2D — Lecturas de entidades y relaciones
 
-### Alcance todavía pendiente dentro del dominio territorial
+Aplicada mediante:
 
-Este subbloque no declara finalizada la migración territorial. Todavía deben revisarse:
+- `20260728134017_create_public_entity_read_contracts.sql`;
+- `20260728134425_scope_entity_reads_and_relationships.sql`;
+- `20260728134625_normalize_service_role_boolean_helpers.sql`;
+- `20260728134752_restrict_public_entity_base_columns.sql`.
 
-- lectores y mutaciones administrativas de entidades que no utilizan el helper territorial canónico;
-- revisión, aprobación, publicación y movimientos de entidades;
-- eventos estructurales distintos de unidades organizativas;
-- lotes de importación completos, no solo el buscador de coincidencias;
-- búsqueda administrativa y reportes territoriales;
-- políticas o vistas que usen `internal.current_user_has_admin_role()` como bypass de lectura.
+### Contratos públicos sanitizados
 
-## Fase 2D — Eliminación del bypass en dominios restantes
+La ficha pública dejó de consultar directamente las tablas base y utiliza:
 
-**Pendiente.** La migración de usuarios, entidades base, estructuras y unidades organizativas no autoriza a declarar terminada la separación multi-país.
+- `public_entity_directory_details`;
+- `public_entity_relationships`.
+
+Ambas vistas son `security_invoker`. La vista de entidades contiene únicamente campos destinados a publicación. La vista de relaciones excluye:
+
+- `notes`;
+- `document_id`;
+- `approved_change_request_id`;
+- `created_by`;
+- metadatos editoriales de actualización.
+
+La API `/api/entidades` ya no solicita `notes` y utiliza las vistas también para resolver entidades relacionadas.
+
+### RLS territorial
+
+`current_user_can_read_entity(uuid)` permite:
+
+- entidades activas y públicas para cualquier visitante;
+- entidades internas, privadas o inactivas solo cuando el actor posee `entities.view` dentro del alcance territorial canónico.
+
+`current_user_can_read_entity_relationship(uuid)` permite:
+
+- relaciones activas cuando ambos extremos son entidades activas y públicas;
+- relaciones administrativas cuando el actor puede gestionar al menos un extremo y puede leer ambos.
+
+Las políticas heredadas basadas en `current_user_is_admin()` y `current_user_has_any_active_role()` fueron sustituidas por estos lectores territoriales.
+
+`current_user_can_read_entity_descendants(uuid)` también exige ahora `entities.view` sobre la entidad raíz; `national_admin` y `scope_type='national'` ya no constituyen bypasses globales.
+
+### Escrituras y columnas base
+
+`authenticated` ya no posee `INSERT`, `UPDATE` ni `DELETE` directos sobre `entity_relationships`; las mutaciones continúan por RPC y eventos auditados.
+
+`anon` ya no posee `SELECT` de tabla completa. Conserva permisos por columna exclusivamente para soportar las vistas `security_invoker`. No puede leer:
+
+- `ecclesiastical_entities.created_by`;
+- `entity_relationships.notes`;
+- `entity_relationships.document_id`;
+- `entity_relationships.approved_change_request_id`;
+- actores o referencias internas de workflow.
+
+### Booleanos estrictos
+
+Una prueba reveló que el patrón:
+
+```sql
+current_setting('request.jwt.claim.role', true) = 'service_role' OR ...
+```
+
+podía devolver `NULL` cuando el claim no existía. En PL/pgSQL, una condición negativa basada en ese resultado podía no ejecutarse.
+
+Se normalizaron con `coalesce(..., false)`:
+
+- `current_user_can_access_country`;
+- `current_user_can_manage_user`;
+- `current_user_can_read_entity_descendants`.
+
+Desde esta migración, los tres helpers devuelven siempre `true` o `false`.
+
+### Evidencia transaccional
+
+Las pruebas con registros temporales y `ROLLBACK` confirmaron:
+
+- `anon` no ve entidades ni relaciones internas de DO o CO;
+- `anon` sí ve entidades y relaciones públicas;
+- el administrador DO ve entidades y relaciones internas DO;
+- no ve entidades ni relaciones internas CO;
+- conserva la lectura de datos públicos CO;
+- descendientes de DO/CO producen `true/false`, no `true/NULL`;
+- las vistas públicas y `get_entity_internal_tree` continúan operativas después de restringir columnas;
+- las columnas internas no poseen privilegio de lectura anónimo.
+
+## Fase 2E — Dominios restantes
+
+**Pendiente.** La separación internacional aún no está cerrada transversalmente.
 
 Los consumidores restantes deben migrarse en este orden:
 
-1. completar entidades y eventos estructurales territoriales;
+1. revisión, aprobación, publicación y eventos estructurales de entidades;
 2. personas, nombramientos y cargos;
 3. eventos y calendarios;
 4. importaciones, revisión y aplicación;
@@ -331,13 +381,13 @@ Los consumidores restantes deben migrarse en este orden:
 Para cada consumidor se requiere:
 
 - identificar la entidad o país objetivo antes de autorizar;
-- reemplazar el bypass por `super_admin OR current_user_can_access_country(...)` o por un helper territorial más específico;
+- reemplazar el bypass por `super_admin OR current_user_can_access_country(...)` o un helper territorial más específico;
 - añadir pruebas A↔B entre dos países;
 - verificar lectura y escritura;
-- comprobar que el superadministrador conserva operación global;
-- registrar cualquier dominio que todavía no tenga una ruta confiable hacia país.
+- comprobar que `super_admin` conserva operación global;
+- registrar dominios que todavía no tengan una ruta confiable hacia país.
 
-No debe modificarse `current_user_is_super_or_national()` para devolver únicamente superadministradores hasta completar ese inventario. Cambiarlo de forma central sin migrar consumidores produciría bloqueos funcionales impredecibles.
+No debe modificarse `current_user_is_super_or_national()` de forma central hasta completar el inventario. Hacerlo antes produciría bloqueos funcionales impredecibles.
 
 ## Fase 3 — Normalización definitiva de tipos de alcance
 
@@ -351,7 +401,7 @@ Después de completar la fase 2:
 6. actualizar contratos de API, formularios, filtros, reportes y manuales;
 7. retirar o redefinir `current_user_is_super_or_national()`.
 
-## Criterios de aceptación de la separación multi-país
+## Criterios de aceptación
 
 La arquitectura solo podrá considerarse cerrada cuando exista evidencia de que:
 
@@ -362,20 +412,20 @@ La arquitectura solo podrá considerarse cerrada cuando exista evidencia de que:
 - usuarios pendientes y sin rol permanecen visibles solo dentro de su país;
 - auditoría, importaciones, eventos, búsqueda y reportes conservan país;
 - `super_admin` puede operar globalmente sin convertirse en una cuenta nacional;
-- la matriz E2E incluye aislamiento bidireccional entre países además del aislamiento entre diócesis;
-- no quedan consumidores de autorización que equiparen `national_admin` con acceso global.
+- la matriz E2E incluye aislamiento bidireccional entre países y diócesis;
+- no quedan consumidores que equiparen `national_admin` con acceso global.
 
 ## Riesgos y deuda controlada
 
-- El bypass heredado continúa activo en dominios todavía no migrados; esta es la principal deuda de seguridad de la fase 2D.
+- El bypass heredado continúa activo en dominios todavía no migrados; esta es la principal deuda de seguridad de la fase 2E.
 - `pastoral_areas` necesita una relación territorial canónica antes de habilitarse para administradores nacionales.
-- Las cuentas existentes recibieron una fuente `backfill` en República Dominicana; antes de operar otros países debe revisarse si corresponde conservarla para cada cuenta.
-- Los escritores internos todavía poseen defaults históricos de República Dominicana; las fachadas migradas los neutralizan derivando país, pero los demás escritores deben revisarse individualmente.
+- Las cuentas existentes recibieron una fuente `backfill` en República Dominicana; antes de operar otros países debe revisarse si corresponde conservarla.
+- Los escritores internos todavía poseen defaults históricos de República Dominicana; las fachadas migradas los neutralizan, pero los demás escritores deben revisarse individualmente.
 - Los helpers RLS con `SECURITY DEFINER` deben permanecer mínimos, con `search_path` fijo y permisos de ejecución explícitos.
-- Los índices nuevos aparecen inicialmente como no utilizados por el bajo volumen y la ausencia de carga; no deben eliminarse sin estadísticas representativas.
+- Los índices nuevos no deben eliminarse sin estadísticas representativas.
 - Los registros de auditoría antiguos solo reciben país cuando su alcance histórico permite derivarlo con certeza.
 - El alcance `national` sin país se conserva únicamente para compatibilidad de lectura y debe desaparecer en la fase 3.
 
 ## Regla de operación
 
-Hasta completar la fase 2D, no se deben crear administradores nacionales de otros países para uso real. Pueden utilizarse cuentas QA controladas con entidades `test-*`, siempre con pruebas A↔B, contraseñas rotadas y suspensión posterior.
+Hasta completar la fase 2E, no se deben crear administradores nacionales de otros países para uso real. Pueden utilizarse cuentas QA controladas con entidades `test-*`, siempre con pruebas A↔B, contraseñas rotadas y suspensión posterior.
