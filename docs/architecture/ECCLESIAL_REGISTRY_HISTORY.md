@@ -1,6 +1,6 @@
 # Edición e historial del registro eclesial
 
-> Estado: implementado en base de datos e interfaz; compilación y recorrido autenticado final pendientes  
+> Estado: implementado y compilado en producción; recorrido autenticado multinivel pendiente  
 > Fecha: 2026-07-28  
 > Ruta: `/admin/relaciones-eclesiales`
 
@@ -139,6 +139,8 @@ La edición incluye:
 - condición principal;
 - estado y visibilidad.
 
+Los campos opcionales vaciados se envían explícitamente al escritor. Esto permite eliminar una fecha, dirección, fuente o dato civil anterior en vez de conservarlo por omisión del JSON.
+
 ## Relaciones secundarias
 
 Para lugares se admiten desde la interfaz:
@@ -178,6 +180,38 @@ Se comprobó:
 - cero datos temporales persistidos.
 
 Resultado: `registry_edit_history_matrix_passed`.
+
+La comprobación final confirmó además:
+
+- tres migraciones de edición e historial aplicadas;
+- cero lugares QA;
+- cero instituciones QA;
+- cero canales QA;
+- cero auditorías QA.
+
+## Validación de producción
+
+El despliegue de producción `dpl_C846KVFPNqZer3N2HXzdZ1GW3bHZ`, asociado al commit `c36406e61316655bc52651f43c788b3dbf82731d`, terminó en estado `READY`.
+
+Ese artefacto incluye:
+
+- la ruta `/admin/relaciones-eclesiales`;
+- el workspace de edición e historial;
+- el servicio TypeScript;
+- la navegación autorizada;
+- los lectores y escritores RPC;
+- las reglas de integridad histórica;
+- los contratos estáticos.
+
+La ruta respondió correctamente. Sin sesión activa, el middleware redirige a `/admin/login` y conserva `next=/admin/relaciones-eclesiales`. La respuesta mantiene `x-robots-tag: noindex` para el área administrativa.
+
+El ajuste posterior para permitir vaciar campos opcionales está contenido en el commit `d3d91b1925dbc2cda8a7ebb02405d4a7826da514`. No altera la estructura de la página ni los contratos de base de datos.
+
+## Advisors
+
+El Security Advisor no detectó exposiciones nuevas asociadas a este bloque. Conserva únicamente la advertencia externa conocida de protección contra contraseñas filtradas deshabilitada.
+
+El Performance Advisor no añadió claves foráneas sin índice por estas migraciones. Los dos índices parciales nuevos pueden aparecer inicialmente como no utilizados hasta que exista tráfico real de edición.
 
 ## Migraciones
 
