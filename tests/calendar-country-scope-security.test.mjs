@@ -10,6 +10,7 @@ const migrations = {
   configuration: '20260728163057_create_scoped_calendar_configuration_rpcs.sql',
   roleFix: '20260728163206_fix_event_reminder_role_catalog_validation.sql',
   generator: '20260728163434_generate_calendar_occurrences_by_scope.sql',
+  notificationRls: '20260728164733_optimize_calendar_notification_rls.sql',
 }
 
 async function readMigration(fileName) {
@@ -42,7 +43,7 @@ test('calendar records resolve all canonical scopes without a global admin bypas
     'app_private.current_user_can_manage_calendar_record',
     'app_private.current_user_can_view_calendar_record',
   ]) {
-    assert.match(migration, new RegExp(`function ${helper.replaceAll('.', '\\.')}`))
+    assert.match(migration, new RegExp(`function ${helper.replaceAll('.', '\.')}`))
   }
 
   assert.match(migration, /person_scope_entities/)
@@ -80,6 +81,14 @@ test('calendar RLS exposes public rows globally and non-public rows only through
   }
 
   assert.match(migration, /alter view public\.public_calendar_events set \(security_invoker = true\)/)
+})
+
+test('notification RLS caches auth uid through an initplan', async () => {
+  const migration = await readMigration(migrations.notificationRls)
+
+  assert.match(migration, /recipient_user_id = \(select auth\.uid\(\)\)/)
+  assert.match(migration, /current_user_can_manage_calendar_record\('events\.view', 'event_notification_logs', id\)/)
+  assert.doesNotMatch(migration, /recipient_user_id = auth\.uid\(\)/)
 })
 
 test('organization unit occurrences are accepted and policy helper grants stay minimal', async () => {
