@@ -61,7 +61,7 @@ export type AdminDashboardLoadOptions = {
 
 type AuditRow = Omit<DashboardActivity, 'actor_name'>
 
-const contextualEntityScopeTypes = new Set(['diocese', 'parish', 'entity'])
+const contextualEntityScopeTypes = new Set(['national', 'diocese', 'parish', 'entity'])
 
 function throwIfError(error: { message: string } | null, fallback: string) {
   if (error) throw new Error(error.message || fallback)
