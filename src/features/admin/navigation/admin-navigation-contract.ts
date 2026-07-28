@@ -160,6 +160,16 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     mobilePriority: 50,
   },
   {
+    id: 'documents',
+    href: '/admin/documentos',
+    icon: '▤',
+    label: 'Documentos',
+    sublabel: 'Decretos, fuentes y archivos',
+    section: 'directories',
+    entryPermissions: ['documents.view'],
+    mobilePriority: 48,
+  },
+  {
     id: 'review',
     href: '/admin/revision',
     icon: '!',
