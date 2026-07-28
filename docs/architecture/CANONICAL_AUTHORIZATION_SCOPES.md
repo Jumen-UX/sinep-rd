@@ -17,6 +17,22 @@ La autorización administrativa de SINEP debe distinguir entre:
 
 Los identificadores de estas categorías no son intercambiables. Cada uno pertenece a una tabla y una clave foránea distinta.
 
+## Migraciones
+
+El bloque quedó aplicado y versionado mediante nueve migraciones, en el mismo orden usado en producción:
+
+1. `20260728202305_normalize_role_assignment_scope_storage.sql`;
+2. `20260728202612_replace_legacy_scope_authorization_helpers.sql`;
+3. `20260728202801_restore_safe_current_user_can_facade.sql`;
+4. `20260728203321_preserve_structure_node_entity_scopes.sql`;
+5. `20260728203435_expose_canonical_role_scope_labels.sql`;
+6. `20260728203626_remove_broad_national_rls_shortcuts.sql`;
+7. `20260728203749_simplify_access_catalog_read_policies.sql`;
+8. `20260728204636_grant_scoped_user_assignment_rls_helper.sql`;
+9. `20260728205504_make_current_user_can_security_invoker.sql`.
+
+Las migraciones correctivas permanecen separadas para reproducir exactamente los contratos aplicados y las regresiones descubiertas durante la validación.
+
 ## Vocabulario canónico
 
 `user_role_assignments.scope_type` admite exclusivamente:
@@ -111,7 +127,7 @@ Un alcance `national` sin entidad país devuelve `false`. Una asignación nacion
 
 ### `current_user_can`
 
-La fachada pública se conserva temporalmente para consumidores existentes. Es `SECURITY DEFINER`, pero delega exclusivamente en el despachador tipado. `anon` no puede ejecutarla.
+La fachada pública se conserva temporalmente para consumidores existentes. Es `SECURITY INVOKER`, no está disponible para `anon` y delega exclusivamente en el despachador tipado privado. El Security Advisor confirmó que ya no existe una función pública `SECURITY DEFINER` nueva asociada a este bloque.
 
 ### `current_user_has_scope_access`
 
@@ -191,6 +207,8 @@ Para el administrador nacional DO:
 - ES con `entities.view` → `false`;
 - `national` sin entidad país → `false`.
 
+La misma matriz pasó después de convertir `current_user_can` a `SECURITY INVOKER`.
+
 ### Opciones de asignación
 
 El administrador DO recibió únicamente opciones de su país, separadas en:
@@ -216,19 +234,36 @@ Se validaron de forma reversible:
 
 El administrador DO vio tres asignaciones DO y ninguna asignación del `super_admin`.
 
+### Integridad
+
+La verificación final confirmó:
+
+- cuatro asignaciones reales;
+- cero tipos de alcance inválidos;
+- cero nodos asociados a tipos incorrectos;
+- cero asignaciones o auditorías residuales de las pruebas.
+
 ## Contratos automatizados
 
 `tests/canonical-role-scope-contract.test.mjs` protege:
 
-- las ocho migraciones aplicadas;
+- las primeras ocho migraciones del modelo y RLS;
 - el vocabulario canónico;
 - las claves dedicadas;
-- la fachada segura;
+- la fachada de compatibilidad;
 - la preservación de nodos;
 - etiquetas de onboarding;
 - RLS sin bypass nacional;
 - navegación por identificador canónico;
 - catálogos sin helpers administrativos redundantes.
+
+`tests/current-user-can-security-contract.test.mjs` protege la novena migración y exige que la fachada pública final sea `SECURITY INVOKER`, sin ejecución para `anon` y con delegación al helper tipado privado.
+
+## Advisors
+
+El Security Advisor conserva únicamente la advertencia externa conocida de protección contra contraseñas filtradas deshabilitada. El Performance Advisor no reportó nuevas políticas permisivas duplicadas ni problemas de RLS derivados de este bloque.
+
+El índice `user_role_assignments_structure_node_id_idx` puede aparecer temporalmente como no utilizado porque todavía no hay asignaciones persistentes a nodos. Se conserva porque cubre la nueva clave foránea y las consultas de autorización estructural.
 
 ## Riesgos y pendientes
 
