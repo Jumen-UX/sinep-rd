@@ -10,7 +10,7 @@ const entityColumns = [
 ].join(',')
 
 const relationshipColumns = [
-  'id','parent_entity_id','child_entity_id','relationship_type','start_date','end_date','is_current','status','notes','created_at',
+  'id','parent_entity_id','child_entity_id','relationship_type','start_date','end_date','is_current','status','created_at',
 ].join(',')
 
 const appointmentColumns = [
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const entities = await fetchSupabaseJson<Record<string, unknown>[]>('ecclesiastical_entities', {
+    const entities = await fetchSupabaseJson<Record<string, unknown>[]>('public_entity_directory_details', {
       slug: `eq.${slug}`,
       select: entityColumns,
       limit: '1',
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         select: 'key,name',
         limit: '1',
       }).catch(() => []),
-      fetchSupabaseJson<Record<string, unknown>[]>('entity_relationships', {
+      fetchSupabaseJson<Record<string, unknown>[]>('public_entity_relationships', {
         or: `(parent_entity_id.eq.${entityId},child_entity_id.eq.${entityId})`,
         select: relationshipColumns,
         order: 'start_date.desc.nullslast',
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
     let relatedEntities: Record<string, unknown>[] = []
 
     if (relatedIds.length > 0) {
-      relatedEntities = await fetchSupabaseJson<Record<string, unknown>[]>('ecclesiastical_entities', {
+      relatedEntities = await fetchSupabaseJson<Record<string, unknown>[]>('public_entity_directory_details', {
         id: `in.(${relatedIds.join(',')})`,
         select: 'id,name,slug',
       }).catch(() => [])
