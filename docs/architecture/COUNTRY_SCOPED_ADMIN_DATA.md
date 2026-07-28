@@ -19,7 +19,7 @@ Un administrador nacional solo consulta su país. Un editor pastoral puede consu
 
 ## Migraciones
 
-El bloque se implementó mediante siete migraciones aplicadas y versionadas en el mismo orden:
+El bloque se implementó mediante ocho migraciones aplicadas y versionadas en el mismo orden:
 
 1. `20260728193430_scope_audit_and_generic_units_by_country.sql`;
 2. `20260728193615_grant_scoped_audit_read.sql`;
@@ -27,7 +27,8 @@ El bloque se implementó mediante siete migraciones aplicadas y versionadas en e
 4. `20260728193923_grant_scoped_search_document_rpc_helpers.sql`;
 5. `20260728194100_scope_admin_reports_by_country.sql`;
 6. `20260728194950_support_pastoral_document_roots.sql`;
-7. `20260728195113_prevent_pastoral_scope_entity_escalation.sql`.
+7. `20260728195113_prevent_pastoral_scope_entity_escalation.sql`;
+8. `20260728200434_consolidate_document_select_rls.sql`.
 
 Las migraciones correctivas permanecen separadas para reproducir exactamente la evolución aplicada en producción.
 
@@ -126,6 +127,8 @@ Los resolutores son:
 - `current_user_can_view_document`.
 
 Los documentos `private` y `confidential` requieren `documents.view_private`. Los documentos internos requieren `documents.view`. Los documentos públicos activos o aprobados pueden consultarse anónimamente.
+
+La lectura anónima utiliza `documents_select_public_anon`. Para usuarios autenticados, `documents_select_authenticated` combina la lectura pública y la lectura administrativa territorial en una sola política, evitando políticas permisivas duplicadas y evaluaciones innecesarias por fila.
 
 ### Raíces soportadas
 
@@ -282,12 +285,13 @@ Ningún documento, rol o registro QA quedó persistido.
 
 `tests/admin-data-scope-security.test.mjs` verifica:
 
-- presencia de las siete migraciones;
+- presencia de las ocho migraciones;
 - aislamiento de auditoría;
 - cierre de escrituras directas;
 - búsqueda territorial y pastoral;
 - resolutores documentales;
 - raíces de entidad, unidad y área;
+- política documental consolidada para usuarios autenticados;
 - prevención de escalación por entidad de respaldo;
 - KPI nacionales y reportes autorizados.
 
