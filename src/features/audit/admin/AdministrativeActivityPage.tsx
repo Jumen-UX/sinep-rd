@@ -9,6 +9,7 @@ import { PageState } from '@/components/ui/page-state'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { createClient } from '@/lib/supabase/client'
 import {
+  downloadAdministrativeActivityCsv,
   loadRecentAdministrativeActivity,
   type ActivityRow,
 } from '../services/audit-admin-service'
@@ -70,9 +71,19 @@ export default function AdministrativeActivityPage() {
           </StatusBadge>
         }
         actions={
-          <Button asChild variant="secondary">
-            <Link href="/admin/configuracion">Volver a configuración</Link>
-          </Button>
+          <>
+            <Button
+              disabled={loading || rows.length === 0}
+              onClick={() => downloadAdministrativeActivityCsv(rows)}
+              type="button"
+              variant="secondary"
+            >
+              Exportar CSV
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/admin/configuracion">Volver a configuración</Link>
+            </Button>
+          </>
         }
       />
 
