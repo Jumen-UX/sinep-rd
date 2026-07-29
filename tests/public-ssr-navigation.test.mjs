@@ -14,7 +14,7 @@ test('public home renders a server shell around one interactive explorer', async
     readRepoFile('src/lib/public/dashboard.ts'),
   ])
 
-  assert.doesNotMatch(page, /['"]use client['"]/)
+  assert.doesNotMatch(page, /['"]use client['"]/) 
   assert.match(page, /loadPublicDashboardBundle\(\)/)
   assert.doesNotMatch(page, /Promise\.all\(\[loadPublicDashboardData\(\), loadDashboardSummary\(\)\]\)/)
   assert.match(page, /data: initialData, summary: initialSummary/)
@@ -22,7 +22,7 @@ test('public home renders a server shell around one interactive explorer', async
   assert.match(page, /initialData=\{initialData\}/)
   assert.match(page, /initialSummary=\{initialSummary\}/)
 
-  assert.doesNotMatch(shell, /['"]use client['"]/)
+  assert.doesNotMatch(shell, /['"]use client['"]/) 
   assert.match(shell, /<PublicDashboardExplorer \{\.\.\.props\} \/>/)
   assert.match(shell, /public-mobile-header/)
   assert.match(shell, /public-sidebar/)
@@ -41,6 +41,22 @@ test('public home renders a server shell around one interactive explorer', async
   assert.match(loader, /public_position_assignments_with_hierarchy/)
 
   await assert.rejects(access(new URL('src/features/public/PublicDashboardClient.tsx', repoRoot)))
+})
+
+test('secondary dashboard views are lazy while territorial remains in the initial explorer', async () => {
+  const explorer = await readRepoFile('src/features/public/PublicDashboardExplorer.tsx')
+
+  assert.match(explorer, /import dynamic from 'next\/dynamic'/)
+  assert.match(explorer, /import \{ PublicTerritorialView \} from '\.\/PublicTerritorialView'/)
+  assert.doesNotMatch(explorer, /from '\.\/PublicPeoplePastoralViews'/)
+  assert.doesNotMatch(explorer, /from '\.\/PublicOrganizationViews'/)
+  assert.match(explorer, /import\('\.\/PublicPeoplePastoralViews'\)\.then\(\(module\) => module\.PublicPeopleView\)/)
+  assert.match(explorer, /import\('\.\/PublicPeoplePastoralViews'\)\.then\(\(module\) => module\.PublicPastoralView\)/)
+  assert.match(explorer, /import\('\.\/PublicOrganizationViews'\)\.then\(\(module\) => module\.PublicAdministrativeView\)/)
+  assert.match(explorer, /import\('\.\/PublicOrganizationViews'\)\.then\(\(module\) => module\.PublicCollegialView\)/)
+  assert.match(explorer, /aria-busy="true"/)
+  assert.match(explorer, /role="status" aria-live="polite"/)
+  assert.doesNotMatch(explorer, /ssr:\s*false/)
 })
 
 test('public navigation contains no placeholder hash destinations', async () => {
@@ -69,7 +85,7 @@ test('public directory pages are server rendered and filter through URLs', async
   ])
 
   for (const page of [dioceses, people]) {
-    assert.doesNotMatch(page, /['"]use client['"]/)
+    assert.doesNotMatch(page, /['"]use client['"]/) 
     assert.doesNotMatch(page, /useEffect|window\.history|fetch\(/)
     assert.match(page, /searchParams: Promise/)
   }
