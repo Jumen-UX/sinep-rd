@@ -1,24 +1,32 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import type { OrganizationUnit, PublicView } from '@/lib/public/dashboard'
+import type { OrganizationUnit, PublicDashboardBundle, PublicView } from '@/lib/public/dashboard'
 import { personTypeLabel, views, type PersonCard, type Props } from './PublicDashboardShared'
 import { buildPublicDashboardScope } from './buildPublicDashboardScope'
 import { buildPublicDashboardSearch } from './PublicDashboardUrlState'
 
+type DeferredDataState = 'idle' | 'loading' | 'error'
+
 export function usePublicDashboardModel({
   initialData,
+  initialDataComplete,
   initialSummary,
   initialView,
   initialCountry,
   initialProvince,
   initialJurisdictionId,
 }: Props) {
+  const [dashboardData, setDashboardData] = useState(initialData)
+  const [dashboardSummary, setDashboardSummary] = useState(initialSummary)
+  const [hasCompleteData, setHasCompleteData] = useState(initialDataComplete)
+  const [deferredDataState, setDeferredDataState] = useState<DeferredDataState>('idle')
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const defaultCountry = useMemo(() => (
-    initialData.countries.some((item) => item.key === 'DO')
+    dashboardData.countries.some((item) => item.key === 'DO')
       ? 'DO'
-      : initialData.countries[0]?.key ?? 'DO'
-  ), [initialData.countries])
+      : dashboardData.countries[0]?.key ?? 'DO'
+  ), [dashboardData.countries])
   const [activeView, setActiveView] = useState<PublicView>(initialView)
   const [country, setCountry] = useState(initialCountry)
   const [province, setProvince] = useState(initialProvince)
@@ -42,22 +50,54 @@ export function usePublicDashboardModel({
     }
   }, [activeView, country, defaultCountry, jurisdictionId, province])
 
+  useEffect(() => {
+    if (activeView === 'territorial' || hasCompleteData) return
+
+    const controller = new AbortController()
+    setDeferredDataState('loading')
+
+    async function loadDeferredData() {
+      try {
+        const response = await fetch('/api/dashboard/vistas', {
+          headers: { Accept: 'application/json' },
+          signal: controller.signal,
+        })
+        if (!response.ok) throw new Error(`Dashboard views request failed with ${response.status}`)
+
+        const bundle = await response.json() as PublicDashboardBundle
+        if (!bundle.data || !bundle.summary) throw new Error('Dashboard views response is incomplete')
+
+        setDashboardData(bundle.data)
+        setDashboardSummary(bundle.summary)
+        setHasCompleteData(true)
+        setDeferredDataState('idle')
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        console.error('Unable to load deferred public dashboard data', error)
+        setDeferredDataState('error')
+      }
+    }
+
+    void loadDeferredData()
+    return () => controller.abort()
+  }, [activeView, hasCompleteData, loadAttempt])
+
   const scope = useMemo(
-    () => buildPublicDashboardScope(initialData, country, province, jurisdictionId),
-    [country, initialData, jurisdictionId, province],
+    () => buildPublicDashboardScope(dashboardData, country, province, jurisdictionId),
+    [country, dashboardData, jurisdictionId, province],
   )
   const countryName = useMemo(
-    () => initialData.countries.find((row) => row.key === country)?.name ?? 'República Dominicana',
-    [country, initialData.countries],
+    () => dashboardData.countries.find((row) => row.key === country)?.name ?? 'República Dominicana',
+    [country, dashboardData.countries],
   )
-  const countryPeople = useMemo<PersonCard[]>(() => initialData.people.map((item) => ({
+  const countryPeople = useMemo<PersonCard[]>(() => dashboardData.people.map((item) => ({
     id: item.id,
     name: item.display_name,
     slug: item.slug,
     personType: item.person_type,
     role: personTypeLabel(item.person_type),
     scope: countryName,
-  })), [countryName, initialData.people])
+  })), [countryName, dashboardData.people])
   const territoriallyLinkedPeople = useMemo(() => Array.from(new Map(
     [...scope.ordinaryPeople, ...scope.assignmentPeople].map((item) => [item.id, item]),
   ).values()), [scope.assignmentPeople, scope.ordinaryPeople])
@@ -74,13 +114,13 @@ export function usePublicDashboardModel({
     const administrative: OrganizationUnit[] = []
     const collegial: OrganizationUnit[] = []
 
-    for (const item of initialData.organization_units) {
+    for (const item of dashboardData.organization_units) {
       if (/(consejo|comisi[oó]n|comit[eé]|colegio|equipo)/i.test(item.name)) collegial.push(item)
       else administrative.push(item)
     }
 
     return { administrativeUnits: administrative, collegialUnits: collegial }
-  }, [initialData.organization_units])
+  }, [dashboardData.organization_units])
   const scopeTitle = scope.selectedJurisdiction?.name
     || province
     || countryName
@@ -89,6 +129,8 @@ export function usePublicDashboardModel({
     () => views.find((item) => item.key === activeView) ?? views[0],
     [activeView],
   )
+  const deferredDataPending = activeView !== 'territorial' && !hasCompleteData && deferredDataState !== 'error'
+  const deferredDataError = activeView !== 'territorial' && !hasCompleteData && deferredDataState === 'error'
 
   function resetScope() {
     setProvince('')
@@ -97,9 +139,14 @@ export function usePublicDashboardModel({
     setPastoralLevel('')
   }
 
+  function retryDeferredData() {
+    setDeferredDataState('idle')
+    setLoadAttempt((attempt) => attempt + 1)
+  }
+
   return {
-    initialData,
-    initialSummary,
+    initialData: dashboardData,
+    initialSummary: dashboardSummary,
     activeView,
     setActiveView,
     country,
@@ -119,6 +166,9 @@ export function usePublicDashboardModel({
     collegialUnits,
     scopeTitle,
     activeMeta,
+    deferredDataPending,
+    deferredDataError,
+    retryDeferredData,
     resetScope,
   }
 }
