@@ -14,7 +14,9 @@ export type Props = {
   initialData: PublicDashboardData
   initialSummary: DashboardSummary
   initialView: PublicView
+  initialCountry: string
   initialProvince: string
+  initialJurisdictionId: string
 }
 
 export type PersonCard = {
