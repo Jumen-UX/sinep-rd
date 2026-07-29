@@ -1,6 +1,3 @@
-'use client'
-
-import { useMemo } from 'react'
 import Link from 'next/link'
 import styles from './EntityInstitutionalTimeline.module.css'
 
@@ -143,7 +140,7 @@ export function buildEntityInstitutionalTimeline(payload: EntityTimelinePayload)
 }
 
 export default function EntityInstitutionalTimeline({ payload }: { payload: EntityTimelinePayload }) {
-  const items = useMemo(() => buildEntityInstitutionalTimeline(payload), [payload])
+  const items = buildEntityInstitutionalTimeline(payload)
 
   return (
     <section className={`card dashboard-section ${styles.section}`} id="historia-institucional" aria-labelledby="entity-institutional-timeline-title">
