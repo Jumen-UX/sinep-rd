@@ -29,3 +29,23 @@ test('dashboard-only styles stay out of the root layout and load on the public h
   assert.match(performanceAudit, /public-dashboard-route-scoped-css/)
   assert.match(performanceAudit, /routeStyles: dashboardRouteStyles/)
 })
+
+test('administrative brand styles load only inside the admin route group', async () => {
+  const [rootLayout, adminLayout, publicOverrides] = await Promise.all([
+    readRepoFile('src/app/layout.tsx'),
+    readRepoFile('src/app/(admin)/layout.tsx'),
+    readRepoFile('src/app/public-brand-overrides.css'),
+  ])
+
+  assert.doesNotMatch(rootLayout, /['"]\.\/admin-brand\.css['"]/)
+  assert.match(rootLayout, /['"]\.\/public-brand-overrides\.css['"]/)
+  assert.match(adminLayout, /['"]\.\.\/admin-brand\.css['"]/)
+
+  for (const selector of [
+    '.home-hero-panel',
+    '.home-view-card:hover',
+    '.home-warning-note',
+  ]) {
+    assert.match(publicOverrides, new RegExp(selector.replaceAll('.', '\\.')))
+  }
+})
