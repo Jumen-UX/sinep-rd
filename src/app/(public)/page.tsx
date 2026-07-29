@@ -12,17 +12,46 @@ export const metadata: Metadata = buildPublicMetadata({
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 const allowedViews = new Set<PublicView>(['territorial', 'clero', 'pastoral', 'administrativa', 'colegial'])
 const firstValue = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value
+const slugify = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
 export default async function HomePage({ searchParams }: PageProps) {
   const params = await searchParams
   const requestedView = firstValue(params.vista)
+  const requestedCountry = firstValue(params.pais)?.toUpperCase()
   const requestedProvince = firstValue(params.provincia) ?? ''
+  const requestedJurisdictionId = firstValue(params.jurisdiccion) ?? ''
   const initialView = allowedViews.has(requestedView as PublicView) ? requestedView as PublicView : 'territorial'
 
   try {
     const { data: initialData, summary: initialSummary } = await loadPublicDashboardBundle()
-    const exactProvince = initialSummary.dioceses.provinces.find((item) => item.name === requestedProvince || item.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') === requestedProvince)?.name ?? ''
-    return <PublicDashboardShell initialData={initialData} initialSummary={initialSummary} initialView={initialView} initialProvince={exactProvince} />
+    const defaultCountry = initialData.countries.some((item) => item.key === 'DO')
+      ? 'DO'
+      : initialData.countries[0]?.key ?? 'DO'
+    const initialCountry = requestedCountry && initialData.countries.some((item) => item.key === requestedCountry)
+      ? requestedCountry
+      : defaultCountry
+    const countryDioceses = initialData.dioceses.filter((item) => (
+      item.country_iso2 ? item.country_iso2 === initialCountry : initialCountry === 'DO'
+    ))
+    const initialProvince = countryDioceses.find((item) => {
+      const provinceName = item.ecclesiastical_province_name
+      return provinceName && (provinceName === requestedProvince || slugify(provinceName) === requestedProvince)
+    })?.ecclesiastical_province_name ?? ''
+    const initialJurisdictionId = countryDioceses.find((item) => (
+      item.id === requestedJurisdictionId
+      && (!initialProvince || item.ecclesiastical_province_name === initialProvince)
+    ))?.id ?? ''
+
+    return (
+      <PublicDashboardShell
+        initialCountry={initialCountry}
+        initialData={initialData}
+        initialJurisdictionId={initialJurisdictionId}
+        initialProvince={initialProvince}
+        initialSummary={initialSummary}
+        initialView={initialView}
+      />
+    )
   } catch (error) {
     console.error('Unable to render the public dashboard', error)
     return <main className="container"><div className="error-box">No se pudo cargar el portal público. Intenta nuevamente.</div></main>
