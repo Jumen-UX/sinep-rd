@@ -11,17 +11,21 @@ const dashboardStyles = [
 ]
 
 test('dashboard-only styles stay out of the root layout and load on the public home route', async () => {
-  const [rootLayout, publicHome] = await Promise.all([
+  const [rootLayout, publicHome, performanceAudit] = await Promise.all([
     readRepoFile('src/app/layout.tsx'),
     readRepoFile('src/app/(public)/page.tsx'),
+    readRepoFile('scripts/audit-web-performance.mjs'),
   ])
 
   for (const style of dashboardStyles) {
     assert.doesNotMatch(rootLayout, new RegExp(`['"]\\./${style.replace('.', '\\.')}['"]`))
     assert.match(publicHome, new RegExp(`['"]\\.\\./${style.replace('.', '\\.')}['"]`))
+    assert.match(performanceAudit, new RegExp(`['"]${style.replace('.', '\\.')}['"]`))
   }
 
   const importPositions = dashboardStyles.map((style) => publicHome.indexOf(`../${style}`))
   assert.deepEqual(importPositions, [...importPositions].sort((left, right) => left - right))
   assert.equal(importPositions.every((position) => position >= 0), true)
+  assert.match(performanceAudit, /public-dashboard-route-scoped-css/)
+  assert.match(performanceAudit, /routeStyles: dashboardRouteStyles/)
 })
