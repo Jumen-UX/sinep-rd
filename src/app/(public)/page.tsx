@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 import PublicDashboardShell from '@/features/public/PublicDashboardShell'
-import { loadPublicDashboardBundle, type PublicView } from '@/lib/public/dashboard'
+import {
+  loadPublicDashboardBundle,
+  loadPublicTerritorialDashboardBundle,
+  type PublicView,
+} from '@/lib/public/dashboard'
 import { buildPublicMetadata } from '@/lib/public/metadata'
 import '../public-combobox.css'
 import '../public-dashboard.css'
@@ -24,9 +28,12 @@ export default async function HomePage({ searchParams }: PageProps) {
   const requestedProvince = firstValue(params.provincia) ?? ''
   const requestedJurisdictionId = firstValue(params.jurisdiccion) ?? ''
   const initialView = allowedViews.has(requestedView as PublicView) ? requestedView as PublicView : 'territorial'
+  const initialDataComplete = initialView !== 'territorial'
 
   try {
-    const { data: initialData, summary: initialSummary } = await loadPublicDashboardBundle()
+    const { data: initialData, summary: initialSummary } = initialDataComplete
+      ? await loadPublicDashboardBundle()
+      : await loadPublicTerritorialDashboardBundle()
     const defaultCountry = initialData.countries.some((item) => item.key === 'DO')
       ? 'DO'
       : initialData.countries[0]?.key ?? 'DO'
@@ -49,6 +56,7 @@ export default async function HomePage({ searchParams }: PageProps) {
       <PublicDashboardShell
         initialCountry={initialCountry}
         initialData={initialData}
+        initialDataComplete={initialDataComplete}
         initialJurisdictionId={initialJurisdictionId}
         initialProvince={initialProvince}
         initialSummary={initialSummary}
