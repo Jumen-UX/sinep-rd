@@ -1,13 +1,15 @@
 import 'server-only'
 
 import { cache } from 'react'
-import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
+import { revalidatePath, unstable_cache } from 'next/cache'
+import { PUBLIC_CACHE_TAGS } from './cache-tags'
 import { loadPublicEntityDetail as loadUncachedPublicEntityDetail } from './entity-detail'
 import { loadPublicPersonDetail as loadUncachedPublicPersonDetail } from './person-detail'
+import { revalidatePublicCache } from './revalidate'
 
 export const PUBLIC_DETAIL_REVALIDATE_SECONDS = 900
-export const PUBLIC_PERSON_DETAIL_TAG = 'public-person-details'
-export const PUBLIC_ENTITY_DETAIL_TAG = 'public-entity-details'
+export const PUBLIC_PERSON_DETAIL_TAG = PUBLIC_CACHE_TAGS.directories
+export const PUBLIC_ENTITY_DETAIL_TAG = PUBLIC_CACHE_TAGS.directories
 
 const loadCachedPublicPersonDetail = unstable_cache(
   async (slug: string) => loadUncachedPublicPersonDetail(slug),
@@ -36,12 +38,7 @@ type PublicContentInvalidation = {
 }
 
 export function revalidatePublicContent({ personSlug, entitySlug }: PublicContentInvalidation = {}) {
-  revalidateTag(PUBLIC_PERSON_DETAIL_TAG)
-  revalidateTag(PUBLIC_ENTITY_DETAIL_TAG)
-
-  revalidatePath('/')
-  revalidatePath('/personas')
-  revalidatePath('/diocesis')
+  revalidatePublicCache('directories')
 
   if (personSlug) revalidatePath(`/personas/${personSlug}`)
   if (entitySlug) revalidatePath(`/entidades/${entitySlug}`)
