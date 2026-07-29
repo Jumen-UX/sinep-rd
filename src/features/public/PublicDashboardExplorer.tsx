@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import type { PublicView } from '@/lib/public/dashboard'
+import styles from './PublicDashboardExplorer.module.css'
 import { views, type Props } from './PublicDashboardShared'
 import { PublicTerritorialView } from './PublicTerritorialView'
 import { usePublicDashboardModel } from './usePublicDashboardModel'
@@ -11,11 +12,11 @@ function PublicViewLoading({ view, label }: { view: PublicView; label: string })
     <section
       aria-busy="true"
       aria-labelledby={`tab-${view}`}
-      className="public-directory-card public-panel"
+      className={`${styles.loadingPanel} public-directory-card public-panel`}
       id={`panel-${view}`}
       role="tabpanel"
     >
-      <div className="public-empty" role="status" aria-live="polite">
+      <div className={`${styles.loadingMessage} public-empty`} role="status" aria-live="polite">
         <strong>Cargando {label}</strong>
         <br />
         <span>Preparando la información del ámbito seleccionado.</span>
