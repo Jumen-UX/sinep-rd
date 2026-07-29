@@ -1,6 +1,7 @@
 'use client'
 
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import AdminModuleHeader from '@/components/admin/AdminModuleHeader'
@@ -50,7 +51,6 @@ type CountriesResponse = {
 }
 
 type EnableCountryResponse = { country_id?: string | null; iso2?: string; error?: string }
-
 type LoadError = { title: string; description: string; code?: string }
 
 function normalize(value: string) {
@@ -58,7 +58,19 @@ function normalize(value: string) {
 }
 
 function flag(country: { flag_emoji?: string | null; flag_image_url?: string | null; name?: string | null }) {
-  if (country.flag_image_url) return <img alt={`Bandera de ${country.name ?? 'país'}`} className="admin-country-flag-image" src={country.flag_image_url} />
+  if (country.flag_image_url) {
+    return (
+      <Image
+        alt={`Bandera de ${country.name ?? 'país'}`}
+        className="admin-country-flag-image"
+        src={country.flag_image_url}
+        width={32}
+        height={22}
+        sizes="32px"
+        unoptimized
+      />
+    )
+  }
   return <span className="admin-country-flag-emoji" role="img" aria-label={`Bandera de ${country.name ?? 'país'}`}>{country.flag_emoji ?? '▦'}</span>
 }
 
@@ -180,53 +192,28 @@ export default function CountryCatalogPage() {
         <a href="/admin/estructura"><span>▦</span><strong>↗</strong><small>Estructura territorial</small></a>
       </section>
 
-      <section className="grid two-columns" id="country-catalog">
-        <section className="card dashboard-section">
-          <div className="section-heading"><div><p className="eyebrow">Catálogo ISO</p><h2>Seleccionar país</h2><p className="meta">Busca por nombre, ISO2 o ISO3. Los países ya habilitados se excluyen automáticamente.</p></div></div>
-          <label>Buscar país<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej.: República Dominicana, DO, DOM" /></label>
-
-          {loading && <AdminStatusNotice tone="info" title="Consultando catálogo" description="Cargando países y estado de publicación…" />}
-          {!loading && !loadError && availableCatalog.length === 0 && <AdminStatusNotice tone="empty" title="No hay coincidencias disponibles" description={query ? 'Cambia el término de búsqueda.' : 'Todos los países del catálogo ya están habilitados.'} />}
-
+      <section className="card admin-countries-panel" id="enabled-countries">
+        <div className="section-heading"><div><p className="eyebrow">Operación actual</p><h2>Países habilitados</h2></div><span className="meta">{loading ? 'Cargando…' : `${enabledCountries.length} configurados`}</span></div>
+        {enabledCountries.length === 0 ? <div className="empty-state">Todavía no hay países habilitados.</div> : (
           <div className="admin-country-grid">
-            {availableCatalog.map((country) => {
-              const selected = country.iso2 === selectedIso2
-              return (
-                <button className={`entity-card admin-country-card${selected ? ' is-selected' : ''}`} key={country.iso2} type="button" onClick={() => setSelectedIso2(country.iso2)}>
-                  <div className="admin-country-heading"><span className="admin-country-flag">{flag(country)}</span><div><p className="entity-type">{country.iso2} · {country.iso3 ?? 'Sin ISO3'}</p><h2>{country.name}</h2><p className="meta">{country.name_en}</p></div></div>
-                </button>
-              )
-            })}
+            {enabledCountries.map((country) => <article className="admin-country-card" key={country.id}>{flag(country)}<div><strong>{country.name}</strong><small>{country.iso2}{country.iso3 ? ` · ${country.iso3}` : ''}</small></div><span className={publicKeys.has(country.iso2) ? 'status-badge status-badge-success' : 'status-badge'}>{publicKeys.has(country.iso2) ? 'Público' : 'Sin jurisdicción pública'}</span></article>)}
           </div>
-        </section>
-
-        <form className="admin-form admin-config-form card dashboard-section" onSubmit={handleEnableCountry}>
-          <div className="section-heading"><div><p className="eyebrow">Ficha del país</p><h2>{selectedCountry ? selectedCountry.name : 'Selecciona un país'}</h2><p className="meta">Revisa los datos oficiales antes de habilitarlo.</p></div></div>
-
-          {selectedCountry ? (
-            <>
-              <div className="admin-country-heading"><span className="admin-country-flag">{flag(selectedCountry)}</span><div><p className="entity-type">{selectedCountry.iso2} · {selectedCountry.iso3 ?? 'Sin ISO3'}</p><h2>{selectedCountry.name}</h2><p className="meta">{selectedCountry.official_name_en ?? selectedCountry.name_en}</p></div></div>
-              <div className="admin-check-list"><div>✓ Código ISO2 disponible</div><div>✓ Código ISO3 {selectedCountry.iso3 ? 'disponible' : 'pendiente'}</div><div>✓ Bandera automática</div><div>⚠ No será público hasta tener jurisdicción activa</div></div>
-              <label>Imagen de bandera personalizada opcional<input value={flagImageUrl} onChange={(event) => setFlagImageUrl(event.target.value)} placeholder="https://.../bandera.svg" type="url" /></label>
-              <button className="button button-primary" disabled={saving} type="submit">{saving ? 'Habilitando…' : `Habilitar ${selectedCountry.name}`}</button>
-            </>
-          ) : (
-            <AdminStatusNotice tone="empty" title="Ningún país seleccionado" description="Selecciona un país del catálogo para ver su ficha y habilitarlo." />
-          )}
-        </form>
+        )}
       </section>
 
-      <section className="card dashboard-section" id="enabled-countries">
-        <div className="section-heading"><div><p className="eyebrow">Países activos</p><h2>Países habilitados en SINEP</h2><p className="meta">Pueden utilizarse al crear jurisdicciones y estructuras.</p></div></div>
-        <div className="admin-country-grid">
-          {enabledCountries.length === 0 && !loading && <AdminStatusNotice tone="empty" title="Todavía no hay países habilitados" description="Selecciona el primero desde el catálogo ISO." />}
-          {enabledCountries.map((country) => (
-            <article className="entity-card admin-country-card" key={country.id}>
-              <div className="admin-country-heading"><span className="admin-country-flag">{flag(country)}</span><div><p className="entity-type">{country.iso2} · {country.iso3 ?? 'Sin ISO3'}</p><h2>{country.name}</h2><p className="meta">{country.official_name ?? 'Sin nombre oficial'}</p></div></div>
-              <div className="role-list"><span className="role-pill">{country.status}</span><span className="role-pill">{country.visibility}</span><span className="role-pill">{publicKeys.has(country.iso2) ? 'Visible en dashboard' : 'Pendiente de jurisdicción pública'}</span></div>
-            </article>
-          ))}
-        </div>
+      <section className="admin-countries-layout" id="country-catalog">
+        <article className="card admin-countries-panel">
+          <div className="section-heading"><div><p className="eyebrow">Catálogo ISO</p><h2>Agregar país</h2></div><span className="meta">No se crean países manualmente</span></div>
+          <form className="admin-form-stack" onSubmit={handleEnableCountry}>
+            <label>Buscar país<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, ISO2 o ISO3" /></label>
+            <label>País<select required value={selectedIso2} onChange={(event) => setSelectedIso2(event.target.value)}><option value="">Selecciona un país</option>{availableCatalog.map((country) => <option key={country.iso2} value={country.iso2}>{country.flag_emoji ?? '▦'} {country.name} · {country.iso2}</option>)}</select></label>
+            <label>URL de bandera alternativa <span className="meta">Opcional</span><input type="url" value={flagImageUrl} onChange={(event) => setFlagImageUrl(event.target.value)} placeholder="https://…" /></label>
+            {selectedCountry && <div className="admin-country-preview">{flag({ flag_emoji: selectedCountry.flag_emoji, flag_image_url: flagImageUrl, name: selectedCountry.name })}<div><strong>{selectedCountry.name}</strong><small>{selectedCountry.name_en} · {selectedCountry.iso2}{selectedCountry.iso3 ? ` · ${selectedCountry.iso3}` : ''}</small></div></div>}
+            <button className="button button-primary" disabled={saving || !selectedCountry} type="submit">{saving ? 'Habilitando…' : 'Habilitar país'}</button>
+          </form>
+        </article>
+
+        <aside className="card admin-countries-panel admin-country-guidance"><p className="eyebrow">Regla de publicación</p><h2>País no equivale a jurisdicción</h2><p>Habilitar un país permite usarlo en formularios y permisos. Solo aparecerá en el portal público cuando tenga al menos una jurisdicción activa y pública.</p><ol><li>Habilita el país.</li><li>Crea la conferencia episcopal o jurisdicción nacional.</li><li>Registra provincias y diócesis.</li><li>Revisa visibilidad y estado.</li></ol></aside>
       </section>
     </main>
   )
