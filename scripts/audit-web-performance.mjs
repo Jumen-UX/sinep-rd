@@ -4,12 +4,7 @@ import process from 'node:process'
 
 const root = process.cwd()
 const srcRoot = join(root, 'src')
-const strict = process.argv.includes('--strict')
 const sourceExtensions = new Set(['.ts', '.tsx', '.js', '.jsx'])
-const knownRawImageAllowlist = new Set([
-  'src/features/personas/PersonDetailServerView.tsx',
-  'src/features/personas/admin/PersonDetailPage.tsx',
-])
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -33,11 +28,10 @@ for (const absolutePath of files) {
   const isPublicSource = path.includes('/app/(public)/') || path.includes('/features/public/')
 
   if (source.includes('<img')) {
-    const severity = knownRawImageAllowlist.has(path) ? 'known' : 'new'
-    findings.push({ rule: 'raw-img', severity, path })
+    findings.push({ rule: 'raw-img', severity: 'new', path })
   }
 
-  if (isPublicSource && /^['"]use client['"]/m.test(source)) {
+  if (isPublicSource && /^[\'"]use client[\'"]/m.test(source)) {
     publicClientComponents.push(path)
   }
 
@@ -54,7 +48,7 @@ if (!rootLayout.includes("from 'next/font/")) {
   findings.push({ rule: 'next-font-required', severity: 'new', path: 'src/app/layout.tsx' })
 }
 
-if (rootLayout.includes("features/public/components")) {
+if (rootLayout.includes('features/public/components')) {
   findings.push({ rule: 'global-public-client-hydration', severity: 'new', path: 'src/app/layout.tsx' })
 }
 
@@ -75,8 +69,5 @@ console.log(JSON.stringify(report, null, 2))
 
 if (newFindings.length > 0) {
   console.error(`Se detectaron ${newFindings.length} regresiones de rendimiento en el código fuente.`)
-  process.exitCode = 1
-} else if (strict && findings.length > 0) {
-  console.error('La auditoría estricta exige eliminar también los usos heredados de <img>.')
   process.exitCode = 1
 }
