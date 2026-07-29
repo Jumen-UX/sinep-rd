@@ -108,6 +108,7 @@ test('production build enforces route bundle budgets and server boundaries', asy
   assert.equal(sourceAudit.includes('public-dashboard-secondary-view-lazy-load'), true)
   assert.equal(sourceAudit.includes('public-dashboard-lazy-view-ssr-disabled'), true)
   assert.equal(sourceAudit.includes('public-dashboard-lazy-view-accessibility'), true)
+  assert.equal(sourceAudit.includes('public-dashboard-lazy-view-stability'), true)
   assert.equal(sourceAudit.includes("initialView: 'PublicTerritorialView'"), true)
   assert.equal(sourceAudit.includes('legacy-public-dashboard-module'), true)
   assert.equal(sourceAudit.includes('src/app/(public)/oficinas/[id]/page.tsx'), true)
