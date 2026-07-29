@@ -108,6 +108,7 @@ test('production build enforces route bundle budgets and server boundaries', asy
   assert.equal(auditSource.includes('app-build-manifest.json'), true)
   assert.equal(auditSource.includes('gzipSync'), true)
 
+  assert.equal(sourceAudit.includes('route-group-shell-boundary'), true)
   assert.equal(sourceAudit.includes('public-detail-client-page'), true)
   assert.equal(sourceAudit.includes('public-detail-self-api-fetch'), true)
   assert.equal(sourceAudit.includes('public-dashboard-server-shell-required'), true)
@@ -129,6 +130,7 @@ test('production build enforces route bundle budgets and server boundaries', asy
   assert.equal(sourceAudit.includes("lazyStrategy: 'React.lazy + Suspense'"), true)
   assert.equal(sourceAudit.includes('shareableScopeParameters: scopeParameters'), true)
   assert.equal(sourceAudit.includes('sharedThemeHook'), true)
+  assert.equal(sourceAudit.includes('layoutBoundary'), true)
   assert.equal(sourceAudit.includes('personImageContract'), true)
   assert.equal(sourceAudit.includes('legacy-public-dashboard-module'), true)
   assert.equal(sourceAudit.includes('src/app/(public)/oficinas/[id]/page.tsx'), true)
