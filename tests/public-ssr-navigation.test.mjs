@@ -22,7 +22,7 @@ test('public home renders a server shell around one interactive explorer', async
   assert.match(page, /initialData=\{initialData\}/)
   assert.match(page, /initialSummary=\{initialSummary\}/)
 
-  assert.doesNotMatch(shell, /['"]use client['"]/) 
+  assert.doesNotMatch(shell, /['"]use client['"]/)
   assert.match(shell, /<PublicDashboardExplorer \{\.\.\.props\} \/>/)
   assert.match(shell, /public-mobile-header/)
   assert.match(shell, /public-sidebar/)
@@ -43,13 +43,14 @@ test('public home renders a server shell around one interactive explorer', async
   await assert.rejects(access(new URL('src/features/public/PublicDashboardClient.tsx', repoRoot)))
 })
 
-test('every secondary dashboard view has its own lazy chunk while territorial remains initial', async () => {
+test('every secondary dashboard view has its own React lazy chunk while territorial remains initial', async () => {
   const [explorer, loadingStyles] = await Promise.all([
     readRepoFile('src/features/public/PublicDashboardExplorer.tsx'),
     readRepoFile('src/features/public/PublicDashboardExplorer.module.css'),
   ])
 
-  assert.match(explorer, /import dynamic from 'next\/dynamic'/)
+  assert.match(explorer, /import \{ lazy, Suspense \} from 'react'/)
+  assert.doesNotMatch(explorer, /next\/dynamic/)
   assert.match(explorer, /import styles from '\.\/PublicDashboardExplorer\.module\.css'/)
   assert.match(explorer, /import \{ PublicTerritorialView \} from '\.\/PublicTerritorialView'/)
   for (const viewModule of [
@@ -59,8 +60,9 @@ test('every secondary dashboard view has its own lazy chunk while territorial re
     'PublicCollegialView',
   ]) {
     assert.doesNotMatch(explorer, new RegExp(`from ['"]\\./${viewModule}['"]`))
-    assert.match(explorer, new RegExp(`import\\(['"]\\./${viewModule}['"]\\)`))
+    assert.match(explorer, new RegExp(`lazy\\(\\(\\) => import\\(['"]\\./${viewModule}['"]\\)\\)`))
   }
+  assert.equal(explorer.match(/<Suspense fallback=/g)?.length, 4)
   assert.match(explorer, /aria-busy="true"/)
   assert.match(explorer, /role="status" aria-live="polite"/)
   assert.match(explorer, /styles\.loadingPanel/)
