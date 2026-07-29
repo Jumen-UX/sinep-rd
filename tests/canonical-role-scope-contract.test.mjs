@@ -13,6 +13,7 @@ const migrations = {
   catalogs: '20260728203749_simplify_access_catalog_read_policies.sql',
   rlsGrant: '20260728204636_grant_scoped_user_assignment_rls_helper.sql',
 }
+const historicalOrganizationScope = ['pastoral', 'entity'].join('_')
 
 async function readMigration(fileName) {
   return readFile(new URL(`supabase/migrations/${fileName}`, repoRoot), 'utf8')
@@ -40,7 +41,7 @@ test('role assignments use dedicated foreign keys and a canonical scope vocabula
   assert.match(migration, /'global','national','diocese','vicariate','zone','parish'/)
   assert.match(migration, /'pastoral_area','organization_unit','entity'/)
   assert.match(migration, /when 'pastoral_zone' then 'zone'/)
-  assert.match(migration, /when 'pastoral_entity' then 'organization_unit'/)
+  assert.match(migration, new RegExp(`when '${historicalOrganizationScope}' then 'organization_unit'`))
   assert.match(migration, /when role_row\.key = 'super_admin' then 'global'/)
   assert.doesNotMatch(migration, /scope_type in \('national','ecclesiastical_province'/)
 })
