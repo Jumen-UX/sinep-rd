@@ -7,7 +7,7 @@ const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
 test('public entity profile renders active relationships as a directional hierarchy', async () => {
   const [page, map] = await Promise.all([
-    readRepoFile('src/features/entidades/EntityDetailPage.tsx'),
+    readRepoFile('src/features/entidades/EntityDetailServerView.tsx'),
     readRepoFile('src/features/entidades/EntityRelationshipMap.tsx'),
   ])
 
