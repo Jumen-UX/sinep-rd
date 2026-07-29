@@ -13,6 +13,7 @@ const serverRenderedPublicDetailRoutes = new Set([
   'src/app/(public)/organismos/[id]/page.tsx',
   'src/app/(public)/provincias-eclesiasticas/[slug]/page.tsx',
 ])
+const legacyPublicDashboardClient = 'src/features/public/PublicDashboardClient.tsx'
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -29,6 +30,7 @@ const files = await walk(srcRoot)
 const findings = []
 const publicClientComponents = []
 const publicPollingComponents = []
+const sourcePaths = new Set(files.map((absolutePath) => relative(root, absolutePath).replaceAll('\\', '/')))
 
 for (const absolutePath of files) {
   const path = relative(root, absolutePath).replaceAll('\\', '/')
@@ -61,6 +63,9 @@ for (const absolutePath of files) {
 
 const rootLayout = await readFile(join(srcRoot, 'app', 'layout.tsx'), 'utf8')
 const dashboardService = await readFile(join(srcRoot, 'lib', 'public', 'dashboard.ts'), 'utf8')
+const dashboardPage = await readFile(join(srcRoot, 'app', '(public)', 'page.tsx'), 'utf8')
+const dashboardShell = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardShell.tsx'), 'utf8')
+const dashboardExplorer = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardExplorer.tsx'), 'utf8')
 
 if (!rootLayout.includes("from 'next/font/")) {
   findings.push({ rule: 'next-font-required', severity: 'new', path: 'src/app/layout.tsx' })
@@ -74,6 +79,22 @@ if (!dashboardService.includes('unstable_cache')) {
   findings.push({ rule: 'public-dashboard-cache-required', severity: 'new', path: 'src/lib/public/dashboard.ts' })
 }
 
+if (!dashboardPage.includes('PublicDashboardShell') || dashboardPage.includes('PublicDashboardClient')) {
+  findings.push({ rule: 'public-dashboard-server-shell-required', severity: 'new', path: 'src/app/(public)/page.tsx' })
+}
+
+if (/^[\'"]use client[\'"]/m.test(dashboardShell) || /onClick=|onChange=/.test(dashboardShell)) {
+  findings.push({ rule: 'public-dashboard-shell-hydration', severity: 'new', path: 'src/features/public/PublicDashboardShell.tsx' })
+}
+
+if (!/^[\'"]use client[\'"]/m.test(dashboardExplorer) || !dashboardExplorer.includes('usePublicDashboardModel')) {
+  findings.push({ rule: 'public-dashboard-explorer-boundary', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx' })
+}
+
+if (sourcePaths.has(legacyPublicDashboardClient)) {
+  findings.push({ rule: 'legacy-public-dashboard-client', severity: 'new', path: legacyPublicDashboardClient })
+}
+
 const newFindings = findings.filter((finding) => finding.severity === 'new')
 const report = {
   rawImages: findings.filter((finding) => finding.rule === 'raw-img'),
@@ -81,6 +102,10 @@ const report = {
   publicClientComponents,
   publicPollingComponents,
   serverRenderedPublicDetailRoutes: [...serverRenderedPublicDetailRoutes],
+  dashboardBoundary: {
+    shell: 'src/features/public/PublicDashboardShell.tsx',
+    explorer: 'src/features/public/PublicDashboardExplorer.tsx',
+  },
   findings,
 }
 
