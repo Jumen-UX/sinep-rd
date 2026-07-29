@@ -95,6 +95,7 @@ test('production build enforces route bundle budgets', async () => {
   assert.equal(budgets.javascript.publicInitialCompressedKb > 0, true)
   assert.equal(budgets.javascript.publicDetailCompressedKb > 0, true)
   assert.equal(budgets.javascript.adminInitialCompressedKb > 0, true)
+  assert.equal(budgets.routes.includes('/pastoral/[slug]'), true)
   assert.equal(budgets.routes.includes('/lugares/[slug]'), true)
   assert.equal(budgets.routes.includes('/instituciones/[slug]'), true)
 })
