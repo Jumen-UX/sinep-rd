@@ -7,6 +7,7 @@ import CompletionIndicator from '@/components/admin/CompletionIndicator'
 import EntitySectionCard from '@/components/admin/EntitySectionCard'
 import SmartContextPanel from '@/components/admin/SmartContextPanel'
 import { createClient } from '@/lib/supabase/client'
+import { AdminPersonPhoto } from '../components/PersonPhoto'
 import PersonAssignmentHistory, { type AssignmentHistoryItem } from './PersonAssignmentHistory'
 import PersonCanonicalTimeline from './PersonCanonicalTimeline'
 import { getAdminPersonDetail, type AdminPersonDetail } from '../services/person-admin-service'
@@ -124,7 +125,7 @@ export default function PersonDetailPage() {
 
       <section className="card admin-entity-header">
         <div className="admin-entity-identity">
-          <div className="admin-entity-avatar" aria-hidden="true">{person.photo_url ? <img alt="" src={person.photo_url} /> : <span>{person.display_name?.slice(0, 1).toUpperCase() ?? 'P'}</span>}</div>
+          <div className="admin-entity-avatar" aria-hidden="true">{person.photo_url ? <AdminPersonPhoto src={person.photo_url} /> : <span>{person.display_name?.slice(0, 1).toUpperCase() ?? 'P'}</span>}</div>
           <div>
             <p className="eyebrow">Ficha administrativa</p>
             <h1>{valueLabel(person.display_name)}</h1>
