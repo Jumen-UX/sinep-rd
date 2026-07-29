@@ -1,14 +1,10 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { Inter } from 'next/font/google'
 import Link from 'next/link'
 import Script from 'next/script'
 import { AccessibilityTools } from '../components/accessibility/AccessibilityTools'
 import { ThemeControl } from '../components/theme/ThemeControl'
-import { PublicCountryFlagEnhancements } from '../features/public/components/public-country-flag-enhancements'
-import { PublicDashboardEntityCards } from '../features/public/components/public-dashboard-entity-cards'
-import { PublicJurisdictionStructureNavigation } from '../features/public/components/public-jurisdiction-structure-navigation'
-import { PublicPastoralEnhancements } from '../features/public/components/public-pastoral-enhancements'
-import { ScopeBackControls } from '../features/public/components/scope-back-controls'
 import './globals.css'
 import './web-standards.css'
 import './hierarchy.css'
@@ -24,6 +20,12 @@ import './public-shell.css'
 import '../styles/dashboard-theme-surfaces.css'
 import '../styles/accessibility-tools.css'
 import '../styles/reflow-accessibility.css'
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+})
 
 const themeBootstrapScript = `
   (() => {
@@ -77,7 +79,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body>
+      <body className={inter.variable}>
         <Script id="theme-bootstrap" strategy="beforeInteractive">
           {themeBootstrapScript}
         </Script>
@@ -123,11 +125,6 @@ export default function RootLayout({
           </footer>
         </div>
 
-        <PublicCountryFlagEnhancements />
-        <PublicDashboardEntityCards />
-        <PublicJurisdictionStructureNavigation />
-        <PublicPastoralEnhancements />
-        <ScopeBackControls />
         <AccessibilityTools />
         <Script
           id="vercel-web-analytics"
