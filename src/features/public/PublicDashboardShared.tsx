@@ -35,18 +35,6 @@ export const views: { key: PublicView; title: string; icon: string; description:
   { key: 'colegial', title: 'Colegial', icon: '♧', description: 'Consejos, comisiones, comités y equipos.' },
 ]
 
-export const sideNav = [
-  { label: 'Inicio', icon: '⌂', href: '/' },
-  { label: 'Territorio', icon: '◇', href: '/?vista=territorial' },
-  { label: 'Personas', icon: '♙', href: '/?vista=clero' },
-  { label: 'Pastoral', icon: '✝', href: '/?vista=pastoral' },
-  { label: 'Administración', icon: '▣', href: '/?vista=administrativa' },
-  { label: 'Colegial', icon: '♧', href: '/?vista=colegial' },
-  { label: 'Diócesis', icon: '✥', href: '/diocesis' },
-  { label: 'Directorio', icon: '▤', href: '/personas' },
-  { label: 'Portal administrativo', icon: '⚙', href: '/admin' },
-]
-
 export function normalize(value?: string | null) {
   return (value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
