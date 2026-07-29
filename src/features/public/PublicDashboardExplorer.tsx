@@ -1,6 +1,6 @@
 'use client'
 
-import dynamic from 'next/dynamic'
+import { lazy, Suspense } from 'react'
 import type { PublicView } from '@/lib/public/dashboard'
 import styles from './PublicDashboardExplorer.module.css'
 import { views, type Props } from './PublicDashboardShared'
@@ -25,25 +25,10 @@ function PublicViewLoading({ view, label }: { view: PublicView; label: string })
   )
 }
 
-const PublicPeopleView = dynamic(
-  () => import('./PublicPeopleView'),
-  { loading: () => <PublicViewLoading label="clero y agentes" view="clero" /> },
-)
-
-const PublicPastoralView = dynamic(
-  () => import('./PublicPastoralView'),
-  { loading: () => <PublicViewLoading label="organización pastoral" view="pastoral" /> },
-)
-
-const PublicAdministrativeView = dynamic(
-  () => import('./PublicAdministrativeView'),
-  { loading: () => <PublicViewLoading label="organización administrativa" view="administrativa" /> },
-)
-
-const PublicCollegialView = dynamic(
-  () => import('./PublicCollegialView'),
-  { loading: () => <PublicViewLoading label="organismos colegiales" view="colegial" /> },
-)
+const PublicPeopleView = lazy(() => import('./PublicPeopleView'))
+const PublicPastoralView = lazy(() => import('./PublicPastoralView'))
+const PublicAdministrativeView = lazy(() => import('./PublicAdministrativeView'))
+const PublicCollegialView = lazy(() => import('./PublicCollegialView'))
 
 export default function PublicDashboardExplorer(props: Props) {
   const model = usePublicDashboardModel(props)
@@ -118,10 +103,26 @@ export default function PublicDashboardExplorer(props: Props) {
       </section>
 
       {activeView === 'territorial' && <PublicTerritorialView model={model} />}
-      {activeView === 'clero' && <PublicPeopleView model={model} />}
-      {activeView === 'pastoral' && <PublicPastoralView model={model} />}
-      {activeView === 'administrativa' && <PublicAdministrativeView model={model} />}
-      {activeView === 'colegial' && <PublicCollegialView model={model} />}
+      {activeView === 'clero' && (
+        <Suspense fallback={<PublicViewLoading label="clero y agentes" view="clero" />}>
+          <PublicPeopleView model={model} />
+        </Suspense>
+      )}
+      {activeView === 'pastoral' && (
+        <Suspense fallback={<PublicViewLoading label="organización pastoral" view="pastoral" />}>
+          <PublicPastoralView model={model} />
+        </Suspense>
+      )}
+      {activeView === 'administrativa' && (
+        <Suspense fallback={<PublicViewLoading label="organización administrativa" view="administrativa" />}>
+          <PublicAdministrativeView model={model} />
+        </Suspense>
+      )}
+      {activeView === 'colegial' && (
+        <Suspense fallback={<PublicViewLoading label="organismos colegiales" view="colegial" />}>
+          <PublicCollegialView model={model} />
+        </Suspense>
+      )}
     </>
   )
 }
