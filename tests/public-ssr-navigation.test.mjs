@@ -14,7 +14,7 @@ test('public home renders a server shell around one interactive explorer', async
     readRepoFile('src/lib/public/dashboard.ts'),
   ])
 
-  assert.doesNotMatch(page, /['"]use client['"]/) 
+  assert.doesNotMatch(page, /['"]use client['"]/)
   assert.match(page, /loadPublicDashboardBundle\(\)/)
   assert.doesNotMatch(page, /Promise\.all\(\[loadPublicDashboardData\(\), loadDashboardSummary\(\)\]\)/)
   assert.match(page, /data: initialData, summary: initialSummary/)
@@ -73,6 +73,38 @@ test('every secondary dashboard view has its own lazy chunk while territorial re
   await assert.rejects(access(new URL('src/features/public/PublicOrganizationViews.tsx', repoRoot)))
 })
 
+test('public dashboard validates and preserves shareable scope state without server navigation', async () => {
+  const [page, shared, model, urlState] = await Promise.all([
+    readRepoFile('src/app/(public)/page.tsx'),
+    readRepoFile('src/features/public/PublicDashboardShared.tsx'),
+    readRepoFile('src/features/public/usePublicDashboardModel.ts'),
+    readRepoFile('src/features/public/PublicDashboardUrlState.ts'),
+  ])
+
+  for (const parameter of ['vista', 'pais', 'provincia', 'jurisdiccion']) {
+    assert.match(page, new RegExp(`params\\.${parameter}`))
+  }
+  assert.match(page, /initialData\.countries\.some/)
+  assert.match(page, /const countryDioceses = initialData\.dioceses\.filter/)
+  assert.match(page, /item\.id === requestedJurisdictionId/)
+  assert.match(page, /initialCountry=\{initialCountry\}/)
+  assert.match(page, /initialJurisdictionId=\{initialJurisdictionId\}/)
+  assert.match(shared, /initialCountry: string/)
+  assert.match(shared, /initialJurisdictionId: string/)
+
+  assert.match(model, /useEffect\(\(\) =>/)
+  assert.match(model, /buildPublicDashboardSearch\(window\.location\.search/)
+  assert.match(model, /window\.history\.replaceState/)
+  assert.doesNotMatch(model, /router\.replace|fetch\(/)
+  assert.match(model, /useMemo<PersonCard\[\]>/)
+  assert.match(model, /const \{ administrativeUnits, collegialUnits \} = useMemo/)
+
+  for (const parameter of ['vista', 'pais', 'provincia', 'jurisdiccion']) {
+    assert.match(urlState, new RegExp(`setOptionalParam\\(params, '${parameter}'`))
+  }
+  assert.doesNotMatch(urlState, /window\.|document\./)
+})
+
 test('public navigation contains no placeholder hash destinations', async () => {
   const source = (await Promise.all([
     readRepoFile('src/features/public/PublicDashboardShell.tsx'),
@@ -101,7 +133,7 @@ test('public directory pages are server rendered and filter through URLs', async
   ])
 
   for (const page of [dioceses, people]) {
-    assert.doesNotMatch(page, /['"]use client['"]/) 
+    assert.doesNotMatch(page, /['"]use client['"]/)
     assert.doesNotMatch(page, /useEffect|window\.history|fetch\(/)
     assert.match(page, /searchParams: Promise/)
   }
