@@ -8,7 +8,7 @@ const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 test('entity organization chart is generated from configured charts and units', async () => {
   const [chart, detail] = await Promise.all([
     readRepoFile('src/features/entidades/EntityDynamicOrganizationChart.tsx'),
-    readRepoFile('src/features/entidades/EntityDetailPage.tsx'),
+    readRepoFile('src/features/entidades/EntityDetailServerView.tsx'),
   ])
 
   assert.match(chart, /buildEntityOrganizationCharts/)
