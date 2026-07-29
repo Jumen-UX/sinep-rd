@@ -30,7 +30,7 @@ test('root layout uses next/font without hydrating obsolete public enhancers', a
   }
 })
 
-test('person portraits use next image and approved remote hosts', async () => {
+test('person portraits use next image and approved raster sources', async () => {
   const [photo, publicDetail, adminDetail, audit, workspace, packageSource, nextConfig] = await Promise.all([
     readRepoFile('src/features/personas/components/PersonPhoto.tsx'),
     readRepoFile('src/features/personas/PersonDetailServerView.tsx'),
@@ -45,6 +45,9 @@ test('person portraits use next image and approved remote hosts', async () => {
   assert.equal(photo.includes("from 'next/image'"), true)
   assert.equal(photo.includes('priority'), true)
   assert.equal(photo.includes('sizes="(max-width: 640px) 100vw, 320px"'), true)
+  assert.equal(photo.includes("url.hostname === 'placehold.co'"), true)
+  assert.equal(photo.includes("}/png`"), true)
+  assert.equal(photo.includes('dangerouslyAllowSVG'), false)
   assert.equal(publicDetail.includes('<PublicPersonPhoto'), true)
   assert.equal(adminDetail.includes('<AdminPersonPhoto'), true)
   assert.equal(publicDetail.includes('<img'), false)
@@ -53,6 +56,7 @@ test('person portraits use next image and approved remote hosts', async () => {
   assert.equal(nextConfig.includes("hostname: '**.supabase.co'"), true)
   assert.equal(nextConfig.includes("pathname: '/storage/v1/object/**'"), true)
   assert.equal(nextConfig.includes("hostname: 'placehold.co'"), true)
+  assert.equal(nextConfig.includes('dangerouslyAllowSVG'), false)
   assert.equal(packageJson.packageManager, 'pnpm@10.18.3')
   assert.match(workspace, /onlyBuiltDependencies:\s*\n\s*- sharp/)
   assert.equal(workspace.includes('allowBuilds:'), false)
