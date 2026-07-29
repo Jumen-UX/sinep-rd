@@ -43,20 +43,26 @@ test('public home renders a server shell around one interactive explorer', async
   await assert.rejects(access(new URL('src/features/public/PublicDashboardClient.tsx', repoRoot)))
 })
 
-test('secondary dashboard views are lazy while territorial remains in the initial explorer', async () => {
+test('every secondary dashboard view has its own lazy chunk while territorial remains initial', async () => {
   const explorer = await readRepoFile('src/features/public/PublicDashboardExplorer.tsx')
 
   assert.match(explorer, /import dynamic from 'next\/dynamic'/)
   assert.match(explorer, /import \{ PublicTerritorialView \} from '\.\/PublicTerritorialView'/)
-  assert.doesNotMatch(explorer, /from '\.\/PublicPeoplePastoralViews'/)
-  assert.doesNotMatch(explorer, /from '\.\/PublicOrganizationViews'/)
-  assert.match(explorer, /import\('\.\/PublicPeoplePastoralViews'\)\.then\(\(module\) => module\.PublicPeopleView\)/)
-  assert.match(explorer, /import\('\.\/PublicPeoplePastoralViews'\)\.then\(\(module\) => module\.PublicPastoralView\)/)
-  assert.match(explorer, /import\('\.\/PublicOrganizationViews'\)\.then\(\(module\) => module\.PublicAdministrativeView\)/)
-  assert.match(explorer, /import\('\.\/PublicOrganizationViews'\)\.then\(\(module\) => module\.PublicCollegialView\)/)
+  for (const viewModule of [
+    'PublicPeopleView',
+    'PublicPastoralView',
+    'PublicAdministrativeView',
+    'PublicCollegialView',
+  ]) {
+    assert.doesNotMatch(explorer, new RegExp(`from ['"]\\./${viewModule}['"]`))
+    assert.match(explorer, new RegExp(`import\\(['"]\\./${viewModule}['"]\\)`))
+  }
   assert.match(explorer, /aria-busy="true"/)
   assert.match(explorer, /role="status" aria-live="polite"/)
   assert.doesNotMatch(explorer, /ssr:\s*false/)
+
+  await assert.rejects(access(new URL('src/features/public/PublicPeoplePastoralViews.tsx', repoRoot)))
+  await assert.rejects(access(new URL('src/features/public/PublicOrganizationViews.tsx', repoRoot)))
 })
 
 test('public navigation contains no placeholder hash destinations', async () => {
@@ -66,8 +72,10 @@ test('public navigation contains no placeholder hash destinations', async () => 
     readRepoFile('src/features/public/PublicDashboardExplorer.tsx'),
     readRepoFile('src/features/public/PublicDashboardShared.tsx'),
     readRepoFile('src/features/public/PublicTerritorialView.tsx'),
-    readRepoFile('src/features/public/PublicPeoplePastoralViews.tsx'),
-    readRepoFile('src/features/public/PublicOrganizationViews.tsx'),
+    readRepoFile('src/features/public/PublicPeopleView.tsx'),
+    readRepoFile('src/features/public/PublicPastoralView.tsx'),
+    readRepoFile('src/features/public/PublicAdministrativeView.tsx'),
+    readRepoFile('src/features/public/PublicCollegialView.tsx'),
   ])).join('\n')
 
   assert.doesNotMatch(source, /href:\s*['"]#['"]/)
