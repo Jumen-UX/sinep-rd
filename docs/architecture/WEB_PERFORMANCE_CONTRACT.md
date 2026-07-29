@@ -45,12 +45,13 @@ La tipografía principal se carga mediante `next/font` con `display: swap` y var
 
 - `next.config.ts` permite imágenes remotas de Supabase Storage y formatos AVIF/WebP.
 - `placehold.co` está autorizado únicamente como proveedor explícito de imágenes ficticias para los datos QA vigentes.
+- Como `placehold.co` entrega SVG por defecto, `normalizePersonPhotoSource()` añade el formato `/png` cuando el placeholder no declara un formato raster. No se habilita `dangerouslyAllowSVG`.
 - Las imágenes de contenido deben usar `next/image`, dimensiones estables y `sizes` cuando sean responsivas.
 - `src/features/personas/components/PersonPhoto.tsx` centraliza los retratos público y administrativo.
 - La fotografía pública prioriza la carga por estar en la cabecera de la ficha y declara un ancho responsivo máximo de 320 píxeles.
 - La fotografía administrativa conserva el avatar de 96 por 96 píxeles y su tratamiento decorativo.
 - La auditoría fuente bloquea cualquier uso de `<img>` dentro de `src`; ya no existen excepciones heredadas.
-- La verificación desplegada debe comprobar también que `/_next/image` responda correctamente; un HTML 200 no demuestra por sí solo que el host remoto esté autorizado.
+- La verificación desplegada debe comprobar también que `/_next/image` responda correctamente; un HTML 200 no demuestra por sí solo que el host y el formato remotos estén autorizados.
 
 ## Instalación de optimización de imágenes
 
