@@ -1,37 +1,9 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { notFound } from 'next/navigation'
+import { loadPublicEcclesiasticalProvinceDetail } from '@/lib/public/cache'
 
-type Diocese = {
-  id: string
-  slug: string
-  name: string
-  entity_type_name: string | null
-  current_ordinary_name: string | null
-  current_ordinary_title: string | null
-  population_total: number | null
-  catholics_total: number | null
-  parishes_count: number | null
-  territory_summary: string | null
-  statistics_year: number | null
-}
-
-type ProvinceDetail = {
-  province: {
-    name: string
-    slug: string
-    country_name: string
-    metropolitan_see: Diocese | null
-    current_metropolitan_name: string | null
-    current_metropolitan_title: string | null
-    jurisdiction_count: number
-    total_population: number
-    total_catholics: number
-    reported_parishes: number
-  }
-  jurisdictions: Diocese[]
+type PageProps = {
+  params: Promise<{ slug: string }>
 }
 
 function formatNumber(value: number | null | undefined) {
@@ -39,33 +11,20 @@ function formatNumber(value: number | null | undefined) {
   return new Intl.NumberFormat('es-DO').format(value)
 }
 
-export default function EcclesiasticalProvincePage() {
-  const params = useParams<{ slug: string }>()
-  const slug = params.slug
-  const [detail, setDetail] = useState<ProvinceDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export const revalidate = 900
 
-  useEffect(() => {
-    async function loadProvince() {
-      try {
-        const response = await fetch(`/api/provincias-eclesiasticas?slug=${encodeURIComponent(slug)}`)
-        const payload = await response.json()
-        if (!response.ok) {
-          setError(payload.error ?? 'No se pudo cargar la provincia eclesiástica.')
-          return
-        }
-        setDetail(payload as ProvinceDetail)
-      } finally {
-        setLoading(false)
-      }
-    }
+export default async function EcclesiasticalProvincePage({ params }: PageProps) {
+  const { slug } = await params
+  let detail: Awaited<ReturnType<typeof loadPublicEcclesiasticalProvinceDetail>>
 
-    loadProvince()
-  }, [slug])
+  try {
+    detail = await loadPublicEcclesiasticalProvinceDetail(slug)
+  } catch (error) {
+    console.error('Unable to server render public ecclesiastical province detail', error)
+    return <main className="container"><div className="error-box">No se pudo cargar la provincia eclesiástica.</div></main>
+  }
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando provincia eclesiástica...</div></main>
-  if (error || !detail) return <main className="container"><div className="error-box">{error ?? 'Provincia eclesiástica no encontrada.'}</div></main>
+  if (!detail) notFound()
 
   const { province, jurisdictions } = detail
 
