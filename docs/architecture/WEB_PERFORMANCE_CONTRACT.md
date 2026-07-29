@@ -35,10 +35,12 @@ Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-
 - Los componentes cliente públicos deben existir solo cuando gestionen interacción real.
 - Se prohíben `MutationObserver` y `setInterval` como mecanismo de sincronización general del DOM público.
 - Las transformaciones de presentación deben realizarse en React, en el servicio de dominio o durante el renderizado del servidor.
-- `/pastoral/[slug]`, `/oficinas/[id]`, `/organismos/[id]` y `/provincias-eclesiasticas/[slug]` se renderizan en servidor y no consultan sus propias rutas `/api/*` después de hidratar.
-- `scripts/audit-web-performance.mjs` bloquea tanto la reintroducción de `use client` en estas fichas como las solicitudes a APIs internas desde sus páginas.
+- `/entidades/[slug]`, `/pastoral/[slug]`, `/oficinas/[id]`, `/organismos/[id]` y `/provincias-eclesiasticas/[slug]` se renderizan en servidor y no consultan sus propias rutas `/api/*` después de hidratar.
+- La navegación anclada, la cronología institucional y el organigrama dinámico de `/entidades/[slug]` son componentes de servidor; no requieren estado, efectos ni eventos del navegador.
+- El antiguo `EntityDetailPage.tsx` y el adaptador `/api/entidades/[slug]` fueron retirados. La ficha canónica usa `loadPublicEntityDetail()` y `EntityDetailServerView`.
+- `scripts/audit-web-performance.mjs` bloquea tanto la reintroducción de `use client` en las páginas SSR protegidas como las solicitudes a APIs internas desde esas páginas.
 
-Las rutas API públicas equivalentes pueden mantenerse temporalmente por compatibilidad, pero no son la fuente de datos del render inicial de estas fichas.
+Las rutas API públicas equivalentes solo deben mantenerse cuando exista un consumidor explícito distinto del render inicial. No se deben conservar adaptadores sin consumidores por compatibilidad hipotética.
 
 ## Fuentes
 
@@ -92,6 +94,8 @@ Las mutaciones administrativas de personas, nombramientos, entidades, jurisdicci
 - `pnpm audit:bundles`: bundles reales posteriores al build.
 - `tests/web-performance-contract.test.mjs`: arquitectura, imágenes, instalación, invalidación y presupuesto.
 - `tests/public-detail-ssr.test.mjs`: SSR y caché consolidada de fichas públicas.
+- `tests/public-entity-detail-route.test.mjs`: ausencia del cliente duplicado y del adaptador API por slug.
+- `tests/entity-profile-navigation.test.mjs`, `tests/entity-institutional-timeline.test.mjs` y `tests/entity-dynamic-organization-chart.test.mjs`: composición SSR y ausencia de hidratación presentacional.
 - `pnpm check`: documentación, auditorías, TypeScript, pruebas, build y bundles.
 
 ## Evidencia de cierre
@@ -103,6 +107,8 @@ La fase no se considera validada operativamente hasta reunir:
 - comprobación de rutas públicas desplegadas y del endpoint `/_next/image`;
 - medición de Core Web Vitals o Speed Insights con tráfico suficiente;
 - revisión visual de imágenes y tipografía en móvil y escritorio.
+
+El despliegue de Vercel asociado a `41cc48c` compiló correctamente, validó tipos y generó 53 páginas. Esa evidencia cubre la retirada del cliente duplicado y del adaptador API, pero no los commits posteriores que trasladan navegación, cronología y organigrama al servidor.
 
 ## Advisors y riesgos
 
