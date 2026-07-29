@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import type { PublicView } from '@/lib/public/dashboard'
+import type { OrganizationUnit, PublicView } from '@/lib/public/dashboard'
 import { personTypeLabel, views, type PersonCard, type Props } from './PublicDashboardShared'
 import { buildPublicDashboardScope } from './buildPublicDashboardScope'
 import { buildPublicDashboardSearch } from './PublicDashboardUrlState'
@@ -71,8 +71,8 @@ export function usePublicDashboardModel({
     [peopleBase, personType],
   )
   const { administrativeUnits, collegialUnits } = useMemo(() => {
-    const administrative = []
-    const collegial = []
+    const administrative: OrganizationUnit[] = []
+    const collegial: OrganizationUnit[] = []
 
     for (const item of initialData.organization_units) {
       if (/(consejo|comisi[oó]n|comit[eé]|colegio|equipo)/i.test(item.name)) collegial.push(item)
