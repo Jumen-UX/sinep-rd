@@ -77,6 +77,8 @@ for (const absolutePath of files) {
 }
 
 const rootLayout = await readFile(join(srcRoot, 'app', 'layout.tsx'), 'utf8')
+const publicLayout = await readFile(join(srcRoot, 'app', '(public)', 'layout.tsx'), 'utf8')
+const adminLayout = await readFile(join(srcRoot, 'app', '(admin)', 'layout.tsx'), 'utf8')
 const dashboardService = await readFile(join(srcRoot, 'lib', 'public', 'dashboard.ts'), 'utf8')
 const dashboardPage = await readFile(join(srcRoot, 'app', '(public)', 'page.tsx'), 'utf8')
 const dashboardShell = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardShell.tsx'), 'utf8')
@@ -96,6 +98,26 @@ if (!rootLayout.includes("from 'next/font/")) {
 
 if (rootLayout.includes('features/public/components')) {
   findings.push({ rule: 'global-public-client-hydration', severity: 'new', path: 'src/app/layout.tsx' })
+}
+
+const rootContainsRouteShell = /next\/link|ThemeControl|site-shell|site-header|site-footer|id="contenido-principal"/.test(rootLayout)
+const publicOwnsShell = publicLayout.includes("from 'next/link'")
+  && publicLayout.includes('ThemeControl')
+  && publicLayout.includes('className="site-shell"')
+  && publicLayout.includes('className="site-header"')
+  && publicLayout.includes('className="site-footer"')
+  && publicLayout.includes('id="contenido-principal"')
+const adminOwnsContentTarget = adminLayout.includes('id="contenido-principal"')
+  && !/next\/link|ThemeControl|site-shell|site-header|site-footer/.test(adminLayout)
+if (rootContainsRouteShell || !publicOwnsShell || !adminOwnsContentTarget) {
+  findings.push({
+    rule: 'route-group-shell-boundary',
+    severity: 'new',
+    path: 'src/app/layout.tsx',
+    rootContainsRouteShell,
+    publicOwnsShell,
+    adminOwnsContentTarget,
+  })
 }
 
 const dashboardStylesInRoot = dashboardRouteStyles.filter((style) => rootLayout.includes(`./${style}`))
@@ -211,6 +233,11 @@ const report = {
   publicClientComponents,
   publicPollingComponents,
   serverRenderedPublicDetailRoutes: [...serverRenderedPublicDetailRoutes],
+  layoutBoundary: {
+    root: 'src/app/layout.tsx',
+    public: 'src/app/(public)/layout.tsx',
+    admin: 'src/app/(admin)/layout.tsx',
+  },
   dashboardBoundary: {
     shell: 'src/features/public/PublicDashboardShell.tsx',
     explorer: 'src/features/public/PublicDashboardExplorer.tsx',
