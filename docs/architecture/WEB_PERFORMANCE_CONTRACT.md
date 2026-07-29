@@ -42,9 +42,13 @@ Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-
 - `PublicDashboardExplorer` conserva exclusivamente el modelo interactivo de ámbito, filtros y selección de vistas mediante `usePublicDashboardModel()`.
 - `PublicTerritorialView` permanece en el grafo inicial porque es la vista predeterminada.
 - `PublicPeopleView`, `PublicPastoralView`, `PublicAdministrativeView` y `PublicCollegialView` se cargan mediante `next/dynamic`, cada una desde su propio módulo y sin desactivar SSR.
-- Los fallbacks de las vistas diferidas mantienen `tabpanel`, `aria-busy`, `role="status"` y `aria-live="polite"`.
+- Los fallbacks de las vistas diferidas mantienen `tabpanel`, `aria-busy`, `role="status"` y `aria-live="polite"`; su CSS Module reserva altura responsive para reducir CLS.
+- Los parámetros `vista`, `pais`, `provincia` y `jurisdiccion` se validan contra el bundle público durante el renderizado de servidor.
+- Los cambios posteriores de vista y ámbito se reflejan con `history.replaceState` mediante `PublicDashboardUrlState`, sin `router.replace`, sin nueva navegación de servidor y sin solicitudes adicionales al dashboard.
+- Los filtros internos de tipo de persona y nivel pastoral permanecen locales para evitar URLs excesivamente volátiles y trabajo de navegación innecesario.
+- Las colecciones derivadas de personas y unidades organizativas se memoizan; la clasificación administrativa/colegial se ejecuta en una sola pasada por cambio del dataset.
 - Los antiguos `PublicDashboardClient.tsx`, `PublicPeoplePastoralViews.tsx` y `PublicOrganizationViews.tsx` fueron retirados para impedir que el shell o vistas no seleccionadas vuelvan al grafo cliente inicial.
-- `scripts/audit-web-performance.mjs` bloquea la reintroducción de `use client` en páginas SSR protegidas, las solicitudes a APIs internas desde esas páginas, regresiones en el límite shell/explorador y la agrupación estática de las vistas secundarias.
+- `scripts/audit-web-performance.mjs` bloquea la reintroducción de `use client` en páginas SSR protegidas, las solicitudes a APIs internas desde esas páginas, regresiones en el límite shell/explorador, agrupación estática de vistas, pérdida del estado compartible y eliminación de la memoización protegida.
 
 Las rutas API públicas equivalentes solo deben mantenerse cuando exista un consumidor explícito distinto del render inicial. No se deben conservar adaptadores sin consumidores por compatibilidad hipotética.
 
@@ -96,10 +100,10 @@ Las mutaciones administrativas de personas, nombramientos, entidades, jurisdicci
 
 ## Contratos preventivos
 
-- `pnpm audit:performance`: fuentes, imágenes, límites cliente, fichas SSR, shell del dashboard, chunks por vista y caché.
+- `pnpm audit:performance`: fuentes, imágenes, límites cliente, fichas SSR, shell del dashboard, chunks por vista, estado compartible, memoización y caché.
 - `pnpm audit:bundles`: bundles reales posteriores al build.
 - `tests/web-performance-contract.test.mjs`: arquitectura, imágenes, instalación, invalidación y presupuesto.
-- `tests/public-ssr-navigation.test.mjs`: shell del portal renderizado en servidor, isla interactiva, carga diferida por vista y navegación pública.
+- `tests/public-ssr-navigation.test.mjs`: shell SSR, isla interactiva, carga diferida, validación de parámetros, sincronización de URL y navegación pública.
 - `tests/public-detail-ssr.test.mjs`: SSR y caché consolidada de fichas públicas.
 - `tests/public-entity-detail-route.test.mjs`: ausencia del cliente duplicado y del adaptador API por slug.
 - `tests/entity-profile-navigation.test.mjs`, `tests/entity-institutional-timeline.test.mjs` y `tests/entity-dynamic-organization-chart.test.mjs`: composición SSR y ausencia de hidratación presentacional.
@@ -120,7 +124,7 @@ El despliegue de Vercel asociado a `260583d` compiló correctamente, validó tip
 - `/` redujo su tamaño propio de 6.08 kB a 5.57 kB; el First Load JS permaneció en 111 kB porque las vistas todavía compartían el grafo cliente en ese commit.
 - `/entidades/[slug]` redujo su tamaño propio de 3.59 kB a 733 B y el First Load JS de 109 kB a 106 kB tras mover navegación, cronología y organigrama al servidor.
 
-El HEAD posterior separa cada vista secundaria del dashboard en un módulo diferido. Esa reducción no debe cuantificarse ni considerarse validada hasta que Vercel construya el commit exacto y `pnpm audit:bundles` reporte los chunks resultantes.
+El HEAD posterior separa cada vista secundaria del dashboard en un módulo diferido, estabiliza su fallback y añade estado de ámbito compartible sin navegación de servidor. Esas mejoras no deben cuantificarse ni considerarse validadas hasta que Vercel construya el commit exacto y `pnpm audit:bundles` reporte los chunks resultantes.
 
 ## Advisors y riesgos
 
@@ -129,3 +133,4 @@ El HEAD posterior separa cada vista secundaria del dashboard en un módulo difer
 - Los presupuestos iniciales son límites de partida. Solo deben ajustarse con evidencia de bundle y una justificación documentada, nunca para ocultar una regresión.
 - Los hosts de imágenes remotas deben permanecer restringidos; no debe abrirse un patrón global para resolver datos QA puntuales.
 - La carga diferida reduce el JavaScript inicial, pero la transición entre vistas debe validarse visualmente en conexiones lentas para descartar saltos de altura o pérdida de foco.
+- `replaceState` mantiene una URL compartible sin llenar el historial con cada ajuste de filtro. El botón Atrás no recorre cada selección interna; este comportamiento es deliberado mientras el dashboard funcione como explorador de una sola página.
