@@ -17,6 +17,7 @@ const scopePaths: Record<Exclude<PublicCacheScope, 'all'>, Array<[string, 'layou
     ['/personas', 'page'],
     ['/entidades/[slug]', 'page'],
     ['/personas/[slug]', 'page'],
+    ['/pastoral/[slug]', 'page'],
   ],
   registry: [
     ['/', 'page'],
