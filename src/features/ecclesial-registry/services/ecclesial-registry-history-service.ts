@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { requestPublicCacheInvalidation } from '@/lib/public/request-cache-invalidation'
 import type {
   CommunicationChannelRow,
   RegistryOwnerKind,
@@ -280,6 +281,7 @@ export async function updateEcclesiasticalPlace(
     },
   })
   normalizeError(error, 'No se pudo actualizar el lugar eclesiástico.')
+  await requestPublicCacheInvalidation('registry')
   return data as { place_id: string; slug: string; country_iso2: string; status: string; visibility: string }
 }
 
@@ -316,6 +318,7 @@ export async function updateEcclesialInstitution(
     },
   })
   normalizeError(error, 'No se pudo actualizar la institución eclesial.')
+  await requestPublicCacheInvalidation('registry')
   return data as { institution_id: string; slug: string; country_iso2: string; status: string; visibility: string }
 }
 
@@ -343,6 +346,7 @@ export async function updateCommunicationChannel(
     },
   })
   normalizeError(error, 'No se pudo actualizar el canal de comunicación.')
+  await requestPublicCacheInvalidation('registry')
   return data as { channel_id: string; country_iso2: string; status: string; visibility: string }
 }
 
@@ -366,6 +370,7 @@ export async function saveEcclesiasticalPlaceAffiliation(
     },
   })
   normalizeError(error, 'No se pudo guardar la relación del lugar.')
+  await requestPublicCacheInvalidation('registry')
   return data as { affiliation_id: string; place_id: string; country_iso2: string }
 }
 
@@ -389,6 +394,7 @@ export async function saveEcclesialInstitutionAffiliation(
     },
   })
   normalizeError(error, 'No se pudo guardar la relación de la institución.')
+  await requestPublicCacheInvalidation('registry')
   return data as { affiliation_id: string; institution_id: string; country_iso2: string }
 }
 
@@ -402,6 +408,7 @@ export async function closeEcclesiasticalPlaceAffiliation(
     payload: { id: affiliationId, valid_to: validTo, notes: optional(notes) },
   })
   normalizeError(error, 'No se pudo cerrar la relación del lugar.')
+  await requestPublicCacheInvalidation('registry')
   return data as { affiliation_id: string; place_id: string; valid_to: string; status: string }
 }
 
@@ -415,6 +422,7 @@ export async function closeEcclesialInstitutionAffiliation(
     payload: { id: affiliationId, valid_to: validTo, notes: optional(notes) },
   })
   normalizeError(error, 'No se pudo cerrar la relación de la institución.')
+  await requestPublicCacheInvalidation('registry')
   return data as { affiliation_id: string; institution_id: string; valid_to: string; status: string }
 }
 
