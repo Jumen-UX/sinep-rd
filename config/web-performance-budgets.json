@@ -1,0 +1,29 @@
+{
+  "coreWebVitals": {
+    "lcpMs": 2500,
+    "inpMs": 200,
+    "cls": 0.1
+  },
+  "javascript": {
+    "publicInitialCompressedKb": 170,
+    "publicDetailCompressedKb": 220,
+    "singleDependencyCompressedKb": 100
+  },
+  "images": {
+    "thumbnailWidth": 320,
+    "cardWidth": 640,
+    "profileWidth": 1200,
+    "socialWidth": 1200,
+    "socialHeight": 630
+  },
+  "routes": [
+    "/",
+    "/diocesis",
+    "/personas",
+    "/entidades/[slug]",
+    "/personas/[slug]",
+    "/lugares/[slug]",
+    "/instituciones/[slug]",
+    "/admin"
+  ]
+}
