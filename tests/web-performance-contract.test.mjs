@@ -30,6 +30,30 @@ test('root layout uses next/font without hydrating obsolete public enhancers', a
   }
 })
 
+test('person portraits use next image and the pinned pnpm version approves sharp', async () => {
+  const [photo, publicDetail, adminDetail, audit, workspace, packageSource] = await Promise.all([
+    readRepoFile('src/features/personas/components/PersonPhoto.tsx'),
+    readRepoFile('src/features/personas/PersonDetailServerView.tsx'),
+    readRepoFile('src/features/personas/admin/PersonDetailPage.tsx'),
+    readRepoFile('scripts/audit-web-performance.mjs'),
+    readRepoFile('pnpm-workspace.yaml'),
+    readRepoFile('package.json'),
+  ])
+  const packageJson = JSON.parse(packageSource)
+
+  assert.equal(photo.includes("from 'next/image'"), true)
+  assert.equal(photo.includes('priority'), true)
+  assert.equal(photo.includes('sizes="(max-width: 640px) 100vw, 320px"'), true)
+  assert.equal(publicDetail.includes('<PublicPersonPhoto'), true)
+  assert.equal(adminDetail.includes('<AdminPersonPhoto'), true)
+  assert.equal(publicDetail.includes('<img'), false)
+  assert.equal(adminDetail.includes('<img'), false)
+  assert.equal(audit.includes('knownRawImageAllowlist'), false)
+  assert.equal(packageJson.packageManager, 'pnpm@10.18.3')
+  assert.match(workspace, /onlyBuiltDependencies:\s*\n\s*- sharp/)
+  assert.equal(workspace.includes('allowBuilds:'), false)
+})
+
 test('public dashboard reads use tagged cache with authenticated invalidation', async () => {
   const [dashboard, cacheTags, revalidate, route, registryAdmin, registryHistory] = await Promise.all([
     readRepoFile('src/lib/public/dashboard.ts'),
