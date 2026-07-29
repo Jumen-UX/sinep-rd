@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { requestPublicCacheInvalidation } from '@/lib/public/request-cache-invalidation'
 
 export type RegistryScope = {
   type: string | null
@@ -299,6 +300,7 @@ export async function saveEcclesiasticalPlace(
   })
 
   normalizeError(error, 'No se pudo guardar el lugar eclesiástico.')
+  await requestPublicCacheInvalidation('registry')
   return data as { place_id: string; slug: string; country_iso2: string; status: string; visibility: string }
 }
 
@@ -323,6 +325,7 @@ export async function saveEcclesialInstitution(
   })
 
   normalizeError(error, 'No se pudo guardar la institución eclesial.')
+  await requestPublicCacheInvalidation('registry')
   return data as { institution_id: string; slug: string; country_iso2: string; status: string; visibility: string }
 }
 
@@ -349,5 +352,6 @@ export async function saveCommunicationChannel(
   })
 
   normalizeError(error, 'No se pudo guardar el canal de comunicación.')
+  await requestPublicCacheInvalidation('registry')
   return data as { channel_id: string; country_iso2: string; status: string; visibility: string }
 }
