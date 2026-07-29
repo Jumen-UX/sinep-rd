@@ -35,18 +35,21 @@ test('theme control persists light dark and automatic preferences', async () => 
 })
 
 test('public and administrative shells expose the shared appearance control', async () => {
-  const [layout, adminShell, publicDashboard] = await Promise.all([
+  const [layout, adminShell, publicShell, publicExplorer] = await Promise.all([
     source('src/app/layout.tsx'),
     source('src/app/(admin)/admin/AdminShell.tsx'),
-    source('src/features/public/PublicDashboardClient.tsx'),
+    source('src/features/public/PublicDashboardShell.tsx'),
+    source('src/features/public/PublicDashboardExplorer.tsx'),
   ])
 
   assert.match(layout, /import \{ ThemeControl \}/)
   assert.match(adminShell, /import \{ ThemeControl \}/)
   assert.match(adminShell, /<ThemeControl \/>/)
-  assert.match(publicDashboard, /import \{ ThemeControl \}/)
-  assert.match(publicDashboard, /public-mobile-header[\s\S]*<ThemeControl compact \/>/)
-  assert.match(publicDashboard, /public-topbar[\s\S]*<ThemeControl compact \/>/)
+  assert.match(publicShell, /import \{ ThemeControl \}/)
+  assert.match(publicShell, /public-mobile-header[\s\S]*<ThemeControl compact \/>/)
+  assert.match(publicShell, /public-topbar[\s\S]*<ThemeControl compact \/>/)
+  assert.doesNotMatch(publicShell, /['"]use client['"]/)
+  assert.match(publicExplorer, /^['"]use client['"]/)
 })
 
 test('dark theme defines semantic surfaces borders states and focus tokens', async () => {
