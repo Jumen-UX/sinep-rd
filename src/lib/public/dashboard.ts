@@ -194,11 +194,27 @@ function buildDashboardSummary(dioceses: Diocese[], parishCount: number, people:
   }
 }
 
-async function loadPublicDashboardDataUncached(): Promise<PublicDashboardData> {
-  const [countries, dioceses, parishes, people, assignments, organizationCharts, organizationUnits] = await Promise.all([
+async function loadPublicTerritorialDashboardDataUncached(): Promise<PublicDashboardData> {
+  const [countries, dioceses, parishes] = await Promise.all([
     safeFetch<{ key: string; name: string }>('public_countries', { select: 'key,name', order: 'name.asc' }),
     fetchSupabaseJson<Diocese[]>('public_dioceses', { select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count,country_iso2,country_name', order: 'name.asc' }),
     safeFetch<Parish>('public_parishes', { select: 'id,name,slug,diocese_id,diocese_name,diocese_slug', status: 'eq.active', visibility: 'eq.public', order: 'name.asc' }),
+  ])
+
+  return {
+    countries: countries.length > 0 ? countries : [{ key: 'DO', name: 'República Dominicana' }],
+    dioceses,
+    parishes,
+    people: [],
+    assignments: [],
+    organization_charts: [],
+    organization_units: [],
+  }
+}
+
+async function loadPublicDashboardDataUncached(): Promise<PublicDashboardData> {
+  const [territorialData, people, assignments, organizationCharts, organizationUnits] = await Promise.all([
+    loadPublicTerritorialDashboardDataUncached(),
     fetchSupabaseJson<Person[]>('person_public_directory', { select: 'id,display_name,slug,person_type,is_religious,status,death_date', status: 'eq.active', visibility: 'eq.public', death_date: 'is.null', order: 'display_name.asc' }),
     safeFetch<Assignment>('public_position_assignments_with_hierarchy', { select: 'id,person_id,person_name,person_slug,person_type,position_title,base_role_name,direct_entity_name,direct_entity_slug,direct_entity_type_name,parish_name,parish_slug,zone_name,zone_slug,vicariate_name,vicariate_slug,diocese_name,diocese_slug,organization_unit_name,organization_unit_slug,is_current,assignment_status', is_current: 'eq.true', order: 'person_name.asc' }),
     safeFetch<OrganizationChart>('organization_charts', { select: 'id,key,name,description', status: 'eq.active', visibility: 'eq.public', order: 'sort_order.asc,name.asc' }),
@@ -206,9 +222,7 @@ async function loadPublicDashboardDataUncached(): Promise<PublicDashboardData> {
   ])
 
   return {
-    countries: countries.length > 0 ? countries : [{ key: 'DO', name: 'República Dominicana' }],
-    dioceses,
-    parishes,
+    ...territorialData,
     people,
     assignments,
     organization_charts: organizationCharts,
@@ -226,6 +240,15 @@ async function loadDashboardSummaryUncached(): Promise<DashboardSummary> {
   return buildDashboardSummary(dioceses, parishes.length, people)
 }
 
+async function loadPublicTerritorialDashboardBundleUncached(): Promise<PublicDashboardBundle> {
+  const data = await loadPublicTerritorialDashboardDataUncached()
+
+  return {
+    data,
+    summary: buildDashboardSummary(data.dioceses, data.parishes.length, []),
+  }
+}
+
 async function loadPublicDashboardBundleUncached(): Promise<PublicDashboardBundle> {
   const [data, historicalPeople] = await Promise.all([
     loadPublicDashboardDataUncached(),
@@ -239,6 +262,15 @@ async function loadPublicDashboardBundleUncached(): Promise<PublicDashboardBundl
     summary: buildDashboardSummary(data.dioceses, data.parishes.length, historicalPeople),
   }
 }
+
+const getCachedPublicTerritorialDashboardData = unstable_cache(
+  loadPublicTerritorialDashboardDataUncached,
+  ['public-territorial-dashboard-data-v1'],
+  {
+    revalidate: PUBLIC_CACHE_REVALIDATE_SECONDS,
+    tags: [PUBLIC_CACHE_TAGS.dashboard, PUBLIC_CACHE_TAGS.directories],
+  },
+)
 
 const getCachedPublicDashboardData = unstable_cache(
   loadPublicDashboardDataUncached,
@@ -258,6 +290,15 @@ const getCachedDashboardSummary = unstable_cache(
   },
 )
 
+const getCachedPublicTerritorialDashboardBundle = unstable_cache(
+  loadPublicTerritorialDashboardBundleUncached,
+  ['public-territorial-dashboard-bundle-v1'],
+  {
+    revalidate: PUBLIC_CACHE_REVALIDATE_SECONDS,
+    tags: [PUBLIC_CACHE_TAGS.dashboard, PUBLIC_CACHE_TAGS.directories],
+  },
+)
+
 const getCachedPublicDashboardBundle = unstable_cache(
   loadPublicDashboardBundleUncached,
   ['public-dashboard-bundle-v1'],
@@ -267,12 +308,20 @@ const getCachedPublicDashboardBundle = unstable_cache(
   },
 )
 
+export async function loadPublicTerritorialDashboardData() {
+  return getCachedPublicTerritorialDashboardData()
+}
+
 export async function loadPublicDashboardData() {
   return getCachedPublicDashboardData()
 }
 
 export async function loadDashboardSummary() {
   return getCachedDashboardSummary()
+}
+
+export async function loadPublicTerritorialDashboardBundle() {
+  return getCachedPublicTerritorialDashboardBundle()
 }
 
 export async function loadPublicDashboardBundle() {
