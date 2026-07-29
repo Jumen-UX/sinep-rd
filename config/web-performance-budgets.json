@@ -7,6 +7,7 @@
   "javascript": {
     "publicInitialCompressedKb": 170,
     "publicDetailCompressedKb": 220,
+    "adminInitialCompressedKb": 300,
     "singleDependencyCompressedKb": 100
   },
   "images": {
