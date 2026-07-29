@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import EntityDynamicOrganizationChart from './EntityDynamicOrganizationChart'
 import EntityInstitutionalTimeline from './EntityInstitutionalTimeline'
+import EntityProfileNavigation from './EntityProfileNavigation'
 import EntityRelationshipMap from './EntityRelationshipMap'
 import type { PublicEntityDetail } from '@/lib/public/entity-detail'
 
@@ -51,6 +52,9 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
     .filter((item) => item.office_key && ordinaryOfficeKeys.has(item.office_key))
     .sort((left, right) => (hierarchyRank[left.office_key ?? ''] ?? 99) - (hierarchyRank[right.office_key ?? ''] ?? 99))
   const currentOrdinary = ordinaryAppointments.find((item) => item.is_current) ?? ordinaryAppointments[0] ?? null
+  const activeRelationshipCount = data.relationships.filter((relationship) => relationship.is_current).length
+  const activePositionCount = positions.filter((position) => position.is_current).length
+  const timelineCount = data.evolution_events.length + ordinaryAppointments.length + (entity.erected_at ? 1 : 0)
 
   return (
     <main className="container dashboard-page public-entity-detail">
@@ -71,6 +75,14 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
         </aside>
       </div>
 
+      <EntityProfileNavigation
+        hasAuthority={Boolean(currentOrdinary)}
+        positionCount={activePositionCount}
+        relationshipCount={activeRelationshipCount}
+        statisticsCount={statisticsSnapshots.length}
+        timelineCount={timelineCount}
+      />
+
       <section className="dashboard-grid dashboard-summary" aria-label="Indicadores principales">
         <div className="metric-card"><strong>{entity.entity_type_name ?? 'Entidad'}</strong><span>Tipo</span></div>
         <div className="metric-card"><strong>{formatNumber(entity.population_total)}</strong><span>Población reportada</span></div>
@@ -78,7 +90,7 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
         <div className="metric-card"><strong>{formatArea(entity.area_km2)}</strong><span>Área</span></div>
       </section>
 
-      <section className="card dashboard-section">
+      <section className="card dashboard-section" id="datos">
         <div className="section-heading"><div><p className="eyebrow">Datos básicos</p><h2>Información de la entidad</h2></div></div>
         <div className="public-directory-list entity-facts-grid">
           <div className="public-directory-item"><div><strong>Nombre oficial</strong><span>{entity.official_name ?? '—'}</span></div><small>{entity.latin_name ?? '—'}</small></div>
@@ -91,7 +103,7 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
       </section>
 
       {currentOrdinary && (
-        <section className="card dashboard-section">
+        <section className="card dashboard-section" id="autoridad">
           <div className="section-heading"><div><p className="eyebrow">Autoridad actual</p><h2>Ordinario o responsable</h2></div></div>
           <div className="public-directory-list entity-authority-list">
             <div className="public-directory-item">
@@ -105,22 +117,26 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
         </section>
       )}
 
-      <EntityRelationshipMap
-        entity={entity}
-        relatedEntities={data.related_entities}
-        relationships={data.relationships}
-      />
+      <div id="jerarquia">
+        <EntityRelationshipMap
+          entity={entity}
+          relatedEntities={data.related_entities}
+          relationships={data.relationships}
+        />
+      </div>
 
-      <EntityInstitutionalTimeline
-        payload={{
-          entity: { name: entity.name, erected_at: entity.erected_at },
-          evolution_events: data.evolution_events,
-          appointment_history: data.appointment_history,
-        }}
-      />
+      <div id="historia">
+        <EntityInstitutionalTimeline
+          payload={{
+            entity: { name: entity.name, erected_at: entity.erected_at },
+            evolution_events: data.evolution_events,
+            appointment_history: data.appointment_history,
+          }}
+        />
+      </div>
 
       {statisticsSnapshots.length > 0 && (
-        <section className="card dashboard-section">
+        <section className="card dashboard-section" id="estadisticas">
           <div className="section-heading"><div><p className="eyebrow">Estadísticas</p><h2>Snapshots históricos</h2></div></div>
           <div className="public-directory-list entity-snapshots-grid">
             {statisticsSnapshots.map((item) => (
