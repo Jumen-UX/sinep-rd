@@ -1,3 +1,5 @@
+import { unstable_cache } from 'next/cache'
+import { PUBLIC_CACHE_REVALIDATE_SECONDS, PUBLIC_CACHE_TAGS } from '@/lib/public/cache-tags'
 import { fetchSupabaseJson } from '@/lib/supabase/rest'
 
 export type PublicView = 'territorial' | 'clero' | 'pastoral' | 'administrativa' | 'colegial'
@@ -192,7 +194,7 @@ function buildDashboardSummary(dioceses: Diocese[], parishCount: number, people:
   }
 }
 
-export async function loadPublicDashboardData(): Promise<PublicDashboardData> {
+async function loadPublicDashboardDataUncached(): Promise<PublicDashboardData> {
   const [countries, dioceses, parishes, people, assignments, organizationCharts, organizationUnits] = await Promise.all([
     safeFetch<{ key: string; name: string }>('public_countries', { select: 'key,name', order: 'name.asc' }),
     fetchSupabaseJson<Diocese[]>('public_dioceses', { select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count,country_iso2,country_name', order: 'name.asc' }),
@@ -214,7 +216,7 @@ export async function loadPublicDashboardData(): Promise<PublicDashboardData> {
   }
 }
 
-export async function loadDashboardSummary(): Promise<DashboardSummary> {
+async function loadDashboardSummaryUncached(): Promise<DashboardSummary> {
   const [dioceses, parishes, people] = await Promise.all([
     fetchSupabaseJson<Diocese[]>('public_dioceses', { select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count,country_iso2,country_name', order: 'name.asc' }),
     fetchSupabaseJson<{ id: string }[]>('public_ecclesiastical_entities', { select: 'id', entity_type_key: 'eq.parish', status: 'eq.active', visibility: 'eq.public' }),
@@ -224,9 +226,9 @@ export async function loadDashboardSummary(): Promise<DashboardSummary> {
   return buildDashboardSummary(dioceses, parishes.length, people)
 }
 
-export async function loadPublicDashboardBundle(): Promise<PublicDashboardBundle> {
+async function loadPublicDashboardBundleUncached(): Promise<PublicDashboardBundle> {
   const [data, historicalPeople] = await Promise.all([
-    loadPublicDashboardData(),
+    loadPublicDashboardDataUncached(),
     fetchSupabaseJson<Person[]>('person_public_directory', {
       select: 'id,display_name,slug,person_type,is_religious,status,death_date',
     }),
@@ -236,4 +238,43 @@ export async function loadPublicDashboardBundle(): Promise<PublicDashboardBundle
     data,
     summary: buildDashboardSummary(data.dioceses, data.parishes.length, historicalPeople),
   }
+}
+
+const getCachedPublicDashboardData = unstable_cache(
+  loadPublicDashboardDataUncached,
+  ['public-dashboard-data-v1'],
+  {
+    revalidate: PUBLIC_CACHE_REVALIDATE_SECONDS,
+    tags: [PUBLIC_CACHE_TAGS.dashboard, PUBLIC_CACHE_TAGS.directories, PUBLIC_CACHE_TAGS.registry],
+  },
+)
+
+const getCachedDashboardSummary = unstable_cache(
+  loadDashboardSummaryUncached,
+  ['public-dashboard-summary-v1'],
+  {
+    revalidate: PUBLIC_CACHE_REVALIDATE_SECONDS,
+    tags: [PUBLIC_CACHE_TAGS.dashboard, PUBLIC_CACHE_TAGS.directories],
+  },
+)
+
+const getCachedPublicDashboardBundle = unstable_cache(
+  loadPublicDashboardBundleUncached,
+  ['public-dashboard-bundle-v1'],
+  {
+    revalidate: PUBLIC_CACHE_REVALIDATE_SECONDS,
+    tags: [PUBLIC_CACHE_TAGS.dashboard, PUBLIC_CACHE_TAGS.directories, PUBLIC_CACHE_TAGS.registry],
+  },
+)
+
+export async function loadPublicDashboardData() {
+  return getCachedPublicDashboardData()
+}
+
+export async function loadDashboardSummary() {
+  return getCachedDashboardSummary()
+}
+
+export async function loadPublicDashboardBundle() {
+  return getCachedPublicDashboardBundle()
 }
