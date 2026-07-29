@@ -46,7 +46,7 @@ test('public E2E checks navigation, dynamic profiles, mobile layout and blocking
   assert.match(spec, /\/sitemap\.xml/)
   assert.match(spec, /E2E_PUBLIC_INDEXING_MODE/)
   assert.match(spec, /beta privada bloquea indexaci.n/)
-  assert.match(spec, /Disallow:\s*\*\//)
+  assert.ok(spec.includes("expect(robots).toMatch(/Disallow:\\s*\\//)"))
   assert.match(spec, /\\\/personas\\\/\[\^<\]\+/)
   assert.match(spec, /\\\/entidades\\\/\[\^<\]\+/)
   assert.match(spec, /setViewportSize\(\{ width: 390, height: 844 \}\)/)
