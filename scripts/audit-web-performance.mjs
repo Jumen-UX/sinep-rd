@@ -13,10 +13,16 @@ const serverRenderedPublicDetailRoutes = new Set([
   'src/app/(public)/organismos/[id]/page.tsx',
   'src/app/(public)/provincias-eclesiasticas/[slug]/page.tsx',
 ])
-const legacyPublicDashboardClient = 'src/features/public/PublicDashboardClient.tsx'
+const legacyPublicDashboardModules = [
+  'src/features/public/PublicDashboardClient.tsx',
+  'src/features/public/PublicPeoplePastoralViews.tsx',
+  'src/features/public/PublicOrganizationViews.tsx',
+]
 const secondaryDashboardViewModules = [
-  'PublicPeoplePastoralViews',
-  'PublicOrganizationViews',
+  'PublicPeopleView',
+  'PublicPastoralView',
+  'PublicAdministrativeView',
+  'PublicCollegialView',
 ]
 
 async function walk(directory) {
@@ -114,8 +120,10 @@ if (!dashboardExplorer.includes('aria-busy="true"') || !dashboardExplorer.includ
   findings.push({ rule: 'public-dashboard-lazy-view-accessibility', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx' })
 }
 
-if (sourcePaths.has(legacyPublicDashboardClient)) {
-  findings.push({ rule: 'legacy-public-dashboard-client', severity: 'new', path: legacyPublicDashboardClient })
+for (const path of legacyPublicDashboardModules) {
+  if (sourcePaths.has(path)) {
+    findings.push({ rule: 'legacy-public-dashboard-module', severity: 'new', path })
+  }
 }
 
 const newFindings = findings.filter((finding) => finding.severity === 'new')
