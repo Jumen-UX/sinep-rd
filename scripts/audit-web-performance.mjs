@@ -108,11 +108,22 @@ if (!dashboardExplorer.includes("import { PublicTerritorialView } from './Public
   findings.push({ rule: 'public-dashboard-territorial-initial-view', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx' })
 }
 
+if (!/import\s*\{\s*lazy,\s*Suspense\s*\}\s*from\s*['"]react['"]/.test(dashboardExplorer)
+  || dashboardExplorer.includes('next/dynamic')) {
+  findings.push({ rule: 'public-dashboard-react-lazy-boundary', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx' })
+}
+
 for (const moduleName of secondaryDashboardViewModules) {
   const staticImport = new RegExp(`from ['"]\\./${moduleName}['"]`)
-  if (staticImport.test(dashboardExplorer) || !dashboardExplorer.includes(`import('./${moduleName}')`)) {
+  const lazyImport = new RegExp(`lazy\\(\\(\\) => import\\(['"]\\./${moduleName}['"]\\)\\)`)
+  if (staticImport.test(dashboardExplorer) || !lazyImport.test(dashboardExplorer)) {
     findings.push({ rule: 'public-dashboard-secondary-view-lazy-load', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx', module: moduleName })
   }
+}
+
+const suspenseBoundaryCount = dashboardExplorer.match(/<Suspense fallback=/g)?.length ?? 0
+if (suspenseBoundaryCount !== secondaryDashboardViewModules.length) {
+  findings.push({ rule: 'public-dashboard-secondary-view-suspense', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx', expected: secondaryDashboardViewModules.length, actual: suspenseBoundaryCount })
 }
 
 if (dashboardExplorer.includes('ssr: false')) {
@@ -167,6 +178,7 @@ const report = {
     shell: 'src/features/public/PublicDashboardShell.tsx',
     explorer: 'src/features/public/PublicDashboardExplorer.tsx',
     initialView: 'PublicTerritorialView',
+    lazyStrategy: 'React.lazy + Suspense',
     lazyModules: secondaryDashboardViewModules,
     loadingStyles: 'src/features/public/PublicDashboardExplorer.module.css',
     shareableScopeParameters: scopeParameters,
