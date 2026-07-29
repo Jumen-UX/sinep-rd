@@ -44,9 +44,13 @@ test('public home renders a server shell around one interactive explorer', async
 })
 
 test('every secondary dashboard view has its own lazy chunk while territorial remains initial', async () => {
-  const explorer = await readRepoFile('src/features/public/PublicDashboardExplorer.tsx')
+  const [explorer, loadingStyles] = await Promise.all([
+    readRepoFile('src/features/public/PublicDashboardExplorer.tsx'),
+    readRepoFile('src/features/public/PublicDashboardExplorer.module.css'),
+  ])
 
   assert.match(explorer, /import dynamic from 'next\/dynamic'/)
+  assert.match(explorer, /import styles from '\.\/PublicDashboardExplorer\.module\.css'/)
   assert.match(explorer, /import \{ PublicTerritorialView \} from '\.\/PublicTerritorialView'/)
   for (const viewModule of [
     'PublicPeopleView',
@@ -59,6 +63,10 @@ test('every secondary dashboard view has its own lazy chunk while territorial re
   }
   assert.match(explorer, /aria-busy="true"/)
   assert.match(explorer, /role="status" aria-live="polite"/)
+  assert.match(explorer, /styles\.loadingPanel/)
+  assert.match(explorer, /styles\.loadingMessage/)
+  assert.match(loadingStyles, /\.loadingPanel\s*\{[\s\S]*min-height:/)
+  assert.match(loadingStyles, /@media \(max-width: 780px\)/)
   assert.doesNotMatch(explorer, /ssr:\s*false/)
 
   await assert.rejects(access(new URL('src/features/public/PublicPeoplePastoralViews.tsx', repoRoot)))
