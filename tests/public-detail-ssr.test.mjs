@@ -53,6 +53,25 @@ test('entity detail is rendered and cached from server data', async () => {
   assert.equal(view.includes('Cargando entidad'), false)
 })
 
+test('organization unit detail is server rendered and shares directory cache invalidation', async () => {
+  const page = await readRepoFile('src/app/(public)/pastoral/[slug]/page.tsx')
+  const loader = await readRepoFile('src/lib/public/organization-unit-detail.ts')
+  const cacheLayer = await readRepoFile('src/lib/public/cache.ts')
+  const revalidate = await readRepoFile('src/lib/public/revalidate.ts')
+
+  assert.equal(page.includes("'use client'"), false)
+  assert.equal(page.includes('useEffect'), false)
+  assert.equal(page.includes('/api/pastoral'), false)
+  assert.equal(page.includes('loadPublicOrganizationUnitDetail(slug)'), true)
+  assert.equal(page.includes('export const revalidate = 900'), true)
+  assert.equal(loader.includes("'public_organization_units'"), true)
+  assert.equal(loader.includes("status: 'eq.active'"), true)
+  assert.equal(loader.includes("visibility: 'eq.public'"), true)
+  assert.equal(cacheLayer.includes('PUBLIC_ORGANIZATION_UNIT_DETAIL_TAG = PUBLIC_CACHE_TAGS.directories'), true)
+  assert.equal(cacheLayer.includes('loadCachedPublicOrganizationUnitDetail'), true)
+  assert.equal(revalidate.includes("['/pastoral/[slug]', 'page']"), true)
+})
+
 test('admin mutations invalidate the consolidated public directory cache', async () => {
   const cacheLayer = await readRepoFile('src/lib/public/cache.ts')
   const mutationRoutes = await Promise.all([
@@ -74,6 +93,7 @@ test('admin mutations invalidate the consolidated public directory cache', async
   assert.equal(cacheLayer.includes('revalidateTag('), false)
   assert.equal(cacheLayer.includes("revalidatePath(`/personas/${personSlug}`)"), true)
   assert.equal(cacheLayer.includes("revalidatePath(`/entidades/${entitySlug}`)"), true)
+  assert.equal(cacheLayer.includes("revalidatePath(`/pastoral/${organizationUnitSlug}`)"), true)
   assert.equal(mutationRoutes.every((route) => route.includes('revalidatePublicContent')), true)
 })
 
