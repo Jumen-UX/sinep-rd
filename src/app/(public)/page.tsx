@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import PublicDashboardShell from '@/features/public/PublicDashboardShell'
 import { loadPublicDashboardBundle, type PublicView } from '@/lib/public/dashboard'
 import { buildPublicMetadata } from '@/lib/public/metadata'
-import '../../public-combobox.css'
-import '../../public-dashboard.css'
-import '../../public-territorial.css'
+import '../public-combobox.css'
+import '../public-dashboard.css'
+import '../public-territorial.css'
 
 export const metadata: Metadata = buildPublicMetadata({
   title: 'Información eclesial y pastoral',
