@@ -1,12 +1,22 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import type { OrganizationUnit, PublicDashboardBundle, PublicView } from '@/lib/public/dashboard'
+import type {
+  DashboardSummary,
+  OrganizationUnit,
+  PublicDashboardData,
+  PublicView,
+} from '@/lib/public/dashboard'
 import { personTypeLabel, views, type PersonCard, type Props } from './PublicDashboardShared'
 import { buildPublicDashboardScope } from './buildPublicDashboardScope'
 import { buildPublicDashboardSearch } from './PublicDashboardUrlState'
 
 type DeferredDataState = 'idle' | 'loading' | 'error'
+
+async function readJson<T>(response: Response, source: string): Promise<T> {
+  if (!response.ok) throw new Error(`${source} request failed with ${response.status}`)
+  return response.json() as Promise<T>
+}
 
 export function usePublicDashboardModel({
   initialData,
@@ -58,17 +68,21 @@ export function usePublicDashboardModel({
 
     async function loadDeferredData() {
       try {
-        const response = await fetch('/api/dashboard/vistas', {
+        const requestOptions = {
           headers: { Accept: 'application/json' },
           signal: controller.signal,
-        })
-        if (!response.ok) throw new Error(`Dashboard views request failed with ${response.status}`)
+        }
+        const [dataResponse, summaryResponse] = await Promise.all([
+          fetch('/api/dashboard/vistas', requestOptions),
+          fetch('/api/dashboard/resumen', requestOptions),
+        ])
+        const [data, summary] = await Promise.all([
+          readJson<PublicDashboardData>(dataResponse, 'Dashboard views'),
+          readJson<DashboardSummary>(summaryResponse, 'Dashboard summary'),
+        ])
 
-        const bundle = await response.json() as PublicDashboardBundle
-        if (!bundle.data || !bundle.summary) throw new Error('Dashboard views response is incomplete')
-
-        setDashboardData(bundle.data)
-        setDashboardSummary(bundle.summary)
+        setDashboardData(data)
+        setDashboardSummary(summary)
         setHasCompleteData(true)
         setDeferredDataState('idle')
       } catch (error) {
