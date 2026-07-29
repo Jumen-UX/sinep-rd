@@ -79,6 +79,11 @@ const dashboardExplorer = await readFile(join(srcRoot, 'features', 'public', 'Pu
 const dashboardExplorerStyles = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardExplorer.module.css'), 'utf8')
 const dashboardModel = await readFile(join(srcRoot, 'features', 'public', 'usePublicDashboardModel.ts'), 'utf8')
 const dashboardUrlState = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardUrlState.ts'), 'utf8')
+const dashboardThemeControl = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardThemeControl.tsx'), 'utf8')
+const globalThemeControl = await readFile(join(srcRoot, 'components', 'theme', 'ThemeControl.tsx'), 'utf8')
+const themePreferenceHook = await readFile(join(srcRoot, 'components', 'theme', 'useThemePreference.ts'), 'utf8')
+const personMetadataLayout = await readFile(join(srcRoot, 'app', '(public)', 'personas', '[slug]', 'layout.tsx'), 'utf8')
+const personPhotoSource = await readFile(join(srcRoot, 'features', 'personas', 'person-photo-source.ts'), 'utf8')
 
 if (!rootLayout.includes("from 'next/font/")) {
   findings.push({ rule: 'next-font-required', severity: 'new', path: 'src/app/layout.tsx' })
@@ -98,6 +103,14 @@ if (!dashboardPage.includes('PublicDashboardShell') || dashboardPage.includes('P
 
 if (/^[\'"]use client[\'"]/m.test(dashboardShell) || /onClick=|onChange=/.test(dashboardShell)) {
   findings.push({ rule: 'public-dashboard-shell-hydration', severity: 'new', path: 'src/features/public/PublicDashboardShell.tsx' })
+}
+
+if (dashboardShell.includes('@/components/theme/ThemeControl')
+  || !dashboardShell.includes('PublicDashboardThemeControl')
+  || !dashboardThemeControl.includes('@/components/theme/useThemePreference')
+  || !globalThemeControl.includes("from './useThemePreference'")
+  || !themePreferenceHook.includes('export function useThemePreference')) {
+  findings.push({ rule: 'public-dashboard-theme-chunk-boundary', severity: 'new', path: 'src/features/public/PublicDashboardShell.tsx' })
 }
 
 if (!/^[\'"]use client[\'"]/m.test(dashboardExplorer) || !dashboardExplorer.includes('usePublicDashboardModel')) {
@@ -161,6 +174,13 @@ if (!dashboardModel.includes('useMemo<PersonCard[]>')
   findings.push({ rule: 'public-dashboard-derived-data-memoization', severity: 'new', path: 'src/features/public/usePublicDashboardModel.ts' })
 }
 
+if (!personPhotoSource.includes("url.hostname === 'placehold.co'")
+  || !personPhotoSource.includes('}/png`')
+  || !personMetadataLayout.includes('normalizePersonPhotoSource(person.photo_url)')
+  || !personMetadataLayout.includes('image,')) {
+  findings.push({ rule: 'public-person-social-image-normalization', severity: 'new', path: 'src/app/(public)/personas/[slug]/layout.tsx' })
+}
+
 for (const path of legacyPublicDashboardModules) {
   if (sourcePaths.has(path)) {
     findings.push({ rule: 'legacy-public-dashboard-module', severity: 'new', path })
@@ -177,12 +197,18 @@ const report = {
   dashboardBoundary: {
     shell: 'src/features/public/PublicDashboardShell.tsx',
     explorer: 'src/features/public/PublicDashboardExplorer.tsx',
+    themeControl: 'src/features/public/PublicDashboardThemeControl.tsx',
+    sharedThemeHook: 'src/components/theme/useThemePreference.ts',
     initialView: 'PublicTerritorialView',
     lazyStrategy: 'React.lazy + Suspense',
     lazyModules: secondaryDashboardViewModules,
     loadingStyles: 'src/features/public/PublicDashboardExplorer.module.css',
     shareableScopeParameters: scopeParameters,
     urlState: 'src/features/public/PublicDashboardUrlState.ts',
+  },
+  personImageContract: {
+    sourceNormalizer: 'src/features/personas/person-photo-source.ts',
+    metadataLayout: 'src/app/(public)/personas/[slug]/layout.tsx',
   },
   findings,
 }
