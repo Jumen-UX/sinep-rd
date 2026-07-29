@@ -30,8 +30,8 @@ test('invitation UI requires explicit confirmation of initial access', async () 
   const page = await readFile(invitePagePath, 'utf8')
   assert.match(page, /accessConfirmed/)
   assert.match(page, /Confirma el rol y el alcance antes de enviar la invitación/)
-  assert.match(page, /Confirmo que este rol y alcance corresponden al usuario invitado/)
-  assert.match(page, /disabled=\{saving \|\| Boolean\(roleId && !accessConfirmed\)\}/)
+  assert.match(page, /Confirmo que este rol, alcance y país corresponden al usuario invitado/)
+  assert.match(page, /disabled=\{saving \|\| !countryEntityId \|\| Boolean\(roleId && !accessConfirmed\)\}/)
 })
 
 test('invitation and access mutations retain their audit boundaries', async () => {
