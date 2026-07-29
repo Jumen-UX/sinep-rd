@@ -8,12 +8,28 @@ type SitemapRecord = {
   updated_at: string | null
 }
 
-const staticRoutes = ['/', '/diocesis', '/personas', '/privacidad', '/cookies', '/aviso-legal']
+const staticRoutes = ['/', '/diocesis', '/personas', '/lugares', '/instituciones', '/privacidad', '/cookies', '/aviso-legal']
 
 function validDate(value: string | null) {
   if (!value) return new Date()
   const parsed = new Date(value)
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed
+}
+
+function dynamicEntries(
+  baseUrl: string,
+  basePath: string,
+  records: SitemapRecord[],
+  priority: number,
+): MetadataRoute.Sitemap {
+  return records
+    .filter((record) => Boolean(record.slug))
+    .map((record) => ({
+      url: `${baseUrl}${basePath}/${encodeURIComponent(record.slug)}`,
+      lastModified: validDate(record.updated_at),
+      changeFrequency: 'monthly',
+      priority,
+    }))
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -29,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '/' ? 1 : 0.7,
   }))
 
-  const [people, entities] = await Promise.all([
+  const [people, entities, places, institutions] = await Promise.all([
     fetchSupabaseJson<SitemapRecord[]>('person_public_directory', {
       select: 'slug,updated_at',
       order: 'updated_at.desc.nullslast',
@@ -40,25 +56,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: 'slug,updated_at',
       order: 'updated_at.desc.nullslast',
     }).catch(() => []),
+    fetchSupabaseJson<SitemapRecord[]>('ecclesiastical_places', {
+      status: 'eq.active',
+      visibility: 'eq.public',
+      select: 'slug,updated_at',
+      order: 'updated_at.desc.nullslast',
+    }).catch(() => []),
+    fetchSupabaseJson<SitemapRecord[]>('ecclesial_institutions', {
+      status: 'eq.active',
+      visibility: 'eq.public',
+      select: 'slug,updated_at',
+      order: 'updated_at.desc.nullslast',
+    }).catch(() => []),
   ])
 
-  const personEntries: MetadataRoute.Sitemap = people
-    .filter((person) => Boolean(person.slug))
-    .map((person) => ({
-      url: `${baseUrl}/personas/${encodeURIComponent(person.slug)}`,
-      lastModified: validDate(person.updated_at),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    }))
-
-  const entityEntries: MetadataRoute.Sitemap = entities
-    .filter((entity) => Boolean(entity.slug))
-    .map((entity) => ({
-      url: `${baseUrl}/entidades/${encodeURIComponent(entity.slug)}`,
-      lastModified: validDate(entity.updated_at),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    }))
-
-  return [...staticEntries, ...entityEntries, ...personEntries]
+  return [
+    ...staticEntries,
+    ...dynamicEntries(baseUrl, '/entidades', entities, 0.8),
+    ...dynamicEntries(baseUrl, '/personas', people, 0.6),
+    ...dynamicEntries(baseUrl, '/lugares', places, 0.7),
+    ...dynamicEntries(baseUrl, '/instituciones', institutions, 0.7),
+  ]
 }
