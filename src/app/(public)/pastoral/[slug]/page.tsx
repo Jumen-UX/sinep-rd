@@ -10,7 +10,7 @@ export const revalidate = 900
 
 export default async function OrganizationUnitPage({ params }: PageProps) {
   const { slug } = await params
-  let item
+  let item: Awaited<ReturnType<typeof loadPublicOrganizationUnitDetail>>
 
   try {
     item = await loadPublicOrganizationUnitDetail(slug)
