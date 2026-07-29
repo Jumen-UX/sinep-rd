@@ -24,6 +24,9 @@
     "/entidades/[slug]",
     "/personas/[slug]",
     "/pastoral/[slug]",
+    "/oficinas/[id]",
+    "/organismos/[id]",
+    "/provincias-eclesiasticas/[slug]",
     "/lugares/[slug]",
     "/instituciones/[slug]",
     "/admin"
