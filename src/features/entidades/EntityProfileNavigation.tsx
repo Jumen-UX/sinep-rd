@@ -1,5 +1,3 @@
-'use client'
-
 import styles from './EntityProfileNavigation.module.css'
 
 type EntityProfileNavigationProps = {
