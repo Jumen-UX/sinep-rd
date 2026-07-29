@@ -1,54 +1,25 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { notFound } from 'next/navigation'
+import { loadPublicOrganizationUnitDetail } from '@/lib/public/cache'
 
-type OrganizationUnitDetail = {
-  item: {
-    name: string
-    slug: string
-    description: string | null
-    organization_chart_name: string | null
-    parent_unit_name: string | null
-    parent_unit_slug: string | null
-    ecclesiastical_entity_name: string | null
-    ecclesiastical_entity_slug: string | null
-    pastoral_area_name: string | null
-    pastoral_area_slug: string | null
-    valid_from: string | null
-  }
+type PageProps = {
+  params: Promise<{ slug: string }>
 }
 
-export default function OrganizationUnitPage() {
-  const params = useParams<{ slug: string }>()
-  const slug = params.slug
-  const [detail, setDetail] = useState<OrganizationUnitDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export const revalidate = 900
 
-  useEffect(() => {
-    async function loadDetail() {
-      try {
-        const response = await fetch(`/api/pastoral?slug=${encodeURIComponent(slug)}`)
-        const payload = await response.json()
-        if (!response.ok) {
-          setError(payload.error ?? 'No se pudo cargar la unidad organizativa.')
-          return
-        }
-        setDetail(payload as OrganizationUnitDetail)
-      } finally {
-        setLoading(false)
-      }
-    }
+export default async function OrganizationUnitPage({ params }: PageProps) {
+  const { slug } = await params
+  let item
 
-    loadDetail()
-  }, [slug])
+  try {
+    item = await loadPublicOrganizationUnitDetail(slug)
+  } catch (error) {
+    console.error('Unable to server render public organization unit detail', error)
+    return <main className="container"><div className="error-box">No se pudo cargar la unidad organizativa.</div></main>
+  }
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando unidad organizativa...</div></main>
-  if (error || !detail) return <main className="container"><div className="error-box">{error ?? 'Unidad organizativa no encontrada.'}</div></main>
-
-  const item = detail.item
+  if (!item) notFound()
 
   return (
     <main className="container dashboard-page home-dashboard">
