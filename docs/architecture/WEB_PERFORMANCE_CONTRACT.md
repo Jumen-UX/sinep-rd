@@ -23,7 +23,7 @@ Estos valores son presupuestos de producto. La aceptación requiere datos de cam
 Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-manifest.json`, comprime cada chunk con gzip y valida:
 
 - rutas públicas iniciales;
-- fichas públicas dinámicas, incluida `/pastoral/[slug]`;
+- fichas públicas dinámicas de personas, entidades, pastoral, oficinas, organismos, provincias eclesiásticas, lugares e instituciones;
 - entrada administrativa;
 - tamaño máximo de un chunk individual.
 
@@ -35,7 +35,10 @@ Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-
 - Los componentes cliente públicos deben existir solo cuando gestionen interacción real.
 - Se prohíben `MutationObserver` y `setInterval` como mecanismo de sincronización general del DOM público.
 - Las transformaciones de presentación deben realizarse en React, en el servicio de dominio o durante el renderizado del servidor.
-- `/pastoral/[slug]` se renderiza en servidor y no realiza una segunda solicitud a `/api/pastoral` después de hidratar.
+- `/pastoral/[slug]`, `/oficinas/[id]`, `/organismos/[id]` y `/provincias-eclesiasticas/[slug]` se renderizan en servidor y no consultan sus propias rutas `/api/*` después de hidratar.
+- `scripts/audit-web-performance.mjs` bloquea tanto la reintroducción de `use client` en estas fichas como las solicitudes a APIs internas desde sus páginas.
+
+Las rutas API públicas equivalentes pueden mantenerse temporalmente por compatibilidad, pero no son la fuente de datos del render inicial de estas fichas.
 
 ## Fuentes
 
@@ -67,7 +70,7 @@ Las lecturas agregadas del dashboard público usan `unstable_cache` con:
 - etiquetas separadas para dashboard, directorios y registro eclesial;
 - invalidación por etiqueta y ruta.
 
-Las fichas públicas de personas, entidades y unidades organizativas comparten la etiqueta `public:directories`, aunque conservan un TTL de respaldo de 900 segundos. Esto evita que una mutación invalide el dashboard pero deje una ficha dinámica con datos anteriores.
+Las fichas públicas de personas, entidades, unidades organizativas, oficinas, organismos colegiales y provincias eclesiásticas comparten la etiqueta `public:directories`, aunque conservan un TTL de respaldo de 900 segundos. Esto evita que una mutación invalide el dashboard pero deje una ficha dinámica con datos anteriores.
 
 Las rutas administrativas y los datos dependientes del usuario no usan caché compartida.
 
@@ -81,11 +84,11 @@ Las rutas administrativas y los datos dependientes del usuario no usan caché co
 
 Las operaciones de creación, edición y cierre de relaciones del registro eclesial solicitan invalidación del ámbito `registry`. Si la invalidación falla, la mutación permanece válida y el TTL limita la obsolescencia a cinco minutos; el cliente registra una advertencia sin exponer datos sensibles.
 
-Las mutaciones administrativas de personas, nombramientos, entidades, jurisdicciones, países, nodos estructurales y unidades organizativas reutilizan `revalidatePublicContent()`, que delega en el ámbito consolidado `directories` y permite invalidar además slugs concretos.
+Las mutaciones administrativas de personas, nombramientos, entidades, jurisdicciones, países, nodos estructurales y unidades organizativas reutilizan `revalidatePublicContent()`, que delega en el ámbito consolidado `directories` y permite invalidar además identificadores o slugs concretos.
 
 ## Contratos preventivos
 
-- `pnpm audit:performance`: fuentes, imágenes, límites cliente y caché.
+- `pnpm audit:performance`: fuentes, imágenes, límites cliente, fichas SSR y caché.
 - `pnpm audit:bundles`: bundles reales posteriores al build.
 - `tests/web-performance-contract.test.mjs`: arquitectura, imágenes, instalación, invalidación y presupuesto.
 - `tests/public-detail-ssr.test.mjs`: SSR y caché consolidada de fichas públicas.
