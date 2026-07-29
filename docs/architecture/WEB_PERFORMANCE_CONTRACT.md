@@ -43,9 +43,15 @@ La tipografía principal se carga mediante `next/font` con `display: swap` y var
 ## Imágenes
 
 - `next.config.ts` permite imágenes remotas de Supabase Storage y formatos AVIF/WebP.
-- Las nuevas imágenes de contenido deben usar `next/image`, dimensiones estables y `sizes` cuando sean responsivas.
-- La auditoría fuente bloquea nuevos usos de `<img>`.
-- Permanecen dos usos heredados permitidos temporalmente en fichas de personas; deben migrarse sin alterar recorte, proporción ni accesibilidad antes de activar la auditoría estricta.
+- Las imágenes de contenido deben usar `next/image`, dimensiones estables y `sizes` cuando sean responsivas.
+- `src/features/personas/components/PersonPhoto.tsx` centraliza los retratos público y administrativo.
+- La fotografía pública prioriza la carga por estar en la cabecera de la ficha y declara un ancho responsivo máximo de 320 píxeles.
+- La fotografía administrativa conserva el avatar de 96 por 96 píxeles y su tratamiento decorativo.
+- La auditoría fuente bloquea cualquier uso de `<img>` dentro de `src`; ya no existen excepciones heredadas.
+
+## Instalación de optimización de imágenes
+
+El proyecto fija `pnpm@10.18.3`. Para esa versión, `pnpm-workspace.yaml` autoriza explícitamente el script de instalación de `sharp` mediante `onlyBuiltDependencies`. No se debe sustituir por `allowBuilds` sin actualizar primero pnpm a una versión que soporte esa opción y regenerar el lockfile de forma controlada.
 
 ## Caché pública
 
@@ -71,7 +77,7 @@ Las operaciones de creación, edición y cierre de relaciones del registro ecles
 
 - `pnpm audit:performance`: fuentes, imágenes, límites cliente y caché.
 - `pnpm audit:bundles`: bundles reales posteriores al build.
-- `tests/web-performance-contract.test.mjs`: arquitectura, invalidación y presupuesto.
+- `tests/web-performance-contract.test.mjs`: arquitectura, imágenes, instalación, invalidación y presupuesto.
 - `pnpm check`: documentación, auditorías, TypeScript, pruebas, build y bundles.
 
 ## Evidencia de cierre
