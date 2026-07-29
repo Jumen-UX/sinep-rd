@@ -23,7 +23,7 @@ test('person detail is rendered and cached from server data', async () => {
   assert.equal(loader.includes('person_public_ordination_history'), true)
   assert.equal(loader.includes('public_position_assignments'), true)
   assert.equal(cacheLayer.includes('unstable_cache'), true)
-  assert.equal(cacheLayer.includes("PUBLIC_PERSON_DETAIL_TAG = 'public-person-details'"), true)
+  assert.equal(cacheLayer.includes('PUBLIC_PERSON_DETAIL_TAG = PUBLIC_CACHE_TAGS.directories'), true)
   assert.equal(view.includes('Historia sacramental'), true)
   assert.equal(view.includes('Movimientos pastorales e institucionales'), true)
   assert.equal(view.includes('Cargando ficha'), false)
@@ -46,14 +46,14 @@ test('entity detail is rendered and cached from server data', async () => {
   assert.equal(layout.includes('loadPublicEntityDetail(slug)'), true)
   assert.equal(loader.includes('public_entity_evolution_events'), true)
   assert.equal(loader.includes('public_position_assignments_with_hierarchy'), true)
-  assert.equal(cacheLayer.includes("PUBLIC_ENTITY_DETAIL_TAG = 'public-entity-details'"), true)
+  assert.equal(cacheLayer.includes('PUBLIC_ENTITY_DETAIL_TAG = PUBLIC_CACHE_TAGS.directories'), true)
   assert.equal(view.includes('EntityRelationshipMap'), true)
   assert.equal(view.includes('EntityInstitutionalTimeline'), true)
   assert.equal(view.includes('EntityDynamicOrganizationChart'), true)
   assert.equal(view.includes('Cargando entidad'), false)
 })
 
-test('admin mutations invalidate public detail caches', async () => {
+test('admin mutations invalidate the consolidated public directory cache', async () => {
   const cacheLayer = await readRepoFile('src/lib/public/cache.ts')
   const mutationRoutes = await Promise.all([
     'src/app/api/admin/sacerdote/route.ts',
@@ -63,12 +63,17 @@ test('admin mutations invalidate public detail caches', async () => {
     'src/app/api/admin/religioso/route.ts',
     'src/app/api/admin/asignacion/route.ts',
     'src/app/api/admin/estructura/nodo-entidad/route.ts',
+    'src/app/api/admin/persona-canonica/route.ts',
+    'src/app/api/admin/entidad/route.ts',
+    'src/app/api/admin/jurisdiccion/route.ts',
+    'src/app/api/admin/paises/route.ts',
+    'src/app/api/admin/organizacion/route.ts',
   ].map(readRepoFile))
 
-  assert.equal(cacheLayer.includes('revalidateTag(PUBLIC_PERSON_DETAIL_TAG)'), true)
-  assert.equal(cacheLayer.includes('revalidateTag(PUBLIC_ENTITY_DETAIL_TAG)'), true)
-  assert.equal(cacheLayer.includes("revalidatePath('/personas')"), true)
-  assert.equal(cacheLayer.includes("revalidatePath('/diocesis')"), true)
+  assert.equal(cacheLayer.includes("revalidatePublicCache('directories')"), true)
+  assert.equal(cacheLayer.includes('revalidateTag('), false)
+  assert.equal(cacheLayer.includes("revalidatePath(`/personas/${personSlug}`)"), true)
+  assert.equal(cacheLayer.includes("revalidatePath(`/entidades/${entitySlug}`)"), true)
   assert.equal(mutationRoutes.every((route) => route.includes('revalidatePublicContent')), true)
 })
 
