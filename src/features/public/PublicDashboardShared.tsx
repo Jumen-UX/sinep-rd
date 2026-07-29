@@ -12,6 +12,7 @@ import type {
 
 export type Props = {
   initialData: PublicDashboardData
+  initialDataComplete: boolean
   initialSummary: DashboardSummary
   initialView: PublicView
   initialCountry: string
