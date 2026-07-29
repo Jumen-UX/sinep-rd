@@ -83,7 +83,7 @@ test('public dashboard reads use tagged cache with authenticated invalidation', 
   assert.equal(registryHistory.includes("requestPublicCacheInvalidation('registry')"), true)
 })
 
-test('production build enforces route bundle budgets', async () => {
+test('production build enforces route bundle budgets and server detail boundaries', async () => {
   const [packageSource, auditSource, budgetSource] = await Promise.all([
     readRepoFile('package.json'),
     readRepoFile('scripts/audit-next-bundles.mjs'),
@@ -96,6 +96,14 @@ test('production build enforces route bundle budgets', async () => {
   assert.match(packageJson.scripts.check, /pnpm build && pnpm audit:bundles$/)
   assert.equal(auditSource.includes('app-build-manifest.json'), true)
   assert.equal(auditSource.includes('gzipSync'), true)
+
+  const sourceAudit = await readRepoFile('scripts/audit-web-performance.mjs')
+  assert.equal(sourceAudit.includes('public-detail-client-page'), true)
+  assert.equal(sourceAudit.includes('public-detail-self-api-fetch'), true)
+  assert.equal(sourceAudit.includes('src/app/(public)/oficinas/[id]/page.tsx'), true)
+  assert.equal(sourceAudit.includes('src/app/(public)/organismos/[id]/page.tsx'), true)
+  assert.equal(sourceAudit.includes('src/app/(public)/provincias-eclesiasticas/[slug]/page.tsx'), true)
+
   assert.equal(budgets.javascript.publicInitialCompressedKb > 0, true)
   assert.equal(budgets.javascript.publicDetailCompressedKb > 0, true)
   assert.equal(budgets.javascript.adminInitialCompressedKb > 0, true)
