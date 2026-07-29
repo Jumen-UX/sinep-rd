@@ -1,18 +1,26 @@
-import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import test from 'node:test'
 
-const adapterPath = new URL('../src/app/api/entidades/[slug]/route.ts', import.meta.url)
-const pagePath = new URL('../src/features/entidades/EntityDetailPage.tsx', import.meta.url)
+const repoRoot = new URL('../', import.meta.url)
+const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
-test('public entity detail route adapts path slug to the canonical query endpoint', async () => {
-  const [adapter, page] = await Promise.all([
-    readFile(adapterPath, 'utf8'),
-    readFile(pagePath, 'utf8'),
+test('public entity detail page uses the cached server loader without a browser API request', async () => {
+  const [page, view, loader, cache] = await Promise.all([
+    readRepoFile('src/app/(public)/entidades/[slug]/page.tsx'),
+    readRepoFile('src/features/entidades/EntityDetailServerView.tsx'),
+    readRepoFile('src/lib/public/entity-detail.ts'),
+    readRepoFile('src/lib/public/cache.ts'),
   ])
 
-  assert.match(page, /fetch\(`\/api\/entidades\/\$\{slug\}`\)/)
-  assert.match(adapter, /import \{ GET as getEntityByQuery \} from '\.\.\/route'/)
-  assert.match(adapter, /url\.searchParams\.set\('slug', slug\)/)
-  assert.match(adapter, /return getEntityByQuery\(new NextRequest\(url/)
+  assert.doesNotMatch(page, /['"]use client['"]/)
+  assert.doesNotMatch(page, /useEffect/)
+  assert.doesNotMatch(page, /fetch\(\s*['"`]\/api\/entidades/)
+  assert.match(page, /loadPublicEntityDetail\(slug\)/)
+  assert.match(page, /EntityDetailServerView/)
+  assert.match(page, /export const revalidate = 900/)
+  assert.match(loader, /public_entity_evolution_events/)
+  assert.match(loader, /public_position_assignments_with_hierarchy/)
+  assert.match(cache, /loadCachedPublicEntityDetail/)
+  assert.match(view, /<EntityProfileNavigation/)
 })
