@@ -29,6 +29,15 @@ Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-
 
 `pnpm check` ejecuta esta auditoría después del build. Un exceso de presupuesto o una ruta configurada ausente hace fallar el contrato.
 
+## Frontera de layouts
+
+- `src/app/layout.tsx` es infraestructura común: tipografía, scripts de tema y accesibilidad, enlace de salto, herramientas de accesibilidad y telemetría.
+- El root no importa `next/link`, no renderiza `ThemeControl` y no contiene header, footer ni `site-shell`.
+- `src/app/(public)/layout.tsx` es propietario del shell público, navegación, control de apariencia, footer y destino `#contenido-principal`.
+- `src/app/(admin)/layout.tsx` mantiene su propio destino `#contenido-principal` sin incorporar navegación ni presentación pública.
+- Esta separación evita que una ruta administrativa renderice elementos públicos ocultos o descargue un chunk público para resolver dependencias del root.
+- `scripts/audit-web-performance.mjs`, `tests/public-admin-layout-boundary.test.mjs` y `tests/theme-contract.test.mjs` protegen la frontera.
+
 ## CSS por ruta
 
 - `public-dashboard.css`, `public-territorial.css` y `public-combobox.css` pertenecen exclusivamente al portal principal y se importan desde `src/app/(public)/page.tsx`.
@@ -36,7 +45,7 @@ Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-
 - `admin-brand.css` se carga desde `src/app/(admin)/layout.tsx`; no forma parte del CSS común de las páginas públicas.
 - Las tres reglas públicas que estaban mezcladas en `admin-brand.css` se preservan en `public-brand-overrides.css` para no alterar las fichas de oficinas, pastoral, organismos y provincias eclesiásticas.
 - `scripts/audit-web-performance.mjs` y `tests/public-dashboard-css-boundary.test.mjs` protegen estas fronteras fuente.
-- La reducción efectiva de hojas y bytes debe medirse en un build desplegado. El auditor de bundles vigente controla JavaScript mediante `app-build-manifest.json`; no se declarará un presupuesto CSS numérico hasta implementar una lectura reproducible de los manifiestos CSS de Next.js.
+- El auditor de bundles vigente controla JavaScript mediante `app-build-manifest.json`; no se declarará un presupuesto CSS numérico hasta implementar una lectura reproducible de los manifiestos CSS de Next.js.
 
 ## Límite servidor/cliente
 
@@ -45,7 +54,7 @@ Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-
 - Se prohíben `MutationObserver` y `setInterval` como mecanismo de sincronización general del DOM público.
 - Las transformaciones de presentación deben realizarse en React, en el servicio de dominio o durante el renderizado del servidor.
 - `/entidades/[slug]`, `/pastoral/[slug]`, `/oficinas/[id]`, `/organismos/[id]` y `/provincias-eclesiasticas/[slug]` se renderizan en servidor y no consultan sus propias rutas `/api/*` después de hidratar.
-- La navegación anclada, la cronología institucional y el organigrama dinámico de `/entidades/[slug]` son componentes de servidor; no requieren estado, efectos ni eventos del navegador.
+- La navegación anclada, la cronología institucional y el organigrama dinámico de `/entidades/[slug]` son componentes de servidor.
 - El antiguo `EntityDetailPage.tsx` y el adaptador `/api/entidades/[slug]` fueron retirados. La ficha canónica usa `loadPublicEntityDetail()` y `EntityDetailServerView`.
 - El portal principal usa `PublicDashboardShell` para cabecera, sidebar, accesos, controles de apariencia y navegación móvil renderizados en servidor.
 - `PublicDashboardExplorer` conserva exclusivamente el modelo interactivo de ámbito, filtros y selección de vistas mediante `usePublicDashboardModel()`.
@@ -54,12 +63,12 @@ Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-
 - Los fallbacks de las vistas diferidas mantienen `tabpanel`, `aria-busy`, `role="status"` y `aria-live="polite"`; su CSS Module reserva altura responsive para reducir CLS.
 - Los parámetros `vista`, `pais`, `provincia` y `jurisdiccion` se validan contra el bundle público durante el renderizado de servidor.
 - Los cambios posteriores de vista y ámbito se reflejan con `history.replaceState` mediante `PublicDashboardUrlState`, sin `router.replace`, sin nueva navegación de servidor y sin solicitudes adicionales al dashboard.
-- Los filtros internos de tipo de persona y nivel pastoral permanecen locales para evitar URLs excesivamente volátiles y trabajo de navegación innecesario.
+- Los filtros internos de tipo de persona y nivel pastoral permanecen locales.
 - Las colecciones derivadas de personas y unidades organizativas se memoizan; la clasificación administrativa/colegial se ejecuta en una sola pasada por cambio del dataset.
-- El footer del shell público usa una descripción neutral de cobertura internacional; no debe mostrar un país fijo porque el ámbito puede cambiar sin volver a renderizar el shell.
-- `ThemeControl` y `PublicDashboardThemeControl` comparten `useThemePreference`, pero mantienen presentaciones separadas. Esto evita que las fichas públicas dependan del chunk de presentación del dashboard.
-- Los antiguos `PublicDashboardClient.tsx`, `PublicPeoplePastoralViews.tsx` y `PublicOrganizationViews.tsx` fueron retirados para impedir que el shell o vistas no seleccionadas vuelvan al grafo cliente inicial.
-- `scripts/audit-web-performance.mjs` bloquea regresiones en SSR, shell/explorador, `React.lazy`, `Suspense`, URL compartible, memoización, control de tema, CSS por ruta e imágenes sociales.
+- El footer del shell público usa una descripción neutral de cobertura internacional.
+- `ThemeControl` y `PublicDashboardThemeControl` comparten `useThemePreference`, pero mantienen presentaciones separadas.
+- Los antiguos `PublicDashboardClient.tsx`, `PublicPeoplePastoralViews.tsx` y `PublicOrganizationViews.tsx` fueron retirados.
+- `scripts/audit-web-performance.mjs` bloquea regresiones en layouts, SSR, shell/explorador, `React.lazy`, `Suspense`, URL compartible, memoización, control de tema, CSS por ruta e imágenes sociales.
 
 Las rutas API públicas equivalentes solo deben mantenerse cuando exista un consumidor explícito distinto del render inicial. No se deben conservar adaptadores sin consumidores por compatibilidad hipotética.
 
@@ -72,12 +81,12 @@ La tipografía principal se carga mediante `next/font` con `display: swap` y var
 - `next.config.ts` permite imágenes remotas de Supabase Storage y formatos AVIF/WebP.
 - `placehold.co` está autorizado únicamente como proveedor explícito de imágenes ficticias para los datos QA vigentes.
 - Como `placehold.co` entrega SVG por defecto, `normalizePersonPhotoSource()` añade el formato `/png` cuando el placeholder no declara un formato raster. No se habilita `dangerouslyAllowSVG`.
-- La normalización reside en `src/features/personas/person-photo-source.ts` y se reutiliza tanto en `PersonPhoto.tsx` como en `generateMetadata()` de las fichas de personas.
+- La normalización reside en `src/features/personas/person-photo-source.ts` y se reutiliza tanto en `PersonPhoto.tsx` como en `generateMetadata()`.
 - Open Graph y Twitter no deben publicar una URL SVG implícita cuando la fotografía renderizada utiliza una fuente raster normalizada.
 - Las imágenes de contenido deben usar `next/image`, dimensiones estables y `sizes` cuando sean responsivas.
 - La fotografía pública prioriza la carga por estar en la cabecera de la ficha y declara un ancho responsivo máximo de 320 píxeles.
 - La fotografía administrativa conserva el avatar de 96 por 96 píxeles y su tratamiento decorativo.
-- La auditoría fuente bloquea cualquier uso de `<img>` dentro de `src`; ya no existen excepciones heredadas.
+- La auditoría fuente bloquea cualquier uso de `<img>` dentro de `src`.
 
 ## Instalación de optimización de imágenes
 
@@ -93,7 +102,7 @@ Las lecturas agregadas del dashboard público usan `unstable_cache` con:
 - etiquetas separadas para dashboard, directorios y registro eclesial;
 - invalidación por etiqueta y ruta.
 
-Las fichas públicas de personas, entidades, unidades organizativas, oficinas, organismos colegiales y provincias eclesiásticas comparten la etiqueta `public:directories`, aunque conservan un TTL de respaldo de 900 segundos. Esto evita que una mutación invalide el dashboard pero deje una ficha dinámica con datos anteriores.
+Las fichas públicas de personas, entidades, unidades organizativas, oficinas, organismos colegiales y provincias eclesiásticas comparten la etiqueta `public:directories`, aunque conservan un TTL de respaldo de 900 segundos.
 
 Las rutas administrativas y los datos dependientes del usuario no usan caché compartida.
 
@@ -105,19 +114,20 @@ Las rutas administrativas y los datos dependientes del usuario no usan caché co
 2. rol administrativo confirmado por Supabase;
 3. ámbito de invalidación permitido.
 
-Las operaciones de creación, edición y cierre de relaciones del registro eclesial solicitan invalidación del ámbito `registry`. Si la invalidación falla, la mutación permanece válida y el TTL limita la obsolescencia a cinco minutos; el cliente registra una advertencia sin exponer datos sensibles.
+Las operaciones de creación, edición y cierre de relaciones del registro eclesial solicitan invalidación del ámbito `registry`. Si la invalidación falla, la mutación permanece válida y el TTL limita la obsolescencia a cinco minutos.
 
-Las mutaciones administrativas de personas, nombramientos, entidades, jurisdicciones, países, nodos estructurales y unidades organizativas reutilizan `revalidatePublicContent()`, que delega en el ámbito consolidado `directories` y permite invalidar además identificadores o slugs concretos.
+Las mutaciones administrativas reutilizan `revalidatePublicContent()`, que delega en el ámbito consolidado `directories` y permite invalidar además identificadores o slugs concretos.
 
 ## Contratos preventivos
 
-- `pnpm audit:performance`: fuentes, imágenes, CSS por ruta, límites cliente, fichas SSR, shell del dashboard, `React.lazy`, límites `Suspense`, chunks por vista, estado compartible, memoización y caché.
+- `pnpm audit:performance`: layouts, fuentes, imágenes, CSS por ruta, límites cliente, fichas SSR, dashboard, chunks por vista, estado compartible, memoización y caché.
 - `pnpm audit:bundles`: bundles JavaScript reales posteriores al build.
 - `tests/web-performance-contract.test.mjs`: arquitectura, imágenes, instalación, invalidación y presupuesto.
+- `tests/public-admin-layout-boundary.test.mjs`: root infraestructural y shells propios por grupo de rutas.
 - `tests/public-dashboard-css-boundary.test.mjs`: estilos exclusivos del dashboard y administración fuera del layout raíz.
-- `tests/public-ssr-navigation.test.mjs`: shell SSR, isla interactiva, carga diferida, límites `Suspense`, validación de parámetros, sincronización de URL y navegación pública.
-- `tests/public-international-shell.test.mjs`: shell neutral respecto al país seleccionado sin convertirlo en cliente.
-- `tests/theme-contract.test.mjs`: lógica compartida de tema con fronteras de presentación separadas.
+- `tests/public-ssr-navigation.test.mjs`: shell SSR, carga diferida, parámetros y sincronización de URL.
+- `tests/public-international-shell.test.mjs`: shell neutral respecto al país seleccionado.
+- `tests/theme-contract.test.mjs`: lógica compartida de tema y fronteras de presentación.
 - `tests/public-detail-ssr.test.mjs`: SSR y caché consolidada de fichas públicas.
 - `tests/public-entity-detail-route.test.mjs`: ausencia del cliente duplicado y del adaptador API por slug.
 - `tests/entity-profile-navigation.test.mjs`, `tests/entity-institutional-timeline.test.mjs` y `tests/entity-dynamic-organization-chart.test.mjs`: composición SSR y ausencia de hidratación presentacional.
@@ -129,41 +139,43 @@ La fase no se considera validada operativamente hasta reunir:
 
 - ejecución de GitHub Actions para el HEAD correspondiente;
 - build de Vercel no bloqueado por límite de frecuencia;
-- comprobación de rutas públicas desplegadas;
+- comprobación de rutas públicas y administrativas desplegadas;
 - medición de Core Web Vitals o Speed Insights con tráfico suficiente;
-- revisión visual de imágenes, tipografía y fronteras CSS en móvil y escritorio.
+- revisión visual en móvil y escritorio.
 
-El despliegue de Vercel asociado a `260583d` compiló correctamente, validó tipos y generó 50 páginas después de retirar endpoints públicos redundantes. En esa evidencia intermedia:
-
-- `/` redujo su tamaño propio de 6.08 kB a 5.57 kB; el First Load JS permaneció en 111 kB porque las vistas todavía compartían el grafo cliente en ese commit.
-- `/entidades/[slug]` redujo su tamaño propio de 3.59 kB a 733 B y el First Load JS de 109 kB a 106 kB tras mover navegación, cronología y organigrama al servidor.
+El despliegue asociado a `260583d` confirmó `/` en 5.57 kB propios y 111 kB de First Load JS, y `/entidades/[slug]` en 733 B y 106 kB.
 
 El despliegue asociado a `30b30f8` confirmó cuatro chunks diferidos, pero `next/dynamic` elevó `/` a 6.24 kB propios y 112 kB de First Load JS.
 
-El despliegue `dpl_AU7Afua93xf6v5QRYF2qSaJAjnBA`, asociado a `10d177e`, sustituyó ese cargador por `React.lazy` y cuatro límites `Suspense`. Compiló con Next.js 15.5.20, aprobó tipos, generó 50 páginas y quedó `READY`:
+El despliegue `dpl_AU7Afua93xf6v5QRYF2qSaJAjnBA`, asociado a `10d177e`, sustituyó ese cargador por `React.lazy` y cuatro límites `Suspense`:
 
 - `/`: 5.64 kB propios y 111 kB de First Load JS;
-- mejora de 0.60 kB propios y 1 kB de First Load frente a `next/dynamic`;
-- `/entidades/[slug]`: 733 B propios y 106 kB de First Load JS, sin regresión.
-
-La inspección desplegada confirmó cuatro IDs de chunk, cuatro límites `Suspense` y una URL directa internacional con `vista`, `pais`, `provincia` y `jurisdiccion` resuelta por SSR.
+- `/entidades/[slug]`: 733 B propios y 106 kB de First Load JS;
+- cuatro chunks independientes y URL internacional directa resuelta por SSR.
 
 El despliegue `dpl_9VCjE5daqvLs5nCuUX49SG7UGtmz`, asociado a `3172a38`, confirmó:
 
-- compilación y validación de tipos correctas;
 - `/personas/[slug]` en 177 B propios y 111 kB de First Load JS;
-- eliminación del chunk de presentación del dashboard en el HTML de la ficha de persona, aunque el total de 111 kB permanece por el runtime requerido por `next/image`;
-- `/_next/image` respondiendo 200 con `image/png` para el placeholder normalizado y caché pública;
-- `og:image` y `twitter:image` utilizando la misma URL raster `/png` que la imagen renderizada.
+- eliminación del chunk de presentación del dashboard en la ficha de persona;
+- `/_next/image` respondiendo 200 con `image/png`;
+- `og:image` y `twitter:image` utilizando la URL raster normalizada.
 
-Las separaciones de CSS por ruta se añadieron después de `3172a38`. Su HEAD está bloqueado por el límite de frecuencia de Vercel; todavía falta verificar que `/`, una ficha pública y `/admin` conserven apariencia y reciban hojas distintas.
+El despliegue `dpl_4WGZXKqtiHdHDLeuDcZwk1Mt2CHb`, asociado a `184af63`, validó las fronteras CSS:
+
+- compilación, tipos y 50 páginas correctas;
+- `/` en 5.71 kB propios y 111 kB de First Load JS;
+- una ficha pública carga la hoja común `f691…css` y no la hoja de dashboard `4736…css`;
+- `/` carga adicionalmente `4736…css`, que contiene únicamente reglas de combobox, dashboard, territorial, impresión y fallback;
+- `/admin/login` carga `1cef…css` con la marca administrativa, además de sus hojas administrativas específicas.
+
+La inspección RSC de ese mismo despliegue detectó que `/admin/login` todavía descargaba `app/(public)/page-112bb055756962be.js`. El módulo se utilizaba como proveedor de `next/link` para el header y footer que entonces residían en el root. El HEAD posterior mueve el shell público a `(public)`, deja el root infraestructural y asigna un destino de salto independiente a `(admin)`. Esta reducción aún requiere un build exacto y verificación del HTML administrativo.
 
 ## Advisors y riesgos
 
-- `next/font/google` descarga la fuente durante el build; un bloqueo de red del entorno de compilación debe tratarse como fallo de infraestructura, no como razón para volver a una fuente remota en el navegador.
-- La invalidación manual protege por rol administrativo. Debe evolucionar a permiso específico cuando exista un permiso operativo de caché en la matriz de autorización.
-- Los presupuestos iniciales son límites de partida. Solo deben ajustarse con evidencia de bundle y una justificación documentada, nunca para ocultar una regresión.
-- Los hosts de imágenes remotas deben permanecer restringidos; no debe abrirse un patrón global para resolver datos QA puntuales.
-- La carga diferida reduce el código ejecutable inicial de las vistas no seleccionadas, pero su runtime, tamaño de ruta y transición deben medirse conjuntamente.
-- `replaceState` mantiene una URL compartible sin llenar el historial con cada ajuste de filtro. El botón Atrás no recorre cada selección interna; este comportamiento es deliberado.
-- Mover CSS entre layouts puede alterar el orden de cascada. Por eso las fronteras nuevas deben validarse visualmente antes de considerar cerrada la fase.
+- `next/font/google` descarga la fuente durante el build; un bloqueo de red debe tratarse como fallo de infraestructura.
+- La invalidación manual protege por rol administrativo. Debe evolucionar a permiso específico cuando exista un permiso operativo de caché.
+- Los presupuestos solo deben ajustarse con evidencia, nunca para ocultar una regresión.
+- Los hosts de imágenes remotas deben permanecer restringidos.
+- La carga diferida debe evaluarse junto con su runtime y transición.
+- `replaceState` mantiene una URL compartible sin llenar el historial con cada ajuste.
+- Mover CSS o shells entre layouts puede alterar cascada, foco o navegación. Cada frontera requiere validación desplegada.
