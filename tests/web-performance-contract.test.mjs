@@ -11,6 +11,7 @@ const removedEnhancers = [
   'src/features/public/components/public-jurisdiction-structure-navigation.tsx',
   'src/features/public/components/public-pastoral-enhancements.tsx',
   'src/features/public/components/scope-back-controls.tsx',
+  'src/features/diocesis/DiocesisPage.tsx',
 ]
 
 test('root layout uses next/font without hydrating obsolete public enhancers', async () => {
