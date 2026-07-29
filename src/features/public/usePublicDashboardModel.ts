@@ -1,22 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import type {
-  DashboardSummary,
-  OrganizationUnit,
-  PublicDashboardData,
-  PublicView,
-} from '@/lib/public/dashboard'
+import type { OrganizationUnit, PublicView } from '@/lib/public/dashboard'
 import { personTypeLabel, views, type PersonCard, type Props } from './PublicDashboardShared'
 import { buildPublicDashboardScope } from './buildPublicDashboardScope'
 import { buildPublicDashboardSearch } from './PublicDashboardUrlState'
-
-type DeferredDataState = 'idle' | 'loading' | 'error'
-
-async function readJson<T>(response: Response, source: string): Promise<T> {
-  if (!response.ok) throw new Error(`${source} request failed with ${response.status}`)
-  return response.json() as Promise<T>
-}
+import { useDeferredPublicDashboardData } from './useDeferredPublicDashboardData'
 
 export function usePublicDashboardModel({
   initialData,
@@ -27,22 +16,29 @@ export function usePublicDashboardModel({
   initialProvince,
   initialJurisdictionId,
 }: Props) {
-  const [dashboardData, setDashboardData] = useState(initialData)
-  const [dashboardSummary, setDashboardSummary] = useState(initialSummary)
-  const [hasCompleteData, setHasCompleteData] = useState(initialDataComplete)
-  const [deferredDataState, setDeferredDataState] = useState<DeferredDataState>('idle')
-  const [loadAttempt, setLoadAttempt] = useState(0)
-  const defaultCountry = useMemo(() => (
-    dashboardData.countries.some((item) => item.key === 'DO')
-      ? 'DO'
-      : dashboardData.countries[0]?.key ?? 'DO'
-  ), [dashboardData.countries])
   const [activeView, setActiveView] = useState<PublicView>(initialView)
   const [country, setCountry] = useState(initialCountry)
   const [province, setProvince] = useState(initialProvince)
   const [jurisdictionId, setJurisdictionId] = useState(initialJurisdictionId)
   const [personType, setPersonType] = useState('')
   const [pastoralLevel, setPastoralLevel] = useState('')
+  const {
+    dashboardData,
+    dashboardSummary,
+    deferredDataPending,
+    deferredDataError,
+    retryDeferredData,
+  } = useDeferredPublicDashboardData({
+    activeView,
+    initialData,
+    initialDataComplete,
+    initialSummary,
+  })
+  const defaultCountry = useMemo(() => (
+    dashboardData.countries.some((item) => item.key === 'DO')
+      ? 'DO'
+      : dashboardData.countries[0]?.key ?? 'DO'
+  ), [dashboardData.countries])
 
   useEffect(() => {
     const search = buildPublicDashboardSearch(window.location.search, {
@@ -59,42 +55,6 @@ export function usePublicDashboardModel({
       window.history.replaceState(window.history.state, '', nextUrl)
     }
   }, [activeView, country, defaultCountry, jurisdictionId, province])
-
-  useEffect(() => {
-    if (activeView === 'territorial' || hasCompleteData) return
-
-    const controller = new AbortController()
-    setDeferredDataState('loading')
-
-    async function loadDeferredData() {
-      try {
-        const requestOptions = {
-          headers: { Accept: 'application/json' },
-          signal: controller.signal,
-        }
-        const [dataResponse, summaryResponse] = await Promise.all([
-          fetch('/api/dashboard/vistas', requestOptions),
-          fetch('/api/dashboard/resumen', requestOptions),
-        ])
-        const [data, summary] = await Promise.all([
-          readJson<PublicDashboardData>(dataResponse, 'Dashboard views'),
-          readJson<DashboardSummary>(summaryResponse, 'Dashboard summary'),
-        ])
-
-        setDashboardData(data)
-        setDashboardSummary(summary)
-        setHasCompleteData(true)
-        setDeferredDataState('idle')
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return
-        console.error('Unable to load deferred public dashboard data', error)
-        setDeferredDataState('error')
-      }
-    }
-
-    void loadDeferredData()
-    return () => controller.abort()
-  }, [activeView, hasCompleteData, loadAttempt])
 
   const scope = useMemo(
     () => buildPublicDashboardScope(dashboardData, country, province, jurisdictionId),
@@ -143,19 +103,12 @@ export function usePublicDashboardModel({
     () => views.find((item) => item.key === activeView) ?? views[0],
     [activeView],
   )
-  const deferredDataPending = activeView !== 'territorial' && !hasCompleteData && deferredDataState !== 'error'
-  const deferredDataError = activeView !== 'territorial' && !hasCompleteData && deferredDataState === 'error'
 
   function resetScope() {
     setProvince('')
     setJurisdictionId('')
     setPersonType('')
     setPastoralLevel('')
-  }
-
-  function retryDeferredData() {
-    setDeferredDataState('idle')
-    setLoadAttempt((attempt) => attempt + 1)
   }
 
   return {
