@@ -41,7 +41,7 @@ export default function PublicDashboardShell(props: Props) {
         </nav>
         <div className="public-sidebar-footer">
           <strong>Sistema eclesial</strong>
-          <span>República Dominicana</span>
+          <span>Cobertura internacional</span>
           <span>Entorno de desarrollo</span>
         </div>
       </aside>
