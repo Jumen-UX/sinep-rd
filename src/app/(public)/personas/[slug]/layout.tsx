@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { normalizePersonPhotoSource } from '@/features/personas/person-photo-source'
 import { loadPublicPersonDetail } from '@/lib/public/cache'
 import { buildPublicMetadata } from '@/lib/public/metadata'
 
@@ -36,12 +37,13 @@ export async function generateMetadata({ params }: Omit<LayoutProps, 'children'>
   const type = personTypeLabel(data.ecclesial_state?.effective_person_type ?? person.person_type)
   const description = person.biography_public?.trim()
     || `Ficha pública de ${person.display_name}, ${type.toLowerCase()}, en SINEP RD.`
+  const image = person.photo_url ? normalizePersonPhotoSource(person.photo_url) : null
 
   return buildPublicMetadata({
     title: person.display_name,
     description,
     path: `/personas/${person.slug}`,
-    image: person.photo_url,
+    image,
     imageAlt: person.display_name,
     type: 'profile',
   })
