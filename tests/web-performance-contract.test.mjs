@@ -12,6 +12,7 @@ const removedEnhancers = [
   'src/features/public/components/public-pastoral-enhancements.tsx',
   'src/features/public/components/scope-back-controls.tsx',
   'src/features/diocesis/DiocesisPage.tsx',
+  'src/features/public/PublicDashboardClient.tsx',
 ]
 
 test('root layout uses next/font without hydrating obsolete public enhancers', async () => {
@@ -84,11 +85,12 @@ test('public dashboard reads use tagged cache with authenticated invalidation', 
   assert.equal(registryHistory.includes("requestPublicCacheInvalidation('registry')"), true)
 })
 
-test('production build enforces route bundle budgets and server detail boundaries', async () => {
-  const [packageSource, auditSource, budgetSource] = await Promise.all([
+test('production build enforces route bundle budgets and server boundaries', async () => {
+  const [packageSource, auditSource, budgetSource, sourceAudit] = await Promise.all([
     readRepoFile('package.json'),
     readRepoFile('scripts/audit-next-bundles.mjs'),
     readRepoFile('config/web-performance-budgets.json'),
+    readRepoFile('scripts/audit-web-performance.mjs'),
   ])
   const packageJson = JSON.parse(packageSource)
   const budgets = JSON.parse(budgetSource)
@@ -98,9 +100,12 @@ test('production build enforces route bundle budgets and server detail boundarie
   assert.equal(auditSource.includes('app-build-manifest.json'), true)
   assert.equal(auditSource.includes('gzipSync'), true)
 
-  const sourceAudit = await readRepoFile('scripts/audit-web-performance.mjs')
   assert.equal(sourceAudit.includes('public-detail-client-page'), true)
   assert.equal(sourceAudit.includes('public-detail-self-api-fetch'), true)
+  assert.equal(sourceAudit.includes('public-dashboard-server-shell-required'), true)
+  assert.equal(sourceAudit.includes('public-dashboard-shell-hydration'), true)
+  assert.equal(sourceAudit.includes('public-dashboard-explorer-boundary'), true)
+  assert.equal(sourceAudit.includes('legacy-public-dashboard-client'), true)
   assert.equal(sourceAudit.includes('src/app/(public)/oficinas/[id]/page.tsx'), true)
   assert.equal(sourceAudit.includes('src/app/(public)/organismos/[id]/page.tsx'), true)
   assert.equal(sourceAudit.includes('src/app/(public)/provincias-eclesiasticas/[slug]/page.tsx'), true)
