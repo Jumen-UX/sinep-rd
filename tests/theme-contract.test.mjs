@@ -19,22 +19,30 @@ test('root layout resolves the persisted theme before interactive rendering', as
   assert.match(layout, /<ThemeControl compact \/>/)
 })
 
-test('theme control persists light dark and automatic preferences', async () => {
-  const control = await source('src/components/theme/ThemeControl.tsx')
+test('theme controls share persistence logic without sharing route presentation', async () => {
+  const [control, dashboardControl, preferenceHook] = await Promise.all([
+    source('src/components/theme/ThemeControl.tsx'),
+    source('src/features/public/PublicDashboardThemeControl.tsx'),
+    source('src/components/theme/useThemePreference.ts'),
+  ])
 
-  assert.match(control, /type ThemePreference = 'light' \| 'dark' \| 'system'/)
-  assert.match(control, /window\.localStorage\.setItem\(THEME_STORAGE_KEY/)
-  assert.match(control, /window\.matchMedia\('\(prefers-color-scheme: dark\)'\)/)
-  assert.match(control, /media\.addEventListener\('change'/)
-  assert.match(control, /const \[ready, setReady\] = useState\(false\)/)
-  assert.match(control, /disabled=\{!ready\}/)
-  assert.match(control, /applyTheme\(initialPreference, media\)\s*setReady\(true\)/)
-  assert.match(control, /<option value="light">Claro<\/option>/)
-  assert.match(control, /<option value="dark">Oscuro<\/option>/)
-  assert.match(control, /<option value="system">Automático<\/option>/)
+  assert.match(preferenceHook, /type ThemePreference = 'light' \| 'dark' \| 'system'/)
+  assert.match(preferenceHook, /window\.localStorage\.setItem\(THEME_STORAGE_KEY/)
+  assert.match(preferenceHook, /window\.matchMedia\('\(prefers-color-scheme: dark\)'\)/)
+  assert.match(preferenceHook, /media\.addEventListener\('change'/)
+  assert.match(preferenceHook, /const \[ready, setReady\] = useState\(false\)/)
+  assert.match(preferenceHook, /applyTheme\(initialPreference, media\)\s*setReady\(true\)/)
+
+  for (const surface of [control, dashboardControl]) {
+    assert.match(surface, /useThemePreference\(\)/)
+    assert.match(surface, /disabled=\{!ready\}/)
+    assert.match(surface, /<option value="light">Claro<\/option>/)
+    assert.match(surface, /<option value="dark">Oscuro<\/option>/)
+    assert.match(surface, /<option value="system">Automático<\/option>/)
+  }
 })
 
-test('public and administrative shells expose the shared appearance control', async () => {
+test('public and administrative shells expose isolated appearance controls', async () => {
   const [layout, adminShell, publicShell, publicExplorer] = await Promise.all([
     source('src/app/layout.tsx'),
     source('src/app/(admin)/admin/AdminShell.tsx'),
@@ -45,9 +53,10 @@ test('public and administrative shells expose the shared appearance control', as
   assert.match(layout, /import \{ ThemeControl \}/)
   assert.match(adminShell, /import \{ ThemeControl \}/)
   assert.match(adminShell, /<ThemeControl \/>/)
-  assert.match(publicShell, /import \{ ThemeControl \}/)
-  assert.match(publicShell, /public-mobile-header[\s\S]*<ThemeControl compact \/>/)
-  assert.match(publicShell, /public-topbar[\s\S]*<ThemeControl compact \/>/)
+  assert.match(publicShell, /import \{ PublicDashboardThemeControl \}/)
+  assert.match(publicShell, /public-mobile-header[\s\S]*<PublicDashboardThemeControl \/>/)
+  assert.match(publicShell, /public-topbar[\s\S]*<PublicDashboardThemeControl \/>/)
+  assert.doesNotMatch(publicShell, /@\/components\/theme\/ThemeControl/)
   assert.doesNotMatch(publicShell, /['"]use client['"]/)
   assert.match(publicExplorer, /^['"]use client['"]/)
 })
