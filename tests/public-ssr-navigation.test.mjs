@@ -1,49 +1,65 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const repoRoot = new URL('../', import.meta.url)
 const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
-test('public home renders one consolidated dashboard bundle before hydration', async () => {
-  const [page, client, loader] = await Promise.all([
+test('public home renders a server shell around one interactive explorer', async () => {
+  const [page, shell, explorer, model, loader] = await Promise.all([
     readRepoFile('src/app/(public)/page.tsx'),
-    Promise.all([
-      readRepoFile('src/features/public/PublicDashboardClient.tsx'),
-      readRepoFile('src/features/public/usePublicDashboardModel.ts'),
-    ]).then((parts) => parts.join('\n')),
+    readRepoFile('src/features/public/PublicDashboardShell.tsx'),
+    readRepoFile('src/features/public/PublicDashboardExplorer.tsx'),
+    readRepoFile('src/features/public/usePublicDashboardModel.ts'),
     readRepoFile('src/lib/public/dashboard.ts'),
   ])
 
-  assert.doesNotMatch(page, /['"]use client['"]/) 
+  assert.doesNotMatch(page, /['"]use client['"]/)
   assert.match(page, /loadPublicDashboardBundle\(\)/)
   assert.doesNotMatch(page, /Promise\.all\(\[loadPublicDashboardData\(\), loadDashboardSummary\(\)\]\)/)
   assert.match(page, /data: initialData, summary: initialSummary/)
+  assert.match(page, /<PublicDashboardShell/)
   assert.match(page, /initialData=\{initialData\}/)
   assert.match(page, /initialSummary=\{initialSummary\}/)
-  assert.match(client, /useState<PublicView>\(initialView\)/)
-  assert.doesNotMatch(client, /fetch\(['"]\/api\/dashboard/)
+
+  assert.doesNotMatch(shell, /['"]use client['"]/)
+  assert.match(shell, /<PublicDashboardExplorer \{\.\.\.props\} \/>/)
+  assert.match(shell, /public-mobile-header/)
+  assert.match(shell, /public-sidebar/)
+  assert.match(shell, /public-bottom-nav/)
+  assert.doesNotMatch(shell, /usePublicDashboardModel|onClick=|onChange=/)
+
+  assert.match(explorer, /^['"]use client['"]/)
+  assert.match(explorer, /usePublicDashboardModel\(props\)/)
+  assert.match(explorer, /onClick=|onChange=/)
+  assert.match(model, /useState<PublicView>\(initialView\)/)
+  assert.doesNotMatch(`${explorer}\n${model}`, /fetch\(['"]\/api\/dashboard/)
+
   assert.match(loader, /export async function loadPublicDashboardBundle/)
   assert.match(loader, /buildDashboardSummary\(data\.dioceses, data\.parishes\.length, historicalPeople\)/)
   assert.match(loader, /person_public_directory/)
   assert.match(loader, /public_position_assignments_with_hierarchy/)
+
+  await assert.rejects(access(new URL('src/features/public/PublicDashboardClient.tsx', repoRoot)))
 })
 
 test('public navigation contains no placeholder hash destinations', async () => {
-  const client = (await Promise.all([
-    readRepoFile('src/features/public/PublicDashboardClient.tsx'),
+  const source = (await Promise.all([
+    readRepoFile('src/features/public/PublicDashboardShell.tsx'),
+    readRepoFile('src/features/public/PublicDashboardNavigation.ts'),
+    readRepoFile('src/features/public/PublicDashboardExplorer.tsx'),
     readRepoFile('src/features/public/PublicDashboardShared.tsx'),
     readRepoFile('src/features/public/PublicTerritorialView.tsx'),
     readRepoFile('src/features/public/PublicPeoplePastoralViews.tsx'),
     readRepoFile('src/features/public/PublicOrganizationViews.tsx'),
   ])).join('\n')
 
-  assert.doesNotMatch(client, /href:\s*['"]#['"]/)
-  assert.doesNotMatch(client, /href=\{[^}]*['"]#['"]/)
-  assert.match(client, /href="\/diocesis"/)
-  assert.match(client, /href="\/personas"/)
-  assert.match(client, /`\/oficinas\/\$\{item\.id\}`/)
-  assert.match(client, /`\/organismos\/\$\{item\.id\}`/)
+  assert.doesNotMatch(source, /href:\s*['"]#['"]/)
+  assert.doesNotMatch(source, /href=\{[^}]*['"]#['"]/)
+  assert.match(source, /href="\/diocesis"/)
+  assert.match(source, /href="\/personas"/)
+  assert.match(source, /`\/oficinas\/\$\{item\.id\}`/)
+  assert.match(source, /`\/organismos\/\$\{item\.id\}`/)
 })
 
 test('public directory pages are server rendered and filter through URLs', async () => {
@@ -53,7 +69,7 @@ test('public directory pages are server rendered and filter through URLs', async
   ])
 
   for (const page of [dioceses, people]) {
-    assert.doesNotMatch(page, /['"]use client['"]/) 
+    assert.doesNotMatch(page, /['"]use client['"]/)
     assert.doesNotMatch(page, /useEffect|window\.history|fetch\(/)
     assert.match(page, /searchParams: Promise/)
   }
