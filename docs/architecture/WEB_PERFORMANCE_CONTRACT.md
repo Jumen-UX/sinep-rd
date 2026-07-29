@@ -47,6 +47,7 @@ Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-
 - Los cambios posteriores de vista y ámbito se reflejan con `history.replaceState` mediante `PublicDashboardUrlState`, sin `router.replace`, sin nueva navegación de servidor y sin solicitudes adicionales al dashboard.
 - Los filtros internos de tipo de persona y nivel pastoral permanecen locales para evitar URLs excesivamente volátiles y trabajo de navegación innecesario.
 - Las colecciones derivadas de personas y unidades organizativas se memoizan; la clasificación administrativa/colegial se ejecuta en una sola pasada por cambio del dataset.
+- El footer del shell público usa una descripción neutral de cobertura internacional; no debe mostrar un país fijo porque el ámbito puede cambiar sin volver a renderizar el shell.
 - Los antiguos `PublicDashboardClient.tsx`, `PublicPeoplePastoralViews.tsx` y `PublicOrganizationViews.tsx` fueron retirados para impedir que el shell o vistas no seleccionadas vuelvan al grafo cliente inicial.
 - `scripts/audit-web-performance.mjs` bloquea la reintroducción de `use client` en páginas SSR protegidas, las solicitudes a APIs internas desde esas páginas, regresiones en el límite shell/explorador, agrupación estática de vistas, pérdida de `React.lazy` o `Suspense`, reintroducción de `next/dynamic`, pérdida del estado compartible y eliminación de la memoización protegida.
 
@@ -104,6 +105,7 @@ Las mutaciones administrativas de personas, nombramientos, entidades, jurisdicci
 - `pnpm audit:bundles`: bundles reales posteriores al build.
 - `tests/web-performance-contract.test.mjs`: arquitectura, imágenes, instalación, invalidación y presupuesto.
 - `tests/public-ssr-navigation.test.mjs`: shell SSR, isla interactiva, carga diferida, límites `Suspense`, validación de parámetros, sincronización de URL y navegación pública.
+- `tests/public-international-shell.test.mjs`: shell neutral respecto al país seleccionado sin convertirlo en cliente.
 - `tests/public-detail-ssr.test.mjs`: SSR y caché consolidada de fichas públicas.
 - `tests/public-entity-detail-route.test.mjs`: ausencia del cliente duplicado y del adaptador API por slug.
 - `tests/entity-profile-navigation.test.mjs`, `tests/entity-institutional-timeline.test.mjs` y `tests/entity-dynamic-organization-chart.test.mjs`: composición SSR y ausencia de hidratación presentacional.
@@ -124,9 +126,18 @@ El despliegue de Vercel asociado a `260583d` compiló correctamente, validó tip
 - `/` redujo su tamaño propio de 6.08 kB a 5.57 kB; el First Load JS permaneció en 111 kB porque las vistas todavía compartían el grafo cliente en ese commit.
 - `/entidades/[slug]` redujo su tamaño propio de 3.59 kB a 733 B y el First Load JS de 109 kB a 106 kB tras mover navegación, cronología y organigrama al servidor.
 
-El despliegue de Vercel asociado a `30b30f8` confirmó cuatro chunks diferidos independientes y que ninguno se incluye entre los scripts iniciales de `/`. La tabla de Next.js reportó, sin embargo, 6.24 kB propios y 112 kB de First Load JS para `/`, frente a 5.57 kB y 111 kB en `260583d`. La inspección del chunk de ruta mostró que `next/dynamic` incorporaba su cargador, `Suspense` interno y utilidades de soporte. Por esa razón el HEAD posterior conserva los cuatro imports diferidos con `React.lazy` y límites `Suspense` explícitos. Esta sustitución no debe considerarse mejorada hasta medir un build del commit exacto.
+El despliegue de Vercel asociado a `30b30f8` confirmó cuatro chunks diferidos independientes y que ninguno se incluía entre los scripts iniciales de `/`. La tabla de Next.js reportó, sin embargo, 6.24 kB propios y 112 kB de First Load JS para `/`, frente a 5.57 kB y 111 kB en `260583d`. La inspección del chunk de ruta mostró que `next/dynamic` incorporaba cargador y utilidades de soporte.
 
-El HEAD también añade validación SSR y sincronización compartible del ámbito (`vista`, `pais`, `provincia`, `jurisdiccion`) sin navegación de servidor. Ese comportamiento requiere verificación desplegada de enlaces directos y recarga.
+El despliegue de Vercel `dpl_AU7Afua93xf6v5QRYF2qSaJAjnBA`, asociado a `10d177e`, sustituyó ese cargador por `React.lazy` y cuatro límites `Suspense`. Compiló con Next.js 15.5.20, aprobó la validación de tipos, generó 50 páginas y quedó `READY`. Sus resultados fueron:
+
+- `/`: 5.64 kB propios y 111 kB de First Load JS;
+- mejora de 0.60 kB propios y 1 kB de First Load frente a `next/dynamic`;
+- diferencia de solo 0.07 kB propios respecto al mejor baseline `260583d`, conservando ahora los cuatro chunks por vista, URL compartible y memoización;
+- `/entidades/[slug]`: 733 B propios y 106 kB de First Load JS, sin regresión.
+
+La inspección del chunk desplegado confirmó `React.lazy`, cuatro IDs de chunk independientes y cuatro límites `Suspense`, sin el cargador de `next/dynamic`. Una URL directa con `vista=clero`, `pais=CO`, provincia y jurisdicción válidas respondió 200, seleccionó esos cuatro valores durante SSR y transmitió la vista de Clero con datos de la Arquidiócesis de Puerto Claro detrás del fallback estable.
+
+La etiqueta neutral del footer se añadió después de `10d177e`; requiere el siguiente build exacto, aunque no modifica el grafo de dependencias ni el presupuesto de JavaScript.
 
 ## Advisors y riesgos
 
