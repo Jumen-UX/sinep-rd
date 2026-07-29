@@ -33,6 +33,7 @@ test('public registry profiles expose dynamic metadata and structured data', asy
 test('sitemap includes only active public registry profiles', async () => {
   const sitemap = await readRepoFile('src/app/sitemap.ts')
   const robots = await readRepoFile('src/app/robots.ts')
+  const staticRoutesDeclaration = sitemap.match(/const staticRoutes = \[(.*?)\]/s)?.[1] ?? ''
 
   assert.equal(sitemap.includes("fetchSupabaseJson<SitemapRecord[]>('ecclesiastical_places'"), true)
   assert.equal(sitemap.includes("fetchSupabaseJson<SitemapRecord[]>('ecclesial_institutions'"), true)
@@ -40,8 +41,8 @@ test('sitemap includes only active public registry profiles', async () => {
   assert.equal(sitemap.includes("visibility: 'eq.public'"), true)
   assert.equal(sitemap.includes("dynamicEntries(baseUrl, '/lugares'"), true)
   assert.equal(sitemap.includes("dynamicEntries(baseUrl, '/instituciones'"), true)
-  assert.equal(sitemap.includes("'/lugares'"), false)
-  assert.equal(sitemap.includes("'/instituciones'"), false)
+  assert.equal(staticRoutesDeclaration.includes("'/lugares'"), false)
+  assert.equal(staticRoutesDeclaration.includes("'/instituciones'"), false)
 
   assert.equal(robots.includes("disallow: ['/admin/', '/api/']"), true)
   assert.equal(robots.includes('isPublicIndexingEnabled()'), true)
