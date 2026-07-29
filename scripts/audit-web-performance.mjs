@@ -77,6 +77,8 @@ const dashboardPage = await readFile(join(srcRoot, 'app', '(public)', 'page.tsx'
 const dashboardShell = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardShell.tsx'), 'utf8')
 const dashboardExplorer = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardExplorer.tsx'), 'utf8')
 const dashboardExplorerStyles = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardExplorer.module.css'), 'utf8')
+const dashboardModel = await readFile(join(srcRoot, 'features', 'public', 'usePublicDashboardModel.ts'), 'utf8')
+const dashboardUrlState = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardUrlState.ts'), 'utf8')
 
 if (!rootLayout.includes("from 'next/font/")) {
   findings.push({ rule: 'next-font-required', severity: 'new', path: 'src/app/layout.tsx' })
@@ -125,6 +127,29 @@ if (!dashboardExplorer.includes('styles.loadingPanel') || !/\.loadingPanel\s*\{[
   findings.push({ rule: 'public-dashboard-lazy-view-stability', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.module.css' })
 }
 
+const scopeParameters = ['vista', 'pais', 'provincia', 'jurisdiccion']
+if (scopeParameters.some((parameter) => !dashboardPage.includes(`params.${parameter}`))
+  || !dashboardPage.includes('initialCountry={initialCountry}')
+  || !dashboardPage.includes('initialJurisdictionId={initialJurisdictionId}')) {
+  findings.push({ rule: 'public-dashboard-url-scope-validation', severity: 'new', path: 'src/app/(public)/page.tsx' })
+}
+
+if (!dashboardModel.includes('buildPublicDashboardSearch(window.location.search')
+  || !dashboardModel.includes('window.history.replaceState')
+  || /router\.replace|fetch\(/.test(dashboardModel)) {
+  findings.push({ rule: 'public-dashboard-url-state-sync', severity: 'new', path: 'src/features/public/usePublicDashboardModel.ts' })
+}
+
+if (scopeParameters.some((parameter) => !dashboardUrlState.includes(`setOptionalParam(params, '${parameter}'`))
+  || /window\.|document\./.test(dashboardUrlState)) {
+  findings.push({ rule: 'public-dashboard-url-state-purity', severity: 'new', path: 'src/features/public/PublicDashboardUrlState.ts' })
+}
+
+if (!dashboardModel.includes('useMemo<PersonCard[]>')
+  || !dashboardModel.includes('const { administrativeUnits, collegialUnits } = useMemo')) {
+  findings.push({ rule: 'public-dashboard-derived-data-memoization', severity: 'new', path: 'src/features/public/usePublicDashboardModel.ts' })
+}
+
 for (const path of legacyPublicDashboardModules) {
   if (sourcePaths.has(path)) {
     findings.push({ rule: 'legacy-public-dashboard-module', severity: 'new', path })
@@ -144,6 +169,8 @@ const report = {
     initialView: 'PublicTerritorialView',
     lazyModules: secondaryDashboardViewModules,
     loadingStyles: 'src/features/public/PublicDashboardExplorer.module.css',
+    shareableScopeParameters: scopeParameters,
+    urlState: 'src/features/public/PublicDashboardUrlState.ts',
   },
   findings,
 }
