@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import PublicDashboardClient from '@/features/public/PublicDashboardClient'
+import PublicDashboardShell from '@/features/public/PublicDashboardShell'
 import { loadPublicDashboardBundle, type PublicView } from '@/lib/public/dashboard'
 import { buildPublicMetadata } from '@/lib/public/metadata'
 
@@ -22,7 +22,7 @@ export default async function HomePage({ searchParams }: PageProps) {
   try {
     const { data: initialData, summary: initialSummary } = await loadPublicDashboardBundle()
     const exactProvince = initialSummary.dioceses.provinces.find((item) => item.name === requestedProvince || item.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') === requestedProvince)?.name ?? ''
-    return <PublicDashboardClient initialData={initialData} initialSummary={initialSummary} initialView={initialView} initialProvince={exactProvince} />
+    return <PublicDashboardShell initialData={initialData} initialSummary={initialSummary} initialView={initialView} initialProvince={exactProvince} />
   } catch (error) {
     console.error('Unable to render the public dashboard', error)
     return <main className="container"><div className="error-box">No se pudo cargar el portal público. Intenta nuevamente.</div></main>
