@@ -1,12 +1,6 @@
 import type { Metadata } from 'next'
+import { getAppBaseUrl } from '@/lib/appBaseUrl'
 import type { PublicInstitutionProfile, PublicPlaceProfile } from './ecclesial-registry-detail'
-
-const DEFAULT_APP_URL = 'https://sinep-rd.vercel.app'
-
-export function getPublicAppUrl() {
-  const configured = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL
-  return configured.replace(/\/$/, '')
-}
 
 function text(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null
@@ -45,7 +39,7 @@ function metadataFor(
   const record = profile.record
   const name = text(record.official_name) || text(record.name) || typeLabel
   const description = descriptionFor(profile, `${typeLabel}: ${name}`)
-  const canonical = `${getPublicAppUrl()}${pathname}`
+  const canonical = `${getAppBaseUrl()}${pathname}`
 
   return {
     title: `${name} · ${typeLabel}`,
@@ -118,7 +112,7 @@ export function buildRegistryJsonLd(
   const name = text(record.official_name) || text(record.name) || 'Registro eclesial'
   const isPlace = profile.kind === 'place'
   const pathname = isPlace ? `/lugares/${encodeURIComponent(slug)}` : `/instituciones/${encodeURIComponent(slug)}`
-  const canonical = `${getPublicAppUrl()}${pathname}`
+  const canonical = `${getAppBaseUrl()}${pathname}`
   const socialLinks = sameAs(profile)
 
   return {
@@ -146,7 +140,7 @@ export function buildRegistryJsonLd(
           '@type': 'Organization',
           name: profile.primary_entity_name,
           url: profile.primary_entity_slug
-            ? `${getPublicAppUrl()}/entidades/${encodeURIComponent(profile.primary_entity_slug)}`
+            ? `${getAppBaseUrl()}/entidades/${encodeURIComponent(profile.primary_entity_slug)}`
             : undefined,
         }
       : undefined,
