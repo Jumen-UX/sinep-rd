@@ -25,22 +25,22 @@ function PublicViewLoading({ view, label }: { view: PublicView; label: string })
 }
 
 const PublicPeopleView = dynamic(
-  () => import('./PublicPeoplePastoralViews').then((module) => module.PublicPeopleView),
+  () => import('./PublicPeopleView'),
   { loading: () => <PublicViewLoading label="clero y agentes" view="clero" /> },
 )
 
 const PublicPastoralView = dynamic(
-  () => import('./PublicPeoplePastoralViews').then((module) => module.PublicPastoralView),
+  () => import('./PublicPastoralView'),
   { loading: () => <PublicViewLoading label="organización pastoral" view="pastoral" /> },
 )
 
 const PublicAdministrativeView = dynamic(
-  () => import('./PublicOrganizationViews').then((module) => module.PublicAdministrativeView),
+  () => import('./PublicAdministrativeView'),
   { loading: () => <PublicViewLoading label="organización administrativa" view="administrativa" /> },
 )
 
 const PublicCollegialView = dynamic(
-  () => import('./PublicOrganizationViews').then((module) => module.PublicCollegialView),
+  () => import('./PublicCollegialView'),
   { loading: () => <PublicViewLoading label="organismos colegiales" view="colegial" /> },
 )
 
