@@ -16,7 +16,7 @@ test('root layout resolves the persisted theme before interactive rendering', as
   assert.match(layout, /localStorage\.getItem\('sinep-theme'\)/)
   assert.match(layout, /prefers-color-scheme:\s*dark/)
   assert.match(layout, /document\.documentElement\.dataset\.theme/)
-  assert.match(layout, /<ThemeControl compact \/>/)
+  assert.doesNotMatch(layout, /ThemeControl|next\/link|site-header|site-footer/)
 })
 
 test('theme controls share persistence logic without sharing route presentation', async () => {
@@ -43,14 +43,15 @@ test('theme controls share persistence logic without sharing route presentation'
 })
 
 test('public and administrative shells expose isolated appearance controls', async () => {
-  const [layout, adminShell, publicShell, publicExplorer] = await Promise.all([
-    source('src/app/layout.tsx'),
+  const [publicLayout, adminShell, publicShell, publicExplorer] = await Promise.all([
+    source('src/app/(public)/layout.tsx'),
     source('src/app/(admin)/admin/AdminShell.tsx'),
     source('src/features/public/PublicDashboardShell.tsx'),
     source('src/features/public/PublicDashboardExplorer.tsx'),
   ])
 
-  assert.match(layout, /import \{ ThemeControl \}/)
+  assert.match(publicLayout, /import \{ ThemeControl \}/)
+  assert.match(publicLayout, /<ThemeControl compact \/>/)
   assert.match(adminShell, /import \{ ThemeControl \}/)
   assert.match(adminShell, /<ThemeControl \/>/)
   assert.match(publicShell, /import \{ PublicDashboardThemeControl \}/)
