@@ -13,6 +13,8 @@ const removedEnhancers = [
   'src/features/public/components/scope-back-controls.tsx',
   'src/features/diocesis/DiocesisPage.tsx',
   'src/features/public/PublicDashboardClient.tsx',
+  'src/features/public/PublicPeoplePastoralViews.tsx',
+  'src/features/public/PublicOrganizationViews.tsx',
 ]
 
 test('root layout uses next/font without hydrating obsolete public enhancers', async () => {
@@ -109,7 +111,12 @@ test('production build enforces route bundle budgets and server boundaries', asy
   assert.equal(sourceAudit.includes('public-dashboard-lazy-view-ssr-disabled'), true)
   assert.equal(sourceAudit.includes('public-dashboard-lazy-view-accessibility'), true)
   assert.equal(sourceAudit.includes('public-dashboard-lazy-view-stability'), true)
+  assert.equal(sourceAudit.includes('public-dashboard-url-scope-validation'), true)
+  assert.equal(sourceAudit.includes('public-dashboard-url-state-sync'), true)
+  assert.equal(sourceAudit.includes('public-dashboard-url-state-purity'), true)
+  assert.equal(sourceAudit.includes('public-dashboard-derived-data-memoization'), true)
   assert.equal(sourceAudit.includes("initialView: 'PublicTerritorialView'"), true)
+  assert.equal(sourceAudit.includes('shareableScopeParameters: scopeParameters'), true)
   assert.equal(sourceAudit.includes('legacy-public-dashboard-module'), true)
   assert.equal(sourceAudit.includes('src/app/(public)/oficinas/[id]/page.tsx'), true)
   assert.equal(sourceAudit.includes('src/app/(public)/organismos/[id]/page.tsx'), true)
