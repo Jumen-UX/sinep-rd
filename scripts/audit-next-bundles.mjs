@@ -18,6 +18,16 @@ const budgets = JSON.parse(budgetSource)
 const pages = manifest.pages ?? {}
 const routeResults = []
 const findings = []
+const forbiddenRouteChunks = {
+  '/admin/login': [
+    /(?:^|\/)app\/\(public\)\/page-[^/]+\.js$/,
+    /(?:^|\/)app\/\(public\)\/layout-[^/]+\.js$/,
+  ],
+}
+const auditedRoutes = Array.from(new Set([
+  ...budgets.routes,
+  ...Object.keys(forbiddenRouteChunks),
+]))
 
 function manifestKey(route) {
   return route === '/' ? '/page' : `${route}/page`
@@ -34,7 +44,7 @@ async function compressedSize(file) {
   return gzipSync(source, { level: 9 }).byteLength
 }
 
-for (const route of budgets.routes) {
+for (const route of auditedRoutes) {
   const key = manifestKey(route)
   const files = Array.from(new Set(pages[key] ?? []))
 
@@ -55,6 +65,8 @@ for (const route of budgets.routes) {
     { file: '', compressedBytes: 0 },
   )
   const largestChunkKb = Number((largestChunk.compressedBytes / 1024).toFixed(1))
+  const forbiddenPatterns = forbiddenRouteChunks[route] ?? []
+  const forbiddenChunks = files.filter((file) => forbiddenPatterns.some((pattern) => pattern.test(file)))
 
   routeResults.push({
     route,
@@ -64,6 +76,7 @@ for (const route of budgets.routes) {
     largestChunk: largestChunk.file,
     largestChunkKb,
     chunkCount: chunks.length,
+    forbiddenChunks,
   })
 
   if (compressedKb > budgetKb) {
@@ -82,6 +95,14 @@ for (const route of budgets.routes) {
       file: largestChunk.file,
       actualKb: largestChunkKb,
       budgetKb: budgets.javascript.singleDependencyCompressedKb,
+    })
+  }
+
+  if (forbiddenChunks.length > 0) {
+    findings.push({
+      rule: 'route-shell-chunk-leak',
+      route,
+      forbiddenChunks,
     })
   }
 }
