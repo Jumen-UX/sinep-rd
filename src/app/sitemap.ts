@@ -8,7 +8,7 @@ type SitemapRecord = {
   updated_at: string | null
 }
 
-const staticRoutes = ['/', '/diocesis', '/personas', '/lugares', '/instituciones', '/privacidad', '/cookies', '/aviso-legal']
+const staticRoutes = ['/', '/diocesis', '/personas', '/privacidad', '/cookies', '/aviso-legal']
 
 function validDate(value: string | null) {
   if (!value) return new Date()
