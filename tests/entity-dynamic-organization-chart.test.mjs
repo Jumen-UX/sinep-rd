@@ -11,6 +11,7 @@ test('entity organization chart is generated from configured charts and units', 
     readRepoFile('src/features/entidades/EntityDetailServerView.tsx'),
   ])
 
+  assert.doesNotMatch(chart, /['"]use client['"]/) 
   assert.match(chart, /buildEntityOrganizationCharts/)
   assert.match(chart, /organization_chart_key/)
   assert.match(chart, /organization_chart_name/)
