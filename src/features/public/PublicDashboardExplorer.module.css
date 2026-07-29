@@ -1,0 +1,14 @@
+.loadingPanel {
+  align-content: center;
+  min-height: min(52vh, 26rem);
+}
+
+.loadingMessage {
+  text-align: center;
+}
+
+@media (max-width: 780px) {
+  .loadingPanel {
+    min-height: 18rem;
+  }
+}
