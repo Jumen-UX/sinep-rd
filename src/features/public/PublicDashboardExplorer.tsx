@@ -1,11 +1,48 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import type { PublicView } from '@/lib/public/dashboard'
 import { views, type Props } from './PublicDashboardShared'
-import { PublicAdministrativeView, PublicCollegialView } from './PublicOrganizationViews'
-import { PublicPastoralView, PublicPeopleView } from './PublicPeoplePastoralViews'
 import { PublicTerritorialView } from './PublicTerritorialView'
 import { usePublicDashboardModel } from './usePublicDashboardModel'
+
+function PublicViewLoading({ view, label }: { view: PublicView; label: string }) {
+  return (
+    <section
+      aria-busy="true"
+      aria-labelledby={`tab-${view}`}
+      className="public-directory-card public-panel"
+      id={`panel-${view}`}
+      role="tabpanel"
+    >
+      <div className="public-empty" role="status" aria-live="polite">
+        <strong>Cargando {label}</strong>
+        <br />
+        <span>Preparando la información del ámbito seleccionado.</span>
+      </div>
+    </section>
+  )
+}
+
+const PublicPeopleView = dynamic(
+  () => import('./PublicPeoplePastoralViews').then((module) => module.PublicPeopleView),
+  { loading: () => <PublicViewLoading label="clero y agentes" view="clero" /> },
+)
+
+const PublicPastoralView = dynamic(
+  () => import('./PublicPeoplePastoralViews').then((module) => module.PublicPastoralView),
+  { loading: () => <PublicViewLoading label="organización pastoral" view="pastoral" /> },
+)
+
+const PublicAdministrativeView = dynamic(
+  () => import('./PublicOrganizationViews').then((module) => module.PublicAdministrativeView),
+  { loading: () => <PublicViewLoading label="organización administrativa" view="administrativa" /> },
+)
+
+const PublicCollegialView = dynamic(
+  () => import('./PublicOrganizationViews').then((module) => module.PublicCollegialView),
+  { loading: () => <PublicViewLoading label="organismos colegiales" view="colegial" /> },
+)
 
 export default function PublicDashboardExplorer(props: Props) {
   const model = usePublicDashboardModel(props)
