@@ -5,6 +5,14 @@ import process from 'node:process'
 const root = process.cwd()
 const srcRoot = join(root, 'src')
 const sourceExtensions = new Set(['.ts', '.tsx', '.js', '.jsx'])
+const serverRenderedPublicDetailRoutes = new Set([
+  'src/app/(public)/personas/[slug]/page.tsx',
+  'src/app/(public)/entidades/[slug]/page.tsx',
+  'src/app/(public)/pastoral/[slug]/page.tsx',
+  'src/app/(public)/oficinas/[id]/page.tsx',
+  'src/app/(public)/organismos/[id]/page.tsx',
+  'src/app/(public)/provincias-eclesiasticas/[slug]/page.tsx',
+])
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -26,13 +34,23 @@ for (const absolutePath of files) {
   const path = relative(root, absolutePath).replaceAll('\\', '/')
   const source = await readFile(absolutePath, 'utf8')
   const isPublicSource = path.includes('/app/(public)/') || path.includes('/features/public/')
+  const isClientComponent = /^[\'"]use client[\'"]/m.test(source)
 
   if (source.includes('<img')) {
     findings.push({ rule: 'raw-img', severity: 'new', path })
   }
 
-  if (isPublicSource && /^[\'"]use client[\'"]/m.test(source)) {
+  if (isPublicSource && isClientComponent) {
     publicClientComponents.push(path)
+  }
+
+  if (serverRenderedPublicDetailRoutes.has(path)) {
+    if (isClientComponent) {
+      findings.push({ rule: 'public-detail-client-page', severity: 'new', path })
+    }
+    if (/fetch\(\s*['"`]\/api\//.test(source)) {
+      findings.push({ rule: 'public-detail-self-api-fetch', severity: 'new', path })
+    }
   }
 
   if (isPublicSource && (source.includes('setInterval(') || source.includes('new MutationObserver('))) {
@@ -62,6 +80,7 @@ const report = {
   publicClientComponentCount: publicClientComponents.length,
   publicClientComponents,
   publicPollingComponents,
+  serverRenderedPublicDetailRoutes: [...serverRenderedPublicDetailRoutes],
   findings,
 }
 
