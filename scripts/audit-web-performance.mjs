@@ -25,32 +25,56 @@ async function walk(directory) {
 const files = await walk(srcRoot)
 const findings = []
 const publicClientComponents = []
+const publicPollingComponents = []
 
 for (const absolutePath of files) {
   const path = relative(root, absolutePath).replaceAll('\\', '/')
   const source = await readFile(absolutePath, 'utf8')
+  const isPublicSource = path.includes('/app/(public)/') || path.includes('/features/public/')
 
   if (source.includes('<img')) {
     const severity = knownRawImageAllowlist.has(path) ? 'known' : 'new'
     findings.push({ rule: 'raw-img', severity, path })
   }
 
-  if ((path.includes('/app/(public)/') || path.includes('/features/public/')) && /^['\"]use client['\"]/m.test(source)) {
+  if (isPublicSource && /^['"]use client['"]/m.test(source)) {
     publicClientComponents.push(path)
+  }
+
+  if (isPublicSource && (source.includes('setInterval(') || source.includes('new MutationObserver('))) {
+    publicPollingComponents.push(path)
+    findings.push({ rule: 'public-dom-polling', severity: 'new', path })
   }
 }
 
-const newRawImages = findings.filter((finding) => finding.severity === 'new')
+const rootLayout = await readFile(join(srcRoot, 'app', 'layout.tsx'), 'utf8')
+const dashboardService = await readFile(join(srcRoot, 'lib', 'public', 'dashboard.ts'), 'utf8')
+
+if (!rootLayout.includes("from 'next/font/")) {
+  findings.push({ rule: 'next-font-required', severity: 'new', path: 'src/app/layout.tsx' })
+}
+
+if (rootLayout.includes("features/public/components")) {
+  findings.push({ rule: 'global-public-client-hydration', severity: 'new', path: 'src/app/layout.tsx' })
+}
+
+if (!dashboardService.includes('unstable_cache')) {
+  findings.push({ rule: 'public-dashboard-cache-required', severity: 'new', path: 'src/lib/public/dashboard.ts' })
+}
+
+const newFindings = findings.filter((finding) => finding.severity === 'new')
 const report = {
-  rawImages: findings,
+  rawImages: findings.filter((finding) => finding.rule === 'raw-img'),
   publicClientComponentCount: publicClientComponents.length,
   publicClientComponents,
+  publicPollingComponents,
+  findings,
 }
 
 console.log(JSON.stringify(report, null, 2))
 
-if (newRawImages.length > 0) {
-  console.error(`Se detectaron ${newRawImages.length} nuevos usos de <img> fuera de la lista temporal permitida.`)
+if (newFindings.length > 0) {
+  console.error(`Se detectaron ${newFindings.length} regresiones de rendimiento en el código fuente.`)
   process.exitCode = 1
 } else if (strict && findings.length > 0) {
   console.error('La auditoría estricta exige eliminar también los usos heredados de <img>.')
