@@ -24,6 +24,11 @@ const secondaryDashboardViewModules = [
   'PublicAdministrativeView',
   'PublicCollegialView',
 ]
+const dashboardRouteStyles = [
+  'public-combobox.css',
+  'public-dashboard.css',
+  'public-territorial.css',
+]
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -91,6 +96,18 @@ if (!rootLayout.includes("from 'next/font/")) {
 
 if (rootLayout.includes('features/public/components')) {
   findings.push({ rule: 'global-public-client-hydration', severity: 'new', path: 'src/app/layout.tsx' })
+}
+
+const dashboardStylesInRoot = dashboardRouteStyles.filter((style) => rootLayout.includes(`./${style}`))
+const missingDashboardPageStyles = dashboardRouteStyles.filter((style) => !dashboardPage.includes(`../${style}`))
+if (dashboardStylesInRoot.length > 0 || missingDashboardPageStyles.length > 0) {
+  findings.push({
+    rule: 'public-dashboard-route-scoped-css',
+    severity: 'new',
+    path: 'src/app/(public)/page.tsx',
+    dashboardStylesInRoot,
+    missingDashboardPageStyles,
+  })
 }
 
 if (!dashboardService.includes('unstable_cache')) {
@@ -199,6 +216,7 @@ const report = {
     explorer: 'src/features/public/PublicDashboardExplorer.tsx',
     themeControl: 'src/features/public/PublicDashboardThemeControl.tsx',
     sharedThemeHook: 'src/components/theme/useThemePreference.ts',
+    routeStyles: dashboardRouteStyles,
     initialView: 'PublicTerritorialView',
     lazyStrategy: 'React.lazy + Suspense',
     lazyModules: secondaryDashboardViewModules,
