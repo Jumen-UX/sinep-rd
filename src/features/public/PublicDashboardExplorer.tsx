@@ -25,6 +25,33 @@ function PublicViewLoading({ view, label }: { view: PublicView; label: string })
   )
 }
 
+function PublicViewError({
+  view,
+  label,
+  onRetry,
+}: {
+  view: PublicView
+  label: string
+  onRetry: () => void
+}) {
+  return (
+    <section
+      aria-labelledby={`tab-${view}`}
+      className={`${styles.loadingPanel} public-directory-card public-panel`}
+      id={`panel-${view}`}
+      role="tabpanel"
+    >
+      <div className={`${styles.loadingMessage} public-empty`} role="alert">
+        <strong>No se pudo cargar {label}</strong>
+        <br />
+        <span>La información territorial sigue disponible. Intenta cargar nuevamente esta vista.</span>
+        <br />
+        <button className="public-clear-button" onClick={onRetry} type="button">Reintentar</button>
+      </div>
+    </section>
+  )
+}
+
 const PublicPeopleView = lazy(() => import('./PublicPeopleView'))
 const PublicPastoralView = lazy(() => import('./PublicPastoralView'))
 const PublicAdministrativeView = lazy(() => import('./PublicAdministrativeView'))
@@ -44,6 +71,10 @@ export default function PublicDashboardExplorer(props: Props) {
     setJurisdictionId,
     provinces,
     provinceDioceses,
+    activeMeta,
+    deferredDataPending,
+    deferredDataError,
+    retryDeferredData,
     resetScope,
   } = model
 
@@ -103,22 +134,30 @@ export default function PublicDashboardExplorer(props: Props) {
       </section>
 
       {activeView === 'territorial' && <PublicTerritorialView model={model} />}
-      {activeView === 'clero' && (
+      {deferredDataPending && <PublicViewLoading label={activeMeta.title.toLowerCase()} view={activeView} />}
+      {deferredDataError && (
+        <PublicViewError
+          label={activeMeta.title.toLowerCase()}
+          onRetry={retryDeferredData}
+          view={activeView}
+        />
+      )}
+      {activeView === 'clero' && !deferredDataPending && !deferredDataError && (
         <Suspense fallback={<PublicViewLoading label="clero y agentes" view="clero" />}>
           <PublicPeopleView model={model} />
         </Suspense>
       )}
-      {activeView === 'pastoral' && (
+      {activeView === 'pastoral' && !deferredDataPending && !deferredDataError && (
         <Suspense fallback={<PublicViewLoading label="organización pastoral" view="pastoral" />}>
           <PublicPastoralView model={model} />
         </Suspense>
       )}
-      {activeView === 'administrativa' && (
+      {activeView === 'administrativa' && !deferredDataPending && !deferredDataError && (
         <Suspense fallback={<PublicViewLoading label="organización administrativa" view="administrativa" />}>
           <PublicAdministrativeView model={model} />
         </Suspense>
       )}
-      {activeView === 'colegial' && (
+      {activeView === 'colegial' && !deferredDataPending && !deferredDataError && (
         <Suspense fallback={<PublicViewLoading label="organismos colegiales" view="colegial" />}>
           <PublicCollegialView model={model} />
         </Suspense>
