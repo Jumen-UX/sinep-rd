@@ -6,16 +6,17 @@ const repoRoot = new URL('../', import.meta.url)
 const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
 test('public home renders a server shell with a bounded territorial payload', async () => {
-  const [page, shell, explorer, model, loader, viewsRoute] = await Promise.all([
+  const [page, shell, explorer, model, loader, viewsRoute, summaryRoute] = await Promise.all([
     readRepoFile('src/app/(public)/page.tsx'),
     readRepoFile('src/features/public/PublicDashboardShell.tsx'),
     readRepoFile('src/features/public/PublicDashboardExplorer.tsx'),
     readRepoFile('src/features/public/usePublicDashboardModel.ts'),
     readRepoFile('src/lib/public/dashboard.ts'),
     readRepoFile('src/app/api/dashboard/vistas/route.ts'),
+    readRepoFile('src/app/api/dashboard/resumen/route.ts'),
   ])
 
-  assert.doesNotMatch(page, /['"]use client['"]/) 
+  assert.doesNotMatch(page, /['"]use client['"]/)
   assert.match(page, /loadPublicTerritorialDashboardBundle/)
   assert.match(page, /loadPublicDashboardBundle/)
   assert.match(page, /const initialDataComplete = initialView !== 'territorial'/)
@@ -25,7 +26,7 @@ test('public home renders a server shell with a bounded territorial payload', as
   assert.match(page, /initialDataComplete=\{initialDataComplete\}/)
   assert.match(page, /initialSummary=\{initialSummary\}/)
 
-  assert.doesNotMatch(shell, /['"]use client['"]/) 
+  assert.doesNotMatch(shell, /['"]use client['"]/)
   assert.match(shell, /<PublicDashboardExplorer \{\.\.\.props\} \/>/)
   assert.match(shell, /public-mobile-header/)
   assert.match(shell, /public-sidebar/)
@@ -39,10 +40,13 @@ test('public home renders a server shell with a bounded territorial payload', as
   assert.match(explorer, /onClick=|onChange=/)
   assert.match(model, /useState<PublicView>\(initialView\)/)
   assert.match(model, /fetch\('\/api\/dashboard\/vistas'/)
+  assert.match(model, /fetch\('\/api\/dashboard\/resumen'/)
+  assert.match(model, /Promise\.all/)
   assert.match(model, /AbortController/)
-  assert.match(model, /setDashboardData\(bundle\.data\)/)
-  assert.match(model, /setDashboardSummary\(bundle\.summary\)/)
-  assert.match(viewsRoute, /loadPublicDashboardBundle\(\)/)
+  assert.match(model, /setDashboardData\(data\)/)
+  assert.match(model, /setDashboardSummary\(summary\)/)
+  assert.match(viewsRoute, /loadPublicDashboardData\(\)/)
+  assert.match(summaryRoute, /loadDashboardSummary\(\)/)
 
   assert.match(loader, /export async function loadPublicTerritorialDashboardBundle/)
   assert.match(loader, /loadPublicTerritorialDashboardDataUncached/)
@@ -116,6 +120,7 @@ test('public dashboard validates and preserves shareable scope state without ser
   assert.match(model, /window\.history\.replaceState/)
   assert.doesNotMatch(model, /router\.replace/)
   assert.match(model, /fetch\('\/api\/dashboard\/vistas'/)
+  assert.match(model, /fetch\('\/api\/dashboard\/resumen'/)
   assert.match(model, /useMemo<PersonCard\[\]>/)
   assert.match(model, /const \{ administrativeUnits, collegialUnits \} = useMemo/)
 
@@ -153,7 +158,7 @@ test('public directory pages are server rendered and filter through URLs', async
   ])
 
   for (const page of [dioceses, people]) {
-    assert.doesNotMatch(page, /['"]use client['"]/) 
+    assert.doesNotMatch(page, /['"]use client['"]/)
     assert.doesNotMatch(page, /useEffect|window\.history|fetch\(/)
     assert.match(page, /searchParams: Promise/)
   }
