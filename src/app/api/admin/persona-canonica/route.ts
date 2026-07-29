@@ -10,6 +10,7 @@ import {
   ValidationError,
 } from '@/lib/admin/validation'
 import { normalizeSourceVerification } from '@/features/shared/source-verification'
+import { revalidatePublicContent } from '@/lib/public/cache'
 
 const allowedFlows = ['layperson', 'religious', 'deacon', 'priest', 'bishop'] as const
 const allowedModes = ['existing', 'new'] as const
@@ -116,6 +117,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    revalidatePublicContent()
     return NextResponse.json(data)
   } catch (error) {
     if (error instanceof ValidationError) {
