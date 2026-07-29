@@ -23,6 +23,7 @@
     "/personas",
     "/entidades/[slug]",
     "/personas/[slug]",
+    "/pastoral/[slug]",
     "/lugares/[slug]",
     "/instituciones/[slug]",
     "/admin"
