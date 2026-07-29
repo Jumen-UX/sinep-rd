@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PublicPersonPhoto } from './components/PersonPhoto'
 import type {
   PublicClericalHistory,
   PublicPersonDetail,
@@ -203,7 +204,7 @@ export default function PersonDetailServerView({ data }: { data: PublicPersonDet
       <div className="detail-backlink"><Link href="/personas">← Volver al directorio de personas</Link></div>
 
       <section className="detail-hero card person-hero">
-        {person.photo_url && <img className="person-photo" src={person.photo_url} alt={person.display_name} />}
+        {person.photo_url && <PublicPersonPhoto displayName={person.display_name} src={person.photo_url} />}
         <div>
           <p className="eyebrow">{personTypeLabel(effectivePersonType)}</p>
           <h1>{person.display_name}</h1>
