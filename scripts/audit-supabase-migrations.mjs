@@ -16,6 +16,8 @@ const allowedLegacyDuplicateTimestamps = new Map([
   ['20260714050000', 2],
   ['20260714051000', 3],
 ])
+const exposedFunctionRoles = new Set(['anon', 'public'])
+const effectiveFunctionExecuteGrants = new Map()
 
 async function exists(target) {
   try {
@@ -23,6 +25,43 @@ async function exists(target) {
     return true
   } catch {
     return false
+  }
+}
+
+function normalizeFunctionSignature(value) {
+  return value
+    .replace(/\s+/g, ' ')
+    .replace(/\s*,\s*/g, ', ')
+    .trim()
+    .toLowerCase()
+}
+
+function readRoles(value) {
+  return value
+    .split(',')
+    .map((role) => role.trim().replace(/^"|"$/g, '').toLowerCase())
+    .filter(Boolean)
+}
+
+function recordFunctionExecutePrivileges(sql, file) {
+  const statements = sql.matchAll(
+    /\b(grant\s+(?:execute|all(?:\s+privileges)?)|revoke\s+(?:execute|all(?:\s+privileges)?))\s+on\s+function\s+([\s\S]*?)\s+(to|from)\s+([^;]+);/gi,
+  )
+
+  for (const statement of statements) {
+    const action = statement[1].toLowerCase().startsWith('grant') ? 'grant' : 'revoke'
+    const signature = normalizeFunctionSignature(statement[2])
+    const roles = readRoles(statement[4]).filter((role) => exposedFunctionRoles.has(role))
+    if (roles.length === 0) continue
+
+    const grants = effectiveFunctionExecuteGrants.get(signature) ?? new Map()
+    for (const role of roles) {
+      if (action === 'grant') grants.set(role, file)
+      else grants.delete(role)
+    }
+
+    if (grants.size > 0) effectiveFunctionExecuteGrants.set(signature, grants)
+    else effectiveFunctionExecuteGrants.delete(signature)
   }
 }
 
@@ -56,6 +95,8 @@ for (const file of files) {
   const normalized = sql.replace(/--.*$/gm, '')
   if (match[1] < deepAuditStart) continue
 
+  recordFunctionExecutePrivileges(normalized, file)
+
   const securityDefinerFunctions = [...normalized.matchAll(/create\s+(?:or\s+replace\s+)?function\s+([\w."]+)[\s\S]*?security\s+definer[\s\S]*?(?=\n\s*create\s|\n\s*alter\s|\n\s*grant\s|\n\s*revoke\s|$)/gi)]
   for (const functionMatch of securityDefinerFunctions) {
     if (!/set\s+search_path\s*(?:=|to)\s*/i.test(functionMatch[0])) {
@@ -63,8 +104,8 @@ for (const file of files) {
     }
   }
 
-  if (/grant\s+execute\s+on\s+function[\s\S]{0,250}\s+to\s+(?:anon|public)\b/i.test(normalized)) {
-    errors.push(`${file}: ejecución de función concedida a anon/public.`)
+  if (/grant\s+(?:execute|all(?:\s+privileges)?)\s+on\s+all\s+functions\s+in\s+schema[\s\S]{0,250}\s+to\s+(?:anon|public)\b/i.test(normalized)) {
+    errors.push(`${file}: ejecución global de funciones concedida a anon/public.`)
   }
 
   if (/create\s+table[\s\S]*?references\s+[\w."]+/i.test(normalized) && !/create\s+(?:unique\s+)?index/i.test(normalized)) {
@@ -74,6 +115,14 @@ for (const file of files) {
   if (/drop\s+(?:table|function|view|type)\b/i.test(normalized) && !/if\s+exists/i.test(normalized)) {
     warnings.push(`${file}: operación DROP sin IF EXISTS; revisar reversibilidad e idempotencia.`)
   }
+}
+
+for (const [signature, grants] of effectiveFunctionExecuteGrants) {
+  const roles = [...grants.keys()].sort()
+  const sourceFiles = [...new Set(grants.values())].sort()
+  errors.push(
+    `${sourceFiles.join(', ')}: ejecución efectiva de ${signature} concedida a ${roles.join(', ')}.`,
+  )
 }
 
 for (const [timestamp, group] of timestamps) {
