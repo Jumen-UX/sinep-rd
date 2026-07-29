@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { ThemeControl } from '@/components/theme/ThemeControl'
 import PublicDashboardExplorer from './PublicDashboardExplorer'
 import { sideNav } from './PublicDashboardNavigation'
 import type { Props } from './PublicDashboardShared'
+import { PublicDashboardThemeControl } from './PublicDashboardThemeControl'
 
 export default function PublicDashboardShell(props: Props) {
   return (
@@ -15,7 +15,7 @@ export default function PublicDashboardShell(props: Props) {
             <span className="public-brand-subtitle">Sistema de Información<br />Eclesial Pastoral</span>
           </span>
         </Link>
-        <ThemeControl compact />
+        <PublicDashboardThemeControl />
         <Link className="public-mobile-icon-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
       </header>
 
@@ -48,7 +48,7 @@ export default function PublicDashboardShell(props: Props) {
 
       <main className="public-main">
         <div className="public-topbar">
-          <ThemeControl compact />
+          <PublicDashboardThemeControl />
           <Link className="public-user-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
         </div>
 
