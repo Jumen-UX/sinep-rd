@@ -99,7 +99,8 @@ test('navigation context combines active roles, permissions and resolved scope l
       user_id: 'user-1',
       role_id: 'role-national',
       scope_type: 'national',
-      scope_entity_id: null,
+      scope_entity_id: 'country-do',
+      country_iso2: 'DO',
       diocese_id: null,
       pastoral_area_id: null,
       organization_unit_id: null,
@@ -132,6 +133,7 @@ test('navigation context combines active roles, permissions and resolved scope l
     assignments,
     names: {
       ecclesiastical_entities: [
+        { id: 'country-do', name: 'República Dominicana' },
         { id: 'parish-1', name: 'Parroquia San Pablo Apóstol' },
       ],
     },
@@ -147,10 +149,10 @@ test('navigation context combines active roles, permissions and resolved scope l
   ])
   assert.deepEqual(context.modules, ['people', 'security'])
   assert.equal(context.availableScopes.length, 2)
-  assert.equal(context.activeScope.key, 'national:all')
-  assert.equal(context.activeScope.label, 'Ámbito nacional')
+  assert.equal(context.activeScope.key, 'national:country-do')
+  assert.equal(context.activeScope.label, 'República Dominicana')
   assert.equal(context.roles[1].scopeLabel, 'Parroquia San Pablo Apóstol')
-  assert.equal(context.roles[0].isUnrestricted, true)
+  assert.equal(context.roles[0].isUnrestricted, false)
 })
 
 test('expired assignments do not contribute permissions or scopes', async () => {

@@ -130,7 +130,7 @@ test('the workspace separates parent edits from secondary relationship history',
   assert.match(page, /type RegistryRecordKind = 'place' \| 'institution' \| 'channel'/)
   assert.match(page, /Editar fichas y conservar relaciones históricas/)
   assert.match(page, /La afiliación primaria nunca se elimina desde la tabla de relaciones/)
-  assert.match(page, /Cambiar la pertenencia principal/)
+  assert.match(page, /cambiar la pertenencia principal/i)
   assert.match(page, /handlePlaceUpdate/)
   assert.match(page, /handleInstitutionUpdate/)
   assert.match(page, /handleChannelUpdate/)

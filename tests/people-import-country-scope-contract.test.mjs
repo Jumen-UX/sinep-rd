@@ -15,6 +15,14 @@ async function readMigration(fileName) {
   return readFile(new URL(`supabase/migrations/${fileName}`, repoRoot), 'utf8')
 }
 
+function functionBody(source, name) {
+  const marker = `create or replace function ${name}`
+  const start = source.indexOf(marker)
+  assert.notEqual(start, -1, `${name} must exist`)
+  const end = source.indexOf('create or replace function', start + marker.length)
+  return source.slice(start, end === -1 ? source.length : end)
+}
+
 test('repository keeps the exact applied people import migration sequence', async () => {
   const files = await readdir(new URL('supabase/migrations/', repoRoot))
   for (const fileName of Object.values(migrations)) {
@@ -35,9 +43,7 @@ test('person and assignment import engines are sealed behind scoped facades', as
 
 test('every imported person row remains inside the batch country and entity permission', async () => {
   const migration = await readMigration(migrations.scope)
-  const start = migration.indexOf('function app_private.admin_apply_person_import_batch')
-  const end = migration.indexOf('create or replace function', start + 30)
-  const body = migration.slice(start, end)
+  const body = functionBody(migration, 'app_private.admin_apply_person_import_batch')
 
   assert.match(body, /resolve_entity_country_iso2\(v_batch\.scope_entity_id\)/)
   assert.match(body, /resolve_entity_country_iso2\(v_row_entity_id\)/)
@@ -47,9 +53,7 @@ test('every imported person row remains inside the batch country and entity perm
 
 test('every imported assignment validates country, entity and person', async () => {
   const migration = await readMigration(migrations.scope)
-  const start = migration.indexOf('function app_private.admin_apply_assignment_import_batch')
-  const end = migration.indexOf('create or replace function', start + 30)
-  const body = migration.slice(start, end)
+  const body = functionBody(migration, 'app_private.admin_apply_assignment_import_batch')
 
   assert.match(body, /audit_json_uuid\(v_row\.resolved_relations, 'persona'\)/)
   assert.match(body, /audit_json_uuid\(v_row\.resolved_relations, 'entidad'\)/)
@@ -72,9 +76,7 @@ test('public import dispatcher is a sealed definer and requires canonical batch 
 
 test('assignment incompatibility resolution is scoped and audited', async () => {
   const migration = await readMigration(migrations.scope)
-  const start = migration.indexOf('function app_private.rpc_definer__resolve_assignment_canonical_incompatibility')
-  const end = migration.indexOf('create or replace function', start + 30)
-  const body = migration.slice(start, end)
+  const body = functionBody(migration, 'app_private.rpc_definer__resolve_assignment_canonical_incompatibility')
 
   assert.match(body, /review_record_scope_entity\('position_assignments', v_assignment_id\)/)
   assert.match(body, /current_user_can_manage_entity\('appointments\.approve', v_entity_id\)/)

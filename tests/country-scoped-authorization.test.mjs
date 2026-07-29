@@ -227,9 +227,9 @@ test('navigation query includes country context and no longer globalizes nationa
     'utf8',
   )
 
-  assert.match(source, /scope_entity_id,country_iso2,diocese_id/)
+  assert.match(source, /scope_entity_id,structure_node_id,country_iso2,diocese_id/)
   assert.match(source, /const unrestrictedRoleKeys = new Set\(\['super_admin'\]\)/)
-  assert.match(source, /scopeType === 'national' && !countryIso2/)
+  assert.match(source, /return unrestrictedRoleKeys\.has\(roleKey\) \|\| scopeType === 'global'/)
   assert.doesNotMatch(source, /\['super_admin', 'national_admin'\]/)
 })
 

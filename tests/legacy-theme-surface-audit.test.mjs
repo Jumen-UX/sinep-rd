@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const repoRoot = new URL('../', import.meta.url)
@@ -13,7 +13,6 @@ const migratedFiles = [
   'src/app/hierarchy.css',
   'src/app/web-standards.css',
   'src/app/public-combobox.css',
-  'src/app/scope-back-controls.css',
 ]
 
 test('migrated public layers no longer contain fixed light surfaces', async () => {
@@ -25,6 +24,11 @@ test('migrated public layers no longer contain fixed light surfaces', async () =
       `${file} todavía contiene una superficie clara fija.`,
     )
   }
+
+  await assert.rejects(
+    access(new URL('src/app/scope-back-controls.css', repoRoot)),
+    (error) => error?.code === 'ENOENT',
+  )
 })
 
 test('intentional print white remains isolated to print rules', async () => {

@@ -43,7 +43,8 @@ test('dynamic profiles reuse cached domain loaders and keep missing records out 
   assert.match(personDetail, /index: false/)
   assert.match(entityDetail, /index: false/)
   assert.match(personDetail, /type: 'profile'/)
-  assert.match(personDetail, /image: person\.photo_url/)
+  assert.match(personDetail, /normalizePersonPhotoSource\(person\.photo_url\)/)
+  assert.match(personDetail, /image,\s+imageAlt: person\.display_name/)
 })
 
 test('page titles do not duplicate the site name before the shared template', () => {

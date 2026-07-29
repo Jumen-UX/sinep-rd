@@ -4,7 +4,7 @@
 > Alcance técnico: completado
 > Validación operativa: pendiente
 > Inicio: 2026-07-18
-> Actualizada: 2026-07-27
+> Actualizada: 2026-07-29
 > Rama operativa: `main`
 > Propietario: rendimiento, indexación, observabilidad y documentación
 
@@ -33,7 +33,7 @@ Preparar una base mantenible para rendimiento público, indexación, búsqueda, 
 
 ## S8-01 a S8-04 — Base técnica validada
 
-- `next.config.ts` no declara todavía políticas globales de rendimiento; no se modificará sin evidencia concreta.
+- `next.config.ts` declara formatos AVIF/WebP y patrones remotos acotados para Supabase Storage y el placeholder autorizado; cualquier nueva política global seguirá requiriendo evidencia concreta.
 - `docs/architecture/RENDERING_CACHE_CONTRACT.md` separa rutas públicas, administrativas y operativas.
 - `src/lib/public/metadata.ts` centraliza canonical, Open Graph, Twitter y robots para el portal público.
 - La indexación es fail-closed y requiere simultáneamente `PUBLIC_INDEXING_ENABLED=true` y `PUBLIC_LAUNCH_APPROVED=true`.

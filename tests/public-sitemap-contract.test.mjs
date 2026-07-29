@@ -31,24 +31,29 @@ test('robots blocks all crawlers until the complete launch gate is enabled', asy
   assert.match(source, /sitemap: `\$\{baseUrl\}\/sitemap\.xml`/)
 })
 
-test('public sitemap exposes only approved public profiles after launch approval', async () => {
+test('public sitemap exposes approved public profile domains after launch approval', async () => {
   const source = await readFile(sitemapPath, 'utf8')
 
   assert.match(source, /export default async function sitemap/)
   assert.match(source, /if \(!isPublicIndexingEnabled\(\)\) return \[\]/)
+  assert.match(source, /function dynamicEntries/)
   assert.match(source, /person_public_directory/)
   assert.match(source, /ecclesiastical_entities/)
+  assert.match(source, /ecclesiastical_places/)
+  assert.match(source, /ecclesial_institutions/)
   assert.match(source, /visibility: 'eq\.public'/)
   assert.match(source, /status: 'eq\.active'/)
-  assert.match(source, /\/personas\/\$\{encodeURIComponent\(person\.slug\)\}/)
-  assert.match(source, /\/entidades\/\$\{encodeURIComponent\(entity\.slug\)\}/)
+  assert.match(source, /dynamicEntries\(baseUrl, '\/personas', people, 0\.6\)/)
+  assert.match(source, /dynamicEntries\(baseUrl, '\/entidades', entities, 0\.8\)/)
+  assert.match(source, /dynamicEntries\(baseUrl, '\/lugares', places, 0\.7\)/)
+  assert.match(source, /dynamicEntries\(baseUrl, '\/instituciones', institutions, 0\.7\)/)
 })
 
 test('enabled sitemap degrades to static routes when Supabase is unavailable', async () => {
   const source = await readFile(sitemapPath, 'utf8')
 
-  assert.equal((source.match(/\.catch\(\(\) => \[\]\)/g) ?? []).length, 2)
-  assert.match(source, /return \[\.\.\.staticEntries, \.\.\.entityEntries, \.\.\.personEntries\]/)
+  assert.equal((source.match(/\.catch\(\(\) => \[\]\)/g) ?? []).length, 4)
+  assert.match(source, /return \[\s*\.\.\.staticEntries,/s)
   assert.match(source, /updated_at/)
   assert.match(source, /lastModified: validDate/)
 })

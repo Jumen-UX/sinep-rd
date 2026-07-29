@@ -11,7 +11,8 @@ test('Sprint 7 canonical queue marks S7-06 through S7-09 complete and leaves S7-
   }
 
   assert.match(sprint, /\[ \] S7-10/)
-  assert.match(sprint, /Iniciar S7-10 por la reparación del perfil E2E autenticado/)
+  assert.match(sprint, /S7-10 — Alcance de cierre reactivado/)
+  assert.match(sprint, /E2E_ACCESS_PROFILES_JSON/)
   assert.doesNotMatch(sprint, /cerrar S7-06 e iniciar S7-07/)
 })
 
