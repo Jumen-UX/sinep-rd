@@ -5,12 +5,13 @@ import test from 'node:test'
 const repoRoot = new URL('../', import.meta.url)
 const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
-test('entity profile navigation exposes only available anchored sections', async () => {
+test('entity profile navigation exposes only available anchored sections without client hydration', async () => {
   const [navigation, detail] = await Promise.all([
     readRepoFile('src/features/entidades/EntityProfileNavigation.tsx'),
-    readRepoFile('src/features/entidades/EntityDetailPage.tsx'),
+    readRepoFile('src/features/entidades/EntityDetailServerView.tsx'),
   ])
 
+  assert.doesNotMatch(navigation, /['"]use client['"]/)
   assert.match(navigation, /aria-label="Secciones de la ficha institucional"/)
   assert.match(navigation, /relationshipCount/)
   assert.match(navigation, /timelineCount/)
@@ -23,5 +24,5 @@ test('entity profile navigation exposes only available anchored sections', async
   assert.match(detail, /id="jerarquia"/)
   assert.match(detail, /id="historia"/)
   assert.match(detail, /id="estadisticas"/)
-  assert.match(detail, /id="organigrama"|EntityDynamicOrganizationChart/)
+  assert.match(detail, /EntityDynamicOrganizationChart/)
 })
