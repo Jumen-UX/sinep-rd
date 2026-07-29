@@ -1,0 +1,68 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+
+export const THEME_STORAGE_KEY = 'sinep-theme'
+const THEME_CHANGE_EVENT = 'sinep-theme-change'
+
+export type ThemePreference = 'light' | 'dark' | 'system'
+type ResolvedTheme = Exclude<ThemePreference, 'system'>
+
+function isThemePreference(value: string | null): value is ThemePreference {
+  return value === 'light' || value === 'dark' || value === 'system'
+}
+
+function resolveTheme(preference: ThemePreference, media: MediaQueryList): ResolvedTheme {
+  if (preference !== 'system') return preference
+  return media.matches ? 'dark' : 'light'
+}
+
+function applyTheme(preference: ThemePreference, media: MediaQueryList) {
+  const resolvedTheme = resolveTheme(preference, media)
+  document.documentElement.dataset.theme = resolvedTheme
+  document.documentElement.style.colorScheme = resolvedTheme
+}
+
+export function useThemePreference() {
+  const [preference, setPreference] = useState<ThemePreference>('system')
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const storedPreference = window.localStorage.getItem(THEME_STORAGE_KEY)
+    const initialPreference = isThemePreference(storedPreference) ? storedPreference : 'system'
+
+    setPreference(initialPreference)
+    applyTheme(initialPreference, media)
+    setReady(true)
+
+    function handleSystemChange() {
+      const currentPreference = window.localStorage.getItem(THEME_STORAGE_KEY)
+      if (!isThemePreference(currentPreference) || currentPreference === 'system') {
+        applyTheme('system', media)
+      }
+    }
+
+    function handleThemeChange(event: Event) {
+      const nextPreference = (event as CustomEvent<ThemePreference>).detail
+      if (!isThemePreference(nextPreference)) return
+      setPreference(nextPreference)
+      applyTheme(nextPreference, media)
+    }
+
+    media.addEventListener('change', handleSystemChange)
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+
+    return () => {
+      media.removeEventListener('change', handleSystemChange)
+      window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+    }
+  }, [])
+
+  function updatePreference(nextPreference: ThemePreference) {
+    window.localStorage.setItem(THEME_STORAGE_KEY, nextPreference)
+    window.dispatchEvent(new CustomEvent<ThemePreference>(THEME_CHANGE_EVENT, { detail: nextPreference }))
+  }
+
+  return { preference, ready, updatePreference }
+}
