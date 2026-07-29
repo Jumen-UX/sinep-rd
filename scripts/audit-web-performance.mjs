@@ -14,6 +14,10 @@ const serverRenderedPublicDetailRoutes = new Set([
   'src/app/(public)/provincias-eclesiasticas/[slug]/page.tsx',
 ])
 const legacyPublicDashboardClient = 'src/features/public/PublicDashboardClient.tsx'
+const secondaryDashboardViewModules = [
+  'PublicPeoplePastoralViews',
+  'PublicOrganizationViews',
+]
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -91,6 +95,25 @@ if (!/^[\'"]use client[\'"]/m.test(dashboardExplorer) || !dashboardExplorer.incl
   findings.push({ rule: 'public-dashboard-explorer-boundary', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx' })
 }
 
+if (!dashboardExplorer.includes("import { PublicTerritorialView } from './PublicTerritorialView'")) {
+  findings.push({ rule: 'public-dashboard-territorial-initial-view', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx' })
+}
+
+for (const moduleName of secondaryDashboardViewModules) {
+  const staticImport = new RegExp(`from ['"]\\./${moduleName}['"]`)
+  if (staticImport.test(dashboardExplorer) || !dashboardExplorer.includes(`import('./${moduleName}')`)) {
+    findings.push({ rule: 'public-dashboard-secondary-view-lazy-load', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx', module: moduleName })
+  }
+}
+
+if (dashboardExplorer.includes('ssr: false')) {
+  findings.push({ rule: 'public-dashboard-lazy-view-ssr-disabled', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx' })
+}
+
+if (!dashboardExplorer.includes('aria-busy="true"') || !dashboardExplorer.includes('role="status" aria-live="polite"')) {
+  findings.push({ rule: 'public-dashboard-lazy-view-accessibility', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx' })
+}
+
 if (sourcePaths.has(legacyPublicDashboardClient)) {
   findings.push({ rule: 'legacy-public-dashboard-client', severity: 'new', path: legacyPublicDashboardClient })
 }
@@ -105,6 +128,8 @@ const report = {
   dashboardBoundary: {
     shell: 'src/features/public/PublicDashboardShell.tsx',
     explorer: 'src/features/public/PublicDashboardExplorer.tsx',
+    initialView: 'PublicTerritorialView',
+    lazyModules: secondaryDashboardViewModules,
   },
   findings,
 }
