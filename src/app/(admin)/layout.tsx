@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { LegacyAdminAccessibilityEnhancements } from '@/components/admin/LegacyAdminAccessibilityEnhancements'
+import '../admin-brand.css'
 import '@/styles/admin-shell.css'
 import '@/styles/admin-framework.css'
 import '@/styles/admin-dashboard.css'
