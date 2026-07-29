@@ -29,8 +29,14 @@ const auditedRoutes = Array.from(new Set([
   ...Object.keys(forbiddenRouteChunks),
 ]))
 
-function manifestKey(route) {
-  return route === '/' ? '/page' : `${route}/page`
+function routeFromManifestKey(key) {
+  const withoutPage = key.endsWith('/page') ? key.slice(0, -'/page'.length) : key
+  const withoutRouteGroups = withoutPage.replace(/\/\([^/]+\)(?=\/|$)/g, '')
+  return withoutRouteGroups || '/'
+}
+
+function manifestEntries(route) {
+  return Object.entries(pages).filter(([key]) => routeFromManifestKey(key) === route)
 }
 
 function routeBudget(route) {
@@ -45,11 +51,12 @@ async function compressedSize(file) {
 }
 
 for (const route of auditedRoutes) {
-  const key = manifestKey(route)
-  const files = Array.from(new Set(pages[key] ?? []))
+  const entries = manifestEntries(route)
+  const manifestKeys = entries.map(([key]) => key)
+  const files = Array.from(new Set(entries.flatMap(([, routeFiles]) => routeFiles ?? [])))
 
   if (files.length === 0) {
-    findings.push({ rule: 'route-manifest-missing', route, key })
+    findings.push({ rule: 'route-manifest-missing', route, manifestKeys })
     continue
   }
 
@@ -70,7 +77,7 @@ for (const route of auditedRoutes) {
 
   routeResults.push({
     route,
-    manifestKey: key,
+    manifestKeys,
     compressedKb,
     budgetKb,
     largestChunk: largestChunk.file,
