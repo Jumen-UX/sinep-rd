@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const repoRoot = new URL('../', import.meta.url)
@@ -23,4 +23,7 @@ test('public entity detail page uses the cached server loader without a browser 
   assert.match(loader, /public_position_assignments_with_hierarchy/)
   assert.match(cache, /loadCachedPublicEntityDetail/)
   assert.match(view, /<EntityProfileNavigation/)
+
+  await assert.rejects(access(new URL('../src/features/entidades/EntityDetailPage.tsx', import.meta.url)))
+  await assert.rejects(access(new URL('../src/app/api/entidades/[slug]/route.ts', import.meta.url)))
 })
