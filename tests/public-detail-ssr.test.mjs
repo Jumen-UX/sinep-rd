@@ -72,6 +72,53 @@ test('organization unit detail is server rendered and shares directory cache inv
   assert.equal(revalidate.includes("['/pastoral/[slug]', 'page']"), true)
 })
 
+test('administrative and collegial organization details render on the server', async () => {
+  const [officePage, collegialPage, loader, cacheLayer, revalidate] = await Promise.all([
+    readRepoFile('src/app/(public)/oficinas/[id]/page.tsx'),
+    readRepoFile('src/app/(public)/organismos/[id]/page.tsx'),
+    readRepoFile('src/lib/public/organization-detail.ts'),
+    readRepoFile('src/lib/public/cache.ts'),
+    readRepoFile('src/lib/public/revalidate.ts'),
+  ])
+
+  for (const page of [officePage, collegialPage]) {
+    assert.equal(page.includes("'use client'"), false)
+    assert.equal(page.includes('useEffect'), false)
+    assert.equal(page.includes('/api/organizacion'), false)
+    assert.equal(page.includes('loadPublicOrganizationDetail(id)'), true)
+    assert.equal(page.includes('export const revalidate = 900'), true)
+  }
+
+  assert.equal(loader.includes("'organization_units'"), true)
+  assert.equal(loader.includes("'organization_charts'"), true)
+  assert.equal(loader.includes("status: 'eq.active'"), true)
+  assert.equal(loader.includes("visibility: 'eq.public'"), true)
+  assert.equal(cacheLayer.includes('PUBLIC_ORGANIZATION_DETAIL_TAG = PUBLIC_CACHE_TAGS.directories'), true)
+  assert.equal(cacheLayer.includes('loadCachedPublicOrganizationDetail'), true)
+  assert.equal(revalidate.includes("['/oficinas/[id]', 'page']"), true)
+  assert.equal(revalidate.includes("['/organismos/[id]', 'page']"), true)
+})
+
+test('ecclesiastical province detail renders on the server with directory cache', async () => {
+  const [page, loader, cacheLayer, revalidate] = await Promise.all([
+    readRepoFile('src/app/(public)/provincias-eclesiasticas/[slug]/page.tsx'),
+    readRepoFile('src/lib/public/ecclesiastical-province-detail.ts'),
+    readRepoFile('src/lib/public/cache.ts'),
+    readRepoFile('src/lib/public/revalidate.ts'),
+  ])
+
+  assert.equal(page.includes("'use client'"), false)
+  assert.equal(page.includes('useEffect'), false)
+  assert.equal(page.includes('/api/provincias-eclesiasticas'), false)
+  assert.equal(page.includes('loadPublicEcclesiasticalProvinceDetail(slug)'), true)
+  assert.equal(page.includes('export const revalidate = 900'), true)
+  assert.equal(loader.includes("'public_dioceses'"), true)
+  assert.equal(loader.includes('jurisdiction_count'), true)
+  assert.equal(cacheLayer.includes('PUBLIC_ECCLESIASTICAL_PROVINCE_DETAIL_TAG = PUBLIC_CACHE_TAGS.directories'), true)
+  assert.equal(cacheLayer.includes('loadCachedPublicEcclesiasticalProvinceDetail'), true)
+  assert.equal(revalidate.includes("['/provincias-eclesiasticas/[slug]', 'page']"), true)
+})
+
 test('admin mutations invalidate the consolidated public directory cache', async () => {
   const cacheLayer = await readRepoFile('src/lib/public/cache.ts')
   const mutationRoutes = await Promise.all([
@@ -93,7 +140,10 @@ test('admin mutations invalidate the consolidated public directory cache', async
   assert.equal(cacheLayer.includes('revalidateTag('), false)
   assert.equal(cacheLayer.includes("revalidatePath(`/personas/${personSlug}`)"), true)
   assert.equal(cacheLayer.includes("revalidatePath(`/entidades/${entitySlug}`)"), true)
+  assert.equal(cacheLayer.includes("revalidatePath(`/oficinas/${organizationId}`)"), true)
+  assert.equal(cacheLayer.includes("revalidatePath(`/organismos/${organizationId}`)"), true)
   assert.equal(cacheLayer.includes("revalidatePath(`/pastoral/${organizationUnitSlug}`)"), true)
+  assert.equal(cacheLayer.includes("revalidatePath(`/provincias-eclesiasticas/${provinceSlug}`)"), true)
   assert.equal(mutationRoutes.every((route) => route.includes('revalidatePublicContent')), true)
 })
 
