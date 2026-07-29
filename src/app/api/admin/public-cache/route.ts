@@ -4,7 +4,7 @@ import { revalidatePublicCache } from '@/lib/public/revalidate'
 import { createClient } from '@/lib/supabase/server'
 
 const allowedScopes = new Set<PublicCacheScope>([
-  ...Object.keys(PUBLIC_CACHE_TAGS) as Array<keyof typeof PUBLIC_CACHE_TAGS>,
+  ...(Object.keys(PUBLIC_CACHE_TAGS) as Array<keyof typeof PUBLIC_CACHE_TAGS>),
   'all',
 ])
 
