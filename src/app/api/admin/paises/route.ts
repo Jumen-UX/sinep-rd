@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
 import { parseJsonObjectBody, ValidationError } from '@/lib/admin/validation'
+import { revalidatePublicContent } from '@/lib/public/cache'
 
 type EnableCountryResponse = string | { id?: string; country_id?: string } | null
 
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
       metadata: { iso2 },
     })
 
+    revalidatePublicContent()
     return NextResponse.json({ country_id: countryId, iso2 })
   } catch (error) {
     if (error instanceof ValidationError) {
