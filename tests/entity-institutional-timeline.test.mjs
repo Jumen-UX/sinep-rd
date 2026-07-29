@@ -19,6 +19,8 @@ test('public entity profile exposes a unified institutional timeline from one se
   assert.match(detail, /evolution_events: data\.evolution_events/)
   assert.match(detail, /appointment_history: data\.appointment_history/)
   assert.doesNotMatch(detail, /fetch\(/)
+  assert.doesNotMatch(timeline, /['"]use client['"]/)
+  assert.doesNotMatch(timeline, /useMemo/)
   assert.doesNotMatch(timeline, /fetch\(/)
   assert.match(timeline, /buildEntityInstitutionalTimeline/)
   assert.match(timeline, /evolution_events/)
