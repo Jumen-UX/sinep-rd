@@ -20,7 +20,9 @@ export const fetchCache = 'force-no-store'
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      {children}
+      <div id="contenido-principal" tabIndex={-1}>
+        {children}
+      </div>
       <LegacyAdminAccessibilityEnhancements />
     </>
   )
