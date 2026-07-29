@@ -1,7 +1,7 @@
 # Documentación de SINEP RD
 
 > Estado: vigente
-> Última revisión: 2026-07-27
+> Última revisión: 2026-07-29
 
 Este índice apunta a documentación canónica y activa. Los cierres y resultados históricos se conservan bajo `archive` y no definen el estado actual.
 
@@ -12,7 +12,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 | Entender el propósito del sistema | [Plan Maestro](./product/PLAN_MAESTRO.md) |
 | Consultar prioridades y estado | [Hoja de ruta](./product/ROADMAP.md) |
 | Continuar el cierre operativo activo | [Sprint 7](./sprints/active/sprint-7.md) |
-| Consultar la referencia técnica de rendimiento | [Sprint 8](./sprints/active/sprint-8.md) |
+| Consultar la referencia técnica de rendimiento | [Sprint 8](./sprints/active/sprint-8.md) y [contrato de rendimiento web](./architecture/WEB_PERFORMANCE_CONTRACT.md) |
 | Entender la arquitectura | [Arquitectura](./architecture/ARQUITECTURA.md) |
 | Crear o mover módulos | [Convención de módulos](./architecture/CONVENCION_MODULOS.md) |
 | Implementar estructuras | [Modelo estructural canónico](./architecture/MODELO_ESTRUCTURAL_CANONICO.md) |
@@ -50,6 +50,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 - [Autorización y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md).
 - [Autorización administrativa por país](./architecture/COUNTRY_SCOPED_AUTHORIZATION.md).
 - [Contrato mínimo de observabilidad](./architecture/OBSERVABILITY_CONTRACT.md).
+- [Contrato de rendimiento web](./architecture/WEB_PERFORMANCE_CONTRACT.md).
 - [Stack oficial](./architecture/STACK_OFICIAL.md).
 
 ### Interfaz y estándares
