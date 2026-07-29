@@ -76,6 +76,7 @@ const dashboardService = await readFile(join(srcRoot, 'lib', 'public', 'dashboar
 const dashboardPage = await readFile(join(srcRoot, 'app', '(public)', 'page.tsx'), 'utf8')
 const dashboardShell = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardShell.tsx'), 'utf8')
 const dashboardExplorer = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardExplorer.tsx'), 'utf8')
+const dashboardExplorerStyles = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardExplorer.module.css'), 'utf8')
 
 if (!rootLayout.includes("from 'next/font/")) {
   findings.push({ rule: 'next-font-required', severity: 'new', path: 'src/app/layout.tsx' })
@@ -120,6 +121,10 @@ if (!dashboardExplorer.includes('aria-busy="true"') || !dashboardExplorer.includ
   findings.push({ rule: 'public-dashboard-lazy-view-accessibility', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.tsx' })
 }
 
+if (!dashboardExplorer.includes('styles.loadingPanel') || !/\.loadingPanel\s*\{[\s\S]*min-height:/.test(dashboardExplorerStyles)) {
+  findings.push({ rule: 'public-dashboard-lazy-view-stability', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.module.css' })
+}
+
 for (const path of legacyPublicDashboardModules) {
   if (sourcePaths.has(path)) {
     findings.push({ rule: 'legacy-public-dashboard-module', severity: 'new', path })
@@ -138,6 +143,7 @@ const report = {
     explorer: 'src/features/public/PublicDashboardExplorer.tsx',
     initialView: 'PublicTerritorialView',
     lazyModules: secondaryDashboardViewModules,
+    loadingStyles: 'src/features/public/PublicDashboardExplorer.module.css',
   },
   findings,
 }
