@@ -38,7 +38,10 @@ Después de `next build`, `scripts/audit-next-bundles.mjs` lee `.next/app-build-
 - `/entidades/[slug]`, `/pastoral/[slug]`, `/oficinas/[id]`, `/organismos/[id]` y `/provincias-eclesiasticas/[slug]` se renderizan en servidor y no consultan sus propias rutas `/api/*` después de hidratar.
 - La navegación anclada, la cronología institucional y el organigrama dinámico de `/entidades/[slug]` son componentes de servidor; no requieren estado, efectos ni eventos del navegador.
 - El antiguo `EntityDetailPage.tsx` y el adaptador `/api/entidades/[slug]` fueron retirados. La ficha canónica usa `loadPublicEntityDetail()` y `EntityDetailServerView`.
-- `scripts/audit-web-performance.mjs` bloquea tanto la reintroducción de `use client` en las páginas SSR protegidas como las solicitudes a APIs internas desde esas páginas.
+- El portal principal usa `PublicDashboardShell` para cabecera, sidebar, accesos, controles de apariencia y navegación móvil renderizados en servidor.
+- `PublicDashboardExplorer` es la única isla que conserva el modelo interactivo de ámbito, filtros y vistas mediante `usePublicDashboardModel()`.
+- El antiguo `PublicDashboardClient.tsx` fue retirado para impedir que el armazón estático vuelva a quedar dentro del grafo cliente.
+- `scripts/audit-web-performance.mjs` bloquea la reintroducción de `use client` en páginas SSR protegidas, las solicitudes a APIs internas desde esas páginas y regresiones en el límite shell/explorador del dashboard.
 
 Las rutas API públicas equivalentes solo deben mantenerse cuando exista un consumidor explícito distinto del render inicial. No se deben conservar adaptadores sin consumidores por compatibilidad hipotética.
 
@@ -90,9 +93,10 @@ Las mutaciones administrativas de personas, nombramientos, entidades, jurisdicci
 
 ## Contratos preventivos
 
-- `pnpm audit:performance`: fuentes, imágenes, límites cliente, fichas SSR y caché.
+- `pnpm audit:performance`: fuentes, imágenes, límites cliente, fichas SSR, shell del dashboard y caché.
 - `pnpm audit:bundles`: bundles reales posteriores al build.
 - `tests/web-performance-contract.test.mjs`: arquitectura, imágenes, instalación, invalidación y presupuesto.
+- `tests/public-ssr-navigation.test.mjs`: shell del portal renderizado en servidor, isla interactiva y navegación pública.
 - `tests/public-detail-ssr.test.mjs`: SSR y caché consolidada de fichas públicas.
 - `tests/public-entity-detail-route.test.mjs`: ausencia del cliente duplicado y del adaptador API por slug.
 - `tests/entity-profile-navigation.test.mjs`, `tests/entity-institutional-timeline.test.mjs` y `tests/entity-dynamic-organization-chart.test.mjs`: composición SSR y ausencia de hidratación presentacional.
@@ -108,7 +112,12 @@ La fase no se considera validada operativamente hasta reunir:
 - medición de Core Web Vitals o Speed Insights con tráfico suficiente;
 - revisión visual de imágenes y tipografía en móvil y escritorio.
 
-El despliegue de Vercel asociado a `41cc48c` compiló correctamente, validó tipos y generó 53 páginas. Esa evidencia cubre la retirada del cliente duplicado y del adaptador API, pero no los commits posteriores que trasladan navegación, cronología y organigrama al servidor.
+El despliegue de Vercel asociado a `260583d` compiló correctamente, validó tipos y generó 50 páginas después de retirar endpoints públicos redundantes. En esa evidencia intermedia:
+
+- `/` redujo su tamaño propio de 6.08 kB a 5.57 kB; el First Load JS permaneció en 111 kB porque el explorador interactivo todavía comparte el mismo grafo cliente.
+- `/entidades/[slug]` redujo su tamaño propio de 3.59 kB a 733 B y el First Load JS de 109 kB a 106 kB tras mover navegación, cronología y organigrama al servidor.
+
+El HEAD posterior a `260583d` añade la eliminación definitiva del shell heredado y los contratos preventivos, pero todavía requiere un build exacto antes de considerarse validado.
 
 ## Advisors y riesgos
 
@@ -116,3 +125,4 @@ El despliegue de Vercel asociado a `41cc48c` compiló correctamente, validó tip
 - La invalidación manual protege por rol administrativo. Debe evolucionar a permiso específico cuando exista un permiso operativo de caché en la matriz de autorización.
 - Los presupuestos iniciales son límites de partida. Solo deben ajustarse con evidencia de bundle y una justificación documentada, nunca para ocultar una regresión.
 - Los hosts de imágenes remotas deben permanecer restringidos; no debe abrirse un patrón global para resolver datos QA puntuales.
+- El dashboard principal conserva una isla interactiva amplia. La siguiente reducción requiere separar sus vistas o migrar filtros a URL sin degradar la experiencia de consulta.
