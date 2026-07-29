@@ -34,9 +34,11 @@ test('root layout uses next/font without hydrating obsolete public enhancers', a
   }
 })
 
-test('person portraits use next image and approved raster sources', async () => {
-  const [photo, publicDetail, adminDetail, audit, workspace, packageSource, nextConfig] = await Promise.all([
+test('person portraits and social metadata share approved raster sources', async () => {
+  const [photo, photoSource, personLayout, publicDetail, adminDetail, audit, workspace, packageSource, nextConfig] = await Promise.all([
     readRepoFile('src/features/personas/components/PersonPhoto.tsx'),
+    readRepoFile('src/features/personas/person-photo-source.ts'),
+    readRepoFile('src/app/(public)/personas/[slug]/layout.tsx'),
     readRepoFile('src/features/personas/PersonDetailServerView.tsx'),
     readRepoFile('src/features/personas/admin/PersonDetailPage.tsx'),
     readRepoFile('scripts/audit-web-performance.mjs'),
@@ -47,11 +49,15 @@ test('person portraits use next image and approved raster sources', async () => 
   const packageJson = JSON.parse(packageSource)
 
   assert.equal(photo.includes("from 'next/image'"), true)
+  assert.equal(photo.includes("from '../person-photo-source'"), true)
   assert.equal(photo.includes('priority'), true)
   assert.equal(photo.includes('sizes="(max-width: 640px) 100vw, 320px"'), true)
-  assert.equal(photo.includes("url.hostname === 'placehold.co'"), true)
-  assert.equal(photo.includes('}/png`'), true)
-  assert.equal(photo.includes('dangerouslyAllowSVG'), false)
+  assert.equal(photoSource.includes("url.hostname === 'placehold.co'"), true)
+  assert.equal(photoSource.includes('}/png`'), true)
+  assert.equal(photoSource.includes('dangerouslyAllowSVG'), false)
+  assert.equal(personLayout.includes("from '@/features/personas/person-photo-source'"), true)
+  assert.match(personLayout, /const image = person\.photo_url \? normalizePersonPhotoSource\(person\.photo_url\) : null/)
+  assert.match(personLayout, /image,\s*\n\s*imageAlt:/)
   assert.equal(publicDetail.includes('<PublicPersonPhoto'), true)
   assert.equal(adminDetail.includes('<AdminPersonPhoto'), true)
   assert.equal(publicDetail.includes('<img'), false)
