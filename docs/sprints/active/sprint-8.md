@@ -62,6 +62,15 @@ La apertura futura debe comprobar metadata, `/robots.txt`, `/sitemap.xml` y cano
 - `buildDashboardSummary()` reutiliza los datos ya cargados y conserva una lectura histórica separada de personas para mantener los totales públicos.
 - Los directorios no se migraron a filtrado íntegro en memoria porque el volumen y la transferencia deben medirse antes.
 
+### Optimización posterior — payload inicial de la portada
+
+- La vista territorial predeterminada usa `loadPublicTerritorialDashboardBundle()` y serializa únicamente países, jurisdicciones y parroquias.
+- Personas, asignaciones, organigramas y unidades organizativas se solicitan al activar una vista secundaria.
+- Una URL que abre directamente `?vista=clero`, `pastoral`, `administrativa` o `colegial` conserva renderizado inicial con el bundle completo.
+- Los endpoints `/api/dashboard/vistas` y `/api/dashboard/resumen` mantienen sus contratos existentes y se consultan en paralelo con cancelación mediante `AbortController`.
+- La interfaz diferencia carga, error y reintento sin sustituir ni degradar la vista territorial disponible.
+- La mejora no se declara validada por CI hasta contar con una ejecución completa sobre el commit que la contiene.
+
 ## S8-06 — Índices revisados y aplicados
 
 Se compararon los filtros reales de `public_dioceses`, `public_organization_units`, `person_public_directory` y relaciones jerárquicas con `pg_indexes`.
