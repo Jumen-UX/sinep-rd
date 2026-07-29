@@ -1,41 +1,25 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { notFound } from 'next/navigation'
+import { loadPublicOrganizationDetail } from '@/lib/public/cache'
 
-type OrganizationDetail = {
-  unit: { id: string; name: string; description: string | null; parent_unit_id: string | null }
-  chart: { id: string; name: string; description: string | null } | null
+type PageProps = {
+  params: Promise<{ id: string }>
 }
 
-export default function CollegialOrganizationPage() {
-  const params = useParams<{ id: string }>()
-  const id = params.id
-  const [detail, setDetail] = useState<OrganizationDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export const revalidate = 900
 
-  useEffect(() => {
-    async function loadDetail() {
-      try {
-        const response = await fetch(`/api/organizacion?id=${encodeURIComponent(id)}`)
-        const payload = await response.json()
-        if (!response.ok) {
-          setError(payload.error ?? 'No se pudo cargar el organismo.')
-          return
-        }
-        setDetail(payload as OrganizationDetail)
-      } finally {
-        setLoading(false)
-      }
-    }
+export default async function CollegialOrganizationPage({ params }: PageProps) {
+  const { id } = await params
+  let detail: Awaited<ReturnType<typeof loadPublicOrganizationDetail>>
 
-    loadDetail()
-  }, [id])
+  try {
+    detail = await loadPublicOrganizationDetail(id)
+  } catch (error) {
+    console.error('Unable to server render public collegial organization detail', error)
+    return <main className="container"><div className="error-box">No se pudo cargar el organismo.</div></main>
+  }
 
-  if (loading) return <main className="container"><div className="empty-state">Cargando organismo...</div></main>
-  if (error || !detail) return <main className="container"><div className="error-box">{error ?? 'Organismo no encontrado.'}</div></main>
+  if (!detail) notFound()
 
   return (
     <main className="container dashboard-page home-dashboard">
