@@ -3,6 +3,7 @@ import { recordAdminAudit } from '@/lib/admin/audit'
 import { requireAdminAccess } from '@/lib/admin/authorization'
 import { isJsonObject, oneOf, optionalText, parseJsonObjectBody, requiredText, ValidationError } from '@/lib/admin/validation'
 import { toSpanishAdminError } from '@/lib/admin/postgresErrors'
+import { revalidatePublicContent } from '@/lib/public/cache'
 
 const allowedJurisdictionTypes = [
   'country',
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    revalidatePublicContent()
     return NextResponse.json(data)
   } catch (error) {
     if (error instanceof ValidationError) {
