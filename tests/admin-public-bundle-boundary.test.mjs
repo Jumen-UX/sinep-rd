@@ -12,13 +12,10 @@ async function createFixture({ includePublicChunk }) {
   const root = await mkdtemp(join(tmpdir(), 'sinep-bundle-audit-'))
   const files = [
     'static/chunks/common.js',
+    'static/chunks/app/(public)/page-public.js',
     'static/chunks/app/(admin)/admin/page-admin.js',
     'static/chunks/app/(admin)/admin/login/page-login.js',
   ]
-
-  if (includePublicChunk) {
-    files.push('static/chunks/app/(public)/page-public.js')
-  }
 
   for (const file of files) {
     const absolutePath = join(root, '.next', file)
@@ -38,11 +35,15 @@ async function createFixture({ includePublicChunk }) {
   await mkdir(join(root, 'config'), { recursive: true })
   await writeFile(join(root, '.next', 'app-build-manifest.json'), JSON.stringify({
     pages: {
-      '/admin/page': [
+      '/(public)/page': [
+        'static/chunks/common.js',
+        'static/chunks/app/(public)/page-public.js',
+      ],
+      '/(admin)/admin/page': [
         'static/chunks/common.js',
         'static/chunks/app/(admin)/admin/page-admin.js',
       ],
-      '/admin/login/page': loginChunks,
+      '/(admin)/admin/login/page': loginChunks,
     },
   }))
   await writeFile(join(root, 'config', 'web-performance-budgets.json'), JSON.stringify({
@@ -52,7 +53,7 @@ async function createFixture({ includePublicChunk }) {
       adminInitialCompressedKb: 300,
       singleDependencyCompressedKb: 100,
     },
-    routes: ['/admin'],
+    routes: ['/', '/admin'],
   }))
 
   return root
@@ -72,7 +73,7 @@ test('bundle audit rejects public route chunks from admin login', async (t) => {
   assert.match(result.stdout, /app\/\(public\)\/page-public\.js/)
 })
 
-test('bundle audit accepts an isolated admin login graph', async (t) => {
+test('bundle audit accepts isolated grouped public and admin graphs', async (t) => {
   const root = await createFixture({ includePublicChunk: false })
   t.after(() => rm(root, { recursive: true, force: true }))
 
@@ -82,5 +83,9 @@ test('bundle audit accepts an isolated admin login graph', async (t) => {
   })
 
   assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stdout, /"manifestKeys": \[/)
+  assert.match(result.stdout, /"\/\(public\)\/page"/)
+  assert.match(result.stdout, /"\/\(admin\)\/admin\/login\/page"/)
+  assert.doesNotMatch(result.stdout, /route-manifest-missing/)
   assert.doesNotMatch(result.stdout, /route-shell-chunk-leak/)
 })
