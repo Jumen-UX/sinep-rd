@@ -7,9 +7,11 @@ export function buildPublicDashboardScope(
   province: string,
   jurisdictionId: string,
 ) {
-  const countryDioceses = initialData.dioceses.filter((item) => (
-    item.country_iso2 ? item.country_iso2 === country : country === 'DO'
-  ))
+  const countryDioceses = country
+    ? initialData.dioceses.filter((item) => (
+      item.country_iso2 ? item.country_iso2 === country : country === 'DO'
+    ))
+    : initialData.dioceses
   const provinceMap = new Map<string, number>()
   countryDioceses.filter((item) => !isSpecial(item)).forEach((item) => {
     const name = item.ecclesiastical_province_name
@@ -24,7 +26,7 @@ export function buildPublicDashboardScope(
   const scopedDioceses = selectedJurisdiction ? [selectedJurisdiction] : provinceDioceses
   const scopedIds = new Set(scopedDioceses.map((item) => item.id))
   const scopedSlugs = new Set(scopedDioceses.map((item) => item.slug))
-  const scopeFiltered = Boolean(province || selectedJurisdiction)
+  const scopeFiltered = Boolean(country || province || selectedJurisdiction)
   const inTerritorialScope = (dioceseId: string | null, dioceseSlug: string | null) => Boolean(
     (dioceseId && scopedIds.has(dioceseId)) || (dioceseSlug && scopedSlugs.has(dioceseSlug)),
   )
