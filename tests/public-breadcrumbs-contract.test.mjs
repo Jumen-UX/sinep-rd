@@ -39,3 +39,42 @@ test('entity detail links back through the canonical jurisdiction directory', as
   assert.match(entity, /label: entity\.name/)
   assert.match(entity, /aria-label="Ruta territorial de la entidad"/)
 })
+
+test('person and registry profiles expose canonical detail breadcrumbs', async () => {
+  const [person, place, institution] = await Promise.all([
+    read('src/app/(public)/personas/[slug]/page.tsx'),
+    read('src/app/(public)/lugares/[slug]/page.tsx'),
+    read('src/app/(public)/instituciones/[slug]/page.tsx'),
+  ])
+
+  for (const source of [person, place, institution]) {
+    assert.match(source, /PublicBreadcrumbs/)
+    assert.match(source, /label: 'Inicio', href: '\/'/)
+  }
+
+  assert.match(person, /label: 'Personas', href: '\/personas'/)
+  for (const source of [place, institution]) {
+    assert.match(source, /label: 'Diócesis y jurisdicciones', href: '\/diocesis'/)
+    assert.match(source, /primary_entity_slug/)
+    assert.match(source, /href: `\/entidades\/\$\{data\.primary_entity_slug\}`/)
+  }
+})
+
+test('structural detail routes expose their public explorer hierarchy', async () => {
+  const routes = await Promise.all([
+    read('src/app/(public)/provincias-eclesiasticas/[slug]/page.tsx'),
+    read('src/app/(public)/pastoral/[slug]/page.tsx'),
+    read('src/app/(public)/oficinas/[id]/page.tsx'),
+    read('src/app/(public)/organismos/[id]/page.tsx'),
+  ])
+
+  for (const source of routes) {
+    assert.match(source, /PublicBreadcrumbs/)
+    assert.match(source, /label: 'Inicio', href: '\/'/)
+  }
+
+  assert.match(routes[0], /label: 'Diócesis y jurisdicciones', href: '\/diocesis'/)
+  assert.match(routes[1], /label: 'Pastoral', href: '\/\?vista=pastoral'/)
+  assert.match(routes[2], /label: 'Administración', href: '\/\?vista=administrativa'/)
+  assert.match(routes[3], /label: 'Organismos colegiales', href: '\/\?vista=colegial'/)
+})
