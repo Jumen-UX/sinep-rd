@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 
 export type PublicSearchableOption = {
   value: string
@@ -35,6 +35,7 @@ export function PublicSearchableSelect({
   const inputId = useId()
   const listboxId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
   const selectedOption = options.find((option) => option.value === value) ?? null
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState(selectedOption?.label ?? '')
@@ -46,6 +47,20 @@ export function PublicSearchableSelect({
     return options.filter((option) => normalize(option.label).includes(normalizedQuery))
   }, [options, query, selectedOption?.label])
 
+  useEffect(() => {
+    if (!open) setQuery(selectedOption?.label ?? '')
+  }, [open, selectedOption?.label])
+
+  useEffect(() => {
+    if (!open || filteredOptions.length === 0) return
+    const safeIndex = Math.min(activeIndex, filteredOptions.length - 1)
+    if (safeIndex !== activeIndex) {
+      setActiveIndex(safeIndex)
+      return
+    }
+    optionRefs.current[safeIndex]?.scrollIntoView({ block: 'nearest' })
+  }, [activeIndex, filteredOptions.length, open])
+
   function selectOption(option: PublicSearchableOption) {
     onChange(option.value)
     setQuery(option.label)
@@ -54,7 +69,7 @@ export function PublicSearchableSelect({
   }
 
   function openList() {
-    if (disabled) return
+    if (disabled || open) return
     setQuery('')
     setOpen(true)
     setActiveIndex(Math.max(0, options.findIndex((option) => option.value === value)))
@@ -64,6 +79,14 @@ export function PublicSearchableSelect({
     setOpen(false)
     setQuery(selectedOption?.label ?? '')
     setActiveIndex(0)
+  }
+
+  function moveActive(delta: number) {
+    if (filteredOptions.length === 0) return
+    setActiveIndex((current) => {
+      const safeCurrent = Math.min(Math.max(current, 0), filteredOptions.length - 1)
+      return Math.min(Math.max(safeCurrent + delta, 0), filteredOptions.length - 1)
+    })
   }
 
   return (
@@ -96,11 +119,17 @@ export function PublicSearchableSelect({
             if (event.key === 'ArrowDown') {
               event.preventDefault()
               setOpen(true)
-              setActiveIndex((current) => Math.min(current + 1, filteredOptions.length - 1))
+              moveActive(1)
             } else if (event.key === 'ArrowUp') {
               event.preventDefault()
               setOpen(true)
-              setActiveIndex((current) => Math.max(current - 1, 0))
+              moveActive(-1)
+            } else if (event.key === 'Home' && open && filteredOptions.length > 0) {
+              event.preventDefault()
+              setActiveIndex(0)
+            } else if (event.key === 'End' && open && filteredOptions.length > 0) {
+              event.preventDefault()
+              setActiveIndex(filteredOptions.length - 1)
             } else if (event.key === 'Enter' && open && filteredOptions[activeIndex]) {
               event.preventDefault()
               selectOption(filteredOptions[activeIndex])
@@ -135,6 +164,7 @@ export function PublicSearchableSelect({
                 key={option.value || '__all__'}
                 onClick={() => selectOption(option)}
                 onMouseEnter={() => setActiveIndex(index)}
+                ref={(node) => { optionRefs.current[index] = node }}
                 role="option"
                 type="button"
               >
