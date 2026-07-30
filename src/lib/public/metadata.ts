@@ -6,7 +6,7 @@ import { isPublicIndexingEnabled } from '@/lib/public/indexing'
 
 export const PUBLIC_SITE_NAME = 'SINEP RD'
 export const PUBLIC_SITE_DESCRIPTION =
-  'Sistema de Información Eclesiástica y Pastoral para consulta pública de jurisdicciones, personas e instituciones de la Iglesia.'
+  'Plataforma de información eclesiástica y pastoral para consultar jurisdicciones, personas, instituciones y estructuras de la Iglesia en distintos países.'
 
 function normalizePath(path: string) {
   if (!path || path === '/') return '/'
