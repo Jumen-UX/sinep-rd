@@ -12,7 +12,7 @@ import '../public-territorial.css'
 
 export const metadata: Metadata = buildPublicMetadata({
   title: 'Información eclesial y pastoral',
-  description: 'Consulta pública de jurisdicciones, personas, estructuras pastorales, administrativas y colegiales de SINEP RD.',
+  description: 'Consulta pública de jurisdicciones, personas, instituciones y estructuras pastorales, administrativas y colegiales de la Iglesia en distintos países.',
   path: '/',
 })
 
