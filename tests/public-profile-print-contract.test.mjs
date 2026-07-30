@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import test from 'node:test'
+
+const repoRoot = new URL('../', import.meta.url)
+const read = (path) => readFile(new URL(path, repoRoot), 'utf8')
+
+test('selective print controls remain explicit accessible and reversible', async () => {
+  const [control, styles] = await Promise.all([
+    read('src/components/public/PublicProfilePrintControls.tsx'),
+    read('src/components/public/PublicProfilePrintControls.module.css'),
+  ])
+
+  assert.match(control, /^['"]use client['"]/)
+  assert.match(control, /<fieldset/)
+  assert.match(control, /<legend className="sr-only">Secciones de la ficha<\/legend>/)
+  assert.match(control, /type="checkbox"/)
+  assert.match(control, /disabled=\{selected\.size === 0\}/)
+  assert.match(control, /document\.querySelector<HTMLElement>\('\[data-print-profile\]'\)/)
+  assert.match(control, /querySelectorAll<HTMLElement>\('\[data-print-section\]'\)/)
+  assert.match(control, /window\.addEventListener\('afterprint', cleanup\)/)
+  assert.match(control, /removeAttribute\('data-print-hidden'\)/)
+  assert.match(control, /window\.print\(\)/)
+  assert.doesNotMatch(control, /dangerouslySetInnerHTML|document\.write|innerHTML/)
+
+  assert.match(styles, /@media print/)
+  assert.match(styles, /\[data-print-hidden\]/)
+  assert.match(styles, /display: none !important/)
+  assert.match(styles, /break-inside: avoid/)
+})
+
+test('entity profile exposes only available canonical sections to selective printing', async () => {
+  const entity = await read('src/features/entidades/EntityDetailServerView.tsx')
+
+  assert.match(entity, /PublicProfilePrintControls/)
+  assert.match(entity, /data-print-profile/)
+  assert.match(entity, /\{ id: 'resumen', label: 'Resumen e indicadores' \}/)
+  assert.match(entity, /currentOrdinary \? \[\{ id: 'autoridad'/)
+  assert.match(entity, /statisticsSnapshots\.length > 0 \? \[\{ id: 'estadisticas'/)
+  assert.match(entity, /positions\.length > 0 \? \[\{ id: 'organigrama'/)
+
+  for (const section of ['resumen', 'datos', 'autoridad', 'jerarquia', 'historia', 'estadisticas', 'organigrama']) {
+    assert.match(entity, new RegExp(`data-print-section="${section}"`))
+  }
+})
