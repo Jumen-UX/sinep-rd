@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import PublicRegistryProfileView from '@/features/ecclesial-registry/public/PublicRegistryProfileView'
 import { loadPublicInstitutionProfile } from '@/lib/public/ecclesial-registry-cache'
 import { buildInstitutionMetadata, buildRegistryJsonLd, serializeJsonLd } from '@/lib/public/ecclesial-registry-seo'
@@ -21,10 +22,24 @@ export default async function PublicInstitutionPage({ params }: PageProps) {
     const data = await loadPublicInstitutionProfile(slug)
     if (!data) notFound()
     const jsonLd = buildRegistryJsonLd(data, slug)
+    const title = String(data.record.official_name || data.record.name)
+    const parentItems = data.primary_entity_slug
+      ? [
+          { label: 'Diócesis y jurisdicciones', href: '/diocesis' },
+          { label: data.primary_entity_name ?? 'Entidad principal', href: `/entidades/${data.primary_entity_slug}` },
+        ]
+      : [{ label: 'Diócesis y jurisdicciones', href: '/diocesis' }]
 
     return (
       <>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
+        <div className="container dashboard-page">
+          <PublicBreadcrumbs items={[
+            { label: 'Inicio', href: '/' },
+            ...parentItems,
+            { label: title },
+          ]} />
+        </div>
         <PublicRegistryProfileView data={data} />
       </>
     )
