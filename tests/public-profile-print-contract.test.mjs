@@ -6,9 +6,11 @@ const repoRoot = new URL('../', import.meta.url)
 const read = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
 test('selective print controls remain explicit accessible and reversible', async () => {
-  const [control, styles] = await Promise.all([
+  const [control, moduleStyles, printStyles, publicLayout] = await Promise.all([
     read('src/components/public/PublicProfilePrintControls.tsx'),
     read('src/components/public/PublicProfilePrintControls.module.css'),
+    read('src/app/public-profile-print.css'),
+    read('src/app/(public)/layout.tsx'),
   ])
 
   assert.match(control, /^['"]use client['"]/)
@@ -23,10 +25,12 @@ test('selective print controls remain explicit accessible and reversible', async
   assert.match(control, /window\.print\(\)/)
   assert.doesNotMatch(control, /dangerouslySetInnerHTML|document\.write|innerHTML/)
 
-  assert.match(styles, /@media print/)
-  assert.match(styles, /\[data-print-hidden\]/)
-  assert.match(styles, /display: none !important/)
-  assert.match(styles, /break-inside: avoid/)
+  assert.doesNotMatch(moduleStyles, /:global|@media print/)
+  assert.match(publicLayout, /import '\.\.\/public-profile-print\.css'/)
+  assert.match(printStyles, /@media print/)
+  assert.match(printStyles, /\[data-print-hidden\]/)
+  assert.match(printStyles, /display: none !important/)
+  assert.match(printStyles, /break-inside: avoid/)
 })
 
 test('entity profile exposes only available canonical sections to selective printing', async () => {
