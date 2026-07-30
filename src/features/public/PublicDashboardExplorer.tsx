@@ -102,8 +102,12 @@ export default function PublicDashboardExplorer(props: Props) {
           </label>
           <label>
             Provincia eclesiástica
-            <select value={province} onChange={(event) => { setProvince(event.target.value); setJurisdictionId('') }}>
-              <option value="">Todas las provincias</option>
+            <select
+              disabled={!country}
+              value={province}
+              onChange={(event) => { setProvince(event.target.value); setJurisdictionId('') }}
+            >
+              <option value="">{country ? 'Todas las provincias' : 'Selecciona primero un país'}</option>
               {provinces.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
             </select>
           </label>
