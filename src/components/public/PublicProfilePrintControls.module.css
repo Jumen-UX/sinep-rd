@@ -39,25 +39,17 @@
   block-size: 1.125rem;
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.status {
-  min-height: 1.5em;
-  color: var(--text-subtle);
+.controls button {
+  justify-self: start;
 }
 
 @media (max-width: 640px) {
-  .options,
-  .actions {
+  .options {
     display: grid;
   }
 
   .options label,
-  .actions button {
+  .controls button {
     inline-size: 100%;
   }
 }
