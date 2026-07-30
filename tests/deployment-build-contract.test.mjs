@@ -5,15 +5,20 @@ import test from 'node:test'
 const repoRoot = new URL('../', import.meta.url)
 const read = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
-test('pnpm keeps root overrides in the workspace manifest', async () => {
-  const [packageJson, workspace] = await Promise.all([
+test('pnpm keeps root overrides and the native image optimizer contract', async () => {
+  const [packageJson, workspace, lockfile] = await Promise.all([
     read('package.json'),
     read('pnpm-workspace.yaml'),
+    read('pnpm-lock.yaml'),
   ])
 
   assert.doesNotMatch(packageJson, /"pnpm"\s*:/)
   assert.match(workspace, /^overrides:\s*$/m)
   assert.match(workspace, /^\s+postcss:\s+8\.5\.19\s*$/m)
+  assert.match(workspace, /^onlyBuiltDependencies:\s*$[\s\S]*^\s+- sharp\s*$/m)
+  assert.match(lockfile, /^\s+sharp@0\.34\.5:\s*$/m)
+  assert.match(lockfile, /^\s+'@img\/sharp-linux-x64@0\.34\.5':\s*$/m)
+  assert.match(lockfile, /^\s+'@img\/sharp-linuxmusl-x64@0\.34\.5':\s*$/m)
 })
 
 test('container build is reproducible and excludes development dependencies at runtime', async () => {
@@ -25,4 +30,15 @@ test('container build is reproducible and excludes development dependencies at r
   assert.match(dockerfile, /FROM base AS runner/)
   assert.match(dockerfile, /pnpm prune --prod/)
   assert.match(dockerfile, /USER node/)
+})
+
+test('CI reuses dependency and incremental Next.js caches without caching build output', async () => {
+  const workflow = await read('.github/workflows/ci.yml')
+
+  assert.match(workflow, /cache: pnpm/)
+  assert.match(workflow, /uses: actions\/cache@v4/)
+  assert.match(workflow, /path: \.next\/cache/)
+  assert.match(workflow, /hashFiles\('pnpm-lock\.yaml'\)/)
+  assert.match(workflow, /github\.sha/)
+  assert.doesNotMatch(workflow, /path:\s*\.next\s*$/m)
 })
