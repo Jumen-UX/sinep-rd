@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import { loadPublicOrganizationDetail } from '@/lib/public/cache'
 
 type PageProps = {
@@ -23,7 +23,11 @@ export default async function CollegialOrganizationPage({ params }: PageProps) {
 
   return (
     <main className="container dashboard-page home-dashboard">
-      <div className="detail-backlink"><Link href="/?vista=colegial">← Volver al explorador</Link></div>
+      <PublicBreadcrumbs items={[
+        { label: 'Inicio', href: '/' },
+        { label: 'Organismos colegiales', href: '/?vista=colegial' },
+        { label: detail.unit.name },
+      ]} />
       <section className="home-hero-panel card">
         <div className="home-hero-copy">
           <p className="eyebrow">Organización colegial</p>
