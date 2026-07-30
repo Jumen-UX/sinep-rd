@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import { loadDashboardSummary } from '@/lib/public/dashboard'
 import { loadPeopleDirectory, normalizePersonFilter, type PersonFilter } from '@/lib/public/directories'
 import { buildPublicMetadata } from '@/lib/public/metadata'
@@ -45,6 +46,7 @@ export default async function PersonasPage({ searchParams }: PageProps) {
 
     return (
       <main className="container dashboard-page">
+        <PublicBreadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Personas' }]} />
         <div className="dashboard-hero card dashboard-hero-split">
           <div><p className="eyebrow">Directorio pastoral</p><h1>Personas</h1><p className="lead">Listado renderizado desde el servidor por grado del Orden, condición laical y vida consagrada. Cada nombre abre su ficha canónica y ministerial.</p></div>
           <aside className="dashboard-path-card"><p className="eyebrow">Vista activa</p><div className="dashboard-path-list"><span>República Dominicana</span><span>{filterLabel(filter)}</span><span>{items.length} resultados</span></div><Link className="inline-link" href="/?vista=clero">Volver al dashboard de clero</Link></aside>
