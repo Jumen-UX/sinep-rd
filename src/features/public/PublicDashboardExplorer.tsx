@@ -80,9 +80,9 @@ export default function PublicDashboardExplorer(props: Props) {
 
   return (
     <>
-      <section className="public-panel public-filter-panel" aria-labelledby="ambito-title">
+      <section className="public-panel public-filter-panel" aria-labelledby="ambito-title" id="explorador">
         <div className="public-panel-title">
-          <div className="public-heading-accent"><h1 id="ambito-title">Ámbito de consulta</h1></div>
+          <div className="public-heading-accent"><h2 id="ambito-title">Explorador eclesial</h2></div>
           <button className="public-clear-button" onClick={resetScope} type="button">↻ Limpiar filtros</button>
         </div>
         <div className="public-filter-grid">
