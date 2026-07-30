@@ -79,6 +79,8 @@ for (const absolutePath of files) {
 const rootLayout = await readFile(join(srcRoot, 'app', 'layout.tsx'), 'utf8')
 const publicLayout = await readFile(join(srcRoot, 'app', '(public)', 'layout.tsx'), 'utf8')
 const adminLayout = await readFile(join(srcRoot, 'app', '(admin)', 'layout.tsx'), 'utf8')
+const adminShell = await readFile(join(srcRoot, 'app', '(admin)', 'admin', 'AdminShell.tsx'), 'utf8')
+const accessibilityTools = await readFile(join(srcRoot, 'components', 'accessibility', 'AccessibilityTools.tsx'), 'utf8')
 const dashboardService = await readFile(join(srcRoot, 'lib', 'public', 'dashboard.ts'), 'utf8')
 const dashboardPage = await readFile(join(srcRoot, 'app', '(public)', 'page.tsx'), 'utf8')
 const dashboardShell = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardShell.tsx'), 'utf8')
@@ -86,8 +88,6 @@ const dashboardExplorer = await readFile(join(srcRoot, 'features', 'public', 'Pu
 const dashboardExplorerStyles = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardExplorer.module.css'), 'utf8')
 const dashboardModel = await readFile(join(srcRoot, 'features', 'public', 'usePublicDashboardModel.ts'), 'utf8')
 const dashboardUrlState = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardUrlState.ts'), 'utf8')
-const dashboardThemeControl = await readFile(join(srcRoot, 'features', 'public', 'PublicDashboardThemeControl.tsx'), 'utf8')
-const globalThemeControl = await readFile(join(srcRoot, 'components', 'theme', 'ThemeControl.tsx'), 'utf8')
 const themePreferenceHook = await readFile(join(srcRoot, 'components', 'theme', 'useThemePreference.ts'), 'utf8')
 const personMetadataLayout = await readFile(join(srcRoot, 'app', '(public)', 'personas', '[slug]', 'layout.tsx'), 'utf8')
 const personPhotoSource = await readFile(join(srcRoot, 'features', 'personas', 'person-photo-source.ts'), 'utf8')
@@ -102,7 +102,6 @@ if (rootLayout.includes('features/public/components')) {
 
 const rootContainsRouteShell = /next\/link|ThemeControl|site-shell|site-header|site-footer|id="contenido-principal"/.test(rootLayout)
 const publicOwnsShell = publicLayout.includes("from 'next/link'")
-  && publicLayout.includes('ThemeControl')
   && publicLayout.includes('className="site-shell"')
   && publicLayout.includes('className="site-header"')
   && publicLayout.includes('className="site-footer"')
@@ -144,12 +143,13 @@ if (/^[\'"]use client[\'"]/m.test(dashboardShell) || /onClick=|onChange=/.test(d
   findings.push({ rule: 'public-dashboard-shell-hydration', severity: 'new', path: 'src/features/public/PublicDashboardShell.tsx' })
 }
 
-if (dashboardShell.includes('@/components/theme/ThemeControl')
-  || !dashboardShell.includes('PublicDashboardThemeControl')
-  || !dashboardThemeControl.includes('@/components/theme/useThemePreference')
-  || !globalThemeControl.includes("from './useThemePreference'")
+if (/ThemeControl|PublicDashboardThemeControl/.test(publicLayout)
+  || /ThemeControl|PublicDashboardThemeControl/.test(adminShell)
+  || /ThemeControl|PublicDashboardThemeControl/.test(dashboardShell)
+  || !accessibilityTools.includes('useThemePreference')
+  || !accessibilityTools.includes("['dark', 'Oscuro']")
   || !themePreferenceHook.includes('export function useThemePreference')) {
-  findings.push({ rule: 'public-dashboard-theme-chunk-boundary', severity: 'new', path: 'src/features/public/PublicDashboardShell.tsx' })
+  findings.push({ rule: 'shared-accessibility-theme-control', severity: 'new', path: 'src/components/accessibility/AccessibilityTools.tsx' })
 }
 
 if (!/^[\'"]use client[\'"]/m.test(dashboardExplorer) || !dashboardExplorer.includes('usePublicDashboardModel')) {
@@ -241,7 +241,7 @@ const report = {
   dashboardBoundary: {
     shell: 'src/features/public/PublicDashboardShell.tsx',
     explorer: 'src/features/public/PublicDashboardExplorer.tsx',
-    themeControl: 'src/features/public/PublicDashboardThemeControl.tsx',
+    themeControl: 'src/components/accessibility/AccessibilityTools.tsx',
     sharedThemeHook: 'src/components/theme/useThemePreference.ts',
     routeStyles: dashboardRouteStyles,
     initialView: 'PublicTerritorialView',
