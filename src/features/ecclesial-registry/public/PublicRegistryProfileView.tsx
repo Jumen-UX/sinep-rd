@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import type {
   PublicInstitutionProfile,
   PublicPlaceProfile,
@@ -35,6 +36,7 @@ function targetHref(item: PublicRegistryAffiliation) {
   if (!item.target_slug) return null
   if (item.target_kind === 'entity') return `/entidades/${item.target_slug}`
   if (item.target_kind === 'institution') return `/instituciones/${item.target_slug}`
+  if (item.target_kind === 'organization_unit') return `/pastoral/${item.target_slug}`
   return null
 }
 
@@ -64,9 +66,18 @@ export default function PublicRegistryProfileView({ data }: Props) {
   const current = data.affiliations.filter((item) => item.is_current)
   const history = data.affiliations.filter((item) => !item.is_current)
   const kindLabel = data.kind === 'place' ? data.type_name : data.category_name
+  const parentItems = data.primary_entity_slug
+    ? [{ label: data.primary_entity_name ?? 'Entidad principal', href: `/entidades/${data.primary_entity_slug}` }]
+    : [{ label: 'Diócesis y jurisdicciones', href: '/diocesis' }]
 
   return (
     <main className="container dashboard-page registry-public-profile">
+      <PublicBreadcrumbs items={[
+        { label: 'Inicio', href: '/' },
+        ...parentItems,
+        { label: title },
+      ]} />
+
       <header className="detail-hero">
         <p className="eyebrow">{kindLabel ?? (data.kind === 'place' ? 'Lugar eclesiástico' : 'Institución eclesial')}</p>
         <h1>{title}</h1>
