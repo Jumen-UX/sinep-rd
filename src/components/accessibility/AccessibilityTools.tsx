@@ -158,7 +158,7 @@ export function AccessibilityTools() {
   return (
     <div className="accessibility-tools" data-ui="accessibility-tools" ref={containerRef}>
       {open && (
-        <section aria-labelledby={headingId} aria-modal="false" className="accessibility-tools__panel" id={panelId} role="dialog">
+        <section aria-label="Herramientas de accesibilidad" aria-labelledby={headingId} aria-modal="false" className="accessibility-tools__panel" id={panelId} role="dialog">
           <header className="accessibility-tools__header">
             <div>
               <p className="accessibility-tools__eyebrow">Preferencias personales</p>
@@ -199,7 +199,7 @@ export function AccessibilityTools() {
         </section>
       )}
 
-      <button aria-controls={panelId} aria-expanded={open} aria-label="Abrir accesibilidad y apariencia" className="accessibility-tools__trigger" disabled={!ready || !themeReady} onClick={() => setOpen((current) => !current)} ref={triggerRef} type="button">
+      <button aria-controls={panelId} aria-expanded={open} aria-label="Abrir herramientas de accesibilidad" className="accessibility-tools__trigger" disabled={!ready || !themeReady} onClick={() => setOpen((current) => !current)} ref={triggerRef} type="button">
         <span aria-hidden="true" className="accessibility-tools__icon">Aa</span>
         <span>Accesibilidad</span>
       </button>
