@@ -46,10 +46,18 @@ test('tema oscuro se aplica sin perder persistencia ni accesibilidad', async ({ 
   expect(response).not.toBeNull()
   expect(response.status()).toBeLessThan(400)
 
-  const themeControl = page.locator('[data-ui="theme-control"]:visible select').first()
-  await expect(themeControl).toBeVisible()
-  await expect(themeControl).toBeEnabled()
-  await themeControl.selectOption('dark')
+  const trigger = page.getByRole('button', { name: 'Abrir herramientas de accesibilidad' })
+  await expect(trigger).toBeVisible()
+  await expect(trigger).toBeEnabled()
+  await trigger.click()
+
+  const panel = page.getByRole('dialog', { name: 'Herramientas de accesibilidad' })
+  await expect(panel).toBeVisible()
+
+  const darkThemeButton = panel.getByRole('button', { name: 'Oscuro', exact: true })
+  await expect(darkThemeButton).toBeEnabled()
+  await darkThemeButton.click()
+
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await expect.poll(() => page.evaluate(() => localStorage.getItem('sinep-theme'))).toBe('dark')
 
