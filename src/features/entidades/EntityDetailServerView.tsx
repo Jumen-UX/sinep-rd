@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
+import { PublicProfilePrintControls } from '@/components/public/PublicProfilePrintControls'
 import EntityDynamicOrganizationChart from './EntityDynamicOrganizationChart'
 import EntityInstitutionalTimeline from './EntityInstitutionalTimeline'
 import EntityProfileNavigation from './EntityProfileNavigation'
@@ -56,16 +57,25 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
   const activeRelationshipCount = data.relationships.filter((relationship) => relationship.is_current).length
   const activePositionCount = positions.filter((position) => position.is_current).length
   const timelineCount = data.evolution_events.length + ordinaryAppointments.length + (entity.erected_at ? 1 : 0)
+  const printSections = [
+    { id: 'resumen', label: 'Resumen e indicadores' },
+    { id: 'datos', label: 'Datos básicos' },
+    ...(currentOrdinary ? [{ id: 'autoridad', label: 'Autoridad actual' }] : []),
+    { id: 'jerarquia', label: 'Relaciones y jerarquía' },
+    { id: 'historia', label: 'Historia institucional' },
+    ...(statisticsSnapshots.length > 0 ? [{ id: 'estadisticas', label: 'Estadísticas históricas' }] : []),
+    ...(positions.length > 0 ? [{ id: 'organigrama', label: 'Organigrama y cargos' }] : []),
+  ]
 
   return (
-    <main className="container dashboard-page public-entity-detail">
+    <main className="container dashboard-page public-entity-detail" data-print-profile>
       <PublicBreadcrumbs items={[
         { label: 'Inicio', href: '/' },
         { label: 'Diócesis y jurisdicciones', href: '/diocesis' },
         { label: entity.name },
       ]} />
 
-      <div className="dashboard-hero card dashboard-hero-split">
+      <div className="dashboard-hero card dashboard-hero-split" data-print-section="resumen">
         <div>
           <p className="eyebrow">Ficha institucional</p>
           <h1>{entity.name}</h1>
@@ -90,14 +100,16 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
         timelineCount={timelineCount}
       />
 
-      <section className="dashboard-grid dashboard-summary" aria-label="Indicadores principales">
+      <PublicProfilePrintControls sections={printSections} />
+
+      <section className="dashboard-grid dashboard-summary" aria-label="Indicadores principales" data-print-section="resumen">
         <div className="metric-card"><strong>{entity.entity_type_name ?? 'Entidad'}</strong><span>Tipo</span></div>
         <div className="metric-card"><strong>{formatNumber(entity.population_total)}</strong><span>Población reportada</span></div>
         <div className="metric-card"><strong>{formatNumber(entity.catholics_total)}</strong><span>Católicos reportados</span></div>
         <div className="metric-card"><strong>{formatArea(entity.area_km2)}</strong><span>Área</span></div>
       </section>
 
-      <section className="card dashboard-section" id="datos">
+      <section className="card dashboard-section" id="datos" data-print-section="datos">
         <div className="section-heading"><div><p className="eyebrow">Datos básicos</p><h2>Información de la entidad</h2></div></div>
         <div className="public-directory-list entity-facts-grid">
           <div className="public-directory-item"><div><strong>Nombre oficial</strong><span>{entity.official_name ?? '—'}</span></div><small>{entity.latin_name ?? '—'}</small></div>
@@ -110,7 +122,7 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
       </section>
 
       {currentOrdinary && (
-        <section className="card dashboard-section" id="autoridad">
+        <section className="card dashboard-section" id="autoridad" data-print-section="autoridad">
           <div className="section-heading"><div><p className="eyebrow">Autoridad actual</p><h2>Ordinario o responsable</h2></div></div>
           <div className="public-directory-list entity-authority-list">
             <div className="public-directory-item">
@@ -124,11 +136,11 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
         </section>
       )}
 
-      <div id="jerarquia">
+      <div id="jerarquia" data-print-section="jerarquia">
         <EntityRelationshipMap entity={entity} relatedEntities={data.related_entities} relationships={data.relationships} />
       </div>
 
-      <div id="historia">
+      <div id="historia" data-print-section="historia">
         <EntityInstitutionalTimeline payload={{
           entity: { name: entity.name, erected_at: entity.erected_at },
           evolution_events: data.evolution_events,
@@ -137,7 +149,7 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
       </div>
 
       {statisticsSnapshots.length > 0 && (
-        <section className="card dashboard-section" id="estadisticas">
+        <section className="card dashboard-section" id="estadisticas" data-print-section="estadisticas">
           <div className="section-heading"><div><p className="eyebrow">Estadísticas</p><h2>Snapshots históricos</h2></div></div>
           <div className="public-directory-list entity-snapshots-grid">
             {statisticsSnapshots.map((item) => (
@@ -150,7 +162,9 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
         </section>
       )}
 
-      <EntityDynamicOrganizationChart positions={positions} />
+      <div data-print-section="organigrama">
+        <EntityDynamicOrganizationChart positions={positions} />
+      </div>
     </main>
   )
 }
