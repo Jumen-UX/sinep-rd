@@ -1,0 +1,38 @@
+.nav {
+  margin-block: 0 1rem;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.925rem;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.item:not(:last-child)::after {
+  content: "/";
+  color: var(--border-strong);
+}
+
+.item a {
+  color: var(--primary);
+  text-underline-offset: 0.2em;
+}
+
+.current {
+  color: var(--foreground);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
