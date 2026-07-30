@@ -1,0 +1,22 @@
+@media print {
+  [data-print-controls],
+  .site-header,
+  .site-footer,
+  .skip-link,
+  .accessibility-tools {
+    display: none !important;
+  }
+
+  [data-print-hidden] {
+    display: none !important;
+  }
+
+  [data-print-profile] {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  [data-print-section] {
+    break-inside: avoid;
+  }
+}
