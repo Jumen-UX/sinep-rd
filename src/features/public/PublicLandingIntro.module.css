@@ -1,0 +1,93 @@
+.hero {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.8fr);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border: 1px solid var(--public-border);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(200, 149, 29, 0.16), transparent 18rem),
+    color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: var(--public-shadow);
+}
+
+.copy {
+  display: grid;
+  align-content: center;
+  gap: 1rem;
+}
+
+.copy h1,
+.copy p,
+.scope p,
+.scope ul {
+  margin: 0;
+}
+
+.copy h1 {
+  max-width: 18ch;
+  font-size: clamp(2rem, 4.5vw, 4.5rem);
+  letter-spacing: -0.055em;
+  line-height: 0.98;
+}
+
+.lead {
+  max-width: 68ch;
+  color: var(--text-muted);
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  line-height: 1.65;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.scope {
+  align-self: stretch;
+  display: grid;
+  align-content: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(200, 149, 29, 0.28);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--gold-soft) 58%, var(--surface));
+}
+
+.scope strong {
+  font-size: 1.15rem;
+}
+
+.scope p,
+.scope li {
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.scope ul {
+  display: grid;
+  gap: 0.5rem;
+  padding-left: 1.15rem;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .copy h1 {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .actions {
+    display: grid;
+  }
+
+  .actions > * {
+    width: 100%;
+  }
+}
