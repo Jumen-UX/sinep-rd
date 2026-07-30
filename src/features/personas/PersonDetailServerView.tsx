@@ -201,8 +201,6 @@ export default function PersonDetailServerView({ data }: { data: PublicPersonDet
 
   return (
     <main className="container detail-page">
-      <div className="detail-backlink"><Link href="/personas">← Volver al directorio de personas</Link></div>
-
       <section className="detail-hero card person-hero">
         {person.photo_url && <PublicPersonPhoto displayName={person.display_name} src={person.photo_url} />}
         <div>
