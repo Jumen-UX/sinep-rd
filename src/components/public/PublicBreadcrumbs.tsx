@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import styles from './PublicBreadcrumbs.module.css'
 
 export type PublicBreadcrumbItem = {
   label: string
@@ -7,15 +8,15 @@ export type PublicBreadcrumbItem = {
 
 export function PublicBreadcrumbs({ items }: { items: PublicBreadcrumbItem[] }) {
   return (
-    <nav aria-label="Migas de pan" className="detail-backlink">
-      <ol className="public-breadcrumb-list">
+    <nav aria-label="Migas de pan" className={styles.nav}>
+      <ol className={styles.list}>
         {items.map((item, index) => {
           const current = index === items.length - 1
           return (
-            <li key={`${item.label}-${index}`}>
+            <li className={styles.item} key={`${item.label}-${index}`}>
               {item.href && !current
                 ? <Link href={item.href}>{item.label}</Link>
-                : <span aria-current={current ? 'page' : undefined}>{item.label}</span>}
+                : <span aria-current={current ? 'page' : undefined} className={current ? styles.current : undefined}>{item.label}</span>}
             </li>
           )
         })}
