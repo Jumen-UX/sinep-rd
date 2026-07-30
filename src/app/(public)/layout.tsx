@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { ThemeControl } from '@/components/theme/ThemeControl'
 import {
   buildPublicMetadata,
   getPublicMetadataBase,
@@ -41,7 +40,6 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               <Link href="/personas">Personas</Link>
               <Link href="/admin">Administración</Link>
             </nav>
-            <ThemeControl compact />
           </div>
         </div>
       </header>
