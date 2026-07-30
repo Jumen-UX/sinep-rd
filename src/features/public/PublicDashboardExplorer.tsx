@@ -89,7 +89,10 @@ export default function PublicDashboardExplorer(props: Props) {
   ]
   const jurisdictionOptions = [
     { value: '', label: 'Todas las jurisdicciones' },
-    ...provinceDioceses.map((item) => ({ value: item.id, label: item.name })),
+    ...provinceDioceses.map((item) => ({
+      value: item.id,
+      label: [item.name, country ? null : item.country_name].filter(Boolean).join(' · '),
+    })),
   ]
 
   return (
