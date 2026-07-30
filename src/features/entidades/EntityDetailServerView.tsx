@@ -66,6 +66,67 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
     ...(statisticsSnapshots.length > 0 ? [{ id: 'estadisticas', label: 'Estadísticas históricas' }] : []),
     ...(positions.length > 0 ? [{ id: 'organigrama', label: 'Organigrama y cargos' }] : []),
   ]
+  const exportData = {
+    resumen: {
+      id: entity.id,
+      slug: entity.slug,
+      name: entity.name,
+      description: entity.description,
+      type: entity.entity_type_name,
+      territory: {
+        country: entity.country,
+        province: entity.province,
+        municipality: entity.municipality,
+      },
+      indicators: {
+        populationTotal: entity.population_total,
+        catholicsTotal: entity.catholics_total,
+        areaKm2: entity.area_km2,
+      },
+    },
+    datos: {
+      officialName: entity.official_name,
+      latinName: entity.latin_name,
+      cathedralName: entity.cathedral_name,
+      territorySummary: entity.territory_summary,
+      address: entity.address,
+      phone: entity.phone,
+      website: entity.website,
+      erectedAt: entity.erected_at,
+      statisticsYear: entity.statistics_year,
+      parishesCount: entity.parishes_count,
+      sourceName: entity.source_name,
+      sourceCheckedAt: entity.source_checked_at,
+    },
+    ...(currentOrdinary ? {
+      autoridad: {
+        personName: currentOrdinary.person_name,
+        personSlug: currentOrdinary.person_slug,
+        officeName: currentOrdinary.office_name,
+        startDate: currentOrdinary.start_date,
+        endDate: currentOrdinary.end_date,
+      },
+    } : {}),
+    jerarquia: {
+      relatedEntities: data.related_entities,
+      relationships: data.relationships.map((relationship) => ({
+        id: relationship.id,
+        parentEntityId: relationship.parent_entity_id,
+        childEntityId: relationship.child_entity_id,
+        relationshipType: relationship.relationship_type,
+        startDate: relationship.start_date,
+        endDate: relationship.end_date,
+        isCurrent: relationship.is_current,
+      })),
+    },
+    historia: {
+      erectedAt: entity.erected_at,
+      evolutionEvents: data.evolution_events,
+      appointmentHistory: data.appointment_history,
+    },
+    ...(statisticsSnapshots.length > 0 ? { estadisticas: statisticsSnapshots } : {}),
+    ...(positions.length > 0 ? { organigrama: positions } : {}),
+  }
 
   return (
     <main className="container dashboard-page public-entity-detail" data-print-profile>
@@ -100,7 +161,12 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
         timelineCount={timelineCount}
       />
 
-      <PublicProfilePrintControls sections={printSections} />
+      <PublicProfilePrintControls
+        sections={printSections}
+        exportData={exportData}
+        exportFileName={`entidad-${entity.slug}.json`}
+        exportProfileType="ecclesiastical_entity"
+      />
 
       <section className="dashboard-grid dashboard-summary" aria-label="Indicadores principales" data-print-section="resumen">
         <div className="metric-card"><strong>{entity.entity_type_name ?? 'Entidad'}</strong><span>Tipo</span></div>
