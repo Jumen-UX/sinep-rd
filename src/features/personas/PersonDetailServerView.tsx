@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PublicProfilePrintControls } from '@/components/public/PublicProfilePrintControls'
 import { PublicPersonPhoto } from './components/PersonPhoto'
 import type {
   PublicClericalHistory,
@@ -177,6 +178,17 @@ export default function PersonDetailServerView({ data }: { data: PublicPersonDet
     (item) => item.dimension_type === 'incardination' && item.is_current,
   ) ?? null
   const primaryAppointment = appointments[0] ?? null
+  const hasEpiscopalData = episcopalRoles.length > 0 || dignities.length > 0 || Boolean(episcopate)
+  const hasCanonicalHistory = appointments.length > 0 || clericalHistory.length > 0
+  const printSections = [
+    { id: 'resumen', label: 'Resumen e indicadores' },
+    { id: 'identidad', label: 'Identidad y situación canónica' },
+    { id: 'ordenaciones', label: 'Historia sacramental' },
+    ...(hasEpiscopalData ? [{ id: 'episcopado', label: 'Episcopado y sucesión apostólica' }] : []),
+    { id: 'cargos', label: 'Cargos configurados' },
+    ...(hasCanonicalHistory ? [{ id: 'historia', label: 'Nombramientos e historia canónica' }] : []),
+    ...(movements.length > 0 ? [{ id: 'movimientos', label: 'Movimientos pastorales e institucionales' }] : []),
+  ]
   const principalConsecratorName = episcopalOrdination?.principal_consecrator_person_name
     ?? episcopalOrdination?.principal_consecrator_name
     ?? episcopate?.principal_ordainer_name
@@ -200,8 +212,10 @@ export default function PersonDetailServerView({ data }: { data: PublicPersonDet
     ?? null
 
   return (
-    <main className="container detail-page">
-      <section className="detail-hero card person-hero">
+    <main className="container detail-page" data-print-profile>
+      <PublicProfilePrintControls sections={printSections} />
+
+      <section className="detail-hero card person-hero" data-print-section="resumen">
         {person.photo_url && <PublicPersonPhoto displayName={person.display_name} src={person.photo_url} />}
         <div>
           <p className="eyebrow">{personTypeLabel(effectivePersonType)}</p>
@@ -210,14 +224,14 @@ export default function PersonDetailServerView({ data }: { data: PublicPersonDet
         </div>
       </section>
 
-      <section className="dashboard-grid dashboard-summary person-metrics">
+      <section className="dashboard-grid dashboard-summary person-metrics" data-print-section="resumen">
         <div className="metric-card"><strong>{metricAge(person.birth_date, person.age_text, person.death_date)}</strong><span>{person.death_date ? 'Edad al fallecer' : 'Edad actual'}</span></div>
         <div className="metric-card"><strong>{metricYears(presbyterate?.ordination_date ?? null, person.death_date)}</strong><span>Años desde el presbiterado</span></div>
         <div className="metric-card"><strong>{metricYears(episcopate?.ordination_date ?? null, person.death_date)}</strong><span>Años desde el episcopado</span></div>
         <div className="metric-card"><strong>{metricYears(primaryAppointment?.start_date ?? null, primaryAppointment?.end_date ?? person.death_date)}</strong><span>En cargo principal</span></div>
       </section>
 
-      <section className="detail-grid">
+      <section className="detail-grid" data-print-section="identidad">
         <article className="card detail-section">
           <h2>Información general</h2>
           <dl className="detail-list">
@@ -243,7 +257,7 @@ export default function PersonDetailServerView({ data }: { data: PublicPersonDet
         </article>
       </section>
 
-      <section className="card detail-section">
+      <section className="card detail-section" data-print-section="ordenaciones">
         <div className="section-heading"><div><p className="eyebrow">Historia sacramental</p><h2>Grados del Orden</h2></div><span className="meta">Identidad única a través de todo el proceso sacramental.</span></div>
         {ordinations.length === 0 ? <p className="meta">No hay ordenaciones públicas registradas.</p> : (
           <div className="table-wrap"><table className="data-table dashboard-list-table"><thead><tr><th>Grado</th><th>Fecha y lugar</th><th>Ordenante principal</th><th>Verificación</th><th>Fuente</th></tr></thead><tbody>
@@ -258,12 +272,12 @@ export default function PersonDetailServerView({ data }: { data: PublicPersonDet
         )}
       </section>
 
-      {(episcopalRoles.length > 0 || dignities.length > 0) && <section className="detail-grid">
+      {(episcopalRoles.length > 0 || dignities.length > 0) && <section className="detail-grid" data-print-section="episcopado">
         <article className="card detail-section"><h2>Función episcopal actual</h2>{episcopalRoles.length === 0 ? <p className="meta">No hay una función episcopal pública vigente.</p> : <div className="timeline-list">{episcopalRoles.map((role) => <div className="timeline-item" key={`${role.role_type}-${role.jurisdiction_entity_id ?? role.title_see_name ?? 'sin-sede'}`}><strong>{episcopalRoleLabel(role.role_type)}</strong><span>{role.title_see_name ?? role.jurisdiction_name ?? 'Jurisdicción no indicada'}</span><small>Desde {formatDate(role.start_date)}{role.has_right_of_succession ? ' · Con derecho de sucesión' : ''}</small></div>)}</div>}</article>
         <article className="card detail-section"><h2>Títulos y dignidades</h2>{dignities.length === 0 ? <p className="meta">No hay dignidades públicas vigentes.</p> : <div className="timeline-list">{dignities.map((dignity) => <div className="timeline-item" key={dignity.dignity_type}><strong>{dignityLabel(dignity.dignity_type)}</strong>{dignity.title_text && <span>{dignity.title_text}</span>}<small>Desde {formatDate(dignity.start_date)}</small></div>)}</div>}</article>
       </section>}
 
-      {episcopate && <section className="card detail-section"><h2>Sucesión apostólica</h2><dl className="detail-list">
+      {episcopate && <section className="card detail-section" data-print-section="episcopado"><h2>Sucesión apostólica</h2><dl className="detail-list">
         <div><dt>Fecha de ordenación episcopal</dt><dd>{formatDate(episcopate.ordination_date)}</dd></div>
         <div><dt>Lugar</dt><dd>{episcopate.ordination_place ?? episcopalOrdination?.ordination_place ?? 'No indicado'}</dd></div>
         <div><dt>Consagrante principal</dt><dd><PersonLink name={principalConsecratorName} slug={principalConsecratorSlug} /></dd></div>
@@ -272,7 +286,7 @@ export default function PersonDetailServerView({ data }: { data: PublicPersonDet
         <div><dt>Verificación</dt><dd>{episcopate.verification_status ?? episcopalOrdination?.verification_status ?? 'No indicada'}</dd></div>
       </dl></section>}
 
-      <section className="card detail-section"><h2>Cargos configurados</h2>{positions.length === 0 ? <p className="meta">Todavía no hay cargos configurados para esta persona.</p> : <div className="table-wrap"><table className="data-table dashboard-list-table"><thead><tr><th>Cargo</th><th>Organigrama</th><th>Entidad / unidad</th><th>Período</th><th>Estado</th><th>Predecesor</th><th>Sucesor</th></tr></thead><tbody>
+      <section className="card detail-section" data-print-section="cargos"><h2>Cargos configurados</h2>{positions.length === 0 ? <p className="meta">Todavía no hay cargos configurados para esta persona.</p> : <div className="table-wrap"><table className="data-table dashboard-list-table"><thead><tr><th>Cargo</th><th>Organigrama</th><th>Entidad / unidad</th><th>Período</th><th>Estado</th><th>Predecesor</th><th>Sucesor</th></tr></thead><tbody>
         {positions.map((position) => <tr key={position.id}>
           <td><strong>{position.position_title ?? 'Cargo'}</strong><small>{position.selection_method ?? 'nombramiento'}</small></td>
           <td>{position.organization_chart_name ?? 'No indicado'}</td>
@@ -284,12 +298,12 @@ export default function PersonDetailServerView({ data }: { data: PublicPersonDet
         </tr>)}
       </tbody></table></div>}</section>
 
-      <section className="detail-grid">
+      <section className="detail-grid" data-print-section="historia">
         <article className="card detail-section"><h2>Nombramientos actuales</h2>{appointments.length === 0 ? <p className="meta">No hay nombramientos públicos activos.</p> : <div className="timeline-list">{appointments.map((appointment) => <div className="timeline-item" key={appointment.id}><strong>{appointment.office_name ?? 'Cargo'}</strong><ScopeLink entityName={appointment.entity_name} entitySlug={appointment.entity_slug} unitName={appointment.organization_unit_name} unitSlug={appointment.organization_unit_slug} /><small>Desde {formatDate(appointment.start_date)} · {metricYears(appointment.start_date, person.death_date)} años en el cargo</small>{appointment.notes_public && <span className="meta">{appointment.notes_public}</span>}</div>)}</div>}</article>
         <article className="card detail-section"><h2>Historia canónica</h2>{clericalHistory.length === 0 ? <p className="meta">No hay cambios canónicos públicos registrados.</p> : <div className="timeline-list">{clericalHistory.map((item, index) => <div className="timeline-item" key={`${item.dimension_type}-${item.dimension_key}-${item.start_date ?? index}`}><strong>{historyTitle(item)}</strong>{item.related_entity_name && <EntityLink name={item.related_entity_name} slug={item.related_entity_slug} />}{item.detail_text && item.detail_text !== item.display_title && <span>{item.detail_text}</span>}<small>{formatDate(item.start_date)} — {item.end_date ? formatDate(item.end_date) : item.is_current ? 'vigente' : 'sin fecha final'}{item.has_right_of_succession ? ' · Con derecho de sucesión' : ''}</small></div>)}</div>}</article>
       </section>
 
-      <section className="card detail-section"><h2>Movimientos pastorales e institucionales</h2>{movements.length === 0 ? <p className="meta">Todavía no hay movimientos históricos públicos.</p> : <div className="timeline-list">{movements.map((movement) => <div className="timeline-item" key={movement.id}><strong>{movement.title ?? movement.movement_type ?? 'Movimiento'}</strong><ScopeLink entityName={movement.entity_name} entitySlug={movement.entity_slug} unitName={movement.organization_unit_name} unitSlug={movement.organization_unit_slug} /><small>{formatDate(movement.effective_date)} — {movement.end_date ? formatDate(movement.end_date) : 'actual'}</small>{movement.description && <span className="meta">{movement.description}</span>}</div>)}</div>}</section>
+      <section className="card detail-section" data-print-section="movimientos"><h2>Movimientos pastorales e institucionales</h2>{movements.length === 0 ? <p className="meta">Todavía no hay movimientos históricos públicos.</p> : <div className="timeline-list">{movements.map((movement) => <div className="timeline-item" key={movement.id}><strong>{movement.title ?? movement.movement_type ?? 'Movimiento'}</strong><ScopeLink entityName={movement.entity_name} entitySlug={movement.entity_slug} unitName={movement.organization_unit_name} unitSlug={movement.organization_unit_slug} /><small>{formatDate(movement.effective_date)} — {movement.end_date ? formatDate(movement.end_date) : 'actual'}</small>{movement.description && <span className="meta">{movement.description}</span>}</div>)}</div>}</section>
     </main>
   )
 }
