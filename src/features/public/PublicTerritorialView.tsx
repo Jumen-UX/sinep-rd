@@ -6,6 +6,8 @@ import type { PublicDashboardModel } from './usePublicDashboardModel'
 
 export function PublicTerritorialView({ model }: { model: PublicDashboardModel }) {
   const {
+    initialData,
+    country,
     province,
     setProvince,
     setJurisdictionId,
@@ -17,12 +19,14 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
   } = model
   const territorialDioceses = scopedDioceses.filter((item) => !isSpecial(item))
   const specialDioceses = scopedDioceses.filter(isSpecial)
+  const globalScope = !country
 
   return (
     <section className="public-territorial-view" id="panel-territorial" role="tabpanel" aria-labelledby="tab-territorial">
       <section className="public-panel public-scope-card">
         <span className="public-country-mark" aria-hidden="true">▰</span>
         <div><h2>{scopeTitle}</h2><div className="public-scope-summary">
+          {globalScope ? <span>{initialData.countries.length} países con catálogo público</span> : null}
           <span>{territorialDioceses.length} jurisdicciones territoriales</span>
           <span>{specialDioceses.length} especiales</span>
           <span>{scopedParishes.length} parroquias cargadas</span>
@@ -30,7 +34,11 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
       </section>
 
       <section className="public-metrics-grid" aria-label={`Resumen territorial de ${scopeTitle}`}>
-        <Metric label="Provincias" value={province ? 1 : provinces.length} detail="Agrupaciones metropolitanas" />
+        <Metric
+          detail={globalScope ? 'Catálogos nacionales disponibles' : 'Agrupaciones metropolitanas'}
+          label={globalScope ? 'Países' : 'Provincias'}
+          value={globalScope ? initialData.countries.length : province ? 1 : provinces.length}
+        />
         <Metric label="Arquidiócesis" value={scopedDioceses.filter(isArchdiocese).length} detail="Sedes metropolitanas" />
         <Metric label="Diócesis" value={scopedDioceses.filter(isDiocese).length} detail="Jurisdicciones diocesanas" />
         <Metric label="Especiales" value={specialDioceses.length} detail="Ordinariatos y jurisdicciones personales" />
@@ -39,16 +47,21 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
 
       <section className="public-territorial-sections" aria-label="Resumen territorial">
         <article className="public-panel public-section-card public-provinces-section">
-          <div className="public-section-title"><p className="eyebrow">Provincias eclesiásticas</p><h2>Selecciona una provincia</h2></div>
-          <div className="public-province-list">{provinces.length === 0
-            ? <Empty title="Sin provincias publicadas" detail="Este país todavía no tiene provincias eclesiásticas públicas registradas." />
-            : provinces.map((item) => (
-              <article className="public-province-card" key={item.name}>
-                <span className="public-node-icon" aria-hidden="true">⌂</span>
-                <button onClick={() => { setProvince(item.name); setJurisdictionId('') }} type="button"><strong>{item.name}</strong><span>{item.count} jurisdicciones</span></button>
-                <Link className="public-link" href={`/provincias-eclesiasticas/${slugify(item.name)}`}>Ver ficha →</Link>
-              </article>
-            ))}</div>
+          <div className="public-section-title">
+            <p className="eyebrow">Provincias eclesiásticas</p>
+            <h2>{globalScope ? 'Selecciona un país' : 'Selecciona una provincia'}</h2>
+          </div>
+          <div className="public-province-list">{globalScope
+            ? <Empty title="Consulta por país" detail="Selecciona un país en el explorador para ver sus provincias eclesiásticas sin mezclar territorios homónimos." />
+            : provinces.length === 0
+              ? <Empty title="Sin provincias publicadas" detail="El país seleccionado todavía no tiene provincias eclesiásticas públicas registradas." />
+              : provinces.map((item) => (
+                <article className="public-province-card" key={item.name}>
+                  <span className="public-node-icon" aria-hidden="true">⌂</span>
+                  <button onClick={() => { setProvince(item.name); setJurisdictionId('') }} type="button"><strong>{item.name}</strong><span>{item.count} jurisdicciones</span></button>
+                  <Link className="public-link" href={`/provincias-eclesiasticas/${slugify(item.name)}`}>Ver ficha →</Link>
+                </article>
+              ))}</div>
         </article>
 
         <article className="public-panel public-section-card public-jurisdictions-section">
@@ -57,7 +70,7 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
             <div className="public-table-head"><span>Jurisdicción</span><span>Tipo</span><span>Acción</span></div>
             {scopedDioceses.length === 0
               ? <Empty title="Sin jurisdicciones publicadas" detail="No hay arquidiócesis, diócesis u otras jurisdicciones públicas para este ámbito." />
-              : scopedDioceses.slice(0, 12).map((item) => <JurisdictionRow item={item} key={item.id} />)}
+              : scopedDioceses.slice(0, 12).map((item) => <JurisdictionRow item={item} key={item.id} showCountry={globalScope} />)}
             <div className="public-list-footer"><Link className="public-link" href={province ? `/diocesis?provincia=${encodeURIComponent(province)}` : '/diocesis'}>Ver directorio completo →</Link></div>
           </div>
         </article>
