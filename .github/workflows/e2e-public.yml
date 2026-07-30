@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - ci/visual-baseline-refresh
     paths:
       - '.github/workflows/e2e-public.yml'
       - 'e2e/**'
@@ -22,6 +21,9 @@ on:
       - 'src/components/ui/**'
       - 'src/features/access/admin/AdminLoginPage.tsx'
       - 'src/features/access/admin/RequestPasswordRecoveryPage.tsx'
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -55,6 +57,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -77,11 +81,11 @@ jobs:
         run: pnpm exec playwright install chromium --with-deps
 
       - name: Refresh visual baselines on review branch
-        if: github.ref_name == 'ci/visual-baseline-refresh' && matrix.indexing == 'disabled'
+        if: github.event_name == 'pull_request' && github.head_ref == 'ci/visual-baseline-refresh' && matrix.indexing == 'disabled'
         run: pnpm exec playwright test e2e/visual-evidence.spec.mjs --update-snapshots
 
       - name: Commit refreshed visual baselines
-        if: github.ref_name == 'ci/visual-baseline-refresh' && matrix.indexing == 'disabled'
+        if: github.event_name == 'pull_request' && github.head_ref == 'ci/visual-baseline-refresh' && matrix.indexing == 'disabled'
         shell: bash
         run: |
           if git diff --quiet -- e2e/visual-evidence.spec.mjs-snapshots; then
@@ -92,7 +96,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add e2e/visual-evidence.spec.mjs-snapshots
           git commit -m 'test(e2e): refresh visual baselines on linux'
-          git push origin HEAD:${GITHUB_REF_NAME}
+          git push origin HEAD:${GITHUB_HEAD_REF}
 
       - name: Run public accessibility and visual evidence suites
         shell: bash
