@@ -4,6 +4,7 @@ import { lazy, Suspense } from 'react'
 import type { PublicView } from '@/lib/public/dashboard'
 import styles from './PublicDashboardExplorer.module.css'
 import { views, type Props } from './PublicDashboardShared'
+import { PublicSearchableSelect } from './PublicSearchableSelect'
 import { PublicTerritorialView } from './PublicTerritorialView'
 import { usePublicDashboardModel } from './usePublicDashboardModel'
 
@@ -78,6 +79,19 @@ export default function PublicDashboardExplorer(props: Props) {
     resetScope,
   } = model
 
+  const countryOptions = [
+    { value: '', label: 'Todos los países' },
+    ...initialData.countries.map((item) => ({ value: item.key, label: item.name })),
+  ]
+  const provinceOptions = [
+    { value: '', label: country ? 'Todas las provincias' : 'Selecciona primero un país' },
+    ...provinces.map((item) => ({ value: item.name, label: item.name })),
+  ]
+  const jurisdictionOptions = [
+    { value: '', label: 'Todas las jurisdicciones' },
+    ...provinceDioceses.map((item) => ({ value: item.id, label: item.name })),
+  ]
+
   return (
     <>
       <section className="public-panel public-filter-panel" aria-labelledby="ambito-title" id="explorador">
@@ -86,38 +100,35 @@ export default function PublicDashboardExplorer(props: Props) {
           <button className="public-clear-button" onClick={resetScope} type="button">↻ Limpiar filtros</button>
         </div>
         <div className="public-filter-grid">
-          <label>
-            País
-            <select
-              value={country}
-              onChange={(event) => {
-                setCountry(event.target.value)
-                setProvince('')
-                setJurisdictionId('')
-              }}
-            >
-              <option value="">Todos los países</option>
-              {initialData.countries.map((item) => <option key={item.key} value={item.key}>{item.name}</option>)}
-            </select>
-          </label>
-          <label>
-            Provincia eclesiástica
-            <select
-              disabled={!country}
-              value={province}
-              onChange={(event) => { setProvince(event.target.value); setJurisdictionId('') }}
-            >
-              <option value="">{country ? 'Todas las provincias' : 'Selecciona primero un país'}</option>
-              {provinces.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
-            </select>
-          </label>
-          <label>
-            Jurisdicción
-            <select value={jurisdictionId} onChange={(event) => setJurisdictionId(event.target.value)}>
-              <option value="">Todas las jurisdicciones</option>
-              {provinceDioceses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </label>
+          <PublicSearchableSelect
+            label="País"
+            onChange={(nextCountry) => {
+              setCountry(nextCountry)
+              setProvince('')
+              setJurisdictionId('')
+            }}
+            options={countryOptions}
+            placeholder="Buscar país"
+            value={country}
+          />
+          <PublicSearchableSelect
+            disabled={!country}
+            label="Provincia eclesiástica"
+            onChange={(nextProvince) => {
+              setProvince(nextProvince)
+              setJurisdictionId('')
+            }}
+            options={provinceOptions}
+            placeholder={country ? 'Buscar provincia' : 'Selecciona primero un país'}
+            value={province}
+          />
+          <PublicSearchableSelect
+            label="Jurisdicción"
+            onChange={setJurisdictionId}
+            options={jurisdictionOptions}
+            placeholder="Buscar jurisdicción"
+            value={jurisdictionId}
+          />
           <label>
             Vista activa
             <select value={activeView} onChange={(event) => setActiveView(event.target.value as PublicView)}>
