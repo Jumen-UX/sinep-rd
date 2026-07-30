@@ -113,7 +113,7 @@ test('production build enforces route bundle budgets and server boundaries', asy
   assert.equal(sourceAudit.includes('public-detail-self-api-fetch'), true)
   assert.equal(sourceAudit.includes('public-dashboard-server-shell-required'), true)
   assert.equal(sourceAudit.includes('public-dashboard-shell-hydration'), true)
-  assert.equal(sourceAudit.includes('public-dashboard-theme-chunk-boundary'), true)
+  assert.equal(sourceAudit.includes('shared-accessibility-theme-control'), true)
   assert.equal(sourceAudit.includes('public-dashboard-explorer-boundary'), true)
   assert.equal(sourceAudit.includes('public-dashboard-react-lazy-boundary'), true)
   assert.equal(sourceAudit.includes('public-dashboard-secondary-view-lazy-load'), true)
