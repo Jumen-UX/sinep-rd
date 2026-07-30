@@ -43,3 +43,20 @@ test('entity profile exposes only available canonical sections to selective prin
     assert.match(entity, new RegExp(`data-print-section="${section}"`))
   }
 })
+
+test('place and institution profiles expose data-aware print sections', async () => {
+  const registry = await read('src/features/ecclesial-registry/public/PublicRegistryProfileView.tsx')
+
+  assert.match(registry, /PublicProfilePrintControls/)
+  assert.match(registry, /data-print-profile/)
+  assert.match(registry, /\{ id: 'encabezado', label: 'Encabezado y descripción' \}/)
+  assert.match(registry, /\{ id: 'informacion', label: 'Información principal' \}/)
+  assert.match(registry, /\{ id: 'relaciones', label: 'Relaciones vigentes' \}/)
+  assert.match(registry, /history\.length > 0 \? \[\{ id: 'historial'/)
+  assert.match(registry, /data\.channels\.length > 0 \? \[\{ id: 'contacto'/)
+  assert.match(registry, /record\.source_name \|\| record\.source_checked_at/)
+
+  for (const section of ['encabezado', 'informacion', 'relaciones', 'historial', 'contacto', 'fuente']) {
+    assert.match(registry, new RegExp(`data-print-section="${section}"`))
+  }
+})
