@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import PersonDetailServerView from '@/features/personas/PersonDetailServerView'
 import { loadPublicPersonDetail } from '@/lib/public/cache'
 
@@ -14,7 +15,18 @@ export default async function PersonDetailPage({ params }: PageProps) {
   try {
     const data = await loadPublicPersonDetail(slug)
     if (!data) notFound()
-    return <PersonDetailServerView data={data} />
+    return (
+      <>
+        <div className="container detail-page">
+          <PublicBreadcrumbs items={[
+            { label: 'Inicio', href: '/' },
+            { label: 'Personas', href: '/personas' },
+            { label: data.person.display_name },
+          ]} />
+        </div>
+        <PersonDetailServerView data={data} />
+      </>
+    )
   } catch (error) {
     console.error('Unable to server render public person detail', error)
     return <main className="container"><div className="error-box">No se pudo cargar la ficha de la persona.</div></main>
