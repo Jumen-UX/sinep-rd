@@ -101,11 +101,12 @@ export function Empty({ title, detail }: { title: string; detail: string }) {
   return <div className="public-empty"><strong>{title}</strong><br /><span>{detail}</span></div>
 }
 
-export function JurisdictionRow({ item }: { item: Diocese }) {
+export function JurisdictionRow({ item, showCountry = false }: { item: Diocese; showCountry?: boolean }) {
   const ordinary = splitValues(item.current_ordinary_name).find((name) => !normalize(name).includes('vacante'))
+  const context = [ordinary ?? 'Ordinario no publicado', showCountry ? item.country_name : null].filter(Boolean).join(' · ')
   return (
     <Link className="public-row" href={`/entidades/${item.slug}`}>
-      <span className="public-row-main"><span className="public-row-icon" aria-hidden="true">{isSpecial(item) ? '盾' : '⌂'}</span><span><strong>{item.name}</strong><small>{ordinary ?? 'Ordinario no publicado'}</small></span></span>
+      <span className="public-row-main"><span className="public-row-icon" aria-hidden="true">{isSpecial(item) ? '盾' : '⌂'}</span><span><strong>{item.name}</strong><small>{context}</small></span></span>
       <span className="public-type">{item.entity_type_name ?? 'Jurisdicción'}</span>
       <span className="public-link">Ver ficha →</span>
     </Link>
