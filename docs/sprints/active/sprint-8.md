@@ -69,7 +69,16 @@ La apertura futura debe comprobar metadata, `/robots.txt`, `/sitemap.xml` y cano
 - Una URL que abre directamente `?vista=clero`, `pastoral`, `administrativa` o `colegial` conserva renderizado inicial con el bundle completo.
 - Los endpoints `/api/dashboard/vistas` y `/api/dashboard/resumen` mantienen sus contratos existentes y se consultan en paralelo con cancelación mediante `AbortController`.
 - La interfaz diferencia carga, error y reintento sin sustituir ni degradar la vista territorial disponible.
-- La mejora no se declara validada por CI hasta contar con una ejecución completa sobre el commit que la contiene.
+- La mejora fue validada por CI sobre `200fd8a93f88832502dbf33766340ba5d7569498`.
+
+### Optimización posterior — toolchain y caché de compilación
+
+- Next.js 15 aporta `sharp` como dependencia de optimización de imágenes; el lockfile fija `sharp@0.34.5` y sus binarios Linux glibc y musl.
+- `pnpm-workspace.yaml` mantiene `sharp` como única dependencia con script nativo autorizado mediante `onlyBuiltDependencies`.
+- GitHub Actions conserva el caché del almacén de pnpm y añade `.next/cache` como caché incremental de compilación.
+- La clave del caché incremental incorpora sistema operativo, Node 24, hash de `pnpm-lock.yaml` y commit; las claves de restauración permiten reutilización segura entre commits compatibles.
+- No se cachea `.next` completo ni la salida desplegable, evitando reutilizar artefactos de producción obsoletos.
+- `tests/deployment-build-contract.test.mjs` protege estos límites; la validación CI del cambio permanece pendiente.
 
 ## S8-06 — Índices revisados y aplicados
 
