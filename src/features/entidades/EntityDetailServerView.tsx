@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import EntityDynamicOrganizationChart from './EntityDynamicOrganizationChart'
 import EntityInstitutionalTimeline from './EntityInstitutionalTimeline'
 import EntityProfileNavigation from './EntityProfileNavigation'
@@ -58,20 +59,26 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
 
   return (
     <main className="container dashboard-page public-entity-detail">
+      <PublicBreadcrumbs items={[
+        { label: 'Inicio', href: '/' },
+        { label: 'Diócesis y jurisdicciones', href: '/diocesis' },
+        { label: entity.name },
+      ]} />
+
       <div className="dashboard-hero card dashboard-hero-split">
         <div>
           <p className="eyebrow">Ficha institucional</p>
           <h1>{entity.name}</h1>
           <p className="lead">{entity.description ?? 'Información institucional y trayectoria histórica'}</p>
         </div>
-        <aside className="dashboard-path-card" aria-label="Ruta de la entidad">
-          <p className="eyebrow">Ruta</p>
+        <aside className="dashboard-path-card" aria-label="Ruta territorial de la entidad">
+          <p className="eyebrow">Ámbito territorial</p>
           <div className="dashboard-path-list">
             <span>{entity.country ?? 'República Dominicana'}</span>
             <span>{entity.province ?? '—'}</span>
             <span>{entity.municipality ?? '—'}</span>
           </div>
-          <Link className="inline-link" href="/diocesis">Volver al directorio</Link>
+          <Link className="inline-link" href="/diocesis">Explorar otras jurisdicciones</Link>
         </aside>
       </div>
 
@@ -118,21 +125,15 @@ export default function EntityDetailServerView({ data }: { data: PublicEntityDet
       )}
 
       <div id="jerarquia">
-        <EntityRelationshipMap
-          entity={entity}
-          relatedEntities={data.related_entities}
-          relationships={data.relationships}
-        />
+        <EntityRelationshipMap entity={entity} relatedEntities={data.related_entities} relationships={data.relationships} />
       </div>
 
       <div id="historia">
-        <EntityInstitutionalTimeline
-          payload={{
-            entity: { name: entity.name, erected_at: entity.erected_at },
-            evolution_events: data.evolution_events,
-            appointment_history: data.appointment_history,
-          }}
-        />
+        <EntityInstitutionalTimeline payload={{
+          entity: { name: entity.name, erected_at: entity.erected_at },
+          evolution_events: data.evolution_events,
+          appointment_history: data.appointment_history,
+        }} />
       </div>
 
       {statisticsSnapshots.length > 0 && (
