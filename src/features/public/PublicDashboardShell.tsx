@@ -2,7 +2,6 @@ import Link from 'next/link'
 import PublicDashboardExplorer from './PublicDashboardExplorer'
 import { sideNav } from './PublicDashboardNavigation'
 import type { Props } from './PublicDashboardShared'
-import { PublicDashboardThemeControl } from './PublicDashboardThemeControl'
 
 export default function PublicDashboardShell(props: Props) {
   return (
@@ -15,7 +14,6 @@ export default function PublicDashboardShell(props: Props) {
             <span className="public-brand-subtitle">Sistema de Información<br />Eclesial Pastoral</span>
           </span>
         </Link>
-        <PublicDashboardThemeControl />
         <Link className="public-mobile-icon-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
       </header>
 
@@ -48,7 +46,7 @@ export default function PublicDashboardShell(props: Props) {
 
       <main className="public-main">
         <div className="public-topbar">
-          <PublicDashboardThemeControl />
+          <span className="meta">Apariencia y accesibilidad disponibles en el botón flotante.</span>
           <Link className="public-user-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
         </div>
 
