@@ -40,16 +40,18 @@ test('entity detail links back through the canonical jurisdiction directory', as
   assert.match(entity, /aria-label="Ruta territorial de la entidad"/)
 })
 
-test('person and registry profiles expose canonical detail breadcrumbs', async () => {
-  const [person, registryProfile] = await Promise.all([
+test('person and registry profiles expose canonical detail breadcrumbs without duplicate back links', async () => {
+  const [personPage, personView, registryProfile] = await Promise.all([
     read('src/app/(public)/personas/[slug]/page.tsx'),
+    read('src/features/personas/PersonDetailServerView.tsx'),
     read('src/features/ecclesial-registry/public/PublicRegistryProfileView.tsx'),
   ])
 
-  assert.match(person, /PublicBreadcrumbs/)
-  assert.match(person, /label: 'Inicio', href: '\/'/)
-  assert.match(person, /label: 'Personas', href: '\/personas'/)
-  assert.match(person, /label: data\.person\.display_name/)
+  assert.match(personPage, /PublicBreadcrumbs/)
+  assert.match(personPage, /label: 'Inicio', href: '\/'/)
+  assert.match(personPage, /label: 'Personas', href: '\/personas'/)
+  assert.match(personPage, /label: data\.person\.display_name/)
+  assert.doesNotMatch(personView, /detail-backlink|Volver al directorio de personas/)
 
   assert.match(registryProfile, /PublicBreadcrumbs/)
   assert.match(registryProfile, /label: 'Inicio', href: '\/'/)
