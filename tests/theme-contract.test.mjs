@@ -19,10 +19,9 @@ test('root layout resolves the persisted theme before interactive rendering', as
   assert.doesNotMatch(layout, /ThemeControl|next\/link|site-header|site-footer/)
 })
 
-test('theme controls share persistence logic without sharing route presentation', async () => {
-  const [control, dashboardControl, preferenceHook] = await Promise.all([
-    source('src/components/theme/ThemeControl.tsx'),
-    source('src/features/public/PublicDashboardThemeControl.tsx'),
+test('accessibility tools own the only visible appearance control', async () => {
+  const [accessibilityTools, preferenceHook] = await Promise.all([
+    source('src/components/accessibility/AccessibilityTools.tsx'),
     source('src/components/theme/useThemePreference.ts'),
   ])
 
@@ -33,16 +32,14 @@ test('theme controls share persistence logic without sharing route presentation'
   assert.match(preferenceHook, /const \[ready, setReady\] = useState\(false\)/)
   assert.match(preferenceHook, /applyTheme\(initialPreference, media\)\s*setReady\(true\)/)
 
-  for (const surface of [control, dashboardControl]) {
-    assert.match(surface, /useThemePreference\(\)/)
-    assert.match(surface, /disabled=\{!ready\}/)
-    assert.match(surface, /<option value="light">Claro<\/option>/)
-    assert.match(surface, /<option value="dark">Oscuro<\/option>/)
-    assert.match(surface, /<option value="system">Automático<\/option>/)
-  }
+  assert.match(accessibilityTools, /useThemePreference\(\)/)
+  assert.match(accessibilityTools, /\['light', 'Claro'\]/)
+  assert.match(accessibilityTools, /\['dark', 'Oscuro'\]/)
+  assert.match(accessibilityTools, /\['system', 'Automático'\]/)
+  assert.match(accessibilityTools, /aria-pressed=\{themePreference === value\}/)
 })
 
-test('public and administrative shells expose isolated appearance controls', async () => {
+test('public and administrative shells expose no duplicate theme controls', async () => {
   const [publicLayout, adminShell, publicShell, publicExplorer] = await Promise.all([
     source('src/app/(public)/layout.tsx'),
     source('src/app/(admin)/admin/AdminShell.tsx'),
@@ -50,14 +47,9 @@ test('public and administrative shells expose isolated appearance controls', asy
     source('src/features/public/PublicDashboardExplorer.tsx'),
   ])
 
-  assert.match(publicLayout, /import \{ ThemeControl \}/)
-  assert.match(publicLayout, /<ThemeControl compact \/>/)
-  assert.match(adminShell, /import \{ ThemeControl \}/)
-  assert.match(adminShell, /<ThemeControl \/>/)
-  assert.match(publicShell, /import \{ PublicDashboardThemeControl \}/)
-  assert.match(publicShell, /public-mobile-header[\s\S]*<PublicDashboardThemeControl \/>/)
-  assert.match(publicShell, /public-topbar[\s\S]*<PublicDashboardThemeControl \/>/)
-  assert.doesNotMatch(publicShell, /@\/components\/theme\/ThemeControl/)
+  for (const shell of [publicLayout, adminShell, publicShell]) {
+    assert.doesNotMatch(shell, /ThemeControl|PublicDashboardThemeControl/)
+  }
   assert.doesNotMatch(publicShell, /['"]use client['"]/)
   assert.match(publicExplorer, /^['"]use client['"]/)
 })
@@ -161,14 +153,13 @@ test('brand layer preserves dark surfaces instead of restoring the light gradien
   assert.match(brand, /\.button-primary\s*\{[^}]*color:\s*var\(--on-primary\)/s)
 })
 
-test('public dashboard exposes visible theme controls and semantic surfaces', async () => {
+test('public dashboard exposes semantic surfaces', async () => {
   const dashboard = await source('src/app/public-dashboard.css')
 
   assert.match(dashboard, /body:has\(\.public-dashboard-layout\)\s*\{[^}]*background:\s*var\(--surface-subtle\)/s)
   assert.match(dashboard, /\.public-sidebar\s*\{[^}]*background:\s*color-mix\([^;]*var\(--surface\)/s)
   assert.match(dashboard, /\.public-panel\s*\{[^}]*background:\s*color-mix\([^;]*var\(--surface\)/s)
   assert.match(dashboard, /\.public-mobile-header\s*\{[^}]*background:\s*color-mix\([^;]*var\(--surface\)/s)
-  assert.match(dashboard, /\.public-mobile-header \[data-ui='theme-control'\] select\s*\{[^}]*min-width:\s*6\.5rem/s)
 })
 
 test('wizard and jurisdiction surfaces use semantic colors in every theme', async () => {
