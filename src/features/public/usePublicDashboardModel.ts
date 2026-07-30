@@ -34,11 +34,7 @@ export function usePublicDashboardModel({
     initialDataComplete,
     initialSummary,
   })
-  const defaultCountry = useMemo(() => (
-    dashboardData.countries.some((item) => item.key === 'DO')
-      ? 'DO'
-      : dashboardData.countries[0]?.key ?? 'DO'
-  ), [dashboardData.countries])
+  const defaultCountry = ''
 
   useEffect(() => {
     const search = buildPublicDashboardSearch(window.location.search, {
@@ -54,14 +50,16 @@ export function usePublicDashboardModel({
     if (nextUrl !== currentUrl) {
       window.history.replaceState(window.history.state, '', nextUrl)
     }
-  }, [activeView, country, defaultCountry, jurisdictionId, province])
+  }, [activeView, country, jurisdictionId, province])
 
   const scope = useMemo(
     () => buildPublicDashboardScope(dashboardData, country, province, jurisdictionId),
     [country, dashboardData, jurisdictionId, province],
   )
   const countryName = useMemo(
-    () => dashboardData.countries.find((row) => row.key === country)?.name ?? 'República Dominicana',
+    () => country
+      ? dashboardData.countries.find((row) => row.key === country)?.name ?? 'País seleccionado'
+      : 'Todos los países',
     [country, dashboardData.countries],
   )
   const countryPeople = useMemo<PersonCard[]>(() => dashboardData.people.map((item) => ({
@@ -76,10 +74,10 @@ export function usePublicDashboardModel({
     [...scope.ordinaryPeople, ...scope.assignmentPeople].map((item) => [item.id, item]),
   ).values()), [scope.assignmentPeople, scope.ordinaryPeople])
   const peopleBase = useMemo(() => (
-    scope.scopeFiltered || country !== defaultCountry
+    scope.scopeFiltered
       ? territoriallyLinkedPeople
       : countryPeople
-  ), [country, countryPeople, defaultCountry, scope.scopeFiltered, territoriallyLinkedPeople])
+  ), [countryPeople, scope.scopeFiltered, territoriallyLinkedPeople])
   const visiblePeople = useMemo(
     () => peopleBase.filter((item) => !personType || item.personType === personType).slice(0, 24),
     [peopleBase, personType],
@@ -105,6 +103,7 @@ export function usePublicDashboardModel({
   )
 
   function resetScope() {
+    setCountry('')
     setProvince('')
     setJurisdictionId('')
     setPersonType('')
