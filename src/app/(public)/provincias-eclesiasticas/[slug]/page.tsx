@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import { loadPublicEcclesiasticalProvinceDetail } from '@/lib/public/cache'
 
 type PageProps = {
@@ -30,7 +31,11 @@ export default async function EcclesiasticalProvincePage({ params }: PageProps) 
 
   return (
     <main className="container dashboard-page home-dashboard">
-      <div className="detail-backlink"><Link href={`/?vista=territorial&provincia=${province.slug}`}>← Volver al explorador</Link></div>
+      <PublicBreadcrumbs items={[
+        { label: 'Inicio', href: '/' },
+        { label: 'Diócesis y jurisdicciones', href: '/diocesis' },
+        { label: province.name },
+      ]} />
 
       <section className="home-hero-panel card">
         <div className="home-hero-copy">
