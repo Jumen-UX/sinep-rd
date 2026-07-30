@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import PublicDashboardExplorer from './PublicDashboardExplorer'
+import PublicLandingIntro from './PublicLandingIntro'
 import { sideNav } from './PublicDashboardNavigation'
 import type { Props } from './PublicDashboardShared'
 
@@ -11,7 +12,7 @@ export default function PublicDashboardShell(props: Props) {
           <span className="public-brand-mark" aria-hidden="true">✛</span>
           <span>
             <span className="public-brand-title">SINEP RD</span>
-            <span className="public-brand-subtitle">Sistema de Información<br />Eclesial Pastoral</span>
+            <span className="public-brand-subtitle">Información eclesial<br />y pastoral</span>
           </span>
         </Link>
         <Link className="public-mobile-icon-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
@@ -22,7 +23,7 @@ export default function PublicDashboardShell(props: Props) {
           <span className="public-brand-mark" aria-hidden="true">✛</span>
           <span>
             <span className="public-brand-title">SINEP RD</span>
-            <span className="public-brand-subtitle">Sistema de Información<br />Eclesial Pastoral</span>
+            <span className="public-brand-subtitle">Información eclesial<br />y pastoral</span>
           </span>
         </Link>
         <nav className="public-sidebar-nav">
@@ -38,9 +39,9 @@ export default function PublicDashboardShell(props: Props) {
           ))}
         </nav>
         <div className="public-sidebar-footer">
-          <strong>Sistema eclesial</strong>
-          <span>Cobertura internacional</span>
-          <span>Entorno de desarrollo</span>
+          <strong>Plataforma eclesial</strong>
+          <span>Cobertura internacional progresiva</span>
+          <span>Base inicial: República Dominicana</span>
         </div>
       </aside>
 
@@ -49,6 +50,7 @@ export default function PublicDashboardShell(props: Props) {
           <Link className="public-user-button" href="/admin/login" aria-label="Iniciar sesión">◎</Link>
         </div>
 
+        <PublicLandingIntro />
         <PublicDashboardExplorer {...props} />
 
         <nav className="public-bottom-nav" aria-label="Navegación móvil">
