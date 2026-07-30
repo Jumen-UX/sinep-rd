@@ -13,10 +13,12 @@ export function buildPublicDashboardScope(
     ))
     : initialData.dioceses
   const provinceMap = new Map<string, number>()
-  countryDioceses.filter((item) => !isSpecial(item)).forEach((item) => {
-    const name = item.ecclesiastical_province_name
-    if (name) provinceMap.set(name, (provinceMap.get(name) ?? 0) + 1)
-  })
+  if (country) {
+    countryDioceses.filter((item) => !isSpecial(item)).forEach((item) => {
+      const name = item.ecclesiastical_province_name
+      if (name) provinceMap.set(name, (provinceMap.get(name) ?? 0) + 1)
+    })
+  }
   const provinces = Array.from(provinceMap, ([name, count]) => ({ name, count }))
     .sort((a, b) => a.name.localeCompare(b.name, 'es'))
   const provinceDioceses = province
