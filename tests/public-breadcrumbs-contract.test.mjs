@@ -41,26 +41,26 @@ test('entity detail links back through the canonical jurisdiction directory', as
 })
 
 test('person and registry profiles expose canonical detail breadcrumbs', async () => {
-  const [person, place, institution] = await Promise.all([
+  const [person, registryProfile] = await Promise.all([
     read('src/app/(public)/personas/[slug]/page.tsx'),
-    read('src/app/(public)/lugares/[slug]/page.tsx'),
-    read('src/app/(public)/instituciones/[slug]/page.tsx'),
+    read('src/features/ecclesial-registry/public/PublicRegistryProfileView.tsx'),
   ])
 
-  for (const source of [person, place, institution]) {
-    assert.match(source, /PublicBreadcrumbs/)
-    assert.match(source, /label: 'Inicio', href: '\/'/)
-  }
-
+  assert.match(person, /PublicBreadcrumbs/)
+  assert.match(person, /label: 'Inicio', href: '\/'/)
   assert.match(person, /label: 'Personas', href: '\/personas'/)
-  for (const source of [place, institution]) {
-    assert.match(source, /label: 'Diócesis y jurisdicciones', href: '\/diocesis'/)
-    assert.match(source, /primary_entity_slug/)
-    assert.match(source, /href: `\/entidades\/\$\{data\.primary_entity_slug\}`/)
-  }
+  assert.match(person, /label: data\.person\.display_name/)
+
+  assert.match(registryProfile, /PublicBreadcrumbs/)
+  assert.match(registryProfile, /label: 'Inicio', href: '\/'/)
+  assert.match(registryProfile, /label: 'Diócesis y jurisdicciones', href: '\/diocesis'/)
+  assert.match(registryProfile, /primary_entity_slug/)
+  assert.match(registryProfile, /href: `\/entidades\/\$\{data\.primary_entity_slug\}`/)
+  assert.match(registryProfile, /target_kind === 'organization_unit'/)
+  assert.match(registryProfile, /`\/pastoral\/\$\{item\.target_slug\}`/)
 })
 
-test('structural detail routes expose their public explorer hierarchy', async () => {
+test('structural detail routes expose their public explorer hierarchy without redundant back links', async () => {
   const routes = await Promise.all([
     read('src/app/(public)/provincias-eclesiasticas/[slug]/page.tsx'),
     read('src/app/(public)/pastoral/[slug]/page.tsx'),
@@ -71,6 +71,7 @@ test('structural detail routes expose their public explorer hierarchy', async ()
   for (const source of routes) {
     assert.match(source, /PublicBreadcrumbs/)
     assert.match(source, /label: 'Inicio', href: '\/'/)
+    assert.doesNotMatch(source, /detail-backlink|Volver al explorador/)
   }
 
   assert.match(routes[0], /label: 'Diócesis y jurisdicciones', href: '\/diocesis'/)
