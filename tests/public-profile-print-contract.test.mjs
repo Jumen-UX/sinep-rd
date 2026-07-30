@@ -64,3 +64,20 @@ test('place and institution profiles expose data-aware print sections', async ()
     assert.match(registry, new RegExp(`data-print-section="${section}"`))
   }
 })
+
+test('person profiles expose canonical and data-aware print groups', async () => {
+  const person = await read('src/features/personas/PersonDetailServerView.tsx')
+
+  assert.match(person, /PublicProfilePrintControls/)
+  assert.match(person, /data-print-profile/)
+  assert.match(person, /\{ id: 'resumen', label: 'Resumen e indicadores' \}/)
+  assert.match(person, /\{ id: 'identidad', label: 'Identidad y situación canónica' \}/)
+  assert.match(person, /\{ id: 'ordenaciones', label: 'Historia sacramental' \}/)
+  assert.match(person, /hasEpiscopalData \? \[\{ id: 'episcopado'/)
+  assert.match(person, /hasCanonicalHistory \? \[\{ id: 'historia'/)
+  assert.match(person, /movements\.length > 0 \? \[\{ id: 'movimientos'/)
+
+  for (const section of ['resumen', 'identidad', 'ordenaciones', 'episcopado', 'cargos', 'historia', 'movimientos']) {
+    assert.match(person, new RegExp(`data-print-section="${section}"`))
+  }
+})
