@@ -34,15 +34,14 @@ export default async function HomePage({ searchParams }: PageProps) {
     const { data: initialData, summary: initialSummary } = initialDataComplete
       ? await loadPublicDashboardBundle()
       : await loadPublicTerritorialDashboardBundle()
-    const defaultCountry = initialData.countries.some((item) => item.key === 'DO')
-      ? 'DO'
-      : initialData.countries[0]?.key ?? 'DO'
     const initialCountry = requestedCountry && initialData.countries.some((item) => item.key === requestedCountry)
       ? requestedCountry
-      : defaultCountry
-    const countryDioceses = initialData.dioceses.filter((item) => (
-      item.country_iso2 ? item.country_iso2 === initialCountry : initialCountry === 'DO'
-    ))
+      : ''
+    const countryDioceses = initialCountry
+      ? initialData.dioceses.filter((item) => (
+        item.country_iso2 ? item.country_iso2 === initialCountry : initialCountry === 'DO'
+      ))
+      : initialData.dioceses
     const initialProvince = countryDioceses.find((item) => {
       const provinceName = item.ecclesiastical_province_name
       return provinceName && (provinceName === requestedProvince || slugify(provinceName) === requestedProvince)
