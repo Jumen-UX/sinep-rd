@@ -35,13 +35,31 @@ export function PublicProfilePrintControls({ sections }: Props) {
     if (!profile) return
 
     const printableSections = profile.querySelectorAll<HTMLElement>('[data-print-section]')
+    const detailsState: Array<{ element: HTMLDetailsElement; wasOpen: boolean }> = []
+
     printableSections.forEach((section) => {
       const sectionId = section.dataset.printSection
-      section.toggleAttribute('data-print-hidden', Boolean(sectionId && !selected.has(sectionId)))
+      const isSelected = Boolean(sectionId && selected.has(sectionId))
+      section.toggleAttribute('data-print-hidden', Boolean(sectionId && !isSelected))
+
+      if (!isSelected) return
+
+      const detailsElements = [
+        ...(section instanceof HTMLDetailsElement ? [section] : []),
+        ...section.querySelectorAll<HTMLDetailsElement>('details'),
+      ]
+
+      detailsElements.forEach((details) => {
+        detailsState.push({ element: details, wasOpen: details.open })
+        details.open = true
+      })
     })
 
     const cleanup = () => {
       printableSections.forEach((section) => section.removeAttribute('data-print-hidden'))
+      detailsState.forEach(({ element, wasOpen }) => {
+        element.open = wasOpen
+      })
       window.removeEventListener('afterprint', cleanup)
     }
 
