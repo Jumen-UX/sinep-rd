@@ -53,27 +53,3 @@
     inline-size: 100%;
   }
 }
-
-@media print {
-  .controls,
-  :global([data-print-controls]),
-  :global(.site-header),
-  :global(.site-footer),
-  :global(.skip-link),
-  :global(.accessibility-tools) {
-    display: none !important;
-  }
-
-  :global([data-print-hidden]) {
-    display: none !important;
-  }
-
-  :global([data-print-profile]) {
-    max-width: none !important;
-    padding: 0 !important;
-  }
-
-  :global([data-print-section]) {
-    break-inside: avoid;
-  }
-}
