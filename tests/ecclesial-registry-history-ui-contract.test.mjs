@@ -32,6 +32,8 @@ test('primary affiliation transitions are historical instead of in-place rewrite
 
   assert.match(migration, /ecclesiastical_place_affiliations_one_current_primary_idx/)
   assert.match(migration, /ecclesial_institution_affiliations_one_current_primary_idx/)
+  assert.match(migration, /case when new\.is_primary_seat then 'seat_of' else 'belongs_to' end/)
+  assert.match(migration, /old\.is_primary_seat is distinct from new\.is_primary_seat/)
   assert.match(migration, /valid_to = current_date/)
   assert.match(migration, /is_current = false/)
   assert.match(migration, /status = 'inactive'/)
