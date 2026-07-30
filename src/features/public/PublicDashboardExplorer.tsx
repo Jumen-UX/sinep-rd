@@ -88,7 +88,15 @@ export default function PublicDashboardExplorer(props: Props) {
         <div className="public-filter-grid">
           <label>
             País
-            <select value={country} onChange={(event) => { setCountry(event.target.value); resetScope() }}>
+            <select
+              value={country}
+              onChange={(event) => {
+                setCountry(event.target.value)
+                setProvince('')
+                setJurisdictionId('')
+              }}
+            >
+              <option value="">Todos los países</option>
               {initialData.countries.map((item) => <option key={item.key} value={item.key}>{item.name}</option>)}
             </select>
           </label>
