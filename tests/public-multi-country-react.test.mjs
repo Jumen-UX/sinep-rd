@@ -27,7 +27,7 @@ test('multi-country territorial rendering stays inside the typed React dashboard
   assert.match(scopeBuilder, /scopedPastoral = initialData\.organization_units\.filter\(\(item\) => inTerritorialScope/)
   assert.match(scopeBuilder, /\.filter\(\(item\) => assignmentMatches\(item, scopedSlugs\)\)/)
 
-  assert.match(dashboardModel, /initialData\.countries\.some\(\(item\) => item\.key === 'DO'\)/)
+  assert.match(dashboardModel, /dashboardData\.countries\.some\(\(item\) => item\.key === 'DO'\)/)
   assert.match(dashboardModel, /scope\.scopeFiltered \|\| country !== defaultCountry/)
   assert.match(dashboardModel, /territoriallyLinkedPeople/)
 
