@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import { loadDashboardSummary } from '@/lib/public/dashboard'
 import { loadDioceseDirectory, normalizeDioceseFilter, type DioceseFilter } from '@/lib/public/directories'
 import { buildPublicMetadata } from '@/lib/public/metadata'
@@ -46,6 +47,7 @@ export default async function DiocesisPage({ searchParams }: PageProps) {
 
     return (
       <main className="container dashboard-page">
+        <PublicBreadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Diócesis y jurisdicciones' }]} />
         <div className="dashboard-hero card dashboard-hero-split">
           <div><p className="eyebrow">Directorio jerárquico</p><h1>Diócesis y jurisdicciones</h1><p className="lead">Consulta renderizada desde el servidor de la organización territorial-canónica. Cada resultado abre su ficha pública y su historial institucional.</p></div>
           <aside className="dashboard-path-card" aria-label="Ruta activa"><p className="eyebrow">Ruta activa</p><div className="dashboard-path-list"><span>República Dominicana</span><span>{province ?? 'Todas las provincias eclesiásticas'}</span><span>{filterTitle(filter)}</span></div><Link className="inline-link" href="/?vista=territorial">Volver al dashboard territorial</Link></aside>
