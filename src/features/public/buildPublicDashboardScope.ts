@@ -61,6 +61,7 @@ export function buildPublicDashboardScope(
   const ordinaryPeople: PersonCard[] = scopedDioceses.flatMap((item) => {
     const names = splitValues(item.current_ordinary_name).filter((name) => !normalize(name).includes('vacante'))
     const titles = splitValues(item.current_ordinary_title)
+    const territorialScope = [item.name, country ? null : item.country_name].filter(Boolean).join(' · ')
     return names.map((name, index) => ({
       id: `${item.id}-${index}`,
       name,
@@ -68,7 +69,7 @@ export function buildPublicDashboardScope(
       href: `/entidades/${item.slug}`,
       personType: 'bishop',
       role: titles[index] ?? titles[0] ?? 'Obispo u ordinario',
-      scope: item.name,
+      scope: territorialScope,
     }))
   })
 
