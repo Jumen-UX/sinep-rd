@@ -31,7 +31,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             <span className="brand-mark" aria-hidden="true">SD</span>
             <span>
               <strong>SINEP RD</strong>
-              <small>Sistema de Información Eclesial</small>
+              <small>Información eclesial y pastoral</small>
             </span>
           </Link>
           <div className="site-header-actions">
@@ -51,7 +51,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
       <footer className="site-footer">
         <div className="container">
-          <p>SINEP RD · Sistema Nacional de Información Eclesiástica y Pastoral</p>
+          <p>SINEP RD · Plataforma de información eclesiástica y pastoral</p>
           <nav className="site-footer-links" aria-label="Información legal">
             <Link href="/privacidad">Privacidad</Link>
             <Link href="/cookies">Cookies</Link>
