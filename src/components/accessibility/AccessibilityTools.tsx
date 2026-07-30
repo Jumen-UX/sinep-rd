@@ -158,7 +158,7 @@ export function AccessibilityTools() {
   return (
     <div className="accessibility-tools" data-ui="accessibility-tools" ref={containerRef}>
       {open && (
-        <section aria-label="Herramientas de accesibilidad" aria-labelledby={headingId} aria-modal="false" className="accessibility-tools__panel" id={panelId} role="dialog">
+        <section aria-label="Herramientas de accesibilidad" aria-modal="false" className="accessibility-tools__panel" id={panelId} role="dialog">
           <header className="accessibility-tools__header">
             <div>
               <p className="accessibility-tools__eyebrow">Preferencias personales</p>
