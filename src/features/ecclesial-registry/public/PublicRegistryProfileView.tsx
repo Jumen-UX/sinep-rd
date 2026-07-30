@@ -1,5 +1,9 @@
 import Link from 'next/link'
 import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
+import {
+  PublicProfilePrintControls,
+  type PublicProfilePrintSection,
+} from '@/components/public/PublicProfilePrintControls'
 import type {
   PublicInstitutionProfile,
   PublicPlaceProfile,
@@ -69,16 +73,26 @@ export default function PublicRegistryProfileView({ data }: Props) {
   const parentItems = data.primary_entity_slug
     ? [{ label: data.primary_entity_name ?? 'Entidad principal', href: `/entidades/${data.primary_entity_slug}` }]
     : [{ label: 'Diócesis y jurisdicciones', href: '/diocesis' }]
+  const printSections: PublicProfilePrintSection[] = [
+    { id: 'encabezado', label: 'Encabezado y descripción' },
+    { id: 'informacion', label: 'Información principal' },
+    { id: 'relaciones', label: 'Relaciones vigentes' },
+    ...(history.length > 0 ? [{ id: 'historial', label: 'Historial de relaciones' }] : []),
+    ...(data.channels.length > 0 ? [{ id: 'contacto', label: 'Contacto y medios' }] : []),
+    ...((record.source_name || record.source_checked_at) ? [{ id: 'fuente', label: 'Fuente y verificación' }] : []),
+  ]
 
   return (
-    <main className="container dashboard-page registry-public-profile">
+    <main className="container dashboard-page registry-public-profile" data-print-profile>
       <PublicBreadcrumbs items={[
         { label: 'Inicio', href: '/' },
         ...parentItems,
         { label: title },
       ]} />
 
-      <header className="detail-hero">
+      <PublicProfilePrintControls sections={printSections} />
+
+      <header className="detail-hero" data-print-section="encabezado">
         <p className="eyebrow">{kindLabel ?? (data.kind === 'place' ? 'Lugar eclesiástico' : 'Institución eclesial')}</p>
         <h1>{title}</h1>
         {record.description ? <p className="lead">{String(record.description)}</p> : null}
@@ -90,7 +104,7 @@ export default function PublicRegistryProfileView({ data }: Props) {
         ) : null}
       </header>
 
-      <section className="dashboard-card">
+      <section className="dashboard-card" data-print-section="informacion">
         <h2>Información principal</h2>
         <dl className="detail-grid">
           {record.address ? <><dt>Dirección</dt><dd>{String(record.address)}</dd></> : null}
@@ -105,20 +119,20 @@ export default function PublicRegistryProfileView({ data }: Props) {
         </dl>
       </section>
 
-      <section className="dashboard-card">
+      <section className="dashboard-card" data-print-section="relaciones">
         <h2>Relaciones vigentes</h2>
         <AffiliationList items={current} />
       </section>
 
       {history.length > 0 ? (
-        <details className="dashboard-card">
+        <details className="dashboard-card" data-print-section="historial">
           <summary><strong>Ver historial de relaciones ({history.length})</strong></summary>
           <AffiliationList items={history} />
         </details>
       ) : null}
 
       {data.channels.length > 0 ? (
-        <section className="dashboard-card">
+        <section className="dashboard-card" data-print-section="contacto">
           <h2>Contacto y medios</h2>
           <ul className="detail-list">
             {data.channels.map((channel) => (
@@ -129,7 +143,7 @@ export default function PublicRegistryProfileView({ data }: Props) {
       ) : null}
 
       {(record.source_name || record.source_checked_at) ? (
-        <footer className="meta source-note">
+        <footer className="meta source-note" data-print-section="fuente">
           Fuente: {String(record.source_name ?? 'registro institucional')}
           {record.source_checked_at ? ` · verificada el ${formatDate(record.source_checked_at)}` : ''}
         </footer>
