@@ -7,7 +7,7 @@ import { buildPublicMetadata } from '@/lib/public/metadata'
 
 export const metadata: Metadata = buildPublicMetadata({
   title: 'Personas',
-  description: 'Directorio público de obispos, sacerdotes, diáconos, personas consagradas y laicos registrados en SINEP RD.',
+  description: 'Directorio público internacional de obispos, sacerdotes, diáconos, personas consagradas y laicos registrados en SINEP RD.',
   path: '/personas',
 })
 
@@ -48,16 +48,33 @@ export default async function PersonasPage({ searchParams }: PageProps) {
       <main className="container dashboard-page">
         <PublicBreadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Personas' }]} />
         <div className="dashboard-hero card dashboard-hero-split">
-          <div><p className="eyebrow">Directorio pastoral</p><h1>Personas</h1><p className="lead">Listado renderizado desde el servidor por grado del Orden, condición laical y vida consagrada. Cada nombre abre su ficha canónica y ministerial.</p></div>
-          <aside className="dashboard-path-card"><p className="eyebrow">Vista activa</p><div className="dashboard-path-list"><span>República Dominicana</span><span>{filterLabel(filter)}</span><span>{items.length} resultados</span></div><Link className="inline-link" href="/?vista=clero">Volver al dashboard de clero</Link></aside>
+          <div>
+            <p className="eyebrow">Directorio pastoral</p>
+            <h1>Personas</h1>
+            <p className="lead">Catálogo público internacional por grado del Orden, condición laical y vida consagrada. Cada nombre abre su ficha canónica, ministerial e histórica.</p>
+          </div>
+          <aside className="dashboard-path-card" aria-label="Vista activa">
+            <p className="eyebrow">Vista activa</p>
+            <div className="dashboard-path-list">
+              <span>Todos los países</span>
+              <span>{filterLabel(filter)}</span>
+              <span>{items.length} resultados</span>
+            </div>
+            <Link className="inline-link" href="/?vista=clero">Volver al explorador de personas</Link>
+          </aside>
         </div>
 
-        <section className="dashboard-grid dashboard-summary"><div className="metric-card"><strong>{people.total}</strong><span>Personas públicas</span></div><div className="metric-card"><strong>{people.bishops}</strong><span>Con episcopado</span></div><div className="metric-card"><strong>{people.priests}</strong><span>Con presbiterado</span></div><div className="metric-card"><strong>{people.deacons}</strong><span>Con diaconado</span></div></section>
+        <section className="dashboard-grid dashboard-summary">
+          <div className="metric-card"><strong>{people.total}</strong><span>Personas públicas</span></div>
+          <div className="metric-card"><strong>{people.bishops}</strong><span>Con episcopado</span></div>
+          <div className="metric-card"><strong>{people.priests}</strong><span>Con presbiterado</span></div>
+          <div className="metric-card"><strong>{people.deacons}</strong><span>Con diaconado</span></div>
+        </section>
 
         <section className="card dashboard-section">
           <div className="section-heading"><div><p className="eyebrow">Filtros</p><h2>Acceso rápido</h2></div><span className="meta">Filtro activo: {filterLabel(filter)}</span></div>
           <div className="quick-link-grid">{shortcuts.map((shortcut) => <Link className={`quick-link-card filter-card ${filter === shortcut.value ? 'active-filter' : ''}`} href={filterHref(shortcut.value)} key={shortcut.value}><strong>{shortcut.title}</strong><span>{shortcut.count} {shortcut.subtitle}</span></Link>)}</div>
-          <p className="meta">Las categorías son transversales: una persona de vida consagrada también puede ser diácono, sacerdote u obispo.</p>
+          <p className="meta">Las categorías son transversales: una persona de vida consagrada también puede ser diácono, sacerdote u obispo. El contexto territorial se consulta en cada ficha y en sus asignaciones públicas.</p>
         </section>
 
         <section className="card dashboard-section">
