@@ -8,6 +8,10 @@ async function source(relativePath) {
   return readFile(new URL(relativePath, repoRoot), 'utf8')
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 test('administrative compatibility layer defines canonical legacy aliases', async () => {
   const styles = await source('src/styles/admin-theme-compatibility.css')
 
@@ -26,7 +30,7 @@ test('administrative compatibility layer defines canonical legacy aliases', asyn
     '--muted-foreground: var(--text-muted)',
     '--muted-text: var(--text-muted)',
   ]) {
-    assert.match(styles, new RegExp(alias.replace(/[()]/g, '\\$&')))
+    assert.match(styles, new RegExp(escapeRegExp(alias)))
   }
 
   assert.match(styles, /tbody tr:hover,[\s\S]*tbody tr:focus-within\s*\{[^}]*background:\s*var\(--surface-hover\)/s)
