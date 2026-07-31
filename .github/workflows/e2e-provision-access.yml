@@ -28,6 +28,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       APP_BASE_URL: http://127.0.0.1:3000
+      E2E_BASE_URL: http://127.0.0.1:3000
       E2E_ACCESS_OUTPUT: /tmp/e2e-access-profiles.json
       E2E_APP_LOG: /tmp/sinep-next.log
 
