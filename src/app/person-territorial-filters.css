@@ -88,18 +88,12 @@
 
   .people-list-table td::before {
     color: var(--text-muted);
-    content: '';
+    content: attr(data-label);
     font-size: 11px;
     font-weight: 900;
     letter-spacing: .06em;
     text-transform: uppercase;
   }
-
-  .people-list-table td:nth-child(1)::before { content: 'Nombre'; }
-  .people-list-table td:nth-child(2)::before { content: 'Condición'; }
-  .people-list-table td:nth-child(3)::before { content: 'Edad de referencia'; }
-  .people-list-table td:nth-child(4)::before { content: 'Estado'; }
-  .people-list-table td:nth-child(5)::before { content: 'Información publicada'; }
 
   .people-list-table td a {
     min-height: 44px;
