@@ -27,9 +27,11 @@ test('multi-country territorial rendering stays inside the typed React dashboard
   assert.match(scopeBuilder, /scopedPastoral = initialData\.organization_units\.filter\(\(item\) => inTerritorialScope/)
   assert.match(scopeBuilder, /\.filter\(\(item\) => assignmentMatches\(item, scopedSlugs\)\)/)
 
-  assert.match(dashboardModel, /dashboardData\.countries\.some\(\(item\) => item\.key === 'DO'\)/)
-  assert.match(dashboardModel, /scope\.scopeFiltered \|\| country !== defaultCountry/)
+  assert.match(dashboardModel, /const defaultCountry = ''/)
+  assert.match(dashboardModel, /: 'Todos los países'/)
+  assert.match(dashboardModel, /scope\.scopeFiltered/)
   assert.match(dashboardModel, /territoriallyLinkedPeople/)
+  assert.doesNotMatch(dashboardModel, /countries\.some\(\(item\) => item\.key === 'DO'\)/)
 
   const retiredBridges = [
     'src/features/public/components/public-multi-country-dashboard.tsx',
