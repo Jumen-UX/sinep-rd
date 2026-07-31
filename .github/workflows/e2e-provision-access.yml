@@ -28,7 +28,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       APP_BASE_URL: http://127.0.0.1:3000
-      E2E_ACCESS_OUTPUT: ${{ runner.temp }}/e2e-access-profiles.json
+      E2E_ACCESS_OUTPUT: /tmp/e2e-access-profiles.json
 
     steps:
       - name: Validate explicit confirmation and required secret
@@ -85,7 +85,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: e2e-access-profiles-${{ github.run_id }}
-          path: ${{ runner.temp }}/e2e-access-profiles.json
+          path: ${{ env.E2E_ACCESS_OUTPUT }}
           if-no-files-found: error
           retention-days: 1
 
