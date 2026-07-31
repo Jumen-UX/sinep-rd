@@ -37,11 +37,10 @@ export default async function HomePage({ searchParams }: PageProps) {
     const initialCountry = requestedCountry && initialData.countries.some((item) => item.key === requestedCountry)
       ? requestedCountry
       : ''
-    const countryDioceses = initialCountry
-      ? initialData.dioceses.filter((item) => (
-        item.country_iso2 ? item.country_iso2 === initialCountry : initialCountry === 'DO'
-      ))
-      : initialData.dioceses
+    const countryDioceses = initialData.dioceses.filter((item) => (
+      !initialCountry
+      || (item.country_iso2 ? item.country_iso2 === initialCountry : initialCountry === 'DO')
+    ))
     const initialProvince = countryDioceses.find((item) => {
       const provinceName = item.ecclesiastical_province_name
       return provinceName && (provinceName === requestedProvince || slugify(provinceName) === requestedProvince)
