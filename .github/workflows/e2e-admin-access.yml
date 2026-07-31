@@ -27,13 +27,16 @@ jobs:
   access-matrix:
     name: Authenticated navigation and scope
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    environment: qa
     env:
       CI: 'true'
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://hrvgpceqaxujlttpimdz.supabase.co' }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
       APP_BASE_URL: http://127.0.0.1:3000
+      E2E_BASE_URL: http://127.0.0.1:3000
+      E2E_APP_LOG: /tmp/sinep-next.log
       E2E_ACCESS_PROFILES_JSON: ${{ secrets.E2E_ACCESS_PROFILES_JSON }}
 
     steps:
@@ -50,7 +53,7 @@ jobs:
               echo "::error::Configure the protected E2E_ACCESS_PROFILES_JSON secret before running the authenticated matrix manually."
               exit 1
             fi
-            echo "Authenticated matrix skipped on push: configure E2E_ACCESS_PROFILES_JSON as a repository secret."
+            echo "Authenticated matrix skipped on push: configure E2E_ACCESS_PROFILES_JSON as a repository or qa environment secret."
           else
             node scripts/validate-e2e-access-profiles.mjs
             echo "enabled=true" >> "${GITHUB_OUTPUT}"
@@ -81,6 +84,28 @@ jobs:
         if: steps.profile-matrix.outputs.enabled == 'true'
         run: pnpm exec playwright install chromium --with-deps
 
+      - name: Build application
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        run: pnpm build
+
+      - name: Start application
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          pnpm start > "${E2E_APP_LOG}" 2>&1 &
+          echo "APP_PID=$!" >> "${GITHUB_ENV}"
+
+          for attempt in {1..60}; do
+            if curl --fail --silent --show-error "${APP_BASE_URL}/admin/login" > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          cat "${E2E_APP_LOG}"
+          echo "::error::La aplicación no estuvo disponible para la prueba E2E."
+          exit 1
+
       - name: Test authenticated navigation and scope
         if: steps.profile-matrix.outputs.enabled == 'true'
         run: pnpm exec playwright test e2e/admin-access-matrix.spec.mjs
@@ -93,5 +118,14 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            ${{ env.E2E_APP_LOG }}
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Stop application
+        if: always() && steps.profile-matrix.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          if [[ -n "${APP_PID:-}" ]]; then
+            kill "${APP_PID}" 2>/dev/null || true
+          fi
