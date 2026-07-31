@@ -43,7 +43,8 @@ test('people list and dashboard no longer classify clergy from persons.person_ty
 test('public directory explains overlapping ecclesial dimensions', async () => {
   const page = await readRepoFile('src/app/(public)/personas/page.tsx')
 
-  assert.match(page, /grado del Orden, condición laical y vida consagrada/)
+  assert.match(page, /Condición eclesial/)
+  assert.match(page, /Las categorías pueden coincidir/)
   assert.match(page, /una persona de vida consagrada también puede ser diácono, sacerdote u obispo/)
   assert.match(page, /personTypeLabel\(item\.person_type, item\.is_religious\)/)
   assert.match(page, /Vida consagrada/)
