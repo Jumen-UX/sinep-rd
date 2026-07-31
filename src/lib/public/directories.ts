@@ -44,11 +44,47 @@ export type PersonDirectoryItem = {
   age_text: string | null
 }
 
+export type PersonTerritorialAssignment = {
+  assignment_id: string
+  person_id: string
+  person_name: string
+  person_slug: string | null
+  person_type: string | null
+  position_title: string | null
+  base_role_name: string | null
+  assignment_status: string | null
+  is_current: boolean | null
+  direct_entity_id: string | null
+  direct_entity_name: string | null
+  direct_entity_slug: string | null
+  direct_entity_type_name: string | null
+  parish_id: string | null
+  parish_name: string | null
+  parish_slug: string | null
+  diocese_id: string | null
+  diocese_name: string | null
+  diocese_slug: string | null
+  ecclesiastical_province_name: string | null
+  country_iso2: string | null
+  country_name: string | null
+  organization_chart_name: string | null
+  organization_unit_name: string | null
+}
+
+export type PersonTerritorialFilters = {
+  countryIso2?: string | null
+  dioceseId?: string | null
+  parishId?: string | null
+  personType?: string | null
+  limit?: number
+}
+
 export type PersonFilter = 'all' | 'bishop' | 'priest' | 'deacon' | 'religious' | 'layperson' | 'active'
 export type DioceseFilter = 'all' | 'archdiocese' | 'diocese' | 'military' | string
 
 const dioceseColumns = ['id','slug','name','entity_type_name','ecclesiastical_province_name','province','municipality','latin_name','cathedral_name','current_ordinary_name','current_ordinary_title','territory_summary','area_km2','statistics_year','population_total','catholics_total','catholics_percent','parishes_count','source_name','source_url','source_checked_at','erected_at','country_iso2','country_name'].join(',')
 const personColumns = ['id','display_name','slug','person_type','highest_ordination_degree','is_cleric','is_lay','is_religious','religious_life_type','photo_url','biography_public','status','death_date','age_text'].join(',')
+const territorialAssignmentColumns = ['assignment_id','person_id','person_name','person_slug','person_type','position_title','base_role_name','assignment_status','is_current','direct_entity_id','direct_entity_name','direct_entity_slug','direct_entity_type_name','parish_id','parish_name','parish_slug','diocese_id','diocese_name','diocese_slug','ecclesiastical_province_name','country_iso2','country_name','organization_chart_name','organization_unit_name'].join(',')
 
 export function normalizePersonFilter(value: string | null | undefined): PersonFilter {
   if (value === 'lay') return 'layperson'
@@ -67,6 +103,25 @@ export async function loadPeopleDirectory(filter: PersonFilter, limit?: number) 
   if (filter === 'active') params.death_date = 'is.null'
   if (limit && Number.isInteger(limit) && limit > 0) params.limit = String(limit)
   return fetchSupabaseJson<PersonDirectoryItem[]>('person_public_directory', params)
+}
+
+export async function loadPersonTerritorialAssignments({
+  countryIso2,
+  dioceseId,
+  parishId,
+  personType,
+  limit,
+}: PersonTerritorialFilters = {}) {
+  const params: Record<string, string> = {
+    select: territorialAssignmentColumns,
+    order: 'country_name.asc,diocese_name.asc,parish_name.asc,person_name.asc',
+  }
+  if (countryIso2) params.country_iso2 = `eq.${countryIso2.toUpperCase()}`
+  if (dioceseId) params.diocese_id = `eq.${dioceseId}`
+  if (parishId) params.parish_id = `eq.${parishId}`
+  if (personType) params.person_type = `eq.${personType}`
+  if (limit && Number.isInteger(limit) && limit > 0) params.limit = String(limit)
+  return fetchSupabaseJson<PersonTerritorialAssignment[]>('public_person_territorial_assignments', params)
 }
 
 export async function loadDioceseDirectory(
