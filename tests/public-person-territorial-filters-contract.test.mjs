@@ -59,6 +59,7 @@ test('people directory supports searchable pastoral territory filters without du
   assert.match(styles, /grid-template-columns: 1fr/)
   assert.match(styles, /@media \(max-width: 720px\)/)
   assert.match(styles, /\.people-list-table thead/)
-  assert.match(styles, /content: attr\(data-label\)/)
+  assert.match(styles, /td:nth-child\(1\)::before \{ content: 'Nombre'; \}/)
+  assert.match(styles, /td:nth-child\(5\)::before \{ content: 'Información publicada'; \}/)
   assert.match(styles, /min-height: 44px/)
 })
