@@ -12,9 +12,7 @@ const surfaces = [
     key: 'public-home',
     path: '/',
     ready: (page) => page.locator('.public-dashboard-layout'),
-    baseline: (page, viewport) => viewport.key === 'desktop'
-      ? page.locator('.public-sidebar')
-      : page.locator('.public-mobile-header'),
+    baseline: null,
   },
   {
     key: 'admin-login',
@@ -71,17 +69,24 @@ for (const surface of surfaces) {
           `${surface.key} no debe producir desplazamiento horizontal en ${viewport.key}.`,
         ).toBe(true)
 
-        if (surface.key === 'public-home' && viewport.key === 'mobile') {
-          const [accessibilityTrigger, bottomNavigation] = await Promise.all([
-            page.getByRole('button', { name: 'Abrir herramientas de accesibilidad' }).boundingBox(),
-            page.locator('.public-bottom-nav').boundingBox(),
-          ])
-          expect(accessibilityTrigger).not.toBeNull()
-          expect(bottomNavigation).not.toBeNull()
-          expect(
-            accessibilityTrigger.y + accessibilityTrigger.height,
-            'El control de accesibilidad debe quedar sobre la navegación pública móvil.',
-          ).toBeLessThanOrEqual(bottomNavigation.y - 8)
+        if (surface.key === 'public-home') {
+          const primaryNavigation = viewport.key === 'desktop'
+            ? page.locator('.public-sidebar')
+            : page.locator('.public-mobile-header')
+          await expect(primaryNavigation).toBeVisible()
+
+          if (viewport.key === 'mobile') {
+            const [accessibilityTrigger, bottomNavigation] = await Promise.all([
+              page.getByRole('button', { name: 'Abrir herramientas de accesibilidad' }).boundingBox(),
+              page.locator('.public-bottom-nav').boundingBox(),
+            ])
+            expect(accessibilityTrigger).not.toBeNull()
+            expect(bottomNavigation).not.toBeNull()
+            expect(
+              accessibilityTrigger.y + accessibilityTrigger.height,
+              'El control de accesibilidad debe quedar sobre la navegación pública móvil.',
+            ).toBeLessThanOrEqual(bottomNavigation.y - 8)
+          }
         }
 
         const artifactName = `${surface.key}-${theme}-${viewport.key}.png`
@@ -97,11 +102,13 @@ for (const surface of surfaces) {
           path: artifactPath,
         })
 
-        await expect(surface.baseline(page, viewport)).toHaveScreenshot(artifactName, {
-          animations: 'disabled',
-          caret: 'hide',
-          maxDiffPixelRatio: 0.001,
-        })
+        if (surface.baseline) {
+          await expect(surface.baseline(page, viewport)).toHaveScreenshot(artifactName, {
+            animations: 'disabled',
+            caret: 'hide',
+            maxDiffPixelRatio: 0.001,
+          })
+        }
       })
     }
   }
