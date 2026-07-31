@@ -32,6 +32,10 @@ function filterTitle(filter: DioceseFilter) {
 }
 
 function filterHref(value: DioceseFilter, country: string | null) {
+  if (!country && value !== 'all' && !builtinFilters.has(value)) {
+    return `/diocesis?provincia=${encodeURIComponent(value)}`
+  }
+
   const params = new URLSearchParams()
   if (country) params.set('pais', country)
   if (value !== 'all') {
