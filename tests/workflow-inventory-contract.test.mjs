@@ -7,6 +7,7 @@ const workflowsDirectory = new URL('../.github/workflows/', import.meta.url)
 const expectedWorkflows = [
   'ci.yml',
   'e2e-admin-access.yml',
+  'e2e-provision-access.yml',
   'e2e-public.yml',
 ]
 
@@ -29,6 +30,7 @@ test('canonical workflow display names remain stable', async () => {
 
   assert.match(workflowContents['ci.yml'], /^name: CI$/m)
   assert.match(workflowContents['e2e-admin-access.yml'], /^name: E2E \/ Admin access matrix$/m)
+  assert.match(workflowContents['e2e-provision-access.yml'], /^name: E2E \/ Provision QA access profiles$/m)
   assert.match(workflowContents['e2e-public.yml'], /^name: E2E \/ Public accessibility$/m)
 })
 
@@ -68,4 +70,16 @@ test('authenticated access workflow installs Playwright in the project before ru
   assert.match(accessWorkflow, /pnpm exec playwright install chromium --with-deps/)
   assert.match(accessWorkflow, /pnpm exec playwright test e2e\/admin-access-matrix\.spec\.mjs/)
   assert.doesNotMatch(accessWorkflow, /pnpm test:e2e:access/)
+})
+
+test('QA provisioning remains manual explicit and secret-backed', async () => {
+  const provisioningWorkflow = await readWorkflow('e2e-provision-access.yml')
+
+  assert.match(provisioningWorkflow, /^on:\s*\n\s+workflow_dispatch:/m)
+  assert.match(provisioningWorkflow, /PROVISION_NON_PRODUCTION_E2E/)
+  assert.match(provisioningWorkflow, /SUPABASE_SERVICE_ROLE_KEY: \$\{\{ secrets\.SUPABASE_SERVICE_ROLE_KEY \}\}/)
+  assert.match(provisioningWorkflow, /environment: qa/)
+  assert.match(provisioningWorkflow, /retention-days: 1/)
+  assert.match(provisioningWorkflow, /pnpm e2e:access:provision/)
+  assert.match(provisioningWorkflow, /pnpm exec playwright test e2e\/admin-access-matrix\.spec\.mjs/)
 })
