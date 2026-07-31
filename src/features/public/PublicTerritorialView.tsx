@@ -20,6 +20,10 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
   const territorialDioceses = scopedDioceses.filter((item) => !isSpecial(item))
   const specialDioceses = scopedDioceses.filter(isSpecial)
   const globalScope = !country
+  const directoryParams = new URLSearchParams()
+  if (country) directoryParams.set('pais', country)
+  if (province) directoryParams.set('provincia', province)
+  const directoryHref = directoryParams.size > 0 ? `/diocesis?${directoryParams.toString()}` : '/diocesis'
 
   return (
     <section className="public-territorial-view" id="panel-territorial" role="tabpanel" aria-labelledby="tab-territorial">
@@ -71,7 +75,7 @@ export function PublicTerritorialView({ model }: { model: PublicDashboardModel }
             {scopedDioceses.length === 0
               ? <Empty title="Sin jurisdicciones publicadas" detail="No hay arquidiócesis, diócesis u otras jurisdicciones públicas para este ámbito." />
               : scopedDioceses.slice(0, 12).map((item) => <JurisdictionRow item={item} key={item.id} showCountry={globalScope} />)}
-            <div className="public-list-footer"><Link className="public-link" href={province ? `/diocesis?provincia=${encodeURIComponent(province)}` : '/diocesis'}>Ver directorio completo →</Link></div>
+            <div className="public-list-footer"><Link className="public-link" href={directoryHref}>Ver directorio completo →</Link></div>
           </div>
         </article>
 
