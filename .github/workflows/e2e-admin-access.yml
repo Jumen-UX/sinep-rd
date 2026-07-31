@@ -8,11 +8,13 @@ on:
     paths:
       - '.github/workflows/e2e-admin-access.yml'
       - 'e2e/admin-access-matrix.spec.mjs'
+      - 'e2e/admin-visual-evidence.spec.mjs'
       - 'e2e/support/access-profile-matrix.mjs'
       - 'scripts/validate-e2e-access-profiles.mjs'
       - 'playwright.config.mjs'
       - 'src/app/(admin)/admin/AdminShell.tsx'
       - 'src/features/admin/navigation/**'
+      - 'src/features/admin/dashboard/**'
       - 'src/features/access/**'
       - 'src/middleware.ts'
 
@@ -27,7 +29,7 @@ jobs:
   access-matrix:
     name: Authenticated navigation and scope
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     environment: qa
     env:
       CI: 'true'
@@ -109,6 +111,10 @@ jobs:
       - name: Test authenticated navigation and scope
         if: steps.profile-matrix.outputs.enabled == 'true'
         run: pnpm exec playwright test e2e/admin-access-matrix.spec.mjs
+
+      - name: Capture authenticated admin visual evidence
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        run: pnpm exec playwright test e2e/admin-visual-evidence.spec.mjs
 
       - name: Upload Playwright diagnostics
         if: always() && steps.profile-matrix.outputs.enabled == 'true'
