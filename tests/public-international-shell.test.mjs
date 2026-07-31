@@ -8,7 +8,8 @@ const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 test('public dashboard shell stays neutral when the selected country changes', async () => {
   const shell = await readRepoFile('src/features/public/PublicDashboardShell.tsx')
 
-  assert.match(shell, /<span>Cobertura internacional<\/span>/)
-  assert.doesNotMatch(shell, /<span>República Dominicana<\/span>/)
+  assert.match(shell, /<span>Cobertura internacional progresiva<\/span>/)
+  assert.match(shell, /<span>Base inicial: República Dominicana<\/span>/)
+  assert.doesNotMatch(shell, /país seleccionado|countryName|selectedCountry/i)
   assert.doesNotMatch(shell, /['"]use client['"]/)
 })
