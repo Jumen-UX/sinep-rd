@@ -13,12 +13,14 @@ test('pnpm keeps root overrides and the native image optimizer contract', async 
   ])
 
   assert.doesNotMatch(packageJson, /"pnpm"\s*:/)
+  assert.match(packageJson, /"sharp"\s*:\s*"0\.35\.3"/)
   assert.match(workspace, /^overrides:\s*$/m)
   assert.match(workspace, /^\s+postcss:\s+8\.5\.19\s*$/m)
+  assert.match(workspace, /^\s+sharp:\s+0\.35\.3\s*$/m)
   assert.match(workspace, /^onlyBuiltDependencies:\s*$[\s\S]*^\s+- sharp\s*$/m)
-  assert.match(lockfile, /^\s+sharp@0\.34\.5:\s*$/m)
-  assert.match(lockfile, /^\s+'@img\/sharp-linux-x64@0\.34\.5':\s*$/m)
-  assert.match(lockfile, /^\s+'@img\/sharp-linuxmusl-x64@0\.34\.5':\s*$/m)
+  assert.match(lockfile, /^\s+sharp@0\.35\.3:\s*$/m)
+  assert.match(lockfile, /^\s+'@img\/sharp-linux-x64@0\.35\.3':\s*$/m)
+  assert.match(lockfile, /^\s+'@img\/sharp-linuxmusl-x64@0\.35\.3':\s*$/m)
 })
 
 test('container build is reproducible and excludes development dependencies at runtime', async () => {
