@@ -42,11 +42,23 @@ export async function GET(request: Request) {
     const userId = auth.user!.id
     const scope = await getUserScope(auth.supabase, userId)
 
+    const { data: jurisdictionTypes, error: jurisdictionTypesError } = await auth.supabase
+      .from('entity_types')
+      .select('id')
+      .in('key', JURISDICTION_TYPE_KEYS)
+
+    if (jurisdictionTypesError) throw jurisdictionTypesError
+
+    const jurisdictionTypeIds = (jurisdictionTypes ?? []).map((type) => type.id)
+    if (jurisdictionTypeIds.length === 0) {
+      return NextResponse.json({ dioceses: [], count: 0, filtered: true })
+    }
+
     let query = auth.supabase
       .from('ecclesiastical_entities')
-      .select('id,name,official_name,slug,entity_type_id,entity_types!inner(key)')
+      .select('id,name,official_name,slug,entity_type_id')
       .eq('status', 'active')
-      .in('entity_types.key', JURISDICTION_TYPE_KEYS)
+      .in('entity_type_id', jurisdictionTypeIds)
 
     if (!scope.isUnrestricted) {
       const scopedEntities = await filterEntitiesByScope(auth.supabase, userId, {
