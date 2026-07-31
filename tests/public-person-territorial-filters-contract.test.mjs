@@ -10,7 +10,7 @@ test('people directory supports searchable pastoral territory filters without du
     read('src/app/(public)/personas/page.tsx'),
     read('src/features/public/PersonTerritorialFilters.tsx'),
     read('src/lib/public/directories.ts'),
-    read('supabase/migrations/20260730225500_public_person_territorial_assignments.sql'),
+    read('supabase/migrations/20260731025000_public_person_territorial_assignments.sql'),
     read('src/app/person-territorial-filters.css'),
   ])
 
@@ -23,6 +23,17 @@ test('people directory supports searchable pastoral territory filters without du
   assert.match(page, /selectedCountry=/)
   assert.match(page, /selectedDiocese=/)
   assert.match(page, /selectedParish=/)
+
+  assert.match(page, /function personMatchesFilter/)
+  assert.match(page, /const scopeItems = territorialScopeActive/)
+  assert.match(page, /const visibleItems = scopeItems\.filter/)
+  assert.match(page, /const scopedCount =/)
+  assert.match(page, /shortcutCount\('bishop'/)
+  assert.match(page, /shortcutCount\('priest'/)
+  assert.match(page, /shortcutCount\('deacon'/)
+  assert.match(page, /shortcutCount\('religious'/)
+  assert.match(page, /shortcutCount\('layperson'/)
+  assert.match(page, /shortcutCount\('active'/)
 
   assert.match(filters, /PublicSearchableSelect/)
   assert.match(filters, /label="País de servicio"/)
@@ -40,7 +51,8 @@ test('people directory supports searchable pastoral territory filters without du
   assert.match(directories, /parish_id/)
 
   assert.match(migration, /where ppa\.is_current = true/)
-  assert.match(migration, /where ee\.id = coalesce\(ppa\.diocese_id, ppa\.direct_entity_id\)/)
+  assert.match(migration, /left join public\.public_dioceses diocese/)
+  assert.match(migration, /country_iso2/)
   assert.doesNotMatch(migration, /birth_country|nationality/i)
 
   assert.match(styles, /grid-template-columns: repeat\(3/)
