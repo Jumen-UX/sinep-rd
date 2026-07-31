@@ -171,7 +171,9 @@ test('public directory pages are server rendered and filter through URLs', async
   assert.match(dioceses, /loadDioceseDirectory/)
   assert.match(dioceses, /\/diocesis\?provincia=/)
   assert.match(people, /loadPeopleDirectory/)
-  assert.match(people, /\/personas\?tipo=/)
+  assert.match(people, /function buildFilterHref/)
+  assert.match(people, /params\.set\('tipo', value\)/)
+  assert.match(people, /return query \? `\/personas\?\$\{query\}` : '\/personas'/)
 })
 
 test('person and entity profiles expose dynamic canonical metadata', async () => {
