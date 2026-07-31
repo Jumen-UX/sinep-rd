@@ -15,7 +15,10 @@ test('public explorer defaults to every country without silently selecting Domin
 
   assert.match(page, /const initialCountry = requestedCountry[\s\S]*: ''/)
   assert.doesNotMatch(page, /const defaultCountry = initialData\.countries\.some/)
-  assert.match(explorer, /<option value="">Todos los países<\/option>/)
+  assert.match(explorer, /const countryOptions = \[/)
+  assert.match(explorer, /\{ value: '', label: 'Todos los países' \}/)
+  assert.match(explorer, /label="País"/)
+  assert.match(explorer, /options=\{countryOptions\}/)
   assert.match(explorer, /disabled=\{!country\}/)
   assert.match(explorer, /Selecciona primero un país/)
   assert.match(model, /const defaultCountry = ''/)
