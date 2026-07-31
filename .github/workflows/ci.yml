@@ -13,6 +13,18 @@ on:
         description: URL pública para ejecutar Playwright y Axe (opcional)
         required: false
         type: string
+      security_dependency_refresh:
+        description: Regeneración controlada de una dependencia vulnerable
+        required: false
+        default: none
+        type: choice
+        options:
+          - none
+          - sharp-0.35.3
+      security_confirmation:
+        description: Escribe REFRESH_SHARP_0_35_3 cuando selecciones sharp-0.35.3
+        required: false
+        type: string
   schedule:
     - cron: '17 9 * * 1'
 
@@ -62,6 +74,92 @@ jobs:
 
       - name: Check
         run: pnpm check
+
+  refresh-sharp-lock:
+    name: Refresh sharp 0.35.3 lockfile
+    if: github.event_name == 'workflow_dispatch' && inputs.security_dependency_refresh == 'sharp-0.35.3'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-anon-key
+      APP_BASE_URL: http://localhost:3000
+      REQUESTED_CONFIRMATION: ${{ inputs.security_confirmation }}
+    steps:
+      - name: Validate explicit confirmation
+        shell: bash
+        run: |
+          if [[ "${REQUESTED_CONFIRMATION}" != "REFRESH_SHARP_0_35_3" ]]; then
+            echo "::error::La confirmación no coincide. No se regeneró el lockfile."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install current dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pin patched sharp and regenerate lockfile
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises'
+
+          const packagePath = new URL('./package.json', `file://${process.cwd()}/`)
+          const manifest = JSON.parse(await readFile(packagePath, 'utf8'))
+          manifest.dependencies = {
+            ...manifest.dependencies,
+            sharp: '0.35.3',
+          }
+          manifest.pnpm = {
+            ...(manifest.pnpm ?? {}),
+            overrides: {
+              ...(manifest.pnpm?.overrides ?? {}),
+              sharp: '0.35.3',
+            },
+          }
+          await writeFile(packagePath, `${JSON.stringify(manifest, null, 2)}\n`)
+          NODE
+          pnpm install --lockfile-only
+          pnpm install --frozen-lockfile
+
+      - name: Verify resolved sharp version
+        shell: bash
+        run: |
+          RESOLVED_VERSIONS="$(pnpm list sharp --depth 20 --json | node --input-type=module -e "let input=''; process.stdin.on('data', c => input += c); process.stdin.on('end', () => { const data=JSON.parse(input); const versions=new Set(); const visit=(node)=>{ if(!node||typeof node!=='object') return; for(const [name,value] of Object.entries(node)){ if(name==='sharp' && value?.version) versions.add(value.version); visit(value); }}; visit(data); console.log([...versions].sort().join(',')); })")"
+          echo "Resolved sharp versions: ${RESOLVED_VERSIONS}"
+          if [[ "${RESOLVED_VERSIONS}" != "0.35.3" ]]; then
+            echo "::error::Se esperaba resolver únicamente sharp 0.35.3."
+            exit 1
+          fi
+
+      - name: Validate updated dependency graph
+        run: pnpm check
+
+      - name: Upload validated dependency files
+        uses: actions/upload-artifact@v7
+        with:
+          name: sharp-0.35.3-lockfiles-${{ github.run_id }}
+          path: |
+            package.json
+            pnpm-lock.yaml
+          if-no-files-found: error
+          retention-days: 3
 
   dependency-audit:
     name: Critical dependency audit
