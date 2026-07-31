@@ -15,6 +15,8 @@ const JURISDICTION_TYPE_KEYS = [
   'mission_sui_iuris',
 ]
 
+type ScopedEntityId = { id: string }
+
 /**
  * GET /api/admin/dioceses-filtered
  *
@@ -65,7 +67,7 @@ export async function GET(request: Request) {
         includeChildren,
         limit: 500,
       })
-      const scopedIds = scopedEntities.map((entity) => entity.id)
+      const scopedIds = (scopedEntities as ScopedEntityId[]).map((entity) => entity.id)
 
       if (scopedIds.length === 0) {
         return NextResponse.json({ dioceses: [], count: 0, filtered: true })
