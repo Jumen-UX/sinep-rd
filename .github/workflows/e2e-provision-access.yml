@@ -1,0 +1,139 @@
+name: E2E / Provision QA access profiles
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Escribe PROVISION_NON_PRODUCTION_E2E para confirmar el aprovisionamiento QA"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-provision-access
+  cancel-in-progress: false
+
+jobs:
+  provision-and-test:
+    name: Provision profiles and validate access
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: qa
+    env:
+      CI: 'true'
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://hrvgpceqaxujlttpimdz.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_RJkFs3kYh4BoAzfGivOlvg_xBCEklGP' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      APP_BASE_URL: http://127.0.0.1:3000
+      E2E_ACCESS_OUTPUT: ${{ runner.temp }}/e2e-access-profiles.json
+
+    steps:
+      - name: Validate explicit confirmation and required secret
+        shell: bash
+        env:
+          REQUESTED_CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [[ "${REQUESTED_CONFIRMATION}" != "PROVISION_NON_PRODUCTION_E2E" ]]; then
+            echo "::error::La confirmación no coincide. No se modificó ningún usuario."
+            exit 1
+          fi
+
+          if [[ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]]; then
+            echo "::error::Configura SUPABASE_SERVICE_ROLE_KEY en el entorno qa o en los secretos del repositorio."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Provision QA profiles
+        env:
+          E2E_PROVISION_CONFIRM: PROVISION_NON_PRODUCTION_E2E
+        run: pnpm e2e:access:provision
+
+      - name: Validate generated matrix
+        shell: bash
+        run: |
+          test -s "${E2E_ACCESS_OUTPUT}"
+          MATRIX_JSON="$(jq -c . "${E2E_ACCESS_OUTPUT}")"
+          echo "::add-mask::${MATRIX_JSON}"
+          {
+            echo 'E2E_ACCESS_PROFILES_JSON<<__E2E_MATRIX__'
+            cat "${E2E_ACCESS_OUTPUT}"
+            echo '__E2E_MATRIX__'
+          } >> "${GITHUB_ENV}"
+          node scripts/validate-e2e-access-profiles.mjs
+
+      - name: Upload protected QA credentials
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-access-profiles-${{ github.run_id }}
+          path: ${{ runner.temp }}/e2e-access-profiles.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Install E2E runtime
+        run: pnpm add --save-dev --lockfile=false @playwright/test@1.61.0
+
+      - name: Install Chromium
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Start application
+        shell: bash
+        run: |
+          pnpm start > "${RUNNER_TEMP}/sinep-next.log" 2>&1 &
+          echo "APP_PID=$!" >> "${GITHUB_ENV}"
+
+          for attempt in {1..60}; do
+            if curl --fail --silent --show-error "${APP_BASE_URL}/admin/login" > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          cat "${RUNNER_TEMP}/sinep-next.log"
+          echo "::error::La aplicación no estuvo disponible para la prueba E2E."
+          exit 1
+
+      - name: Test authenticated navigation and scope
+        run: pnpm exec playwright test e2e/admin-access-matrix.spec.mjs
+
+      - name: Upload Playwright diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-admin-access-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+            ${{ runner.temp }}/sinep-next.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Stop application
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "${APP_PID:-}" ]]; then
+            kill "${APP_PID}" 2>/dev/null || true
+          fi
