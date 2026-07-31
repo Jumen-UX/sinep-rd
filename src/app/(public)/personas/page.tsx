@@ -7,6 +7,7 @@ import {
   loadPeopleDirectory,
   loadPersonTerritorialAssignments,
   normalizePersonFilter,
+  type PersonDirectoryItem,
   type PersonFilter,
   type PersonTerritorialAssignment,
 } from '@/lib/public/directories'
@@ -33,6 +34,14 @@ function personTypeLabel(value: string | null, isReligious: boolean) {
 function filterLabel(value: PersonFilter) {
   const labels: Record<PersonFilter, string> = { all: 'Todas las personas', bishop: 'Obispos', priest: 'Sacerdotes', deacon: 'Diáconos', religious: 'Vida consagrada', layperson: 'Laicos/as', active: 'Activos' }
   return labels[value]
+}
+
+function personMatchesFilter(item: PersonDirectoryItem, filter: PersonFilter) {
+  if (filter === 'all') return true
+  if (filter === 'religious') return item.is_religious
+  if (filter === 'layperson') return item.is_lay
+  if (filter === 'active') return item.status === 'active' && !item.death_date
+  return item.person_type === filter
 }
 
 function uniqueOptions(
@@ -82,8 +91,8 @@ export default async function PersonasPage({ searchParams }: PageProps) {
   const requestedParish = firstValue(params.parroquia) ?? ''
 
   try {
-    const [items, summary, territorialAssignments] = await Promise.all([
-      loadPeopleDirectory(filter),
+    const [allItems, summary, territorialAssignments] = await Promise.all([
+      loadPeopleDirectory('all'),
       loadDashboardSummary(),
       loadPersonTerritorialAssignments(),
     ])
@@ -134,23 +143,24 @@ export default async function PersonasPage({ searchParams }: PageProps) {
     }
 
     const territorialScopeActive = Boolean(country || diocese || parish)
-    const visibleItems = territorialScopeActive
-      ? items.filter((item) => assignmentsByPerson.has(item.id))
-      : items
+    const scopeItems = territorialScopeActive
+      ? allItems.filter((item) => assignmentsByPerson.has(item.id))
+      : allItems
+    const visibleItems = scopeItems.filter((item) => personMatchesFilter(item, filter))
     const selectedCountryName = countryOptions.find((option) => option.value === country)?.label ?? 'Todos los países'
     const selectedDioceseName = dioceseOptions.find((option) => option.value === diocese)?.label ?? ''
     const selectedParishName = parishOptions.find((option) => option.value === parish)?.label ?? ''
     const people = summary.people
-    const metricItems = territorialScopeActive ? visibleItems : items
-    const metricCount = (type: string) => metricItems.filter((item) => item.person_type === type).length
+    const scopedCount = (value: PersonFilter) => scopeItems.filter((item) => personMatchesFilter(item, value)).length
+    const shortcutCount = (value: PersonFilter, globalCount: number) => territorialScopeActive ? scopedCount(value) : globalCount
     const shortcuts: { value: PersonFilter; count: number; title: string; subtitle: string }[] = [
-      { value: 'all', count: people.total, title: 'Todas', subtitle: 'personas públicas' },
-      { value: 'bishop', count: people.bishops, title: 'Obispos', subtitle: 'con episcopado' },
-      { value: 'priest', count: people.priests, title: 'Sacerdotes', subtitle: 'con presbiterado' },
-      { value: 'deacon', count: people.deacons, title: 'Diáconos', subtitle: 'con diaconado' },
-      { value: 'religious', count: people.religious, title: 'Vida consagrada', subtitle: 'categoría transversal' },
-      { value: 'layperson', count: people.laypeople, title: 'Laicos/as', subtitle: 'sin ordenación' },
-      { value: 'active', count: people.active, title: 'Activos', subtitle: 'registros vigentes' },
+      { value: 'all', count: shortcutCount('all', people.total), title: 'Todas', subtitle: territorialScopeActive ? 'personas en el ámbito' : 'personas públicas' },
+      { value: 'bishop', count: shortcutCount('bishop', people.bishops), title: 'Obispos', subtitle: 'con episcopado' },
+      { value: 'priest', count: shortcutCount('priest', people.priests), title: 'Sacerdotes', subtitle: 'con presbiterado' },
+      { value: 'deacon', count: shortcutCount('deacon', people.deacons), title: 'Diáconos', subtitle: 'con diaconado' },
+      { value: 'religious', count: shortcutCount('religious', people.religious), title: 'Vida consagrada', subtitle: 'categoría transversal' },
+      { value: 'layperson', count: shortcutCount('layperson', people.laypeople), title: 'Laicos/as', subtitle: 'sin ordenación' },
+      { value: 'active', count: shortcutCount('active', people.active), title: 'Activos', subtitle: 'registros vigentes' },
     ]
     const currentScope = { country, diocese, parish }
 
@@ -176,10 +186,10 @@ export default async function PersonasPage({ searchParams }: PageProps) {
         </div>
 
         <section className="dashboard-grid dashboard-summary">
-          <div className="metric-card"><strong>{metricItems.length}</strong><span>{territorialScopeActive ? 'Personas en el ámbito' : 'Personas públicas'}</span></div>
-          <div className="metric-card"><strong>{territorialScopeActive ? metricCount('bishop') : people.bishops}</strong><span>Con episcopado</span></div>
-          <div className="metric-card"><strong>{territorialScopeActive ? metricCount('priest') : people.priests}</strong><span>Con presbiterado</span></div>
-          <div className="metric-card"><strong>{territorialScopeActive ? metricCount('deacon') : people.deacons}</strong><span>Con diaconado</span></div>
+          <div className="metric-card"><strong>{scopeItems.length}</strong><span>{territorialScopeActive ? 'Personas en el ámbito' : 'Personas públicas'}</span></div>
+          <div className="metric-card"><strong>{shortcutCount('bishop', people.bishops)}</strong><span>Con episcopado</span></div>
+          <div className="metric-card"><strong>{shortcutCount('priest', people.priests)}</strong><span>Con presbiterado</span></div>
+          <div className="metric-card"><strong>{shortcutCount('deacon', people.deacons)}</strong><span>Con diaconado</span></div>
         </section>
 
         <section className="card dashboard-section">
