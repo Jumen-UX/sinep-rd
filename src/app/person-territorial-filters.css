@@ -1,0 +1,38 @@
+.person-territorial-filter-grid,
+.public-filter-grid[aria-label='Filtros territoriales de personas'] {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.public-filter-grid[aria-label='Filtros territoriales de personas'] > label {
+  color: var(--text-muted);
+  display: grid;
+  font-size: 13px;
+  font-weight: 900;
+  gap: 8px;
+}
+
+.person-service-list {
+  display: grid;
+  gap: 6px;
+}
+
+.person-service-list span {
+  color: var(--text);
+  display: block;
+  line-height: 1.35;
+}
+
+.person-service-list small {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+@media (max-width: 920px) {
+  .person-territorial-filter-grid,
+  .public-filter-grid[aria-label='Filtros territoriales de personas'] {
+    grid-template-columns: 1fr;
+  }
+}
