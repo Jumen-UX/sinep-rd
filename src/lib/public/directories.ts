@@ -23,6 +23,8 @@ export type DioceseDirectoryItem = {
   source_url: string | null
   source_checked_at: string | null
   erected_at: string | null
+  country_iso2: string | null
+  country_name: string | null
 }
 
 export type PersonDirectoryItem = {
@@ -45,7 +47,7 @@ export type PersonDirectoryItem = {
 export type PersonFilter = 'all' | 'bishop' | 'priest' | 'deacon' | 'religious' | 'layperson' | 'active'
 export type DioceseFilter = 'all' | 'archdiocese' | 'diocese' | 'military' | string
 
-const dioceseColumns = ['id','slug','name','entity_type_name','ecclesiastical_province_name','province','municipality','latin_name','cathedral_name','current_ordinary_name','current_ordinary_title','territory_summary','area_km2','statistics_year','population_total','catholics_total','catholics_percent','parishes_count','source_name','source_url','source_checked_at','erected_at'].join(',')
+const dioceseColumns = ['id','slug','name','entity_type_name','ecclesiastical_province_name','province','municipality','latin_name','cathedral_name','current_ordinary_name','current_ordinary_title','territory_summary','area_km2','statistics_year','population_total','catholics_total','catholics_percent','parishes_count','source_name','source_url','source_checked_at','erected_at','country_iso2','country_name'].join(',')
 const personColumns = ['id','display_name','slug','person_type','highest_ordination_degree','is_cleric','is_lay','is_religious','religious_life_type','photo_url','biography_public','status','death_date','age_text'].join(',')
 
 export function normalizePersonFilter(value: string | null | undefined): PersonFilter {
@@ -67,8 +69,14 @@ export async function loadPeopleDirectory(filter: PersonFilter, limit?: number) 
   return fetchSupabaseJson<PersonDirectoryItem[]>('person_public_directory', params)
 }
 
-export async function loadDioceseDirectory(filter: DioceseFilter, province?: string | null, limit?: number) {
-  const params: Record<string, string | string[]> = { select: dioceseColumns, order: 'name.asc' }
+export async function loadDioceseDirectory(
+  filter: DioceseFilter,
+  province?: string | null,
+  limit?: number,
+  countryIso2?: string | null,
+) {
+  const params: Record<string, string | string[]> = { select: dioceseColumns, order: 'country_name.asc,name.asc' }
+  if (countryIso2) params.country_iso2 = `eq.${countryIso2.toUpperCase()}`
   if (province) params.ecclesiastical_province_name = `eq.${province}`
   if (filter === 'archdiocese') params.or = '(entity_type_name.ilike.*arquidiócesis*,entity_type_name.ilike.*arquidiocesis*)'
   else if (filter === 'diocese') params.entity_type_name = ['ilike.*diócesis*', 'not.ilike.*arquidiócesis*']
