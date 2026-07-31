@@ -4,11 +4,12 @@ import { loadDioceseDirectory, normalizeDioceseFilter } from '@/lib/public/direc
 export async function GET(request: NextRequest) {
   const tipo = normalizeDioceseFilter(request.nextUrl.searchParams.get('tipo'))
   const provincia = request.nextUrl.searchParams.get('provincia')
+  const pais = request.nextUrl.searchParams.get('pais')?.toUpperCase() ?? null
   const limitValue = request.nextUrl.searchParams.get('limit')
   const limit = limitValue && /^\d+$/.test(limitValue) ? Number(limitValue) : undefined
 
   try {
-    return NextResponse.json(await loadDioceseDirectory(tipo, provincia, limit))
+    return NextResponse.json(await loadDioceseDirectory(tipo, provincia, limit, pais))
   } catch (error) {
     console.error('Unexpected dioceses API error', error)
     return NextResponse.json({ error: 'No se pudo cargar el directorio' }, { status: 500 })
