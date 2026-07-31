@@ -29,6 +29,7 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       APP_BASE_URL: http://127.0.0.1:3000
       E2E_ACCESS_OUTPUT: /tmp/e2e-access-profiles.json
+      E2E_APP_LOG: /tmp/sinep-next.log
 
     steps:
       - name: Validate explicit confirmation and required secret
@@ -101,7 +102,7 @@ jobs:
       - name: Start application
         shell: bash
         run: |
-          pnpm start > "${RUNNER_TEMP}/sinep-next.log" 2>&1 &
+          pnpm start > "${E2E_APP_LOG}" 2>&1 &
           echo "APP_PID=$!" >> "${GITHUB_ENV}"
 
           for attempt in {1..60}; do
@@ -111,7 +112,7 @@ jobs:
             sleep 2
           done
 
-          cat "${RUNNER_TEMP}/sinep-next.log"
+          cat "${E2E_APP_LOG}"
           echo "::error::La aplicación no estuvo disponible para la prueba E2E."
           exit 1
 
@@ -126,7 +127,7 @@ jobs:
           path: |
             playwright-report/
             test-results/
-            ${{ runner.temp }}/sinep-next.log
+            ${{ env.E2E_APP_LOG }}
           if-no-files-found: ignore
           retention-days: 14
 
