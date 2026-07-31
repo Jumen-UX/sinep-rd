@@ -67,7 +67,7 @@ export async function GET(request: Request) {
         includeChildren,
         limit: 500,
       })
-      const scopedIds = (scopedEntities as ScopedEntityId[]).map((entity) => entity.id)
+      const scopedIds = (scopedEntities as unknown as ScopedEntityId[]).map((entity) => entity.id)
 
       if (scopedIds.length === 0) {
         return NextResponse.json({ dioceses: [], count: 0, filtered: true })
