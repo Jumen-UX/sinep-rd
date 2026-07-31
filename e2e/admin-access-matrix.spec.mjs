@@ -13,6 +13,31 @@ function routeLocator(navigation, href) {
   return navigation.locator(`a[href="${href}"]`)
 }
 
+async function expectScopedContextualKpis(page, profile) {
+  await expect(page.getByRole('heading', { name: 'Resumen administrativo' })).toBeVisible()
+  await expect(page.getByText(profile.expectedScopeLabel, { exact: true }).first()).toBeVisible()
+
+  const contextPanel = page.locator('.admin-dashboard-quality-panel')
+  await expect(contextPanel).toContainText('Fuente global')
+  await expect(contextPanel).toContainText('Bloqueada')
+
+  const contextualMetrics = page.locator('.admin-dashboard-metric')
+  await expect(contextualMetrics.first()).toBeVisible()
+
+  const numericMetricValues = contextualMetrics.locator('.admin-dashboard-metric-value').filter({
+    hasText: /^\d[\d.,]*(?:\s(?:%|días))?$/,
+  })
+  expect(
+    await numericMetricValues.count(),
+    `${profile.label} debe recibir al menos un KPI contextual numérico dentro de su alcance`,
+  ).toBeGreaterThan(0)
+
+  const activeEntitiesMetric = contextualMetrics.filter({ hasText: 'Entidades activas' })
+  if (await activeEntitiesMetric.count()) {
+    await expect(activeEntitiesMetric.locator('.admin-dashboard-metric-value')).not.toHaveText('—')
+  }
+}
+
 test.describe('matriz operativa de acceso administrativo', () => {
   test.skip(profiles.length === 0, 'Requiere E2E_ACCESS_PROFILES_JSON con cuentas no productivas dedicadas.')
 
@@ -45,6 +70,8 @@ test.describe('matriz operativa de acceso administrativo', () => {
         for (const href of profile.expectedNavigation.readOnly) {
           await expect(routeLocator(navigation, href), `${href} debe identificarse como consulta para ${profile.label}`).toContainText('Consulta')
         }
+
+        await expectScopedContextualKpis(page, profile)
 
         const response = await context.request.get('/api/admin/dioceses-filtered?include_children=true&limit=500')
         expect(response.ok()).toBeTruthy()
