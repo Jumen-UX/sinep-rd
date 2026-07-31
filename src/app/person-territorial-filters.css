@@ -23,6 +23,7 @@
   color: var(--text);
   display: block;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .person-service-list small {
@@ -34,5 +35,84 @@
   .person-territorial-filter-grid,
   .public-filter-grid[aria-label='Filtros territoriales de personas'] {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .people-list-table,
+  .people-list-table tbody,
+  .people-list-table tr,
+  .people-list-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .people-list-table thead {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  .people-list-table tbody {
+    display: grid;
+    gap: 14px;
+  }
+
+  .people-list-table tr {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .people-list-table td {
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    padding: 12px 14px;
+    text-align: left;
+  }
+
+  .people-list-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .people-list-table td::before {
+    color: var(--text-muted);
+    content: '';
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  .people-list-table td:nth-child(1)::before { content: 'Nombre'; }
+  .people-list-table td:nth-child(2)::before { content: 'Condición'; }
+  .people-list-table td:nth-child(3)::before { content: 'Edad de referencia'; }
+  .people-list-table td:nth-child(4)::before { content: 'Estado'; }
+  .people-list-table td:nth-child(5)::before { content: 'Información publicada'; }
+
+  .people-list-table td a {
+    min-height: 44px;
+    overflow-wrap: anywhere;
+  }
+
+  .person-service-list {
+    gap: 8px;
+  }
+
+  .person-service-list span {
+    background: var(--surface-muted);
+    border-radius: 10px;
+    padding: 9px 10px;
   }
 }
