@@ -1,179 +1,69 @@
 # Sprint 8 — Rendimiento, indexación y salida mantenible
 
-> Estado: activo
+> Estado: activo como referencia técnica
 > Alcance técnico: completado
-> Validación operativa: pendiente
+> Validación operativa propia: completada
 > Inicio: 2026-07-18
-> Actualizada: 2026-07-29
+> Actualizada: 2026-07-31
 > Rama operativa: `main`
 > Propietario: rendimiento, indexación, observabilidad y documentación
 
 ## Contexto
 
-Sprint 7 completó técnicamente S7-01 a S7-09. S7-10 fue reactivado el 2026-07-27 y conserva separadas sus validaciones autenticadas, visuales y de cierre.
+Sprint 8 avanzó sobre rendimiento, indexación, búsqueda, observabilidad y documentación sin introducir caché sobre datos privados o dependientes del alcance administrativo.
 
-Sprint 8 avanzó sobre trabajos que no dependían de S7-10. No declara la aplicación lista para producción ni sustituye las validaciones operativas pendientes.
+Sprint 7, incluida S7-10, quedó completado el 2026-07-31 con evidencia autenticada, visual, de accesibilidad y de ciclo de cuentas QA. Sprint 8 permanece como referencia técnica mientras se prepara la beta y el lanzamiento público.
 
-## Objetivo
+## Resultado
 
-Preparar una base mantenible para rendimiento público, indexación, búsqueda, observabilidad y documentación técnica, reduciendo consultas repetitivas y haciendo explícitos los contratos de caché, metadata y operación.
+1. [x] S8-01 — Auditoría de Next.js, límites servidor/cliente, metadata, sitemap, robots, caché, búsqueda, monitoreo y documentación.
+2. [x] S8-02 — Contrato de renderizado, caché y revalidación por tipo de ruta pública.
+3. [x] S8-03 — Metadata canónica, Open Graph y Twitter para páginas y fichas públicas.
+4. [x] S8-04 — Sitemap y robots endurecidos para beta privada y apertura controlada.
+5. [x] S8-05 — Servicios agregados para reducir consultas públicas repetitivas.
+6. [x] S8-06 — Índices revisados y aplicados con migraciones idempotentes.
+7. [x] S8-07 — Primera búsqueda administrativa canónica.
+8. [x] S8-08 — Health checks y contrato mínimo de observabilidad.
+9. [x] S8-09 — README, manual administrativo y guía operativa.
+10. [x] S8-10 — Validación técnica integral mediante contratos y CI.
 
-## Cola
+## Contratos consolidados
 
-1. [x] S8-01 — Auditar configuración de Next.js, límites servidor/cliente, metadata, sitemap, robots, caché, búsqueda, monitoreo y documentación.
-2. [x] S8-02 — Definir el contrato de renderizado, caché y revalidación por tipo de ruta pública. **Validado con CI verde.**
-3. [x] S8-03 — Implementar metadata canónica y Open Graph para páginas públicas principales y fichas. **Validado con CI verde.**
-4. [x] S8-04 — Auditar y endurecer sitemap y robots de acuerdo con el estado no público y la futura apertura controlada. **Validado con CI verde; endurecido nuevamente el 2026-07-27 con aprobación doble.**
-5. [x] S8-05 — Consolidar endpoints o servicios agregados para evitar consultas públicas repetitivas. **Validado con CI verde.**
-6. [x] S8-06 — Revisar índices de las consultas públicas y administrativas más costosas con evidencia reproducible. **Validado con CI verde y aplicado en Supabase.**
-7. [x] S8-07 — Diseñar e implementar la primera búsqueda interna canónica. **Implementación e integración principal validadas con CI verde.**
-8. [x] S8-08 — Incorporar health checks y contrato mínimo de observabilidad sin exponer datos sensibles. **Validado con CI verde.**
-9. [x] S8-09 — Completar README técnico, manual administrativo y guía operativa de despliegue, migración y restauración. **Validado con CI verde.**
-10. [x] S8-10 — Validar el alcance técnico propio de Sprint 8 con pruebas contractuales y CI, sin absorber el cierre operativo de S7-10. **Validado con CI verde.**
+- Next.js sirve imágenes en AVIF/WebP y limita los orígenes remotos autorizados a Supabase Storage y placeholders aprobados.
+- La indexación pública exige simultáneamente `PUBLIC_INDEXING_ENABLED=true` y `PUBLIC_LAUNCH_APPROVED=true`.
+- Metadata, robots y sitemap permanecen cerrados durante la beta privada.
+- Las fichas públicas usan servicios de dominio y caché controlada; las rutas administrativas permanecen dinámicas y sin caché compartida.
+- `loadPublicDashboardBundle()` y su variante territorial reducen cargas repetitivas y payload inicial.
+- La búsqueda administrativa canónica respeta permisos y alcance para personas, entidades y unidades organizativas.
+- `/api/health` diferencia disponibilidad de aplicación y base de datos sin exponer detalles sensibles.
+- La documentación operativa cubre despliegue, migración, restauración, observabilidad y correlación mediante `request_id`.
 
-## S8-01 a S8-04 — Base técnica validada
+## Seguridad y rendimiento posteriores
 
-- `next.config.ts` declara formatos AVIF/WebP y patrones remotos acotados para Supabase Storage y el placeholder autorizado; cualquier nueva política global seguirá requiriendo evidencia concreta.
-- `docs/architecture/RENDERING_CACHE_CONTRACT.md` separa rutas públicas, administrativas y operativas.
-- `src/lib/public/metadata.ts` centraliza canonical, Open Graph, Twitter y robots para el portal público.
-- La indexación es fail-closed y requiere simultáneamente `PUBLIC_INDEXING_ENABLED=true` y `PUBLIC_LAUNCH_APPROVED=true`.
-- El E2E público valida por separado la beta privada y el modo indexable; el workflow activa o desactiva ambos controles conjuntamente.
-- Las fichas públicas reutilizan cargadores cacheados y las rutas administrativas permanecen dinámicas y sin caché compartida.
+- `sharp` quedó actualizado y fijado en `0.35.3` mediante override raíz y lockfile validado.
+- La alerta Dependabot heredada de `libvips` quedó cerrada.
+- El caché incremental de `.next/cache` acelera builds sin reutilizar artefactos completos de producción.
+- CodeQL y contratos preventivos protegen expresiones regulares, workflows, rutas, documentación y límites de despliegue.
 
-### Endurecimiento posterior — 2026-07-27
+## Pendientes operativos de beta y lanzamiento
 
-La verificación directa del despliegue productivo detectó que la portada emitía `robots: index, follow` durante la beta. La causa era doble:
+No forman parte del cierre técnico de Sprint 8:
 
-1. la apertura dependía de un único flag operativo;
-2. `buildPublicMetadata()` no aplicaba la compuerta global a la metadata de página.
+- completar S3-06 con URL autorizada y cuentas reales diferenciadas;
+- verificar respaldo y ejecutar restauración documentada;
+- definir canal, severidad y responsables de incidentes;
+- validar institucional y jurídicamente privacidad, cookies y aviso legal;
+- confirmar metadata `noindex`, robots restrictivo y sitemap vacío en la beta desplegada;
+- revisar la aceptación temporal del riesgo de contraseñas filtradas antes del 2026-10-29 o antes de abrir al público.
 
-Se corrigió mediante:
+## Riesgos y deuda controlada
 
-- aprobación doble en `src/lib/public/indexing.ts`;
-- aplicación de `isPublicIndexingEnabled()` dentro de `buildPublicMetadata()`;
-- actualización de robots, sitemap, workflow E2E, `.env.example`, README y runbook;
-- pruebas contractuales que exigen ambos controles.
-
-La apertura futura debe comprobar metadata, `/robots.txt`, `/sitemap.xml` y canonical después de desplegar. Un valor aislado ya no puede abrir la indexación.
-
-## S8-05 — Consultas públicas consolidadas
-
-- `loadPublicDashboardBundle()` eliminó la doble carga de diócesis, personas y universo parroquial en la portada.
-- `buildDashboardSummary()` reutiliza los datos ya cargados y conserva una lectura histórica separada de personas para mantener los totales públicos.
-- Los directorios no se migraron a filtrado íntegro en memoria porque el volumen y la transferencia deben medirse antes.
-
-### Optimización posterior — payload inicial de la portada
-
-- La vista territorial predeterminada usa `loadPublicTerritorialDashboardBundle()` y serializa únicamente países, jurisdicciones y parroquias.
-- Personas, asignaciones, organigramas y unidades organizativas se solicitan al activar una vista secundaria.
-- Una URL que abre directamente `?vista=clero`, `pastoral`, `administrativa` o `colegial` conserva renderizado inicial con el bundle completo.
-- Los endpoints `/api/dashboard/vistas` y `/api/dashboard/resumen` mantienen sus contratos existentes y se consultan en paralelo con cancelación mediante `AbortController`.
-- La interfaz diferencia carga, error y reintento sin sustituir ni degradar la vista territorial disponible.
-- La mejora fue validada por CI sobre `200fd8a93f88832502dbf33766340ba5d7569498`.
-
-### Optimización posterior — toolchain y caché de compilación
-
-- Next.js 15 aporta `sharp` como dependencia de optimización de imágenes; el lockfile fija `sharp@0.34.5` y sus binarios Linux glibc y musl.
-- `pnpm-workspace.yaml` mantiene `sharp` como única dependencia con script nativo autorizado mediante `onlyBuiltDependencies`.
-- GitHub Actions conserva el caché del almacén de pnpm y añade `.next/cache` como caché incremental de compilación.
-- La clave del caché incremental incorpora sistema operativo, Node 24, hash de `pnpm-lock.yaml` y commit; las claves de restauración permiten reutilización segura entre commits compatibles.
-- No se cachea `.next` completo ni la salida desplegable, evitando reutilizar artefactos de producción obsoletos.
-- `tests/deployment-build-contract.test.mjs` protege estos límites; la validación CI del cambio permanece pendiente.
-
-## S8-06 — Índices revisados y aplicados
-
-Se compararon los filtros reales de `public_dioceses`, `public_organization_units`, `person_public_directory` y relaciones jerárquicas con `pg_indexes`.
-
-`supabase/migrations/20260718160000_optimize_public_query_indexes.sql` incorpora tres índices parciales e idempotentes:
-
-1. `ecclesiastical_entities_public_active_type_name_idx`.
-2. `entity_relationships_current_active_child_idx`.
-3. `organization_units_public_current_chart_order_idx`.
-
-La migración fue aplicada en Supabase y verificada en `pg_indexes`. No se añadieron índices redundantes sobre `persons.display_name`, `status` o `visibility`. El volumen actual todavía no permite afirmar una mejora cuantificada de latencia.
-
-## S8-07 — Búsqueda administrativa canónica
-
-Hallazgo: la búsqueda principal del dashboard solo redirigía al directorio de personas y no representaba una búsqueda transversal del portal.
-
-Implementación:
-
-- `supabase/migrations/20260718234000_create_canonical_admin_search.sql` crea `app_private.admin_search_catalog()` y la fachada invocadora `public.admin_search_catalog()`.
-- La función privada exige autenticación, término mínimo de dos caracteres y límite máximo de 60 resultados.
-- Personas reutilizan `app_private.admin_list_people()`, preservando `people.view` y alcance existentes.
-- Entidades exigen `entities.view` y comprobación de alcance mediante `current_user_can()`.
-- Unidades organizativas exigen `pastorals.view` y comprobación de alcance territorial u organizativo.
-- La implementación privada no es ejecutable por clientes; la fachada pública se concede únicamente a `authenticated`.
-- `src/app/api/admin/search/route.ts` valida acceso administrativo, longitud y límite, y no expone errores internos.
-- `/admin/buscar` presenta resultados tipados con destinos administrativos explícitos y solicitudes `no-store`.
-- El encabezado del dashboard dirige ahora a `/admin/buscar` y solo muestra la entrada cuando el perfil puede consultar al menos uno de los tres dominios.
-- El campo principal exige dos caracteres, limita a 120 y describe correctamente personas, entidades y unidades organizativas.
-- `tests/admin-canonical-search.test.mjs` protege permisos, alcance, separación de dominios, límites, accesibilidad básica e integración del dashboard.
-
-La primera versión no incluye documentos, eventos ni importaciones; esos dominios requieren contratos de permisos y destinos propios antes de incorporarse.
-
-## S8-08 — Salud y observabilidad mínima
-
-- `/api/health` diferencia disponibilidad de aplicación y base de datos.
-- La sonda de Supabase está acotada a cinco segundos y no registra el error original.
-- `request_id` y `X-Request-Id` permiten correlacionar monitor y plataforma sin exponer infraestructura.
-- Las respuestas son dinámicas, no cacheables y usan `200` o `503`.
-- `scripts/verify-health.mjs` valida estado, ambas comprobaciones y correlación.
-- `docs/architecture/OBSERVABILITY_CONTRACT.md` define campos permitidos, límites de seguridad, alerta y evidencia operativa pendiente.
-- `docs/OPERACION_Y_RECUPERACION.md` conserva el procedimiento de monitoreo, incidentes, respaldo y restauración.
-
-## S8-09 — Documentación técnica y operativa
-
-- `README.md` documenta requisitos, entorno, calidad, despliegue y límites de secretos.
-- `docs/README.md` enlaza el sprint activo, manuales, observabilidad y operación.
-- Los manuales de usuario y administrador declaran estado vigente para beta interna.
-- El manual administrativo incorpora búsqueda transversal y correlación mediante `request_id`.
-- `docs/operations/DESPLIEGUE_MIGRACION_RESTAURACION.md` conecta commit, migraciones, despliegue, retroceso, restauración, indexación y evidencia.
-- `docs/INDEX.generated.md` refleja el inventario documental actual.
-- `tests/sprint-8-documentation-contract.test.mjs` protege las referencias y límites operativos.
-
-## S8-10 — Validación técnica integral
-
-El cierre técnico original confirmó:
-
-- TypeScript, pruebas contractuales y build de producción;
-- CodeQL para JavaScript y TypeScript;
-- contratos de renderizado, caché, metadata, robots, sitemap e indexación;
-- búsqueda administrativa canónica y límites de permisos;
-- health check, correlación y documentación operativa;
-- integridad y terminología documental.
-
-La auditoría crítica de dependencias y Playwright/Axe de producción permanecen como ejecuciones separadas. Los cambios de endurecimiento del 2026-07-27 requieren una nueva evidencia CI/E2E y no se presentan como cubiertos por ejecuciones históricas.
-
-## Pendientes operativos de beta
-
-- S7-10: matriz autenticada, aislamiento entre diócesis, revisión visual y accesibilidad administrativa.
-- S3-06: validación con URL autorizada y cuentas reales diferenciadas.
-- Protección contra contraseñas filtradas en Supabase Auth, bloqueada por el plan Free salvo actualización o aceptación formal de riesgo.
-- Copia de seguridad, restauración documentada y responsables de incidentes.
-- Validación institucional y jurídica previa a una apertura pública.
-- Confirmación post-despliegue de metadata `noindex`, robots restrictivo y sitemap vacío durante beta.
-
-Ninguno debe marcarse como completado mediante pruebas contractuales o CI sin la evidencia operativa correspondiente.
-
-## Riesgos y deuda detectados
-
-- Habilitar indexación web sigue siendo una decisión operativa e institucional de publicación.
-- Un cambio de slug debe invalidar la ruta anterior y la nueva.
-- Los directorios requieren medición antes de aplicar caché o agregación compartida.
-- No existe todavía una imagen social institucional por defecto.
-- Las advertencias documentales sobre metadata y documentos posiblemente huérfanos siguen siendo deuda no bloqueante.
-
-## Reglas
-
-- No introducir caché sobre datos privados o dependientes del alcance administrativo.
-- No indexar rutas administrativas, borradores, vistas internas o información privada.
-- Toda metadata pública debe derivarse de servicios de dominio y usar fallbacks seguros.
-- Sitemap y robots deben respetar el estado real de publicación del producto.
-- Los health checks no deben exponer secretos, versiones sensibles, conteos privados ni detalles internos de errores.
-- Los cambios de índices deben basarse en consultas reales y migraciones idempotentes.
-- La búsqueda debe respetar visibilidad, publicación, privacidad y estado canónico.
+- Habilitar indexación es una decisión operativa e institucional.
+- Los cambios de slug deben invalidar rutas anterior y nueva.
+- Los directorios requieren medición antes de ampliar caché o agregación compartida.
+- Falta una imagen social institucional por defecto.
+- Ningún dato privado o dependiente del alcance puede usar caché pública.
 
 ## Cierre técnico
 
-S8-01 a S8-10 están completados técnicamente. S7-10 permanece en progreso y no puede cerrarse desde este sprint sin evidencia operativa autenticada.
+S8-01 a S8-10 están completados técnicamente. La siguiente etapa es preparación y lanzamiento público bajo las compuertas operativas, institucionales y de seguridad documentadas.
