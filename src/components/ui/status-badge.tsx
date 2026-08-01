@@ -13,7 +13,7 @@ const statusBadgeVariants = cva(
         success: 'border-[var(--border-success)] bg-[var(--success-soft)] text-[var(--success)]',
         warning: 'border-[var(--border-warning)] bg-[var(--warning-soft)] text-[var(--warning)]',
         danger: 'border-[var(--border-danger)] bg-[var(--danger-soft)] text-[var(--danger)]',
-        institutional: 'border-[var(--border-institutional)] bg-[var(--primary-soft)] text-[var(--primary)]',
+        institutional: 'border-[var(--border-institutional)] bg-[var(--primary-soft)] text-[var(--foreground)]',
       },
     },
     defaultVariants: {
