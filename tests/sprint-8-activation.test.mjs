@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-const sprint = await readFile('docs/sprints/active/sprint-8.md', 'utf8')
+const sprint = await readFile('docs/sprints/active/sprint-9.md', 'utf8')
+const activeSprint = await readFile('docs/sprints/active/sprint-9.md', 'utf8')
 const operationalSprint = await readFile('docs/sprints/active/sprint-7.md', 'utf8')
 const evidence = await readFile('docs/sprints/active/sprint-7-s7-10-evidence.md', 'utf8')
 const riskAcceptance = await readFile('docs/security/RISK_ACCEPTANCE_LEAKED_PASSWORD_PROTECTION.md', 'utf8')
@@ -13,8 +14,10 @@ const manifest = JSON.parse(
   await readFile('docs/DOCUMENTATION_MANIFEST.json', 'utf8'),
 )
 
-test('sprint 7 is closed and sprint 8 remains the active technical reference', () => {
-  assert.match(sprint, /> Estado: activo como referencia técnica/)
+test('sprints 7 and 8 are closed and sprint 9 owns beta readiness', () => {
+  assert.match(sprint, /> Estado: completado/)
+  assert.match(activeSprint, /> Estado: activo/)
+  assert.match(activeSprint, /S9-01 — Completar S3-06/)
   assert.match(sprint, /> Alcance técnico: completado/)
   assert.match(operationalSprint, /> Estado: completado/)
   assert.match(evidence, /> Estado: completado/)
@@ -24,7 +27,7 @@ test('sprint 7 is closed and sprint 8 remains the active technical reference', (
   assert.match(sprint, /Ningún dato privado o dependiente del alcance puede usar caché pública/)
 })
 
-test('documentation manifest points to the active technical sprint', () => {
+test('documentation manifest points to Sprint 9', () => {
   assert.equal(
     manifest.canonical_documents.active_sprint,
     'docs/sprints/active/sprint-8.md',
