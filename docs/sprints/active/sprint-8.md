@@ -1,10 +1,11 @@
 # Sprint 8 — Rendimiento, indexación y salida mantenible
 
-> Estado: activo como referencia técnica
+> Estado: completado
 > Alcance técnico: completado
 > Validación operativa propia: completada
 > Inicio: 2026-07-18
-> Actualizada: 2026-07-31
+> Actualizada: 2026-08-01
+> Cierre: 2026-08-01
 > Rama operativa: `main`
 > Propietario: rendimiento, indexación, observabilidad y documentación
 
@@ -12,7 +13,7 @@
 
 Sprint 8 avanzó sobre rendimiento, indexación, búsqueda, observabilidad y documentación sin introducir caché sobre datos privados o dependientes del alcance administrativo.
 
-Sprint 7, incluida S7-10, quedó completado el 2026-07-31 con evidencia autenticada, visual, de accesibilidad y de ciclo de cuentas QA. Sprint 8 permanece como referencia técnica mientras se prepara la beta y el lanzamiento público.
+Sprint 7, incluida S7-10, quedó completado el 2026-07-31 con evidencia autenticada, visual, de accesibilidad y de ciclo de cuentas QA. Sprint 8 queda como referencia técnica cerrada; la preparación operativa de beta continúa en Sprint 9.
 
 ## Resultado
 
@@ -66,4 +67,4 @@ No forman parte del cierre técnico de Sprint 8:
 
 ## Cierre técnico
 
-S8-01 a S8-10 están completados técnicamente. La siguiente etapa es preparación y lanzamiento público bajo las compuertas operativas, institucionales y de seguridad documentadas.
+S8-01 a S8-10 están completados técnica y documentalmente. Los pendientes operativos fueron trasladados a Sprint 9 sin declararlos resueltos.
