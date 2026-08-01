@@ -4,6 +4,8 @@ import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import AdminWizardProgress from '@/components/admin/AdminWizardProgress'
+import { Button } from '@/components/ui/button'
+import { FormErrorSummary, type FormErrorSummaryItem } from '@/components/ui/form-error-summary'
 import type { EntityHierarchyEntity } from '@/components/admin/EntityHierarchyPicker'
 import { PersonIdentityStep } from '@/features/personas/shared/components/PersonIdentityStep'
 import { createClient } from '@/lib/supabase/client'
@@ -61,6 +63,7 @@ export default function LayPersonWizardPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [formErrors, setFormErrors] = useState<FormErrorSummaryItem[]>([])
   const [message, setMessage] = useState<string | null>(null)
   const [savedSlug, setSavedSlug] = useState<string | null>(null)
   const [savedInternalCode, setSavedInternalCode] = useState<string | null>(null)
@@ -147,9 +150,15 @@ export default function LayPersonWizardPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setFormErrors([])
 
     if (mode === 'existing' && !selectedPersonId) {
-      setError('Selecciona la persona que deseas reutilizar.')
+      setError(null)
+      setFormErrors([{
+        fieldId: 'lay-existing-person',
+        label: 'Persona',
+        message: 'Selecciona la persona que deseas reutilizar.',
+      }])
       setStep(0)
       return
     }
@@ -168,7 +177,23 @@ export default function LayPersonWizardPage() {
     const slug = mode === 'existing' ? selectedPerson?.slug ?? '' : slugify(displayName)
 
     if (mode === 'new' && (!firstName || !lastName || !displayName || !slug)) {
-      setError('Primer nombre y primer apellido son obligatorios.')
+      const identityErrors: FormErrorSummaryItem[] = []
+      if (!firstName) {
+        identityErrors.push({
+          fieldId: 'lay-first-name',
+          label: 'Primer nombre',
+          message: 'Es obligatorio para crear una identidad.',
+        })
+      }
+      if (!lastName) {
+        identityErrors.push({
+          fieldId: 'lay-last-name',
+          label: 'Primer apellido',
+          message: 'Es obligatorio para crear una identidad.',
+        })
+      }
+      setError(null)
+      setFormErrors(identityErrors)
       setStep(1)
       return
     }
@@ -231,6 +256,7 @@ export default function LayPersonWizardPage() {
       const data = await saveLayPerson(payload)
       setSavedSlug(data.slug ?? slug)
       setSavedInternalCode(data.internal_reference_code ?? null)
+      setFormErrors([])
       setMessage(
         mode === 'existing'
           ? `Se reutilizó la ficha de ${selectedPerson?.display_name ?? 'la persona'} sin crear una identidad duplicada.`
@@ -287,6 +313,8 @@ export default function LayPersonWizardPage() {
         </div>
       ) : null}
 
+      <FormErrorSummary errors={formErrors} />
+
       {message ? (
         <div className="empty-state" role="status" aria-atomic="true" aria-live="polite">
           <strong>{message}</strong>
@@ -301,12 +329,14 @@ export default function LayPersonWizardPage() {
           currentStep={step}
           maxReachableStep={wizardSteps.length - 1}
           onStepChange={setStep}
+          compactOnMobile
         />
 
         <form
           aria-busy={saving}
           aria-describedby={error ? 'lay-wizard-error' : undefined}
           className="admin-form admin-config-form card dashboard-section admin-wizard-form"
+          onChange={() => { if (formErrors.length > 0) setFormErrors([]) }}
           onSubmit={handleSubmit}
         >
           <section hidden={step !== 0}>
@@ -314,14 +344,15 @@ export default function LayPersonWizardPage() {
             <h2>Origen de la identidad</h2>
             <PersonIdentityStep
               mode={mode}
-              onModeChange={setMode}
+              onModeChange={(nextMode) => { setMode(nextMode); setFormErrors([]) }}
               selectedPersonId={selectedPersonId}
-              onSelectedPersonChange={setSelectedPersonId}
+              onSelectedPersonChange={(personId) => { setSelectedPersonId(personId); setFormErrors([]) }}
               people={candidates}
               existingActionLabel="Reutilizar su identidad para contacto o servicio."
               newActionLabel="Crear una identidad nueva."
               selectPlaceholder="Selecciona una persona sin ordenaciones"
               existingSummary="Se conservarán el slug, código interno y todos sus datos e historiales existentes."
+              selectId="lay-existing-person"
             />
           </section>
 
@@ -340,7 +371,7 @@ export default function LayPersonWizardPage() {
                 <div className="admin-form-fields-grid">
                   <label>
                     Primer nombre
-                    <input autoComplete="given-name" name="first_name" />
+                    <input autoComplete="given-name" id="lay-first-name" name="first_name" />
                   </label>
                   <label>
                     Segundo nombre
@@ -348,7 +379,7 @@ export default function LayPersonWizardPage() {
                   </label>
                   <label>
                     Primer apellido
-                    <input autoComplete="family-name" name="last_name" />
+                    <input autoComplete="family-name" id="lay-last-name" name="last_name" />
                   </label>
                   <label>
                     Segundo apellido
@@ -610,13 +641,13 @@ export default function LayPersonWizardPage() {
                 Continuar
               </button>
             ) : (
-              <button className="button button-primary" aria-busy={saving} disabled={saving} type="submit">
-                {saving
-                  ? 'Guardando...'
-                  : mode === 'existing'
-                    ? 'Reutilizar persona'
-                    : 'Guardar persona laica'}
-              </button>
+              <Button
+                loading={saving}
+                loadingLabel="Guardando…"
+                type="submit"
+              >
+                {mode === 'existing' ? 'Reutilizar persona' : 'Guardar persona laica'}
+              </Button>
             )}
           </div>
         </form>
