@@ -36,27 +36,48 @@ const buttonVariants = cva(
   },
 )
 
+type ButtonProps = React.ComponentProps<'button'> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean
+    loading?: boolean
+    loadingLabel?: string
+  }
+
 function Button({
   className,
   variant,
   size,
   asChild = false,
   type,
+  disabled,
+  loading = false,
+  loadingLabel = 'Procesando…',
+  children,
   ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
+}: ButtonProps) {
   const Comp = asChild ? Slot : 'button'
+  const isNativeButton = !asChild
 
   return (
     <Comp
       data-slot="button"
+      data-loading={loading ? 'true' : undefined}
       className={cn(buttonVariants({ variant, size, className }))}
-      type={asChild ? undefined : (type ?? 'button')}
+      type={isNativeButton ? (type ?? 'button') : undefined}
+      disabled={isNativeButton ? (disabled || loading) : undefined}
+      aria-busy={loading || undefined}
+      aria-disabled={!isNativeButton && (disabled || loading) ? true : undefined}
       {...props}
-    />
+    >
+      {loading && isNativeButton ? (
+        <span
+          aria-hidden="true"
+          className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
+        />
+      ) : null}
+      {loading && isNativeButton ? loadingLabel : children}
+    </Comp>
   )
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants, type ButtonProps }
