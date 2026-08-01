@@ -5,7 +5,7 @@
 
 Sistema Nacional de Información Eclesiástica y Pastoral de República Dominicana. Combina un portal público, herramientas administrativas y una base canónica e histórica respaldada por Supabase.
 
-> Estado del producto: candidata a beta interna. Sprint 7 quedó cerrado con evidencia autenticada y Sprint 8 completó su alcance técnico. La siguiente etapa es preparación operativa y lanzamiento público controlado.
+> Estado del producto: candidata a beta interna. Sprints 7 y 8 están cerrados. Sprint 9 está activo para completar la preparación operativa de una beta controlada; la apertura pública requiere una aprobación posterior.
 
 ## Requisitos
 
@@ -54,7 +54,7 @@ Consulta [E2E y accesibilidad](./docs/testing/E2E_Y_ACCESIBILIDAD.md), [Operaci�
 - `tests`: pruebas unitarias, contractuales y de integración.
 - `docs`: documentación canónica, trabajo activo y archivo histórico.
 
-Consulta el [índice de documentación](./docs/README.md), el [Plan Maestro](./docs/product/PLAN_MAESTRO.md), la [hoja de ruta vigente](./docs/product/ROADMAP.md), el [cierre de Sprint 7](./docs/sprints/active/sprint-7.md) y la [referencia técnica de Sprint 8](./docs/sprints/active/sprint-8.md).
+Consulta el [índice de documentación](./docs/README.md), el [Plan Maestro](./docs/product/PLAN_MAESTRO.md), la [hoja de ruta vigente](./docs/product/ROADMAP.md), el [cierre de Sprint 8](./docs/sprints/active/sprint-8.md) y el [Sprint 9 activo](./docs/sprints/active/sprint-9.md).
 
 La aceptación temporal del riesgo de protección frente a contraseñas filtradas está documentada en [este registro de seguridad](./docs/security/RISK_ACCEPTANCE_LEAKED_PASSWORD_PROTECTION.md) y debe revisarse antes del lanzamiento público o el 2026-10-29, lo que ocurra primero.
 
