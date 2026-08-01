@@ -8,13 +8,13 @@ async function read(path) {
   return readFile(new URL(path, repoRoot), 'utf8')
 }
 
-test('shared page state distinguishes loading error and empty feedback', async () => {
+test('shared page state distinguishes loading error empty and no-results feedback', async () => {
   const component = await read('src/components/ui/page-state.tsx')
 
-  assert.match(component, /PageStateKind = 'loading' \| 'error' \| 'empty'/)
-  assert.match(component, /<Alert tone="danger"/)
-  assert.match(component, /aria-live="assertive"/)
-  assert.match(component, /aria-busy=\{kind === 'loading'/)
+  assert.match(component, /PageStateKind = 'loading' \| 'error' \| 'empty' \| 'no-results'/)
+  assert.match(component, /function LoadingState/)
+  assert.match(component, /announce="assertive"/)
+  assert.match(component, /aria-busy="true"/)
   assert.match(component, /<EmptyState/)
 })
 
