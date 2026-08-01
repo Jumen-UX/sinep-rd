@@ -42,7 +42,7 @@ test('roadmap and README record sprint 7 closure and public-launch preparation',
   assert.doesNotMatch(roadmap, /S7-10: reactivada y en progreso/)
 
   assert.match(readme, /Sprints 7 y 8 están cerrados/)
-  assert.match(readme, /preparación operativa y lanzamiento público controlado/)
+  assert.match(readme, /Sprint 9 está activo para completar la preparación operativa de una beta controlada/)
   assert.match(readme, /RISK_ACCEPTANCE_LEAKED_PASSWORD_PROTECTION\.md/)
   assert.doesNotMatch(readme, /S7-10 está reactivado/)
 })
