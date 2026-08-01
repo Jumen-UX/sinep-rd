@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-const sprint = await readFile('docs/sprints/active/sprint-9.md', 'utf8')
+const sprint = await readFile('docs/sprints/active/sprint-8.md', 'utf8')
 const activeSprint = await readFile('docs/sprints/active/sprint-9.md', 'utf8')
 const operationalSprint = await readFile('docs/sprints/active/sprint-7.md', 'utf8')
 const evidence = await readFile('docs/sprints/active/sprint-7-s7-10-evidence.md', 'utf8')
@@ -30,14 +30,14 @@ test('sprints 7 and 8 are closed and sprint 9 owns beta readiness', () => {
 test('documentation manifest points to Sprint 9', () => {
   assert.equal(
     manifest.canonical_documents.active_sprint,
-    'docs/sprints/active/sprint-8.md',
+    'docs/sprints/active/sprint-9.md',
   )
   assert.ok(manifest.metadata.allowed_statuses.includes('diferido'))
 })
 
 test('roadmap and README record sprint 7 closure and public-launch preparation', () => {
   assert.match(roadmap, /Los Sprints 0–7 están cerrados técnica y operativamente/)
-  assert.match(roadmap, /Preparar la beta operativa y el lanzamiento público/)
+  assert.match(roadmap, /Sprint 9 está activo para preparar la beta operativa/)
   assert.match(roadmap, /RISK_ACCEPTANCE_LEAKED_PASSWORD_PROTECTION\.md/)
   assert.doesNotMatch(roadmap, /S7-10: reactivada y en progreso/)
 
