@@ -8,7 +8,9 @@ on:
     paths:
       - '.github/workflows/e2e-admin-access.yml'
       - 'e2e/admin-access-matrix.spec.mjs'
+      - 'e2e/admin-accessibility.spec.mjs'
       - 'e2e/admin-visual-evidence.spec.mjs'
+      - 'e2e/accessibility.mjs'
       - 'e2e/support/access-profile-matrix.mjs'
       - 'scripts/validate-e2e-access-profiles.mjs'
       - 'playwright.config.mjs'
@@ -29,7 +31,7 @@ jobs:
   access-matrix:
     name: Authenticated navigation and scope
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     environment: qa
     env:
       CI: 'true'
@@ -80,7 +82,7 @@ jobs:
 
       - name: Install E2E runtime
         if: steps.profile-matrix.outputs.enabled == 'true'
-        run: pnpm add --save-dev --lockfile=false @playwright/test@1.61.0
+        run: pnpm add --save-dev --lockfile=false @playwright/test@1.61.0 @axe-core/playwright@4.10.2
 
       - name: Install Chromium
         if: steps.profile-matrix.outputs.enabled == 'true'
@@ -115,6 +117,10 @@ jobs:
       - name: Capture authenticated admin visual evidence
         if: steps.profile-matrix.outputs.enabled == 'true'
         run: pnpm exec playwright test e2e/admin-visual-evidence.spec.mjs
+
+      - name: Test authenticated admin accessibility
+        if: steps.profile-matrix.outputs.enabled == 'true'
+        run: pnpm exec playwright test e2e/admin-accessibility.spec.mjs
 
       - name: Upload Playwright diagnostics
         if: always() && steps.profile-matrix.outputs.enabled == 'true'
