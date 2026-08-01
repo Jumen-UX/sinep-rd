@@ -1,0 +1,63 @@
+name: E2E / Suspend QA access profiles
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Escribe DEPROVISION_NON_PRODUCTION_E2E para suspender las cuentas QA.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-deprovision-access
+  cancel-in-progress: false
+
+jobs:
+  suspend-profiles:
+    name: Suspend QA profiles and remove roles
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: qa
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://hrvgpceqaxujlttpimdz.supabase.co' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      E2E_ACCESS_EMAIL_DOMAIN: example.test
+      E2E_DEPROVISION_MODE: suspend
+      E2E_DEPROVISION_CONFIRM: ${{ inputs.confirmation }}
+
+    steps:
+      - name: Validate explicit suspension confirmation
+        shell: bash
+        run: |
+          if [[ "${E2E_DEPROVISION_CONFIRM}" != "DEPROVISION_NON_PRODUCTION_E2E" ]]; then
+            echo "::error::La confirmación no coincide. No se modificó ninguna cuenta."
+            exit 1
+          fi
+
+          if [[ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]]; then
+            echo "::error::Falta el secreto protegido SUPABASE_SERVICE_ROLE_KEY en el entorno qa."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Suspend dedicated QA access profiles
+        run: pnpm e2e:access:deprovision
