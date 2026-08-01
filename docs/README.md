@@ -1,7 +1,7 @@
 # Documentación de SINEP RD
 
 > Estado: vigente
-> Última revisión: 2026-07-29
+> Última revisión: 2026-08-01
 
 Este índice apunta a documentación canónica y activa. Los cierres y resultados históricos se conservan bajo `archive` y no definen el estado actual.
 
@@ -11,7 +11,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 |---|---|
 | Entender el propósito del sistema | [Plan Maestro](./product/PLAN_MAESTRO.md) |
 | Consultar prioridades y estado | [Hoja de ruta](./product/ROADMAP.md) |
-| Continuar el cierre operativo activo | [Sprint 7](./sprints/active/sprint-7.md) |
+| Continuar la preparación operativa de beta | [Sprint 9](./sprints/active/sprint-9.md) |
 | Consultar la referencia técnica de rendimiento | [Sprint 8](./sprints/active/sprint-8.md) y [contrato de rendimiento web](./architecture/WEB_PERFORMANCE_CONTRACT.md) |
 | Entender la arquitectura | [Arquitectura](./architecture/ARQUITECTURA.md) |
 | Crear o mover módulos | [Convención de módulos](./architecture/CONVENCION_MODULOS.md) |
@@ -71,8 +71,8 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 
 ### Trabajo activo
 
-- [Sprint 7](./sprints/active/sprint-7.md).
-- [Sprint 8](./sprints/active/sprint-8.md) como referencia técnica del bloque completado.
+- [Sprint 9](./sprints/active/sprint-9.md) como sprint funcional activo.
+- [Sprint 8](./sprints/active/sprint-8.md) como referencia técnica cerrada.
 - [Backlog UX](./sprints/active/ux-backlog.md).
 
 ## Archivo histórico
