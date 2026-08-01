@@ -24,8 +24,9 @@ test.describe('accesibilidad administrativa autenticada', () => {
 
       try {
         await login(page, profile)
-        await expect(page.locator('aside.admin-sidebar')).toBeVisible()
-        await expect(page.locator('.admin-scope-control')).toContainText(profile.expectedScopeLabel)
+        const sidebar = page.locator('aside.admin-sidebar')
+        await expect(sidebar).toBeVisible()
+        await expect(sidebar.locator('.admin-scope-control')).toContainText(profile.expectedScopeLabel)
         expect(await page.locator('h1').count(), 'El dashboard debe tener un único encabezado principal.').toBe(1)
         expect(await page.locator('img:not([alt])').count(), 'Las imágenes deben declarar texto alternativo.').toBe(0)
 
@@ -58,7 +59,7 @@ test.describe('accesibilidad administrativa autenticada', () => {
 
       const dialog = page.getByRole('dialog', { name: 'Todos los módulos administrativos' })
       await expect(dialog).toBeVisible()
-      await expect(dialog.getByRole('button', { name: 'Cerrar' })).toBeVisible()
+      await expect(dialog.getByRole('button', { name: 'Cerrar' })).toBeFocused()
       await expectNoBlockingAccessibilityViolations({ page, expect, testInfo })
 
       await page.keyboard.press('Escape')
