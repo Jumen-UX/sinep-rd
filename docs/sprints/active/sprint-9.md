@@ -29,6 +29,24 @@ Cerrar las compuertas operativas, institucionales y de seguridad necesarias para
 9. [ ] S9-09 — Ejecutar revisión final con CI, E2E autenticado, salud, seguridad y evidencias operativas.
 10. [ ] S9-10 — Registrar decisión explícita de continuar beta, diferirla o aprobar una apertura posterior.
 
+
+## Matriz de ejecución y compuertas
+
+| Tarea | Estado inicial | Evidencia o autoridad requerida | Próxima acción |
+|---|---|---|---|
+| S9-01 | Bloqueada externamente | URL autorizada y cuentas diferenciadas | Configurar el entorno de beta y ejecutar el ciclo real. |
+| S9-02 | Bloqueada por S9-01 | Enlaces reales o entorno controlado equivalente | Probar expiración, reutilización y manipulación después del ciclo base. |
+| S9-03 | Bloqueada externamente | Acceso autorizado a respaldo y entorno aislado de restauración | Ejecutar el procedimiento y conservar evidencia sin secretos. |
+| S9-04 | Requiere decisión operativa | Canal institucional, responsables y niveles de severidad aprobados | Completar el plan de incidentes con propietarios reales. |
+| S9-05 | Bloqueada externamente | Validación institucional y jurídica | Registrar aprobación, observaciones o cambios exigidos. |
+| S9-06 | Lista para auditoría técnica | Código, contratos y datos representativos sin mutación productiva | Revisar flujo, permisos, estados y publicación selectiva. |
+| S9-07 | Diferida por plazo o apertura | Decisión del propietario antes del 2026-10-29 o de abrir al público | Revisar controles compensatorios y resolver aceptación. |
+| S9-08 | Bloqueada externamente | URL desplegada de beta y configuración autorizada | Verificar respuestas y metadata post-despliegue. |
+| S9-09 | Bloqueada por S9-01 a S9-08 | Evidencia acumulada y ejecución completa de calidad | Ejecutar cierre técnico-operativo. |
+| S9-10 | Bloqueada por S9-09 | Decisión explícita de producto y operación | Documentar continuar, diferir o aprobar la siguiente etapa. |
+
+Estas compuertas no cambian el orden lógico del sprint. S9-06 puede auditarse en paralelo documental porque es de solo lectura y no afirma el cierre de las tareas anteriores.
+
 ## Criterios de cierre
 
 - [ ] El ciclo real de acceso y recuperación está verificado con cuentas diferenciadas.
