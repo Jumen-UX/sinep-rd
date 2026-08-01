@@ -67,6 +67,6 @@ test('sprint 8 records completed performance search observability documentation 
   assert.match(sprint, /20260718234000_create_canonical_admin_search\.sql/)
   assert.match(sprint, /OBSERVABILITY_CONTRACT\.md/)
   assert.match(sprint, /requieren una nueva evidencia CI\/E2E/)
-  assert.match(sprint, /S8-01 a S8-10 están completados técnicamente/)
-  assert.match(sprint, /S7-10 permanece en progreso/)
+  assert.match(sprint, /S8-01 a S8-10 están completados técnica y documentalmente/)
+  assert.match(sprint, /Sprint 7, incluida S7-10, quedó completado/)
 })
