@@ -83,11 +83,15 @@ test('religious and lay wizards can reuse an existing person', async () => {
     assert.match(page, /PersonIdentityStep/)
     assert.match(page, /mode, setMode/)
     assert.match(page, /selectedPersonId=\{selectedPersonId\}/)
-    assert.match(page, /onSelectedPersonChange=\{setSelectedPersonId\}/)
+    assert.match(page, /onSelectedPersonChange=/)
     assert.match(page, /selected_person_id/)
     assert.match(page, /mode === 'existing'/)
   }
 
+  assert.match(religious, /onSelectedPersonChange=\{setSelectedPersonId\}/)
   assert.match(religious, /sin duplicar su identidad/)
+  assert.match(lay, /onSelectedPersonChange=\{\(personId\) => \{/)
+  assert.match(lay, /setSelectedPersonId\(personId\)/)
+  assert.match(lay, /setFormErrors\(\[\]\)/)
   assert.match(lay, /sin crear una identidad duplicada/)
 })
