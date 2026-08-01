@@ -5,7 +5,7 @@
 
 Sistema Nacional de Información Eclesiástica y Pastoral de República Dominicana. Combina un portal público, herramientas administrativas y una base canónica e histórica respaldada por Supabase.
 
-> Estado del producto: candidata a beta interna. Sprint 8 completó su alcance técnico y S7-10 está reactivado para cerrar las validaciones operativas autenticadas, visuales y de seguridad.
+> Estado del producto: candidata a beta interna. Sprint 7 quedó cerrado con evidencia autenticada y Sprint 8 completó su alcance técnico. La siguiente etapa es preparación operativa y lanzamiento público controlado.
 
 ## Requisitos
 
@@ -38,7 +38,7 @@ Las pruebas de integración y los escenarios E2E mutantes no deben ejecutarse co
 
 ## Automatización y despliegue
 
-`CI` se ejecuta en `main` y valida las compuertas canónicas y CodeQL. `E2E / Public accessibility` cubre las rutas públicas afectadas con Chromium, Playwright y Axe.
+`CI` valida documentación, TypeScript, pruebas, build, contratos y seguridad. `E2E / Public accessibility` cubre las rutas públicas con Chromium, Playwright y Axe. Los workflows administrativos protegidos aprovisionan, validan y suspenden perfiles QA sin incorporar credenciales al repositorio.
 
 La aplicación se despliega en Vercel. Mientras el entorno no sea público debe conservar protección de despliegue o controles equivalentes. Los secretos y variables se configuran fuera del repositorio.
 
@@ -54,4 +54,8 @@ Consulta [E2E y accesibilidad](./docs/testing/E2E_Y_ACCESIBILIDAD.md), [Operaci�
 - `tests`: pruebas unitarias, contractuales y de integración.
 - `docs`: documentación canónica, trabajo activo y archivo histórico.
 
-Consulta el [índice de documentación](./docs/README.md), el [Plan Maestro](./docs/product/PLAN_MAESTRO.md), la [hoja de ruta vigente](./docs/product/ROADMAP.md) y el [cierre técnico de Sprint 8](./docs/sprints/active/sprint-8.md). Antes de cerrar una pantalla o flujo, aplica los [estándares web](./docs/standards/ESTANDARES_WEB_SINEP_RD.md) y ejecuta `pnpm check`.
+Consulta el [índice de documentación](./docs/README.md), el [Plan Maestro](./docs/product/PLAN_MAESTRO.md), la [hoja de ruta vigente](./docs/product/ROADMAP.md), el [cierre de Sprint 7](./docs/sprints/active/sprint-7.md) y la [referencia técnica de Sprint 8](./docs/sprints/active/sprint-8.md).
+
+La aceptación temporal del riesgo de protección frente a contraseñas filtradas está documentada en [este registro de seguridad](./docs/security/RISK_ACCEPTANCE_LEAKED_PASSWORD_PROTECTION.md) y debe revisarse antes del lanzamiento público o el 2026-10-29, lo que ocurra primero.
+
+Antes de cerrar una pantalla o flujo, aplica los [estándares web](./docs/standards/ESTANDARES_WEB_SINEP_RD.md) y ejecuta `pnpm check`.
