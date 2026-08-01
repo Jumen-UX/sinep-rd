@@ -220,7 +220,20 @@ La ejecución posterior de `pnpm check` completó documentación, auditorías, T
 
 #### Corte 1B — piloto en un asistente de personas
 
-Piloto recomendado: `LayPersonWizardPage`, porque usa la familia canónica, no contiene la bifurcación diaconal/sacerdotal y permite probar identidad existente o nueva, validación, servicio y revisión.
+> Estado: implementado en `LayPersonWizardPage`, pendiente de `pnpm check` y validación manual.
+
+El piloto usa `LayPersonWizardPage`, porque consume la familia canónica, no contiene la bifurcación diaconal/sacerdotal y permite probar identidad existente o nueva, validación, servicio y revisión.
+
+Implementado:
+
+- `FormErrorSummary` para persona existente, primer nombre y primer apellido;
+- identificadores estables y navegación de foco hacia controles inválidos;
+- limpieza del resumen cuando el usuario corrige datos;
+- estado loading común en el envío final;
+- progreso móvil compacto opt-in mediante `AdminWizardProgress`;
+- resumen editable mediante las acciones “Cambiar” ya existentes;
+- persistencia y servicios canónicos sin cambios;
+- pruebas contractuales actualizadas para el piloto y el progreso móvil.
 
 El piloto debe integrar:
 
