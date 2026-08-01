@@ -39,6 +39,18 @@ Sprint 7, incluida S7-10, quedó completado el 2026-07-31 con evidencia autentic
 - `/api/health` diferencia disponibilidad de aplicación y base de datos sin exponer detalles sensibles.
 - La documentación operativa cubre despliegue, migración, restauración, observabilidad y correlación mediante `request_id`.
 
+
+## Evidencia técnica canónica
+
+- [Contrato de renderizado y caché](../../architecture/RENDERING_CACHE_CONTRACT.md).
+- [Contrato de observabilidad](../../architecture/OBSERVABILITY_CONTRACT.md).
+- `20260718160000_optimize_public_query_indexes.sql`.
+- `20260718234000_create_canonical_admin_search.sql`.
+- `loadPublicDashboardBundle()` y servicios territoriales agregados.
+- Compuertas `PUBLIC_INDEXING_ENABLED` y `PUBLIC_LAUNCH_APPROVED`.
+
+Los cambios posteriores sobre estos contratos requieren una nueva evidencia CI/E2E aplicable; la evidencia de cierre de Sprint 8 no valida modificaciones futuras.
+
 ## Seguridad y rendimiento posteriores
 
 - `sharp` quedó actualizado y fijado en `0.35.3` mediante override raíz y lockfile validado.
