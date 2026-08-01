@@ -18,3 +18,12 @@ test('wizard progress keeps inaccessible future steps non-interactive', () => {
   assert.match(progressSource, /canNavigate \? \(/)
   assert.match(progressSource, /opacity-70/)
 })
+
+
+test('wizard progress offers an opt-in compact mobile disclosure', () => {
+  assert.match(progressSource, /compactOnMobile\?: boolean/)
+  assert.match(progressSource, /compactOnMobile = false/)
+  assert.match(progressSource, /<details className="xl:hidden">/)
+  assert.match(progressSource, /Ver todos los pasos/)
+  assert.match(progressSource, /<ol className="hidden gap-1 xl:grid">/)
+})
