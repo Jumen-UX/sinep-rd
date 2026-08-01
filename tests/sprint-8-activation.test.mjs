@@ -4,6 +4,8 @@ import test from 'node:test'
 
 const sprint = await readFile('docs/sprints/active/sprint-8.md', 'utf8')
 const operationalSprint = await readFile('docs/sprints/active/sprint-7.md', 'utf8')
+const evidence = await readFile('docs/sprints/active/sprint-7-s7-10-evidence.md', 'utf8')
+const riskAcceptance = await readFile('docs/security/RISK_ACCEPTANCE_LEAKED_PASSWORD_PROTECTION.md', 'utf8')
 const roadmap = await readFile('docs/product/ROADMAP.md', 'utf8')
 const readme = await readFile('README.md', 'utf8')
 const nextConfig = await readFile('next.config.ts', 'utf8')
@@ -11,16 +13,18 @@ const manifest = JSON.parse(
   await readFile('docs/DOCUMENTATION_MANIFEST.json', 'utf8'),
 )
 
-test('sprint 8 remains the active technical reference while S7-10 is operationally active', () => {
-  assert.match(sprint, /> Estado: activo/)
+test('sprint 7 is closed and sprint 8 remains the active technical reference', () => {
+  assert.match(sprint, /> Estado: activo como referencia técnica/)
   assert.match(sprint, /> Alcance técnico: completado/)
-  assert.match(operationalSprint, /> Estado: en progreso/)
-  assert.match(sprint, /S8-01 — Auditar configuración de Next\.js/)
-  assert.match(sprint, /S7-10 fue reactivado/)
-  assert.match(sprint, /No introducir caché sobre datos privados/)
+  assert.match(operationalSprint, /> Estado: completado/)
+  assert.match(evidence, /> Estado: completado/)
+  assert.match(sprint, /S8-01 — Auditoría de Next\.js/)
+  assert.match(sprint, /Sprint 7, incluida S7-10, quedó completado/)
+  assert.match(sprint, /No formar parte del cierre técnico de Sprint 8|No forman parte del cierre técnico de Sprint 8/)
+  assert.match(sprint, /Ningún dato privado o dependiente del alcance puede usar caché pública/)
 })
 
-test('documentation manifest points to the only active technical sprint', () => {
+test('documentation manifest points to the active technical sprint', () => {
   assert.equal(
     manifest.canonical_documents.active_sprint,
     'docs/sprints/active/sprint-8.md',
@@ -28,16 +32,25 @@ test('documentation manifest points to the only active technical sprint', () => 
   assert.ok(manifest.metadata.allowed_statuses.includes('diferido'))
 })
 
-test('roadmap and README record sprint 8 technical completion without closing active S7-10', () => {
-  assert.match(roadmap, /Sprint 8 — Rendimiento, indexación y salida mantenible/)
-  assert.match(roadmap, /S7-10: reactivada y en progreso/)
-  assert.match(roadmap, /Completar S7-10 con evidencia operativa autenticada/)
-  assert.doesNotMatch(roadmap, /Continuar Sprint 7 desde S7-06/)
+test('roadmap and README record sprint 7 closure and public-launch preparation', () => {
+  assert.match(roadmap, /Los Sprints 0–7 están cerrados técnica y operativamente/)
+  assert.match(roadmap, /Preparar la beta operativa y el lanzamiento público/)
+  assert.match(roadmap, /RISK_ACCEPTANCE_LEAKED_PASSWORD_PROTECTION\.md/)
+  assert.doesNotMatch(roadmap, /S7-10: reactivada y en progreso/)
 
-  assert.match(readme, /Sprint 8 completó su alcance técnico/)
-  assert.match(readme, /S7-10 está reactivado/)
-  assert.match(readme, /cierre técnico de Sprint 8/)
-  assert.doesNotMatch(readme, /sprint funcional activo es Sprint 5/)
+  assert.match(readme, /Sprint 7 quedó cerrado con evidencia autenticada/)
+  assert.match(readme, /preparación operativa y lanzamiento público controlado/)
+  assert.match(readme, /RISK_ACCEPTANCE_LEAKED_PASSWORD_PROTECTION\.md/)
+  assert.doesNotMatch(readme, /S7-10 está reactivado/)
+})
+
+test('temporary leaked-password risk acceptance has owner controls and deadline', () => {
+  assert.match(riskAcceptance, /> Estado: aceptado temporalmente/)
+  assert.match(riskAcceptance, /> Fecha máxima de revisión: 2026-10-29/)
+  assert.match(riskAcceptance, /> Responsable: propietario del proyecto SINEP RD/)
+  assert.match(riskAcceptance, /antes de cualquier apertura pública/)
+  assert.match(riskAcceptance, /Suspender las cuentas QA y retirar sus roles/)
+  assert.match(riskAcceptance, /Eliminar `E2E_ACCESS_PROFILES_JSON`/)
 })
 
 test('performance configuration records the justified image policy', () => {
@@ -46,7 +59,7 @@ test('performance configuration records the justified image policy', () => {
   assert.match(nextConfig, /pathname: '\/storage\/v1\/object\/\*\*'/)
   assert.match(sprint, /AVIF\/WebP/)
   assert.match(sprint, /Supabase Storage/)
-  assert.match(sprint, /cualquier nueva política global seguirá requiriendo evidencia concreta/)
+  assert.match(sprint, /cualquier nueva política global seguirá requiriendo evidencia concreta|orígenes remotos autorizados/)
   assert.match(
     sprint,
     /metadata, sitemap, robots, caché, búsqueda, monitoreo y documentación/,
