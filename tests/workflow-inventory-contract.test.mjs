@@ -7,6 +7,7 @@ const workflowsDirectory = new URL('../.github/workflows/', import.meta.url)
 const expectedWorkflows = [
   'ci.yml',
   'e2e-admin-access.yml',
+  'e2e-deprovision-access.yml',
   'e2e-provision-access.yml',
   'e2e-public.yml',
 ]
@@ -30,6 +31,7 @@ test('canonical workflow display names remain stable', async () => {
 
   assert.match(workflowContents['ci.yml'], /^name: CI$/m)
   assert.match(workflowContents['e2e-admin-access.yml'], /^name: E2E \/ Admin access matrix$/m)
+  assert.match(workflowContents['e2e-deprovision-access.yml'], /^name: E2E \/ Suspend QA access profiles$/m)
   assert.match(workflowContents['e2e-provision-access.yml'], /^name: E2E \/ Provision QA access profiles$/m)
   assert.match(workflowContents['e2e-public.yml'], /^name: E2E \/ Public accessibility$/m)
 })
@@ -82,4 +84,19 @@ test('QA provisioning remains manual explicit and secret-backed', async () => {
   assert.match(provisioningWorkflow, /retention-days: 1/)
   assert.match(provisioningWorkflow, /pnpm e2e:access:provision/)
   assert.match(provisioningWorkflow, /pnpm exec playwright test e2e\/admin-access-matrix\.spec\.mjs/)
+})
+
+test('QA suspension remains manual reversible and cannot delete Auth users', async () => {
+  const suspensionWorkflow = await readWorkflow('e2e-deprovision-access.yml')
+
+  assert.match(suspensionWorkflow, /^on:\s*\n\s+workflow_dispatch:/m)
+  assert.match(suspensionWorkflow, /DEPROVISION_NON_PRODUCTION_E2E/)
+  assert.match(suspensionWorkflow, /SUPABASE_SERVICE_ROLE_KEY: \$\{\{ secrets\.SUPABASE_SERVICE_ROLE_KEY \}\}/)
+  assert.match(suspensionWorkflow, /environment: qa/)
+  assert.match(suspensionWorkflow, /E2E_ACCESS_EMAIL_DOMAIN: example\.test/)
+  assert.match(suspensionWorkflow, /E2E_DEPROVISION_MODE: suspend/)
+  assert.match(suspensionWorkflow, /pnpm e2e:access:deprovision/)
+  assert.doesNotMatch(suspensionWorkflow, /E2E_DELETE_CONFIRM/)
+  assert.doesNotMatch(suspensionWorkflow, /DELETE_NON_PRODUCTION_E2E_USERS/)
+  assert.doesNotMatch(suspensionWorkflow, /E2E_DEPROVISION_MODE:\s*delete/)
 })
