@@ -207,11 +207,16 @@ El Lote UX-1 no debe extender `WizardShell` de forma aislada. La dirección prop
 
 #### Corte 1A — contratos sin migración de dominio
 
-- `FormErrorSummary` compartido.
-- Estados explícitos en `PageState` o componentes hermanos.
-- Estado loading compatible en `Button`.
-- Anuncios configurables en `Alert`.
-- Pruebas contractuales de las APIs nuevas.
+> Estado: implementado en `main`, pendiente de ejecución local y CI.
+
+- `FormErrorSummary` compartido en `src/components/ui/form-error-summary.tsx`.
+- Estados explícitos `loading`, `error`, `empty` y `no-results` en `PageState`.
+- Estado `loading` compatible en `Button`, con prevención de doble envío para botones nativos.
+- Anuncios `off`, `polite` y `assertive` configurables en `Alert`, independientes del tono.
+- Acciones estructuradas en errores de página y alertas.
+- Pruebas contractuales en `tests/ux-shared-contracts.test.mjs` y actualización de la jerarquía de estados.
+
+No se ejecutaron typecheck, pruebas ni build durante esta actualización porque el entorno de trabajo no pudo obtener un checkout ejecutable. Estos contratos no se consideran validados hasta observar los comandos aplicables y el CI.
 
 #### Corte 1B — piloto en un asistente de personas
 
