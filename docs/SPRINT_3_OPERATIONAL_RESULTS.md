@@ -1,91 +1,63 @@
 # Sprint 3 — resultados operativos de acceso
 
 > Entorno autorizado: Supabase no productivo `hrvgpceqaxujlttpimdz`  
-> Fecha: 2026-07-17  
-> Estado: contrato de base validado; recorrido web con cuentas diferenciadas pendiente
+> Fecha de actualización: 2026-08-01  
+> Estado: matriz y aislamiento completados; recorrido integral de invitación y recuperación pendiente
 
-## Migraciones aplicadas
+## Base técnica validada
 
-Se aplicaron en orden y como entradas independientes del historial remoto:
+Se aplicaron y verificaron las migraciones de onboarding, entrada administrativa, validación de rol y alcance y consulta de progreso. La comprobación confirmó:
 
-| Versión remota | Migración |
-|---|---|
-| `20260715121326` | `user_onboarding_contract` |
-| `20260715121336` | `admin_entry_access_contract` |
-| `20260715121345` | `validate_admin_invitation_role_scope` |
-| `20260715121354` | `admin_user_onboarding_progress` |
+- `profiles.onboarding_step` y `profiles.onboarding_completed_at` disponibles;
+- contratos de lectura y escritura de onboarding operativos;
+- entrada administrativa única mediante `get_my_admin_entry_context()`;
+- validación previa de rol y alcance;
+- consulta administrativa de progreso;
+- `anon` sin permisos sobre entrada ni escritura de onboarding;
+- `authenticated` limitado a las fachadas previstas.
 
-La comprobación posterior confirmó:
+La matriz transaccional original validó los estados `ready`, `onboarding`, `blocked` y `no_role` sin persistir cambios.
 
-- columnas `profiles.onboarding_step` y `profiles.onboarding_completed_at` presentes;
-- lectores y escritores públicos de onboarding disponibles;
-- contrato único de entrada administrativa disponible;
-- validación previa de rol y alcance disponible;
-- lector administrativo del progreso disponible;
-- `anon` sin ejecución sobre entrada ni escritura de onboarding;
-- `authenticated` con ejecución únicamente sobre las fachadas previstas;
-- cero perfiles activos con onboarding incompleto después del backfill.
+## Evidencia operativa completada posteriormente
 
-## Matriz transaccional ejecutada
+S7-10 completó los componentes de S3-06 que dependían de cuentas diferenciadas y navegador real:
 
-Se utilizó la cuenta superadministradora existente exclusivamente para simular estados dentro de una transacción terminada con `ROLLBACK`. No se conservaron cambios de perfil ni de asignaciones.
+- aprovisionamiento protegido de cinco cuentas QA mediante Supabase Auth Admin;
+- matriz autenticada con administrador, consulta, onboarding, sin rol y suspendido;
+- aislamiento territorial bidireccional entre la Arquidiócesis del Ozama y la Diócesis de Monte Azul;
+- validación de navegación y alcance;
+- KPIs contextuales restringidos;
+- evidencia visual administrativa en claro y oscuro;
+- accesibilidad autenticada con Axe, teclado, foco y menú móvil;
+- suspensión posterior de cuentas QA y retirada de roles;
+- auditoría del ciclo de vida sin guardar contraseñas.
 
-Resultados comprobados mediante `get_my_admin_entry_context()`:
+La evidencia canónica se conserva en `docs/sprints/active/sprint-7-s7-10-evidence.md`.
 
-| Perfil simulado | Resultado |
-|---|---|
-| Activo, onboarding completo y rol vigente | `ready` |
-| Activo, onboarding incompleto | `onboarding` |
-| Suspendido | `blocked` |
-| Activo, onboarding completo y sin rol vigente | `no_role` |
+## Pendiente real de S3-06
 
-Después del rollback, la cuenta original volvió a `ready` con su rol vigente.
+S3-06 no requiere repetir la matriz ni conservar permanentemente `E2E_ACCESS_PROFILES_JSON`. El pendiente actual es el recorrido integral del ciclo de acceso:
 
-También se verificó que `validate_admin_role_scope`:
+1. confirmar las URL autorizadas de la aplicación para invitación, confirmación, onboarding y recuperación;
+2. crear o reactivar cuentas QA diferenciadas con correos controlados;
+3. enviar una invitación real y completar el alta desde el enlace recibido;
+4. validar prevalidación de contraseña, establecimiento de contraseña y primer acceso;
+5. completar onboarding y comprobar el estado administrativo resultante;
+6. cerrar sesión y volver a iniciar sesión;
+7. solicitar recuperación de contraseña, abrir el enlace recibido y establecer una contraseña nueva;
+8. comprobar que los enlaces vencidos, reutilizados o manipulados fallen de forma segura;
+9. conservar evidencia sin tokens, enlaces firmados, correos completos ni contraseñas;
+10. suspender nuevamente las cuentas QA y retirar el secreto temporal al finalizar.
 
-- acepta `super_admin` con alcance nacional cuando el actor es superadministrador;
-- acepta `diocesan_admin` con una diócesis dentro del alcance del actor;
-- rechaza un alcance nacional acompañado de una entidad concreta.
+## Condiciones de seguridad
 
-`admin_list_user_onboarding_progress` devolvió la cuenta visible con estado efectivo `ready`.
+- No se insertan usuarios directamente en `auth.users`.
+- Las cuentas técnicas usan dominio `.test` o `.invalid` y metadatos E2E.
+- `SUPABASE_SERVICE_ROLE_KEY` permanece únicamente en el entorno protegido `qa`.
+- `E2E_ACCESS_PROFILES_JSON` se crea solo durante una ronda de prueba y se elimina después.
+- Las pruebas mutantes no se ejecutan contra producción.
+- Las URL autorizadas deben coincidir exactamente con el entorno de beta que se valide.
 
-## Asesores
+## Criterio de cierre
 
-El asesor de seguridad reporta como advertencias las fachadas `SECURITY DEFINER` nuevas. Su exposición es intencional: `anon` no tiene ejecución, cada implementación privada valida `auth.uid()` y permisos, y los helpers privados permanecen revocados a clientes. Referencia del linter: [Signed-In Users Can Execute SECURITY DEFINER Function](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
-
-Continúa pendiente habilitar la [protección contra contraseñas filtradas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) en la configuración de Auth.
-
-Los avisos de índices sin uso son informativos en este entorno de poco tráfico; no justifican eliminar índices antes de observar una carga representativa.
-
-## Pendientes operativos
-
-Todavía no se declara cerrado S3-06. Faltan:
-
-1. configurar las URL exactas permitidas para onboarding y recuperación;
-2. crear o suministrar cuentas separadas de la matriz operativa;
-3. ejecutar el recorrido real de invitación, onboarding, login y recuperación en navegador;
-4. demostrar aislamiento bidireccional entre dos diócesis;
-5. guardar evidencias de auditoría sin secretos;
-6. ejecutar integración y E2E aplicables contra este entorno;
-7. reemplazar el secreto protegido `E2E_ACCESS_PROFILES_JSON` por un arreglo JSON completo y válido.
-
-## Automatización preparada
-
-La matriz autenticada quedó automatizada en `e2e/admin-access-matrix.spec.mjs` y puede ejecutarse mediante `pnpm test:e2e:access`. La ejecución es de solo lectura y queda omitida localmente si no existe `E2E_ACCESS_PROFILES_JSON`.
-
-El workflow canónico `E2E / Admin access matrix`, definido en `.github/workflows/e2e-admin-access.yml`, recibe la matriz únicamente desde el secreto protegido del repositorio. Una matriz completa debe incluir, como mínimo:
-
-- cuenta nacional lista;
-- administrador diocesano A con la entidad B marcada como prohibida;
-- administrador diocesano B con la entidad A marcada como prohibida;
-- cuenta sin rol, bloqueada o con onboarding pendiente según el caso que se documente.
-
-## Última ejecución automatizada
-
-La ejecución [E2E / Admin access matrix #29550578169](https://github.com/Jumen-UX/sinep-rd/actions/runs/29550578169) del 2026-07-17 no llegó a probar la aplicación. El secreto estaba presente, pero `JSON.parse` terminó con `Unexpected end of JSON input`, señal de contenido truncado o incompleto.
-
-La corrección requerida es operativa: reemplazar el valor completo del secreto y relanzar manualmente el workflow. El workflow ahora valida que el secreto sea JSON y contenga un arreglo no vacío antes de instalar dependencias o iniciar Chromium. No se registran valores, correos ni contraseñas en logs o documentación.
-
-Esta automatización no sustituye la creación segura de las cuentas ni convierte el resultado transaccional previo en evidencia de navegador. S3-06 seguirá abierto hasta ejecutarla contra el entorno no productivo y conservar el reporte sin secretos.
-
-La creación de cuentas debe realizarse mediante Supabase Auth Admin o la interfaz administrativa de SINEP; no se insertan usuarios directamente en tablas del esquema `auth`.
+S3-06 quedará completado cuando exista evidencia del recorrido invitación → contraseña → onboarding → login → recuperación en el entorno autorizado, incluyendo escenarios negativos de enlaces inválidos y limpieza posterior de cuentas y secretos.
