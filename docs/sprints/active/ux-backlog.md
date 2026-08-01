@@ -103,8 +103,8 @@ No se recomienda un rediseño visual masivo. La implementación debe ser progres
 | UX-STATE-001 | P0 | Transversal | Carga, vacío y ausencia de resultados pueden compartir una presentación y recuperación ambiguas. | Definir contratos explícitos para carga, vacío, sin resultados y error recuperable. | Bajo | Medio | Pendiente |
 | UX-STATE-002 | P1 | Administración | Sin rol, sin ámbito, permiso insuficiente, sesión vencida y configuración faltante requieren mensajes y acciones distintas. | Crear patrones específicos, sin convertirlos en variantes visuales indistinguibles. | Medio | Medio | Pendiente |
 | UX-IMPACT-001 | P0 | Nombramientos, eventos, estructuras e importaciones | El resumen de impacto existe de forma especializada, no como contrato común. | Definir datos mínimos, consecuencias, registros afectados, fuente y confirmación. | Medio | Medio-alto | Parcial |
-| UX-WIZ-001 | P0 | Asistentes | La primitiva `WizardShell` no tiene consumidores detectados; los asistentes reales mantienen patrones locales. | Inventariar y comparar patrones antes de extender o migrar la primitiva. | Medio | Medio | En análisis |
-| UX-WIZ-002 | P0 | Asistentes | La versión móvil necesita indicador compacto, pasos desplegables, resumen colapsable y controles táctiles. | Definir el contrato después de UX-WIZ-001 y validarlo a 320 y 390 px. | Medio | Medio | Bloqueado por UX-WIZ-001 |
+| UX-WIZ-001 | P0 | Asistentes | `AdminWizardProgress` es el patrón activo en cinco asistentes de personas; eventos mantiene una segunda familia y `WizardShell` no tiene consumidores detectados. | Consolidar sobre el patrón adoptado y evitar una tercera familia de asistentes. | Medio | Medio | Inventario completado |
+| UX-WIZ-002 | P0 | Asistentes | La versión móvil necesita indicador compacto, pasos desplegables, resumen colapsable y controles táctiles. | Extender el patrón basado en `AdminWizardProgress` y validarlo a 320 y 390 px. | Medio | Medio | Preparado para UX-1 |
 | UX-DRAFT-001 | P0 | Formularios largos | No existe política general de borradores según sensibilidad. | Definir persistencia en sesión o servidor; no usar almacenamiento local para datos sensibles sin evaluación de seguridad. | Alto | Alto | Pendiente |
 | UX-LIST-001 | P1 | Listados | El desplazamiento horizontal contenido no resuelve todos los listados móviles. | Clasificar cuándo usar tabla, lista responsive, tarjetas o detalle expandible. | Medio | Medio | Pendiente |
 | UX-PERSON-001 | P0 | Personas | Filtros y accesos duplicados elevan carga cognitiva y tabulaciones. | Consolidar una representación adaptable y mantener una acción primaria. | Medio | Medio | Diagnosticado |
@@ -154,6 +154,93 @@ Preparar contratos transversales verificables antes de migrar pantallas completa
 | UX1-04 | Alertas anunciables | `src/components/ui/alert.tsx` | UX1-02 | El tono no fuerza región viva; anuncio `off/polite/assertive`; acciones estructuradas cuando apliquen. |
 | UX1-05 | Asistente común | `src/components/ui/wizard-shell.tsx` o contrato real que resulte de UX-WIZ-001 | UX-WIZ-001, UX1-01 | Indicadores no interactivos no son botones deshabilitados; pasos bloqueados explican razón; móvil compacto; resumen editable; errores integrables. |
 | UX1-06 | Evidencia de accesibilidad | pruebas unitarias/contractuales y E2E afectadas | UX1-01 a UX1-05 | Teclado, Axe, 320/390 px, claro/oscuro; resultados registrados sin extrapolar a toda la aplicación. |
+
+
+### Resultado del inventario de asistentes actuales
+
+#### Familia A — asistentes de personas
+
+Los asistentes de sacerdote, obispo, diácono, vida consagrada y laico usan el componente compartido `src/components/admin/AdminWizardProgress.tsx`. El patrón real incluye:
+
+- estado de paso controlado por cada página;
+- progreso porcentual y semántica `progressbar`;
+- pasos alcanzables mediante `maxReachableStep`;
+- pasos no alcanzables renderizados como contenido no interactivo;
+- navegación hacia pasos permitidos;
+- reutilización de `PersonIdentityStep` para buscar una identidad antes de crear otra;
+- validación y mensajes de error locales en cada página;
+- resumen y layout especializados por dominio;
+- guardado de borrador en `localStorage` únicamente en el asistente de sacerdote.
+
+Consumidores confirmados:
+
+- `src/features/clero/priest/admin/PriestWizardPage.tsx`;
+- `src/features/clero/bishop/admin/BishopWizardPage.tsx`;
+- `src/features/clero/deacon/admin/DeaconWizardPage.tsx`;
+- `src/features/vida-consagrada/religious/admin/ReligiousWizardPage.tsx`;
+- `src/features/personas/lay/admin/LayPersonWizardPage.tsx`.
+
+#### Familia B — asistente de eventos
+
+`src/features/events/admin/EventDraftPage.tsx` implementa pasos, navegación, impacto y previsualización con clases y estado locales (`assistant-stepper`, `step-card`). No consume `AdminWizardProgress` ni `WizardShell`.
+
+#### Primitiva no adoptada
+
+`src/components/ui/wizard-shell.tsx` define navegación, layout y resumen, pero no se encontraron consumidores. Parte de su contrato está superpuesto por `AdminWizardProgress`, que ya resuelve mejor:
+
+- progreso explícito;
+- máximo paso alcanzable;
+- elementos no interactivos cuando un paso no puede abrirse;
+- evidencia automática específica.
+
+#### Decisión de preparación
+
+El Lote UX-1 no debe extender `WizardShell` de forma aislada. La dirección propuesta es:
+
+1. conservar `AdminWizardProgress` como base de navegación adoptada;
+2. extraer contratos composables para resumen de errores, estados, resumen editable y footer;
+3. decidir mediante un piloto si `WizardShell` se convierte en layout compuesto alrededor de `AdminWizardProgress` o se retira posteriormente;
+4. migrar eventos solo después de demostrar compatibilidad, sin mezclar esa migración con los contratos base;
+5. evaluar seguridad antes de generalizar el borrador de sacerdote, porque contiene datos personales.
+
+### Lote UX-1 listo para implementación
+
+#### Corte 1A — contratos sin migración de dominio
+
+- `FormErrorSummary` compartido.
+- Estados explícitos en `PageState` o componentes hermanos.
+- Estado loading compatible en `Button`.
+- Anuncios configurables en `Alert`.
+- Pruebas contractuales de las APIs nuevas.
+
+#### Corte 1B — piloto en un asistente de personas
+
+Piloto recomendado: `LayPersonWizardPage`, porque usa la familia canónica, no contiene la bifurcación diaconal/sacerdotal y permite probar identidad existente o nueva, validación, servicio y revisión.
+
+El piloto debe integrar:
+
+- resumen navegable de errores;
+- foco al primer campo inválido;
+- botón loading;
+- indicador móvil compacto basado en `AdminWizardProgress`;
+- resumen editable;
+- conservación de datos válidos;
+- pruebas existentes actualizadas y pruebas nuevas limitadas al flujo.
+
+No debe introducir persistencia de borrador hasta cerrar UX-DRAFT-001.
+
+#### Corte 1C — decisión de convergencia
+
+Con evidencia del piloto:
+
+- mantener `WizardShell` como layout compuesto, o
+- retirar `WizardShell` si no aporta un contrato diferencial.
+
+La decisión se documentará antes de migrar los otros cuatro asistentes o el flujo de eventos.
+
+#### Comandos de verificación previstos
+
+La implementación futura deberá ejecutar, como mínimo, los chequeos afectados que determine el repositorio, además de typecheck y las pruebas específicas de asistentes. `pnpm check` solo podrá declararse verde si se ejecuta completo y termina satisfactoriamente. La revisión manual autenticada, lector de pantalla, zoom y touch permanecen como evidencia separada.
 
 ### Exclusiones del lote
 
