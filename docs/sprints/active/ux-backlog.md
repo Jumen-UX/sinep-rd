@@ -1,7 +1,7 @@
 # Backlog UX activo
 
 > Estado: vigente
-> Última revisión: 2026-07-21
+> Última revisión: 2026-08-01
 > Propietario: producto y frontend
 
 ## Convención de estado
@@ -69,6 +69,111 @@ La cobertura visual se controla mediante la [matriz de validación UX](../../des
 4. Implementar resumen navegable de errores y el patrón común de impacto.
 5. Validar lector de pantalla, zoom 400 %, touch e impresión.
 6. Ejecutar pruebas moderadas con usuarios representativos.
+
+
+## Auditoría UX integral — diagnóstico formal 2026-08-01
+
+### Alcance y límites de la evidencia
+
+La auditoría cubrió propósito, perfiles inferidos, arquitectura de información, navegación, jerarquía visual, formularios, estados, prevención de errores, listados, responsive, accesibilidad, microcopy, rendimiento percibido y adopción de primitivas compartidas.
+
+Se inspeccionaron el backlog vigente, la guía UX, el sistema de diseño y código representativo de componentes y pantallas. Los perfiles de público general, personal pastoral, administrador diocesano, administrador nacional, investigador y editor son inferencias que deben validarse con usuarios reales.
+
+Esta auditoría no modifica procesos de negocio ni acredita resultados de CI, pruebas con tecnologías de asistencia o métricas de uso. Un estado **Diagnosticado** indica evidencia de revisión, no implementación ni validación operativa.
+
+### Diagnóstico ejecutivo
+
+SINEP RD cuenta con una base sólida de tokens, shell administrativo autorizado, encabezados, estados, tablas, botones, badges y pruebas iniciales. La deuda principal es convertir esa biblioteca visual parcialmente adoptada en un sistema de interacción consistente:
+
+1. Preservar el contexto eclesial y administrativo.
+2. Unificar prevención y recuperación de errores.
+3. Diferenciar carga, vacío, sin resultados, permiso y sesión.
+4. Mostrar impacto antes de operaciones sensibles.
+5. Diseñar asistentes y listados con comportamiento móvil deliberado.
+6. Completar adopción, validación autenticada y pruebas con usuarios.
+
+No se recomienda un rediseño visual masivo. La implementación debe ser progresiva, basada en contratos compartidos y pilotos verificables.
+
+### Hallazgos formalizados
+
+| ID | Prioridad | Superficie | Problema y consecuencia | Solución propuesta | Riesgo | Esfuerzo | Estado |
+|---|---|---|---|---|---|---|---|
+| UX-AUD-001 | P0 | Transversal | La adopción de primitivas es desigual; una migración sin inventario puede duplicar contratos. | Mantener matriz ruta × shell × header × estado × tabla/formulario × pruebas. | Bajo | Medio | Diagnosticado |
+| UX-FORM-001 | P0 | Formularios | No existe resumen común que cuente errores, los anuncie y lleve el foco al campo inválido. | Crear resumen navegable y pilotarlo en un formulario crítico. | Medio | Medio | Pendiente |
+| UX-STATE-001 | P0 | Transversal | Carga, vacío y ausencia de resultados pueden compartir una presentación y recuperación ambiguas. | Definir contratos explícitos para carga, vacío, sin resultados y error recuperable. | Bajo | Medio | Pendiente |
+| UX-STATE-002 | P1 | Administración | Sin rol, sin ámbito, permiso insuficiente, sesión vencida y configuración faltante requieren mensajes y acciones distintas. | Crear patrones específicos, sin convertirlos en variantes visuales indistinguibles. | Medio | Medio | Pendiente |
+| UX-IMPACT-001 | P0 | Nombramientos, eventos, estructuras e importaciones | El resumen de impacto existe de forma especializada, no como contrato común. | Definir datos mínimos, consecuencias, registros afectados, fuente y confirmación. | Medio | Medio-alto | Parcial |
+| UX-WIZ-001 | P0 | Asistentes | La primitiva `WizardShell` no tiene consumidores detectados; los asistentes reales mantienen patrones locales. | Inventariar y comparar patrones antes de extender o migrar la primitiva. | Medio | Medio | En análisis |
+| UX-WIZ-002 | P0 | Asistentes | La versión móvil necesita indicador compacto, pasos desplegables, resumen colapsable y controles táctiles. | Definir el contrato después de UX-WIZ-001 y validarlo a 320 y 390 px. | Medio | Medio | Bloqueado por UX-WIZ-001 |
+| UX-DRAFT-001 | P0 | Formularios largos | No existe política general de borradores según sensibilidad. | Definir persistencia en sesión o servidor; no usar almacenamiento local para datos sensibles sin evaluación de seguridad. | Alto | Alto | Pendiente |
+| UX-LIST-001 | P1 | Listados | El desplazamiento horizontal contenido no resuelve todos los listados móviles. | Clasificar cuándo usar tabla, lista responsive, tarjetas o detalle expandible. | Medio | Medio | Pendiente |
+| UX-PERSON-001 | P0 | Personas | Filtros y accesos duplicados elevan carga cognitiva y tabulaciones. | Consolidar una representación adaptable y mantener una acción primaria. | Medio | Medio | Diagnosticado |
+| UX-PERSON-002 | P0 | Personas | Búsqueda y filtros locales pueden perderse al recargar o volver desde una ficha. | Sincronizar filtros relevantes con URL y preservar contexto. | Medio | Medio | Diagnosticado |
+| UX-PERSON-003 | P0 | Personas y calidad de datos | Inferir “activa” por “no fallecida” mezcla estado personal y ministerial. | Validar taxonomía canónica antes de cambiar etiquetas o filtros. | Alto | Medio-alto | Requiere validación funcional |
+| UX-SHELL-001 | P1 | Shell administrativo | Existe un shell residual sin consumidor detectado. | Confirmar por búsqueda, build y pruebas; eliminarlo solo con evidencia. | Medio | Bajo | Diagnosticado |
+| UX-A11Y-001 | P0 | Navegación móvil | El diálogo administrativo demuestra foco inicial y retorno, pero falta evidencia de ciclo completo de Tab y Shift+Tab. | Verificar o implementar focus trap y añadir prueba. | Bajo | Bajo-medio | Pendiente |
+| UX-VALID-001 | P0 | Rutas autenticadas | La evidencia automática no cubre todos los estados, roles y datos representativos. | Ejecutar matriz autenticada, Axe, teclado, 320 px, zoom 400 %, touch y revisión manual. | Bajo | Alto | Pendiente |
+| UX-RESEARCH-001 | P0 antes de cierre UX | Producto | Los perfiles y tareas frecuentes aún no están validados con usuarios representativos. | Pruebas moderadas con perfiles nacional, diocesano, consulta y operación restringida. | Bajo | Alto | Pendiente |
+
+### Flujos prioritarios
+
+| Flujo | Situación observada | Objetivo verificable |
+|---|---|---|
+| Buscar y administrar una persona | La ruta combina dashboard, accesos, filtros y listado; el contexto no está garantizado en URL. | Encontrar un registro sin duplicación de controles y regresar desde su ficha conservando búsqueda y filtros. |
+| Crear una persona | Los asistentes comparten partes del dominio, pero no se ha demostrado un shell interactivo común. | Prevenir duplicados, conservar datos válidos, resumir errores y revisar antes de crear. |
+| Registrar un nombramiento | Cargo, titular, vigencia e impacto histórico requieren explicación previa. | Mostrar titular vigente, consecuencia de sustitución, fechas y fuente antes de confirmar. |
+| Configurar estructura | Árbol, propiedades y operaciones históricas tienen distinta gravedad. | Separar edición ordinaria de reorganización y operar completamente por teclado. |
+| Importar datos | Errores, advertencias, duplicados y aplicación parcial no son equivalentes. | Corregir o reintentar filas fallidas y obtener un reporte verificable. |
+| Consultar ficha pública | La confianza depende de contexto, vigencia y procedencia. | Distinguir dato vigente, histórico, no verificado y no publicado cerca del dato afectado. |
+
+### Matriz de adopción inicial
+
+| Primitiva | Adopción observada | Decisión |
+|---|---|---|
+| `PageHeader` | Media-alta en módulos prioritarios. | Conservar; gobernar breadcrumbs, metadata y jerarquía de acciones. |
+| `PageState` | Media. | Corregir contrato antes de ampliar adopción. |
+| `DataTable` | Baja y localizada. | Mantener como tabla semántica; no forzarla en listados orientados a registros. |
+| `WizardShell` | Sin consumidores detectados mediante búsqueda de código. | No extender hasta comparar asistentes reales. |
+| `Button` | Base madura. | Preparar estado loading e `IconButton` accesible en un lote posterior o compatible. |
+| `Alert` | Base madura. | Separar tono visual de comportamiento de anuncio. |
+| `StatusBadge` | Base madura. | Definir catálogo semántico de estados y tonos. |
+
+## Lote UX-1 — contratos compartidos (preparación)
+
+### Objetivo
+
+Preparar contratos transversales verificables antes de migrar pantallas completas. La preparación no autoriza cambios de negocio ni migraciones masivas.
+
+### Alcance propuesto
+
+| ID | Contrato | Archivos candidatos | Dependencias | Criterios de aceptación |
+|---|---|---|---|---|
+| UX1-01 | Resumen navegable de errores | `src/components/ui/form-error-summary.tsx` y formulario piloto por definir | Inventario de asistentes | Cuenta errores; enlaces únicos; mueve foco; conserva datos; mensaje junto al campo; anuncio accesible; prueba de teclado. |
+| UX1-02 | Estados explícitos | `src/components/ui/page-state.tsx` y componentes hermanos si corresponde | Ninguna | Carga no parece vacío; sin resultados conserva filtros; error explica recuperación; API no favorece mensajes genéricos. |
+| UX1-03 | Botón en carga | `src/components/ui/button.tsx` | Compatibilidad con consumidores | `loading`, etiqueta accesible, `aria-busy`, evita doble envío y conserva ancho razonable. |
+| UX1-04 | Alertas anunciables | `src/components/ui/alert.tsx` | UX1-02 | El tono no fuerza región viva; anuncio `off/polite/assertive`; acciones estructuradas cuando apliquen. |
+| UX1-05 | Asistente común | `src/components/ui/wizard-shell.tsx` o contrato real que resulte de UX-WIZ-001 | UX-WIZ-001, UX1-01 | Indicadores no interactivos no son botones deshabilitados; pasos bloqueados explican razón; móvil compacto; resumen editable; errores integrables. |
+| UX1-06 | Evidencia de accesibilidad | pruebas unitarias/contractuales y E2E afectadas | UX1-01 a UX1-05 | Teclado, Axe, 320/390 px, claro/oscuro; resultados registrados sin extrapolar a toda la aplicación. |
+
+### Exclusiones del lote
+
+- Cambios de taxonomía o reglas de negocio.
+- Persistencia de borradores sensibles.
+- Rediseño completo de personas, nombramientos o estructuras.
+- Eliminación del shell residual.
+- Declaración de CI verde sin ejecutar y observar la canalización aplicable.
+- Aceptación operativa basada únicamente en pruebas automáticas.
+
+### Secuencia interna condicionada
+
+1. Identificar asistentes reales y elegir piloto.
+2. Definir el contrato de errores y estados.
+3. Implementar contratos compatibles de botón y alerta.
+4. Adaptar o sustituir `WizardShell` según la evidencia del inventario.
+5. Integrar un formulario piloto.
+6. Ejecutar pruebas afectadas y documentar resultados.
+7. Solo entonces ampliar adopción.
+
 
 ## Regla de prioridad
 
