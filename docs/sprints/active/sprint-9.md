@@ -85,6 +85,17 @@ S9-06 permanecerá abierto hasta obtener evidencia de:
 6. auditoría verificable de cada transición;
 7. CI y pruebas aplicables en verde después de cualquier corrección.
 
+## Evidencia coordinada UX-1B
+
+El piloto UX-1B del asistente de personas laicas quedó implementado y obtuvo una ejecución CI satisfactoria en el commit `1dbfe4de` el 2026-08-01, con duración observada de 1 min 37 s. La ejecución posterior a las correcciones contractuales valida el resumen navegable de errores, el callback de selección de identidad, el botón con carga y el progreso móvil compacto dentro del alcance automatizado del piloto.
+
+Esta evidencia:
+
+- cierra la validación automatizada de UX-1B;
+- no completa S9-09, que requiere la evidencia acumulada de las compuertas S9-01 a S9-08;
+- no sustituye E2E autenticado, revisión manual, lector de pantalla, zoom ni touch;
+- no habilita indexación, publicación pública ni cierre del Sprint 9.
+
 ## Criterios de cierre
 
 - [ ] El ciclo real de acceso y recuperación está verificado con cuentas diferenciadas.
