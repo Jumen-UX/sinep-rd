@@ -7,7 +7,7 @@
 
 ## Estado consolidado
 
-SINEP RD es candidata a beta interna. Los Sprints 0–7 están cerrados técnica y operativamente. Sprint 8 completó su alcance técnico de rendimiento, indexación, búsqueda, observabilidad y documentación.
+SINEP RD es candidata a beta interna. Los Sprints 0–7 están cerrados técnica y operativamente. Sprint 8 cerró su alcance técnico de rendimiento, indexación, búsqueda, observabilidad y documentación. Sprint 9 está activo para preparar la beta operativa.
 
 La aplicación cuenta con identidad canónica de personas, dimensiones clericales, estructuras configurables, organización interna separada, permisos por alcance, auditoría, importaciones controladas, eventos históricos, portal público, portal administrativo consolidado, tema claro/oscuro/automático y compuertas de calidad en CI.
 
@@ -15,7 +15,8 @@ La aplicación cuenta con identidad canónica de personas, dimensiones clericale
 
 - [Sprint 7 — Portal administrativo y experiencia de usuario](../sprints/active/sprint-7.md): completado.
 - [Evidencia S7-10](../sprints/active/sprint-7-s7-10-evidence.md): acceso, KPIs, visuales, accesibilidad y suspensión QA.
-- [Sprint 8 — Rendimiento, indexación y salida mantenible](../sprints/active/sprint-8.md): alcance técnico completado.
+- [Sprint 8 — Rendimiento, indexación y salida mantenible](../sprints/active/sprint-8.md): completado.
+- [Sprint 9 — Preparación operativa de beta](../sprints/active/sprint-9.md): activo.
 - [Resultados operativos de Sprint 3](../SPRINT_3_OPERATIONAL_RESULTS.md): matriz completada; ciclo integral de acceso pendiente.
 
 ## Riesgo temporal aceptado
