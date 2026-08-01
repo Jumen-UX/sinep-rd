@@ -38,7 +38,7 @@ La cobertura visual se controla mediante la [matriz de validación UX](../../des
 | Capacidad | Estado | Evidencia y trabajo restante |
 |---|---|---|
 | Formularios y asistentes comunes | Parcial | Los asistentes de personas comparten progreso, servicios y estilos; no todos los formularios administrativos consumen las mismas primitivas. |
-| Resumen navegable de errores | Pendiente | Hay mensajes locales y estados `role="alert"`, pero no un resumen común que lleve el foco al campo inválido. |
+| Resumen navegable de errores | Parcial | `FormErrorSummary` existe como contrato común y fue validado en el piloto laico; falta adoptarlo en los demás formularios críticos. |
 | Borradores reanudables | Pendiente | Los flujos conservan estado durante la sesión y los eventos tienen borrador canónico, pero no existe persistencia UX general de formularios incompletos. |
 | Resumen de impacto | Parcial | Cargos, nombramientos y eventos muestran impacto en operaciones sensibles; falta el patrón compartido y su adopción total. |
 | Personas y nombramientos en patrón común | Parcial | Servicios y fronteras de dominio están consolidados; la presentación todavía mezcla componentes comunes y estilos especializados. |
@@ -99,12 +99,12 @@ No se recomienda un rediseño visual masivo. La implementación debe ser progres
 | ID | Prioridad | Superficie | Problema y consecuencia | Solución propuesta | Riesgo | Esfuerzo | Estado |
 |---|---|---|---|---|---|---|---|
 | UX-AUD-001 | P0 | Transversal | La adopción de primitivas es desigual; una migración sin inventario puede duplicar contratos. | Mantener matriz ruta × shell × header × estado × tabla/formulario × pruebas. | Bajo | Medio | Diagnosticado |
-| UX-FORM-001 | P0 | Formularios | No existe resumen común que cuente errores, los anuncie y lleve el foco al campo inválido. | Crear resumen navegable y pilotarlo en un formulario crítico. | Medio | Medio | Pendiente |
+| UX-FORM-001 | P0 | Formularios | La adopción del resumen común todavía no cubre todos los flujos críticos. | Ampliar progresivamente `FormErrorSummary`, ya validado en el piloto laico. | Medio | Medio | Parcial: contrato y piloto validados |
 | UX-STATE-001 | P0 | Transversal | Carga, vacío y ausencia de resultados pueden compartir una presentación y recuperación ambiguas. | Definir contratos explícitos para carga, vacío, sin resultados y error recuperable. | Bajo | Medio | Pendiente |
 | UX-STATE-002 | P1 | Administración | Sin rol, sin ámbito, permiso insuficiente, sesión vencida y configuración faltante requieren mensajes y acciones distintas. | Crear patrones específicos, sin convertirlos en variantes visuales indistinguibles. | Medio | Medio | Pendiente |
 | UX-IMPACT-001 | P0 | Nombramientos, eventos, estructuras e importaciones | El resumen de impacto existe de forma especializada, no como contrato común. | Definir datos mínimos, consecuencias, registros afectados, fuente y confirmación. | Medio | Medio-alto | Parcial |
 | UX-WIZ-001 | P0 | Asistentes | `AdminWizardProgress` es el patrón activo en cinco asistentes de personas; eventos mantiene una segunda familia y `WizardShell` no tiene consumidores detectados. | Consolidar sobre el patrón adoptado y evitar una tercera familia de asistentes. | Medio | Medio | Inventario completado |
-| UX-WIZ-002 | P0 | Asistentes | La versión móvil necesita indicador compacto, pasos desplegables, resumen colapsable y controles táctiles. | Extender el patrón basado en `AdminWizardProgress` y validarlo a 320 y 390 px. | Medio | Medio | Preparado para UX-1 |
+| UX-WIZ-002 | P0 | Asistentes | La experiencia móvil compacta todavía no se adoptó en todos los asistentes. | Ampliar el modo compacto opt-in de `AdminWizardProgress`, validado contractualmente en el piloto laico, y completar revisión manual a 320 y 390 px. | Medio | Medio | Parcial: piloto automatizado validado |
 | UX-DRAFT-001 | P0 | Formularios largos | No existe política general de borradores según sensibilidad. | Definir persistencia en sesión o servidor; no usar almacenamiento local para datos sensibles sin evaluación de seguridad. | Alto | Alto | Pendiente |
 | UX-LIST-001 | P1 | Listados | El desplazamiento horizontal contenido no resuelve todos los listados móviles. | Clasificar cuándo usar tabla, lista responsive, tarjetas o detalle expandible. | Medio | Medio | Pendiente |
 | UX-PERSON-001 | P0 | Personas | Filtros y accesos duplicados elevan carga cognitiva y tabulaciones. | Consolidar una representación adaptable y mantener una acción primaria. | Medio | Medio | Diagnosticado |
@@ -220,7 +220,7 @@ La ejecución posterior de `pnpm check` completó documentación, auditorías, T
 
 #### Corte 1B — piloto en un asistente de personas
 
-> Estado: implementado en `LayPersonWizardPage`, pendiente de `pnpm check` y validación manual.
+> Estado: implementado y validado mediante `pnpm check` en CI; validación manual autenticada pendiente.
 
 El piloto usa `LayPersonWizardPage`, porque consume la familia canónica, no contiene la bifurcación diaconal/sacerdotal y permite probar identidad existente o nueva, validación, servicio y revisión.
 
@@ -235,17 +235,17 @@ Implementado:
 - persistencia y servicios canónicos sin cambios;
 - pruebas contractuales actualizadas para el piloto y el progreso móvil.
 
-El piloto debe integrar:
+La ejecución CI del commit `1dbfe4de` finalizó satisfactoriamente el 2026-08-01 en 1 min 37 s. La evidencia observada confirma la canalización aplicable después de actualizar las pruebas contractuales del callback de identidad. Esta evidencia automatizada no sustituye la revisión manual autenticada, lector de pantalla, zoom ni touch.
 
-- resumen navegable de errores;
-- foco al primer campo inválido;
-- botón loading;
-- indicador móvil compacto basado en `AdminWizardProgress`;
-- resumen editable;
-- conservación de datos válidos;
-- pruebas existentes actualizadas y pruebas nuevas limitadas al flujo.
+Validación manual pendiente:
 
-No debe introducir persistencia de borrador hasta cerrar UX-DRAFT-001.
+- recorrido completo con identidad existente y nueva;
+- foco real al primer campo inválido con teclado y lector de pantalla;
+- reflujo a 320 y 390 px;
+- temas claro y oscuro;
+- conservación de datos válidos durante corrección y retorno entre pasos.
+
+No se introdujo persistencia de borrador; esa capacidad continúa condicionada al cierre de UX-DRAFT-001.
 
 #### Corte 1C — decisión de convergencia
 
