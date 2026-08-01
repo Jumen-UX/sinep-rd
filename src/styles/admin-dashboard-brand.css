@@ -219,3 +219,13 @@
   background: var(--primary);
   color: var(--on-primary);
 }
+
+.admin-dashboard-metric-note.alert,
+.admin-dashboard-metric-note.green {
+  color: var(--foreground);
+}
+
+.admin-mobile-nav button[aria-controls='admin-mobile-menu'] > span:last-child {
+  color: var(--foreground);
+  font-weight: 800;
+}
