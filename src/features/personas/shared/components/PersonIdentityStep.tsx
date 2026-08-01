@@ -19,6 +19,7 @@ type PersonIdentityStepProps = {
   selectPlaceholder: string
   existingSummary: string
   emptySelectionLabel?: string
+  selectId?: string
 }
 
 export function PersonIdentityStep({
@@ -32,6 +33,7 @@ export function PersonIdentityStep({
   selectPlaceholder,
   existingSummary,
   emptySelectionLabel = 'Sin persona seleccionada',
+  selectId,
 }: PersonIdentityStepProps) {
   const selectedPerson = people.find((person) => person.id === selectedPersonId)
 
@@ -75,6 +77,7 @@ export function PersonIdentityStep({
           <label>
             Persona
             <select
+              id={selectId}
               value={selectedPersonId}
               onChange={(event) => onSelectedPersonChange(event.target.value)}
             >
