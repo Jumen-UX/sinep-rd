@@ -13,6 +13,7 @@ type AdminWizardProgressProps = {
   currentStep: number
   onStepChange?: (step: number) => void
   maxReachableStep?: number
+  compactOnMobile?: boolean
 }
 
 export default function AdminWizardProgress({
@@ -20,10 +21,56 @@ export default function AdminWizardProgress({
   currentStep,
   onStepChange,
   maxReachableStep = currentStep,
+  compactOnMobile = false,
 }: AdminWizardProgressProps) {
   const progress = steps.length > 0 ? Math.round(((currentStep + 1) / steps.length) * 100) : 0
   const reachableStep = Math.max(currentStep, Math.min(steps.length - 1, maxReachableStep))
   const currentStepLabel = steps[currentStep]?.label ?? 'Sin paso activo'
+
+  function renderSteps() {
+    return steps.map((step, index) => {
+      const isComplete = index < currentStep
+      const isCurrent = index === currentStep
+      const canNavigate = Boolean(onStepChange) && index <= reachableStep
+      const content = (
+        <>
+          <span className="grid size-7 shrink-0 place-items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-bold text-[var(--text-strong)]">
+            {isComplete ? '✓' : index + 1}
+          </span>
+          <span className="min-w-0 flex-1">
+            <strong className="block text-sm text-[var(--text-strong)]">{step.label}</strong>
+            {step.description ? <small className="mt-1 block text-xs leading-5 text-[var(--text-muted)]">{step.description}</small> : null}
+          </span>
+          <StatusBadge tone={isComplete ? 'success' : isCurrent ? 'institutional' : 'neutral'} className="shrink-0">
+            {isComplete ? 'Listo' : isCurrent ? 'Actual' : 'Pendiente'}
+          </StatusBadge>
+        </>
+      )
+
+      const className = cn(
+        'flex w-full items-start gap-3 rounded-[var(--radius-md)] px-3 py-3 text-left transition-colors',
+        isCurrent ? 'bg-[var(--primary-soft)]' : canNavigate ? 'hover:bg-[var(--surface-hover)]' : 'opacity-70',
+      )
+
+      return (
+        <li key={`${index}-${step.label}`}>
+          {canNavigate ? (
+            <button
+              aria-current={isCurrent ? 'step' : undefined}
+              aria-label={`Ir al paso ${index + 1}: ${step.label}`}
+              className={className}
+              onClick={() => onStepChange?.(index)}
+              type="button"
+            >
+              {content}
+            </button>
+          ) : (
+            <div className={className} aria-current={isCurrent ? 'step' : undefined}>{content}</div>
+          )}
+        </li>
+      )
+    })
+  }
 
   return (
     <aside
@@ -52,50 +99,19 @@ export default function AdminWizardProgress({
         <span className="block h-full rounded-full bg-[var(--primary)] transition-[width]" style={{ width: `${progress}%` }} />
       </div>
 
-      <ol className="grid gap-1">
-        {steps.map((step, index) => {
-          const isComplete = index < currentStep
-          const isCurrent = index === currentStep
-          const canNavigate = Boolean(onStepChange) && index <= reachableStep
-          const content = (
-            <>
-              <span className="grid size-7 shrink-0 place-items-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-bold text-[var(--text-strong)]">
-                {isComplete ? '✓' : index + 1}
-              </span>
-              <span className="min-w-0 flex-1">
-                <strong className="block text-sm text-[var(--text-strong)]">{step.label}</strong>
-                {step.description ? <small className="mt-1 block text-xs leading-5 text-[var(--text-muted)]">{step.description}</small> : null}
-              </span>
-              <StatusBadge tone={isComplete ? 'success' : isCurrent ? 'institutional' : 'neutral'} className="shrink-0">
-                {isComplete ? 'Listo' : isCurrent ? 'Actual' : 'Pendiente'}
-              </StatusBadge>
-            </>
-          )
-
-          const className = cn(
-            'flex w-full items-start gap-3 rounded-[var(--radius-md)] px-3 py-3 text-left transition-colors',
-            isCurrent ? 'bg-[var(--primary-soft)]' : canNavigate ? 'hover:bg-[var(--surface-hover)]' : 'opacity-70',
-          )
-
-          return (
-            <li key={`${index}-${step.label}`}>
-              {canNavigate ? (
-                <button
-                  aria-current={isCurrent ? 'step' : undefined}
-                  aria-label={`Ir al paso ${index + 1}: ${step.label}`}
-                  className={className}
-                  onClick={() => onStepChange?.(index)}
-                  type="button"
-                >
-                  {content}
-                </button>
-              ) : (
-                <div className={className} aria-current={isCurrent ? 'step' : undefined}>{content}</div>
-              )}
-            </li>
-          )
-        })}
-      </ol>
+      {compactOnMobile ? (
+        <>
+          <details className="xl:hidden">
+            <summary className="cursor-pointer rounded-[var(--radius-md)] px-3 py-2 text-sm font-semibold text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]">
+              Ver todos los pasos
+            </summary>
+            <ol className="mt-2 grid gap-1">{renderSteps()}</ol>
+          </details>
+          <ol className="hidden gap-1 xl:grid">{renderSteps()}</ol>
+        </>
+      ) : (
+        <ol className="grid gap-1">{renderSteps()}</ol>
+      )}
     </aside>
   )
 }
