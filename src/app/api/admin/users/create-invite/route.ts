@@ -32,6 +32,14 @@ type ValidatedAccess = {
   country_iso2: string | null
 }
 
+type ReconciledInvitation = {
+  user_id: string
+  email: string
+  profile_existed: boolean
+  membership: unknown
+  assignment: unknown
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdminAccess({
     permissionKey: 'users.manage',
@@ -42,7 +50,7 @@ export async function POST(request: Request) {
   if (!auth.ok) return auth.response
 
   try {
-    const payload = await parseJsonObjectBody(request, 'Solicitud invalida.') as Payload
+    const payload = await parseJsonObjectBody(request, 'Solicitud inválida.') as Payload
     const email = requiredEmail(payload.email)
     const fullName = optionalText(payload.full_name, 180)
     const phone = optionalText(payload.phone, 80)
@@ -61,7 +69,9 @@ export async function POST(request: Request) {
     })
 
     if (countryError) {
-      return NextResponse.json({ error: countryError.message || 'El país administrativo seleccionado no es válido.' }, { status: 400 })
+      return NextResponse.json({
+        error: countryError.message || 'El país administrativo seleccionado no es válido.',
+      }, { status: 400 })
     }
 
     const validatedCountry = countryData as ValidatedCountry
@@ -78,7 +88,9 @@ export async function POST(request: Request) {
       })
 
       if (error) {
-        return NextResponse.json({ error: error.message || 'El rol o alcance seleccionado no es válido.' }, { status: 400 })
+        return NextResponse.json({
+          error: error.message || 'El rol o alcance seleccionado no es válido.',
+        }, { status: 400 })
       }
 
       validatedAccess = data as ValidatedAccess
@@ -100,113 +112,49 @@ export async function POST(request: Request) {
       redirectTo,
     })
 
-    let userId = inviteData.user?.id ?? null
-    let existingUser = false
-
-    if (inviteError || !userId) {
-      const { data: profile } = await admin
-        .from('profiles')
-        .select('id')
-        .ilike('email', email)
-        .maybeSingle()
-
-      userId = typeof profile?.id === 'string' ? profile.id : null
-      existingUser = Boolean(userId)
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: inviteError?.message ?? 'No se pudo invitar el usuario.' }, { status: 400 })
-    }
-
-    const profileMutation = existingUser
-      ? admin
-        .from('profiles')
-        .update({ email, full_name: fullName || email, phone: phone || null })
-        .eq('id', userId)
-      : admin.from('profiles').upsert({
-        id: userId,
-        email,
-        full_name: fullName || email,
-        phone: phone || null,
-        status: 'pending_invitation',
-        onboarding_step: 'profile',
-        onboarding_completed_at: null,
-      })
-
-    const { error: profileError } = await profileMutation
-    if (profileError) {
-      return NextResponse.json({ error: profileError.message || 'No se pudo preparar el perfil administrativo.' }, { status: 500 })
-    }
-
-    const { data: membership, error: membershipError } = await auth.supabase.rpc(
-      'admin_register_user_country_membership',
+    const inviteCreated = !inviteError && Boolean(inviteData.user?.id)
+    const { data: reconciliationData, error: reconciliationError } = await auth.supabase.rpc(
+      'admin_reconcile_user_invitation',
       {
         payload: {
-          user_id: userId,
+          user_id_hint: inviteData.user?.id || undefined,
+          email,
+          full_name: fullName || undefined,
+          phone: phone || undefined,
           country_entity_id: validatedCountry.country_entity_id,
-          source_type: 'invitation',
+          role_id: validatedAccess?.role_id || undefined,
+          role_key: validatedAccess?.role_key || undefined,
+          scope_type: validatedAccess?.scope_type || undefined,
+          scope_entity_id: validatedAccess?.scope_entity_id || undefined,
         },
       },
     )
 
-    if (membershipError) {
+    const reconciliation = reconciliationData as ReconciledInvitation | null
+    const userId = reconciliation?.user_id ?? inviteData.user?.id ?? null
+    const existingUser = !inviteCreated
+
+    if (reconciliationError || !reconciliation || !userId) {
       await recordAdminAudit(auth.supabase, {
         action: 'users.invite',
         targetTable: 'profiles',
         targetId: userId,
         metadata: {
           email_domain: emailDomain(email),
-          existing_user: existingUser,
-          membership_error: membershipError.message,
+          invite_created: inviteCreated,
+          invite_error: inviteError?.message ?? null,
+          reconciliation_error: reconciliationError?.message ?? null,
           country_entity_id: validatedCountry.country_entity_id,
           country_iso2: validatedCountry.country_iso2,
         },
       })
 
       return NextResponse.json({
-        error: membershipError.message || 'La cuenta fue creada, pero no se pudo registrar su país administrativo.',
-      }, { status: 500 })
-    }
-
-    let assignment = null
-
-    if (validatedAccess) {
-      const { data, error } = await auth.supabase.rpc('admin_assign_user_role', {
-        payload: {
-          user_id: userId,
-          role_id: validatedAccess.role_id,
-          scope_type: validatedAccess.scope_type,
-          scope_entity_id: validatedAccess.scope_entity_id || undefined,
-        },
-      })
-
-      if (error) {
-        await recordAdminAudit(auth.supabase, {
-          action: 'users.invite',
-          targetTable: 'profiles',
-          targetId: userId,
-          metadata: {
-            email_domain: emailDomain(email),
-            existing_user: existingUser,
-            role_assignment_warning: error.message,
-            role_id: validatedAccess.role_id,
-            scope_type: validatedAccess.scope_type,
-            scope_entity_id: validatedAccess.scope_entity_id,
-            country_entity_id: validatedCountry.country_entity_id,
-            country_iso2: validatedCountry.country_iso2,
-          },
-        })
-
-        return NextResponse.json({
-          user_id: userId,
-          email,
-          existing_user: existingUser,
-          membership,
-          warning: error.message,
-        }, { status: 201 })
-      }
-
-      assignment = data
+        error: inviteCreated
+          ? 'La invitación fue enviada, pero su configuración quedó pendiente. Puedes reintentar sin crear otra cuenta.'
+          : inviteError?.message || reconciliationError?.message || 'No se pudo invitar el usuario.',
+        recoverable: inviteCreated,
+      }, { status: inviteCreated ? 500 : 400 })
     }
 
     await recordAdminAudit(auth.supabase, {
@@ -216,10 +164,11 @@ export async function POST(request: Request) {
       metadata: {
         email_domain: emailDomain(email),
         existing_user: existingUser,
+        invite_created: inviteCreated,
         onboarding_state: existingUser ? 'existing_user' : 'pending_invitation',
         country_entity_id: validatedCountry.country_entity_id,
         country_iso2: validatedCountry.country_iso2,
-        role_assigned: Boolean(validatedAccess),
+        role_assigned: Boolean(reconciliation.assignment),
         role_id: validatedAccess?.role_id ?? null,
         scope_type: validatedAccess?.scope_type ?? null,
         scope_entity_id: validatedAccess?.scope_entity_id ?? null,
@@ -230,8 +179,8 @@ export async function POST(request: Request) {
       user_id: userId,
       email,
       existing_user: existingUser,
-      membership,
-      assignment,
+      membership: reconciliation.membership,
+      assignment: reconciliation.assignment,
       country_preview: validatedCountry,
       access_preview: validatedAccess,
     }, { status: 201 })

@@ -234,11 +234,12 @@ test('navigation query includes country context and no longer globalizes nationa
 })
 
 test('invitation flow requires and persists an administrative country before optional role assignment', async () => {
-  const [accessPage, invitePage, serviceSource, routeSource] = await Promise.all([
+  const [accessPage, invitePage, serviceSource, routeSource, reconciliationSource] = await Promise.all([
     readFile(new URL('src/features/access/admin/UserAccessPage.tsx', repoRoot), 'utf8'),
     readFile(new URL('src/features/access/admin/InviteUserPage.tsx', repoRoot), 'utf8'),
     readFile(new URL('src/features/access/services/user-access-admin-service.ts', repoRoot), 'utf8'),
     readFile(new URL('src/app/api/admin/users/create-invite/route.ts', repoRoot), 'utf8'),
+    readFile(new URL('supabase/migrations/20260801223557_make_admin_invitations_recoverable.sql', repoRoot), 'utf8'),
   ])
 
   assert.equal(scopeNeedsEntity('national'), true)
@@ -252,7 +253,8 @@ test('invitation flow requires and persists an administrative country before opt
   assert.match(serviceSource, /country_entity_id: input\.countryEntityId/)
   assert.match(serviceSource, /scope_entity_id: input\.roleId && scopeNeedsEntity\(input\.scopeType\)/)
   assert.match(routeSource, /validate_admin_country_scope/)
-  assert.match(routeSource, /admin_register_user_country_membership/)
+  assert.match(routeSource, /admin_reconcile_user_invitation/)
+  assert.match(reconciliationSource, /admin_register_user_country_membership/)
   assert.match(routeSource, /validatedAccess\.country_iso2 !== validatedCountry\.country_iso2/)
   assert.doesNotMatch(serviceSource, /!\['national', 'global'\]\.includes\(scopeType\)/)
 })
