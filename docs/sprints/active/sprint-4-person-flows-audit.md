@@ -1,6 +1,6 @@
 # Sprint 4 — Auditoría de flujos de personas
 
-> Estado: S4-01 completado
+> Estado: completado
 > Fecha: 2026-07-15
 
 ## Alcance
