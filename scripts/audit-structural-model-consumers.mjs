@@ -11,6 +11,11 @@ const modelPatterns = {
   legacy_diocese_structure: /\bdiocese_structure_templates\b|\bdiocese_structure_levels\b/g,
   legacy_pastoral_structure: /\bpastoral_structure_templates\b|\bpastoral_structure_levels\b|\bpastoral_entities\b|\bpublic_pastoral_entities\b/g,
 }
+const directOrganizationUnitReadPatterns = [
+  /\.from\(\s*['"]organization_units['"]\s*\)/,
+  /fetchSupabaseJson(?:WithResponse)?<[^>]*>\(\s*['"]organization_units['"]\s*,/,
+  /fetchSupabaseJson(?:WithResponse)?\(\s*['"]organization_units['"]\s*,/,
+]
 
 function classifyPurpose(path) {
   if (path.includes('/public/') || path.includes('(public)') || path.includes('Public')) return 'presentación pública'
@@ -32,6 +37,7 @@ function sourceProjection(model) {
 }
 
 const rows = []
+const unsafePublicOrganizationUnitReads = []
 
 async function walk(directory) {
   let entries
@@ -52,6 +58,15 @@ async function walk(directory) {
 
     const content = await readFile(path, 'utf8')
     const repoPath = relative(process.cwd(), path).replaceAll('\\', '/')
+    const purpose = classifyPurpose(repoPath)
+
+    if (
+      purpose === 'presentación pública'
+      && directOrganizationUnitReadPatterns.some((pattern) => pattern.test(content))
+    ) {
+      unsafePublicOrganizationUnitReads.push(repoPath)
+    }
+
     for (const [model, pattern] of Object.entries(modelPatterns)) {
       pattern.lastIndex = 0
       const matches = content.match(pattern)
@@ -60,7 +75,7 @@ async function walk(directory) {
       rows.push({
         file: repoPath,
         model,
-        purpose: classifyPurpose(repoPath),
+        purpose,
         canonicalPurpose,
         role,
         references: matches.length,
@@ -71,6 +86,7 @@ async function walk(directory) {
 
 for (const root of roots) await walk(root)
 rows.sort((a, b) => a.file.localeCompare(b.file) || a.model.localeCompare(b.model))
+unsafePublicOrganizationUnitReads.sort()
 
 const ambiguous = rows.filter((row) => row.role === 'ambiguo')
 const legacy = rows.filter((row) => row.role === 'retirar')
@@ -86,5 +102,10 @@ console.table(rows)
 console.log(`Consumidores inventariados: ${rows.length}`)
 console.log(`Consumidores con modelo fuente ambiguo: ${ambiguous.length}`)
 console.log(`Consumidores de modelos heredados: ${legacy.length}`)
+console.log(`Lecturas públicas directas de organization_units: ${unsafePublicOrganizationUnitReads.length}`)
+if (unsafePublicOrganizationUnitReads.length > 0) console.table(unsafePublicOrganizationUnitReads)
 
-if (process.argv.includes('--strict') && (ambiguous.length > 0 || legacy.length > 0)) process.exit(1)
+if (
+  process.argv.includes('--strict')
+  && (ambiguous.length > 0 || legacy.length > 0 || unsafePublicOrganizationUnitReads.length > 0)
+) process.exit(1)
