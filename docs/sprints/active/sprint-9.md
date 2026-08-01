@@ -39,13 +39,51 @@ Cerrar las compuertas operativas, institucionales y de seguridad necesarias para
 | S9-03 | Bloqueada externamente | Acceso autorizado a respaldo y entorno aislado de restauración | Ejecutar el procedimiento y conservar evidencia sin secretos. |
 | S9-04 | Requiere decisión operativa | Canal institucional, responsables y niveles de severidad aprobados | Completar el plan de incidentes con propietarios reales. |
 | S9-05 | Bloqueada externamente | Validación institucional y jurídica | Registrar aprobación, observaciones o cambios exigidos. |
-| S9-06 | Lista para auditoría técnica | Código, contratos y datos representativos sin mutación productiva | Revisar flujo, permisos, estados y publicación selectiva. |
+| S9-06 | Auditoría técnica completada; validación funcional pendiente | Diagnóstico de solo lectura, datos representativos y perfiles autorizados | Ejecutar diagnóstico y recorrer aprobación y publicación selectiva sin mutar producción. |
 | S9-07 | Diferida por plazo o apertura | Decisión del propietario antes del 2026-10-29 o de abrir al público | Revisar controles compensatorios y resolver aceptación. |
 | S9-08 | Bloqueada externamente | URL desplegada de beta y configuración autorizada | Verificar respuestas y metadata post-despliegue. |
 | S9-09 | Bloqueada por S9-01 a S9-08 | Evidencia acumulada y ejecución completa de calidad | Ejecutar cierre técnico-operativo. |
 | S9-10 | Bloqueada por S9-09 | Decisión explícita de producto y operación | Documentar continuar, diferir o aprobar la siguiente etapa. |
 
 Estas compuertas no cambian el orden lógico del sprint. S9-06 puede auditarse en paralelo documental porque es de solo lectura y no afirma el cierre de las tareas anteriores.
+
+
+## Evidencia parcial S9-06 — auditoría técnica
+
+La revisión de código y contratos confirma:
+
+- las unidades nuevas se crean como borrador interno;
+- guardar contenido no permite cambiar directamente estado, visibilidad ni vigencia;
+- aprobación y publicación son acciones explícitas y separadas;
+- la cola de revisión solo aprueba borradores y no publica;
+- `pastorals.create_proposal`, `pastorals.update_proposal`, `pastorals.approve` y `pastorals.publish` están separados;
+- el backend vuelve a comprobar permiso y alcance por entidad;
+- padre e hijo deben pertenecer al mismo organigrama y ámbito eclesiástico;
+- la jerarquía rechaza autorreferencia, ciclos y fechas invertidas;
+- creación, actualización, aprobación y publicación generan acciones de auditoría diferenciadas;
+- retirar publicación conserva la unidad y evita borrado histórico;
+- los eventos organizativos requieren plan, aprobación y aplicación separada;
+- existe un diagnóstico SQL de preparación declarado como solo lectura y protegido por prueba.
+
+### Riesgos y validación pendiente
+
+- La interfaz muestra acciones de ciclo de vida según estado, no según permisos cargados; el backend bloquea accesos indebidos, pero debe comprobarse la claridad del mensaje con perfiles restringidos.
+- La aprobación múltiple es secuencial y admite resultado parcial; debe validarse con datos representativos que el resumen permita identificar cada fallo.
+- La carga administrativa consulta catálogos desde el cliente y depende de RLS y alcance efectivos; debe comprobarse aislamiento con perfiles reales.
+- La publicación selectiva existe por unidad, pero aún debe verificarse que solo las unidades públicas, activas y vigentes aparezcan en todas las proyecciones públicas relevantes.
+- No se ejecutó `supabase/diagnostics/sprint2_organization_unit_approval_readiness.sql` durante esta auditoría porque no se proporcionó un entorno autorizado.
+
+### Criterio para cerrar S9-06
+
+S9-06 permanecerá abierto hasta obtener evidencia de:
+
+1. diagnóstico de preparación sin anomalías bloqueantes o con incidencias registradas;
+2. aislamiento territorial y de permisos con al menos un aprobador, un publicador y un perfil de consulta;
+3. aprobación sin publicación automática;
+4. publicación y retirada selectivas de una unidad de prueba;
+5. ausencia de exposición pública para borrador, interna, privada, inactiva, archivada o histórica;
+6. auditoría verificable de cada transición;
+7. CI y pruebas aplicables en verde después de cualquier corrección.
 
 ## Criterios de cierre
 
