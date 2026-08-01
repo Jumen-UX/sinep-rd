@@ -98,3 +98,51 @@ select 'scope_entities_requiring_hierarchy_normalization',
          )
        )::bigint
 from readiness;
+
+-- 5. Compuertas de exposición pública. Todos los issue_count deben ser 0.
+select 'public_projection_non_active' as check_key, count(*)::bigint as issue_count
+from public.public_organization_units
+where status <> 'active'
+union all
+select 'public_projection_non_public', count(*)::bigint
+from public.public_organization_units
+where visibility <> 'public'
+union all
+select 'public_projection_non_current', count(*)::bigint
+from public.public_organization_units
+where is_current is distinct from true
+union all
+select 'public_projection_not_started', count(*)::bigint
+from public.public_organization_units
+where valid_from is not null and valid_from > current_date
+union all
+select 'public_projection_expired', count(*)::bigint
+from public.public_organization_units
+where valid_to is not null and valid_to < current_date;
+
+-- 6. Registros base que parecen publicables, pero deben quedar excluidos por vigencia.
+-- Este resultado sirve para probar que la vista canónica filtra correctamente casos futuros y vencidos.
+select
+  ou.id,
+  ou.name,
+  ou.slug,
+  ou.valid_from,
+  ou.valid_to,
+  case
+    when ou.valid_from is not null and ou.valid_from > current_date then 'future'
+    when ou.valid_to is not null and ou.valid_to < current_date then 'expired'
+  end as exclusion_reason,
+  exists (
+    select 1
+    from public.public_organization_units public_ou
+    where public_ou.id = ou.id
+  ) as incorrectly_exposed
+from public.organization_units ou
+where ou.status='active'
+  and ou.visibility='public'
+  and ou.is_current=true
+  and (
+    (ou.valid_from is not null and ou.valid_from > current_date)
+    or (ou.valid_to is not null and ou.valid_to < current_date)
+  )
+order by exclusion_reason, ou.name;
