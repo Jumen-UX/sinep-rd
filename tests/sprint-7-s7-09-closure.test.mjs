@@ -4,15 +4,17 @@ import test from 'node:test'
 
 const sprint = await readFile('docs/sprints/active/sprint-7.md', 'utf8')
 const consolidation = await readFile('docs/sprints/active/sprint-7-s7-09.md', 'utf8')
+const evidence = await readFile('docs/sprints/active/sprint-7-s7-10-evidence.md', 'utf8')
 
-test('Sprint 7 canonical queue marks S7-06 through S7-09 complete and leaves S7-10 pending', () => {
-  for (const item of ['S7-06', 'S7-07', 'S7-08', 'S7-09']) {
+test('Sprint 7 canonical queue and S7-10 evidence remain closed', () => {
+  for (const item of ['S7-06', 'S7-07', 'S7-08', 'S7-09', 'S7-10']) {
     assert.match(sprint, new RegExp(`\\[x\\] ${item}`))
   }
 
-  assert.match(sprint, /\[ \] S7-10/)
-  assert.match(sprint, /S7-10 — Alcance de cierre reactivado/)
-  assert.match(sprint, /E2E_ACCESS_PROFILES_JSON/)
+  assert.match(sprint, /> Estado: completado/)
+  assert.match(sprint, /Evidencia operativa S7-10/)
+  assert.match(evidence, /> Estado: completado/)
+  assert.match(evidence, /E2E_ACCESS_PROFILES_JSON/)
   assert.doesNotMatch(sprint, /cerrar S7-06 e iniciar S7-07/)
 })
 
