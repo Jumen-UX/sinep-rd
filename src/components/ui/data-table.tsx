@@ -10,10 +10,12 @@ interface DataTableProps extends React.ComponentProps<'div'> {
 }
 
 function DataTable({ className, toolbar, footer, caption, children, ...props }: DataTableProps) {
+  const regionLabel = caption ? `Tabla: ${caption}` : 'Tabla de datos'
+
   return (
     <div className={cn('overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)]', className)} {...props}>
       {toolbar ? <div className="flex flex-col gap-3 border-b border-[var(--border)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">{toolbar}</div> : null}
-      <div className="overflow-x-auto">
+      <div aria-label={regionLabel} className="overflow-x-auto" role="region" tabIndex={0}>
         <table className="w-full border-collapse text-left text-sm">
           {caption ? <caption className="sr-only">{caption}</caption> : null}
           {children}
