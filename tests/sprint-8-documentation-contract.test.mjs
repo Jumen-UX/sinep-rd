@@ -24,7 +24,7 @@ test('technical README links canonical operations and the dual launch gate', () 
   assert.match(readme, /DESPLIEGUE_MIGRACION_RESTAURACION\.md/)
   assert.match(readme, /PUBLIC_INDEXING_ENABLED/)
   assert.match(readme, /PUBLIC_LAUNCH_APPROVED/)
-  assert.match(readme, /Sprint 7 quedó cerrado con evidencia autenticada/)
+  assert.match(readme, /Sprints 7 y 8 están cerrados/)
 })
 
 test('administrator manual reflects canonical search and incident correlation', () => {
