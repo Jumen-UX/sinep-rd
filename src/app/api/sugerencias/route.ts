@@ -1,6 +1,6 @@
+import { createHmac } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { buildSupabaseRestUrl } from '@/lib/supabase/rest'
-import { getSupabaseRestHeaders } from '@/lib/supabase/config'
+import { createAdminClient, getSupabaseServiceRoleKey } from '@/lib/supabase/admin'
 import {
   optionalEmail,
   optionalText,
@@ -15,8 +15,35 @@ import {
 const allowedSuggestionTargetTables = ['persons', 'ecclesiastical_entities'] as const
 const allowedSuggestionTypes = ['correction', 'addition', 'source', 'country_data'] as const
 
+type RateLimitDecision = {
+  allowed: boolean
+  retry_after_seconds: number
+}
+
 function nullable(value: string) {
   return value.length > 0 ? value : null
+}
+
+function clientIp(request: NextRequest) {
+  const vercelIp = request.headers.get('x-vercel-forwarded-for')
+  const localIp = process.env.VERCEL
+    ? null
+    : request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip')
+
+  return (vercelIp || localIp || 'unknown-client')
+    .split(',')[0]
+    .trim()
+    .slice(0, 128)
+}
+
+function rateLimitFingerprint(request: NextRequest) {
+  const derivedKey = createHmac('sha256', getSupabaseServiceRoleKey())
+    .update('sinep-rd/public-suggestion-rate-limit/v1')
+    .digest()
+
+  return createHmac('sha256', derivedKey)
+    .update(clientIp(request))
+    .digest('hex')
 }
 
 export async function POST(request: NextRequest) {
@@ -56,28 +83,47 @@ export async function POST(request: NextRequest) {
       priority: 'normal',
     }
 
-    const response = await fetch(buildSupabaseRestUrl('public_change_suggestions'), {
-      method: 'POST',
-      headers: {
-        ...getSupabaseRestHeaders(),
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation',
-      },
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-    })
+    const admin = createAdminClient()
+    const { data: rateLimitData, error: rateLimitError } = await admin.rpc(
+      'consume_public_suggestion_rate_limit',
+      { p_fingerprint: rateLimitFingerprint(request) },
+    )
 
-    if (!response.ok) {
-      const details = await response.text()
-      console.error('Public suggestion submission failed', {
-        status: response.status,
-        details,
+    if (rateLimitError) {
+      console.error('Public suggestion rate limit failed', {
+        code: rateLimitError.code,
+        message: rateLimitError.message,
       })
-      return NextResponse.json({ error: 'No se pudo enviar la sugerencia.' }, { status: response.status })
+      return NextResponse.json(
+        { error: 'El servicio de sugerencias no está disponible temporalmente.' },
+        { status: 503, headers: { 'Retry-After': '60' } },
+      )
     }
 
-    const result = await response.json()
-    return NextResponse.json({ ok: true, suggestion: result[0] ?? null })
+    const rateLimit = rateLimitData as RateLimitDecision | null
+    if (!rateLimit?.allowed) {
+      const retryAfter = Math.max(1, Number(rateLimit?.retry_after_seconds) || 60)
+      return NextResponse.json(
+        { error: 'Has enviado demasiadas sugerencias. Inténtalo más tarde.' },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+      )
+    }
+
+    const { data: suggestion, error: suggestionError } = await admin
+      .from('public_change_suggestions')
+      .insert(payload)
+      .select('id,created_at')
+      .single()
+
+    if (suggestionError) {
+      console.error('Public suggestion submission failed', {
+        code: suggestionError.code,
+        message: suggestionError.message,
+      })
+      return NextResponse.json({ error: 'No se pudo enviar la sugerencia.' }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true, suggestion })
   } catch (error) {
     if (error instanceof ValidationError) {
       return NextResponse.json({ error: error.message }, { status: error.status })

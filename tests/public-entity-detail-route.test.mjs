@@ -21,9 +21,27 @@ test('public entity detail page uses the cached server loader without a browser 
   assert.match(page, /export const revalidate = 900/)
   assert.match(loader, /public_entity_evolution_events/)
   assert.match(loader, /public_position_assignments_with_hierarchy/)
+  assert.match(loader, /fetchSupabaseJson<PublicEntityRelationship\[]>\('public_entity_relationships'/)
+  assert.doesNotMatch(loader, /fetchSupabaseJson<PublicEntityRelationship\[]>\('entity_relationships'/)
+  assert.doesNotMatch(loader, /'status','notes'/)
   assert.match(cache, /loadCachedPublicEntityDetail/)
   assert.match(view, /<EntityProfileNavigation/)
 
   await assert.rejects(access(new URL('../src/features/entidades/EntityDetailPage.tsx', import.meta.url)))
   await assert.rejects(access(new URL('../src/app/api/entidades/[slug]/route.ts', import.meta.url)))
+})
+
+test('dynamic public profiles rethrow Next.js not-found signals', async () => {
+  const pages = await Promise.all([
+    readRepoFile('src/app/(public)/entidades/[slug]/page.tsx'),
+    readRepoFile('src/app/(public)/personas/[slug]/page.tsx'),
+    readRepoFile('src/app/(public)/lugares/[slug]/page.tsx'),
+    readRepoFile('src/app/(public)/instituciones/[slug]/page.tsx'),
+  ])
+
+  for (const page of pages) {
+    assert.match(page, /notFound, unstable_rethrow/)
+    assert.match(page, /if \(!data\) notFound\(\)/)
+    assert.match(page, /catch \(error\) \{\s+unstable_rethrow\(error\)/)
+  }
 })

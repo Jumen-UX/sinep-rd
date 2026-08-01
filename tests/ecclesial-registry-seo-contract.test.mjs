@@ -28,6 +28,12 @@ test('public registry profiles expose dynamic metadata and structured data', asy
   assert.equal(seo.includes("'@type': 'GeoCoordinates'"), true)
   assert.equal(seo.includes("replace(/</g, '\\\\u003c')"), true)
   assert.equal(seo.includes('getAppBaseUrl()'), true)
+  assert.equal(seo.includes('isPublicIndexingEnabled'), true)
+  assert.equal(seo.includes('const allowIndexing = isPublicIndexingEnabled()'), true)
+  assert.equal(seo.includes('index: allowIndexing'), true)
+  assert.equal(seo.includes('follow: allowIndexing'), true)
+  assert.equal(seo.includes('index: true'), false)
+  assert.equal(seo.includes('follow: true'), false)
 })
 
 test('sitemap includes only active public registry profiles', async () => {

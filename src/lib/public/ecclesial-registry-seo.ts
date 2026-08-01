@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getAppBaseUrl } from '@/lib/appBaseUrl'
 import type { PublicInstitutionProfile, PublicPlaceProfile } from './ecclesial-registry-detail'
+import { isPublicIndexingEnabled } from './indexing'
 
 function text(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null
@@ -40,6 +41,7 @@ function metadataFor(
   const name = text(record.official_name) || text(record.name) || typeLabel
   const description = descriptionFor(profile, `${typeLabel}: ${name}`)
   const canonical = `${getAppBaseUrl()}${pathname}`
+  const allowIndexing = isPublicIndexingEnabled()
 
   return {
     title: `${name} · ${typeLabel}`,
@@ -59,11 +61,11 @@ function metadataFor(
       description,
     },
     robots: {
-      index: true,
-      follow: true,
+      index: allowIndexing,
+      follow: allowIndexing,
       googleBot: {
-        index: true,
-        follow: true,
+        index: allowIndexing,
+        follow: allowIndexing,
         'max-image-preview': 'large',
         'max-snippet': -1,
         'max-video-preview': -1,

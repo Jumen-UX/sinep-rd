@@ -3,12 +3,14 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const validationMigrationPath = 'supabase/migrations/20260714053000_validate_admin_invitation_role_scope.sql'
+const reconciliationMigrationPath = 'supabase/migrations/20260801223557_make_admin_invitations_recoverable.sql'
 const inviteApiPath = 'src/app/api/admin/users/create-invite/route.ts'
 const invitePagePath = 'src/features/access/admin/InviteUserPage.tsx'
 
 test('role and scope are validated before Supabase sends an invitation', async () => {
-  const [sql, api] = await Promise.all([
+  const [sql, reconciliationSql, api] = await Promise.all([
     readFile(validationMigrationPath, 'utf8'),
+    readFile(reconciliationMigrationPath, 'utf8'),
     readFile(inviteApiPath, 'utf8'),
   ])
 
@@ -22,7 +24,8 @@ test('role and scope are validated before Supabase sends an invitation', async (
   const validationIndex = api.indexOf("rpc('validate_admin_role_scope'")
   const invitationIndex = api.indexOf('inviteUserByEmail')
   assert.ok(validationIndex >= 0 && validationIndex < invitationIndex)
-  assert.match(api, /status: 'pending_invitation'/)
+  assert.match(api, /admin_reconcile_user_invitation/)
+  assert.match(reconciliationSql, /'pending_invitation'/)
   assert.doesNotMatch(api, /status: 'pending',/)
 })
 

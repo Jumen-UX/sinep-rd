@@ -33,16 +33,20 @@ test('membership tables stay internal and use explicit deny-all RLS policies', a
 })
 
 test('invitation membership is persisted before optional role assignment', async () => {
-  const routeSource = await readFile(
-    new URL('src/app/api/admin/users/create-invite/route.ts', repoRoot),
-    'utf8',
-  )
+  const [routeSource, reconciliationSource] = await Promise.all([
+    readFile(new URL('src/app/api/admin/users/create-invite/route.ts', repoRoot), 'utf8'),
+    readFile(
+      new URL('supabase/migrations/20260801223557_make_admin_invitations_recoverable.sql', repoRoot),
+      'utf8',
+    ),
+  ])
 
-  const membershipPosition = routeSource.indexOf("'admin_register_user_country_membership'")
-  const assignmentPosition = routeSource.indexOf("'admin_assign_user_role'")
+  const membershipPosition = reconciliationSource.indexOf('admin_register_user_country_membership')
+  const assignmentPosition = reconciliationSource.indexOf('admin_assign_user_role')
 
   assert.ok(membershipPosition > 0)
   assert.ok(assignmentPosition > membershipPosition)
+  assert.match(routeSource, /admin_reconcile_user_invitation/)
   assert.match(routeSource, /validate_admin_country_scope/)
   assert.match(routeSource, /validatedAccess\.country_iso2 !== validatedCountry\.country_iso2/)
 })
