@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, unstable_rethrow } from 'next/navigation'
 import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import PublicRegistryProfileView from '@/features/ecclesial-registry/public/PublicRegistryProfileView'
 import { loadPublicInstitutionProfile } from '@/lib/public/ecclesial-registry-cache'
@@ -44,6 +44,7 @@ export default async function PublicInstitutionPage({ params }: PageProps) {
       </>
     )
   } catch (error) {
+    unstable_rethrow(error)
     console.error('Unable to render public ecclesial institution profile', error)
     return <main className="container dashboard-page"><div className="error-box">No se pudo cargar la ficha de la institución.</div></main>
   }

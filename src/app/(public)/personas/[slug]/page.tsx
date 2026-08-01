@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, unstable_rethrow } from 'next/navigation'
 import { PublicBreadcrumbs } from '@/components/public/PublicBreadcrumbs'
 import PersonDetailServerView from '@/features/personas/PersonDetailServerView'
 import { loadPublicPersonDetail } from '@/lib/public/cache'
@@ -28,6 +28,7 @@ export default async function PersonDetailPage({ params }: PageProps) {
       </>
     )
   } catch (error) {
+    unstable_rethrow(error)
     console.error('Unable to server render public person detail', error)
     return <main className="container"><div className="error-box">No se pudo cargar la ficha de la persona.</div></main>
   }
