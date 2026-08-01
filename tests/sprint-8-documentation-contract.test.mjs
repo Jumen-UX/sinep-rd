@@ -8,12 +8,14 @@ const [
   adminManual,
   operationsGuide,
   sprint,
+  activeSprint,
 ] = await Promise.all([
   readFile('README.md', 'utf8'),
   readFile('docs/README.md', 'utf8'),
   readFile('docs/manuales/manual-de-administrador.md', 'utf8'),
   readFile('docs/operations/DESPLIEGUE_MIGRACION_RESTAURACION.md', 'utf8'),
   readFile('docs/sprints/active/sprint-8.md', 'utf8'),
+  readFile('docs/sprints/active/sprint-9.md', 'utf8'),
 ])
 
 test('technical README links canonical operations and the dual launch gate', () => {
@@ -22,7 +24,7 @@ test('technical README links canonical operations and the dual launch gate', () 
   assert.match(readme, /DESPLIEGUE_MIGRACION_RESTAURACION\.md/)
   assert.match(readme, /PUBLIC_INDEXING_ENABLED/)
   assert.match(readme, /PUBLIC_LAUNCH_APPROVED/)
-  assert.match(readme, /S7-10 está reactivado/)
+  assert.match(readme, /Sprint 7 quedó cerrado con evidencia autenticada/)
 })
 
 test('administrator manual reflects canonical search and incident correlation', () => {
@@ -59,12 +61,14 @@ test('documentation index links manuals and the deployment guide', () => {
   assert.match(docsIndex, /DESPLIEGUE_MIGRACION_RESTAURACION\.md/)
 })
 
-test('sprint 8 keeps technical closure separate from active operational evidence', () => {
+test('sprint 8 is closed and Sprint 9 owns operational beta evidence', () => {
+  assert.match(sprint, /> Estado: completado/)
   assert.match(sprint, /\[x\] S8-09/)
   assert.match(sprint, /\[x\] S8-10/)
-  assert.match(sprint, /S8-01 a S8-10 están completados técnicamente/)
-  assert.match(sprint, /S7-10 permanece en progreso/)
+  assert.match(sprint, /S8-01 a S8-10 están completados técnica y documentalmente/)
   assert.match(sprint, /Pendientes operativos de beta/)
   assert.match(sprint, /PUBLIC_LAUNCH_APPROVED/)
-  assert.match(sprint, /requieren una nueva evidencia CI\/E2E/)
+  assert.match(activeSprint, /> Estado: activo/)
+  assert.match(activeSprint, /S9-01 — Completar S3-06/)
+  assert.match(activeSprint, /No declarar restauración, validación jurídica, E2E o CI como completados sin evidencia/)
 })
