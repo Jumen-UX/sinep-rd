@@ -36,7 +36,7 @@ function EmptyState({
         </div>
       ) : null}
       <h2 className="text-lg font-semibold text-[var(--text-strong)]">{title}</h2>
-      {description ? <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--text-muted)]">{description}</p> : null}
+      {description ? <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--text)]">{description}</p> : null}
       {action || secondaryAction ? (
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           {action}
