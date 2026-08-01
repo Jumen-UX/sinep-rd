@@ -1,7 +1,7 @@
 'use client'
 
 import type { MouseEvent, ReactNode } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { loadCanonicalIncompatibilityCount } from '@/features/appointments/services/canonical-incompatibility-queue'
@@ -68,6 +68,9 @@ function AdminShellContent({ children }: { children: ReactNode }) {
   } = useAdminNavigation()
   const [canonicalIncompatibilities, setCanonicalIncompatibilities] = useState<number | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null)
+  const mobileMenuCloseRef = useRef<HTMLButtonElement>(null)
+  const mobileMenuWasOpenRef = useRef(false)
 
   const canViewCanonicalQueue = sections.some((section) => (
     section.items.some((item) => item.id === 'canonical-incompatibilities')
@@ -79,6 +82,31 @@ function AdminShellContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMobileMenuOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      mobileMenuWasOpenRef.current = true
+      const focusFrame = window.requestAnimationFrame(() => mobileMenuCloseRef.current?.focus())
+      const handleEscape = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          setMobileMenuOpen(false)
+        }
+      }
+
+      document.addEventListener('keydown', handleEscape)
+      return () => {
+        window.cancelAnimationFrame(focusFrame)
+        document.removeEventListener('keydown', handleEscape)
+      }
+    }
+
+    if (mobileMenuWasOpenRef.current) {
+      mobileMenuWasOpenRef.current = false
+      const focusFrame = window.requestAnimationFrame(() => mobileMenuTriggerRef.current?.focus())
+      return () => window.cancelAnimationFrame(focusFrame)
+    }
+  }, [mobileMenuOpen])
 
   useEffect(() => {
     let cancelled = false
@@ -214,6 +242,7 @@ function AdminShellContent({ children }: { children: ReactNode }) {
             aria-controls="admin-mobile-menu"
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen((current) => !current)}
+            ref={mobileMenuTriggerRef}
             type="button"
           >
             <span aria-hidden="true">☰</span>
@@ -233,13 +262,20 @@ function AdminShellContent({ children }: { children: ReactNode }) {
           onClick={() => setMobileMenuOpen(false)}
           type="button"
         />
-        <section aria-label="Todos los módulos administrativos" role="dialog">
+        <section aria-label="Todos los módulos administrativos" aria-modal="true" role="dialog">
           <header>
             <div>
               <strong>Navegación administrativa</strong>
               <ScopeControl compact />
             </div>
-            <button aria-label="Cerrar" onClick={() => setMobileMenuOpen(false)} type="button">×</button>
+            <button
+              aria-label="Cerrar"
+              onClick={() => setMobileMenuOpen(false)}
+              ref={mobileMenuCloseRef}
+              type="button"
+            >
+              ×
+            </button>
           </header>
           <nav className="admin-sidebar-nav">
             {renderNavigationLinks(true)}
