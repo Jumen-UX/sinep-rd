@@ -26,14 +26,18 @@ async function loadUncachedPublicJurisdictionStructure(jurisdictionId: string) {
   if (!normalizedId) return []
 
   return fetchSupabaseJson<PublicJurisdictionStructureNode[]>(
-    'rpc/get_public_jurisdiction_structure_tree',
-    { p_jurisdiction_id: normalizedId },
+    'public_jurisdiction_structure_tree',
+    {
+      select: 'node_id,template_id,level_id,level_key,level_name,parent_node_id,depth,path_ids,path_names,name,official_name,slug,linked_ecclesiastical_entity_id,has_children',
+      jurisdiction_id: `eq.${normalizedId}`,
+      order: 'path_names.asc',
+    },
   )
 }
 
 const loadCachedPublicJurisdictionStructure = unstable_cache(
   loadUncachedPublicJurisdictionStructure,
-  ['public-jurisdiction-structure-v1'],
+  ['public-jurisdiction-structure-v2'],
   {
     revalidate: 900,
     tags: [PUBLIC_CACHE_TAGS.directories],
