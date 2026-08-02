@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, unstable_rethrow } from 'next/navigation'
 import EntityDetailServerView from '@/features/entidades/EntityDetailServerView'
 import PublicJurisdictionStructure from '@/features/entidades/PublicJurisdictionStructure'
 import { loadPublicEntityDetail } from '@/lib/public/cache'
@@ -26,6 +26,7 @@ export default async function EntityDetailPage({ params }: PageProps) {
       </>
     )
   } catch (error) {
+    unstable_rethrow(error)
     console.error('Unable to server render public entity detail', error)
     return <main className="container dashboard-page"><div className="error-box">No se pudo cargar la ficha de la entidad.</div></main>
   }
