@@ -38,7 +38,6 @@ export type PublicEntityRelationship = {
   end_date: string | null
   is_current: boolean
   status: string | null
-  notes: string | null
 }
 
 export type PublicRelatedEntity = {
@@ -160,7 +159,7 @@ const entityColumns = [
 ].join(',')
 
 const relationshipColumns = [
-  'id','parent_entity_id','child_entity_id','relationship_type','start_date','end_date','is_current','status','notes',
+  'id','parent_entity_id','child_entity_id','relationship_type','start_date','end_date','is_current','status',
 ].join(',')
 
 const appointmentColumns = [
@@ -211,7 +210,7 @@ async function fetchPublicEntityDetail(slug: string): Promise<PublicEntityDetail
       select: 'key,name',
       limit: '1',
     }).catch(() => []),
-    fetchSupabaseJson<PublicEntityRelationship[]>('entity_relationships', {
+    fetchSupabaseJson<PublicEntityRelationship[]>('public_entity_relationships', {
       or: `(parent_entity_id.eq.${entityId},child_entity_id.eq.${entityId})`,
       select: relationshipColumns,
       order: 'start_date.desc.nullslast',
