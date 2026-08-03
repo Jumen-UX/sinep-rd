@@ -52,8 +52,34 @@ export type AccountContext = {
   access_requests: AccountAccessRequest[]
 }
 
+export type AccountProfileInput = {
+  fullName: string
+  phone: string
+  preferredLocale: string
+  timezone: string
+  avatarUrl: string
+}
+
 export async function loadMyAccountContext(supabase: SupabaseClient): Promise<AccountContext> {
   const { data, error } = await supabase.rpc('get_my_account_context')
   if (error) throw new Error(error.message || 'No se pudo cargar tu cuenta.')
+  return data as AccountContext
+}
+
+export async function saveMyAccountProfile(
+  supabase: SupabaseClient,
+  input: AccountProfileInput,
+): Promise<AccountContext> {
+  const { data, error } = await supabase.rpc('save_my_account_profile', {
+    payload: {
+      full_name: input.fullName.trim(),
+      phone: input.phone.trim() || null,
+      preferred_locale: input.preferredLocale.trim(),
+      timezone: input.timezone.trim(),
+      avatar_url: input.avatarUrl.trim() || null,
+    },
+  })
+
+  if (error) throw new Error(error.message || 'No se pudo guardar tu perfil.')
   return data as AccountContext
 }
