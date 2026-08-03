@@ -23,16 +23,18 @@ test('account center is an authenticated route independent from admin permission
   assert.match(service, /get_my_account_context/)
 })
 
-test('account overview exposes profile access and request states without write duplication', async () => {
+test('account overview exposes profile, access and request states without write duplication', async () => {
   const [page, service] = await Promise.all([
     readFile(pagePath, 'utf8'),
     readFile(servicePath, 'utf8'),
   ])
 
   assert.match(page, /Mi perfil/)
-  assert.match(page, /Mi acceso/)
-  assert.match(page, /Mis solicitudes/)
+  assert.match(page, /Mis accesos/)
+  assert.match(page, /Solicitudes abiertas/)
   assert.match(page, /Acceso administrativo pendiente/)
+  assert.match(page, /href="\/cuenta\/accesos"/)
+  assert.match(page, /href="\/cuenta\/solicitudes"/)
   assert.match(service, /registration_source/)
   assert.match(service, /access_requests/)
   assert.doesNotMatch(page, /\.from\s*\(/)
@@ -42,9 +44,9 @@ test('account overview exposes profile access and request states without write d
 test('account center remains responsive and touch accessible', async () => {
   const css = await readFile(stylePath, 'utf8')
 
-  assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/)
-  assert.match(css, /min-height: 44px/)
-  assert.match(css, /@media \(max-width: 800px\)/)
-  assert.match(css, /grid-template-columns: 1fr/)
-  assert.match(css, /overflow-wrap: anywhere/)
+  assert.match(css, /grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/)
+  assert.match(css, /min-height:\s*44px/)
+  assert.match(css, /@media\s*\(max-width:\s*800px\)/)
+  assert.match(css, /grid-template-columns:\s*1fr/)
+  assert.match(css, /overflow-wrap:\s*anywhere/)
 })
