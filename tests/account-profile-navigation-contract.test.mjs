@@ -14,8 +14,11 @@ test('personal center exposes its own navigation shell', async () => {
   assert.match(layout, /<AccountShell>\{children\}<\/AccountShell>/)
   assert.match(shell, /aria-label="Navegación del Centro Personal"/)
   assert.match(shell, /href: '\/cuenta\/perfil'/)
-  assert.match(styles, /grid-template-columns:\s*250px minmax\(0, 1fr\)/)
-  assert.match(styles, /@media \(max-width: 900px\)/)
+  assert.match(shell, /href: '\/cuenta\/accesos'/)
+  assert.match(shell, /href: '\/cuenta\/solicitudes'/)
+  assert.match(styles, /grid-template-columns:\s*260px\s+minmax\(0,\s*1fr\)/)
+  assert.match(styles, /@media\s*\(max-width:\s*900px\)/)
+  assert.match(styles, /overflow-x:\s*auto/)
 })
 
 test('profile route updates only the authenticated account contract', async () => {
