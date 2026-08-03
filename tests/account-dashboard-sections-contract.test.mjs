@@ -9,9 +9,10 @@ test('personal center navigation exposes only implemented account sections', asy
 
   assert.match(source, /href: '\/cuenta'/)
   assert.match(source, /href: '\/cuenta\/perfil'/)
+  assert.match(source, /href: '\/cuenta\/seguridad'/)
   assert.match(source, /href: '\/cuenta\/accesos'/)
   assert.match(source, /href: '\/cuenta\/solicitudes'/)
-  assert.doesNotMatch(source, /\/cuenta\/(?:seguridad|notificaciones|mensajes|privacidad)/)
+  assert.doesNotMatch(source, /\/cuenta\/(?:notificaciones|mensajes|privacidad)/)
 })
 
 test('personal dashboard uses canonical account context without direct table reads', async () => {
@@ -40,6 +41,6 @@ test('personal center styles preserve responsive navigation and single-column mo
 
   assert.match(css, /\.quickActionsGrid\{display:grid/)
   assert.match(css, /\.authorizationGrid\{display:grid/)
-  assert.match(css, /@media\(max-width:900px\).*?\.navigation\{grid-template-columns:repeat\(4,minmax\(180px,1fr\)\);overflow-x:auto/s)
+  assert.match(css, /@media\(max-width:900px\).*?\.navigation\{grid-template-columns:repeat\(5,minmax\(180px,1fr\)\);overflow-x:auto/s)
   assert.match(css, /@media\(max-width:800px\).*?\.summaryGrid,\.contentGrid,\.formGrid,\.requestMetadata\{grid-template-columns:1fr\}/s)
 })
