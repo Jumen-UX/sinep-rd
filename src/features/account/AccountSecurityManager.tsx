@@ -120,6 +120,7 @@ export default function AccountSecurityManager({
                 autoComplete="new-password"
                 minLength={MIN_PASSWORD_LENGTH}
                 onChange={(event) => setPassword(event.target.value)}
+                placeholder="Escribe una contraseña nueva"
                 required
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -131,8 +132,7 @@ export default function AccountSecurityManager({
                 onClick={() => setShowPassword((current) => !current)}
                 type="button"
               >
-                <span aria-hidden="true">{showPassword ? '◉' : '◎'}</span>
-                <span>{showPassword ? 'Ocultar' : 'Mostrar'}</span>
+                {showPassword ? 'Ocultar' : 'Mostrar'}
               </button>
             </div>
           </div>
@@ -176,6 +176,7 @@ export default function AccountSecurityManager({
                 autoComplete="new-password"
                 minLength={MIN_PASSWORD_LENGTH}
                 onChange={(event) => setConfirmation(event.target.value)}
+                placeholder="Repite la nueva contraseña"
                 required
                 type={showConfirmation ? 'text' : 'password'}
                 value={confirmation}
@@ -187,8 +188,7 @@ export default function AccountSecurityManager({
                 onClick={() => setShowConfirmation((current) => !current)}
                 type="button"
               >
-                <span aria-hidden="true">{showConfirmation ? '◉' : '◎'}</span>
-                <span>{showConfirmation ? 'Ocultar' : 'Mostrar'}</span>
+                {showConfirmation ? 'Ocultar' : 'Mostrar'}
               </button>
             </div>
             <p
