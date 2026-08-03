@@ -60,6 +60,13 @@ export type AccountProfileInput = {
   avatarUrl: string
 }
 
+export type AccountRequestInput = {
+  requestId?: string
+  requestType: Exclude<AccountAccessRequest['request_type'], 'person_link'>
+  justification: string
+  requesterNotes: string
+}
+
 export async function loadMyAccountContext(supabase: SupabaseClient): Promise<AccountContext> {
   const { data, error } = await supabase.rpc('get_my_account_context')
   if (error) throw new Error(error.message || 'No se pudo cargar tu cuenta.')
@@ -82,4 +89,33 @@ export async function saveMyAccountProfile(
 
   if (error) throw new Error(error.message || 'No se pudo guardar tu perfil.')
   return data as AccountContext
+}
+
+export async function submitMyAccessRequest(
+  supabase: SupabaseClient,
+  input: AccountRequestInput,
+): Promise<AccountAccessRequest> {
+  const { data, error } = await supabase.rpc('submit_my_access_request', {
+    payload: {
+      request_id: input.requestId || null,
+      request_type: input.requestType,
+      justification: input.justification.trim(),
+      requester_notes: input.requesterNotes.trim() || null,
+    },
+  })
+
+  if (error) throw new Error(error.message || 'No se pudo enviar la solicitud.')
+  return data as AccountAccessRequest
+}
+
+export async function cancelMyAccessRequest(
+  supabase: SupabaseClient,
+  requestId: string,
+): Promise<AccountAccessRequest> {
+  const { data, error } = await supabase.rpc('cancel_my_access_request', {
+    p_request_id: requestId,
+  })
+
+  if (error) throw new Error(error.message || 'No se pudo cancelar la solicitud.')
+  return data as AccountAccessRequest
 }
