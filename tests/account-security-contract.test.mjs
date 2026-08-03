@@ -33,11 +33,12 @@ test('password change validates measurable criteria and prevents duplicate actio
   assert.match(manager, /\[\^A-Za-z0-9\]/)
   assert.match(manager, /password === confirmation/)
   assert.match(manager, /disabled=\{!passwordValid \|\| busy !== null\}/)
+  assert.match(manager, /Completa todos los requisitos y confirma la contraseña/)
   assert.match(manager, /role="alert"/)
   assert.match(manager, /role="status"/)
 })
 
-test('security refinement exposes visibility, strength, confirmation and clear status semantics', async () => {
+test('security refinement exposes visibility strength contextual guidance and confirmation semantics', async () => {
   const [manager, css] = await Promise.all([
     readFile(managerPath, 'utf8'),
     readFile(cssPath, 'utf8'),
@@ -45,18 +46,24 @@ test('security refinement exposes visibility, strength, confirmation and clear s
 
   assert.match(manager, /Mostrar nueva contraseña/)
   assert.match(manager, /Ocultar nueva contraseña/)
+  assert.match(manager, /aria-pressed=\{showPassword\}/)
   assert.match(manager, /role="progressbar"/)
-  assert.match(manager, /Fortaleza de contraseña/)
+  assert.match(manager, /Fortaleza de la contraseña/)
+  assert.match(manager, /Agrega un símbolo especial, por ejemplo:/)
   assert.match(manager, /Las contraseñas coinciden/)
+  assert.match(manager, /Las contraseñas no coinciden/)
+  assert.match(manager, /aria-describedby="password-strength password-requirements"/)
   assert.match(manager, /Consejos de seguridad/)
   assert.match(manager, /Esta sesión permanece activa/)
   assert.match(manager, /emailConfirmed \? 'Verificado' : 'Pendiente'/)
   assert.match(css, /\.inputGroup:focus-within/)
-  assert.match(css, /\.strengthTrack/)
+  assert.match(css, /\.strengthTrack\[data-score='5'\]/)
+  assert.match(css, /\.matchStatus\[data-error='true'\]/)
+  assert.match(css, /max-width:680px/)
   assert.match(css, /\.statusGood/)
 })
 
-test('security workspace remains responsive and does not invent device inventory', async () => {
+test('security workspace remains responsive touch-safe and does not invent device inventory', async () => {
   const [manager, css] = await Promise.all([
     readFile(managerPath, 'utf8'),
     readFile(cssPath, 'utf8'),
@@ -66,5 +73,7 @@ test('security workspace remains responsive and does not invent device inventory
   assert.match(manager, /Autenticación en dos pasos/)
   assert.match(css, /min-height:44px/)
   assert.match(css, /@media\(max-width:800px\)/)
+  assert.match(css, /@media\(max-width:480px\)/)
+  assert.match(css, /grid-template-columns:minmax\(0,1fr\) 48px/)
   assert.match(css, /grid-template-columns:1fr/)
 })
