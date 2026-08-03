@@ -28,6 +28,16 @@ function getStrength(checks: PasswordChecks, password: string) {
   return { score, label: 'Excelente' }
 }
 
+function getPasswordHint(checks: PasswordChecks, password: string) {
+  if (!password) return 'Escribe una contraseña para evaluar su fortaleza.'
+  if (!checks.length) return `Agrega al menos ${MIN_PASSWORD_LENGTH - password.length} caracteres más.`
+  if (!checks.upper) return 'Agrega una letra mayúscula.'
+  if (!checks.lower) return 'Agrega una letra minúscula.'
+  if (!checks.number) return 'Agrega un número.'
+  if (!checks.symbol) return 'Agrega un símbolo especial, por ejemplo: ! @ # $ %.'
+  return 'La contraseña cumple todos los requisitos.'
+}
+
 export default function AccountSecurityManager({
   email,
   emailConfirmed,
@@ -46,7 +56,9 @@ export default function AccountSecurityManager({
   const [error, setError] = useState<string | null>(null)
   const checks = validatePassword(password)
   const strength = getStrength(checks, password)
+  const strengthHint = getPasswordHint(checks, password)
   const passwordsMatch = password.length > 0 && password === confirmation
+  const confirmationStarted = confirmation.length > 0
   const passwordValid = Object.values(checks).every(Boolean) && passwordsMatch
 
   async function changePassword(event: React.FormEvent<HTMLFormElement>) {
@@ -96,60 +108,121 @@ export default function AccountSecurityManager({
             <h2 id="password-title">Cambiar contraseña</h2>
             <p>Usa una contraseña exclusiva para SINEP y evita reutilizar credenciales.</p>
           </div>
-          <span className={styles.securityBadge}>Protección de acceso</span>
         </div>
 
         <form className={styles.form} onSubmit={changePassword}>
           <div className={styles.passwordField}>
             <label htmlFor="new-password">Nueva contraseña</label>
             <div className={styles.inputGroup}>
-              <input id="new-password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} onChange={(event) => setPassword(event.target.value)} required type={showPassword ? 'text' : 'password'} value={password} />
-              <button aria-label={showPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'} className={styles.visibilityButton} onClick={() => setShowPassword((current) => !current)} type="button">
-                {showPassword ? 'Ocultar' : 'Mostrar'}
+              <input
+                id="new-password"
+                aria-describedby="password-strength password-requirements"
+                autoComplete="new-password"
+                minLength={MIN_PASSWORD_LENGTH}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+              />
+              <button
+                aria-label={showPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'}
+                aria-pressed={showPassword}
+                className={styles.visibilityButton}
+                onClick={() => setShowPassword((current) => !current)}
+                type="button"
+              >
+                <span aria-hidden="true">{showPassword ? '◉' : '◎'}</span>
+                <span>{showPassword ? 'Ocultar' : 'Mostrar'}</span>
               </button>
             </div>
           </div>
 
-          <div className={styles.strength} aria-live="polite">
+          <div className={styles.strength} id="password-strength" aria-live="polite">
             <div className={styles.strengthHeader}>
-              <span>Fortaleza</span>
-              <strong>{strength.label}</strong>
+              <span>Fortaleza de la contraseña</span>
+              <strong data-score={strength.score}>{strength.label}</strong>
             </div>
-            <div aria-label={`Fortaleza de contraseña: ${strength.label}`} className={styles.strengthTrack} role="progressbar" aria-valuemin={0} aria-valuemax={5} aria-valuenow={strength.score}>
+            <div
+              aria-label={`Fortaleza de contraseña: ${strength.label}`}
+              className={styles.strengthTrack}
+              data-score={strength.score}
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={5}
+              aria-valuenow={strength.score}
+            >
               <span style={{ width: `${(strength.score / 5) * 100}%` }} />
             </div>
+            <p className={styles.strengthHint}>{strengthHint}</p>
           </div>
 
-          <ul className={styles.criteria} aria-label="Requisitos de contraseña">
-            <li data-complete={checks.length}>Al menos {MIN_PASSWORD_LENGTH} caracteres</li>
-            <li data-complete={checks.upper}>Una letra mayúscula</li>
-            <li data-complete={checks.lower}>Una letra minúscula</li>
-            <li data-complete={checks.number}>Un número</li>
-            <li data-complete={checks.symbol}>Un símbolo especial</li>
-          </ul>
+          <div className={styles.requirements} id="password-requirements">
+            <strong>Requisitos</strong>
+            <ul className={styles.criteria} aria-label="Requisitos de contraseña">
+              <li data-complete={checks.length}>Al menos {MIN_PASSWORD_LENGTH} caracteres</li>
+              <li data-complete={checks.upper}>Una letra mayúscula</li>
+              <li data-complete={checks.lower}>Una letra minúscula</li>
+              <li data-complete={checks.number}>Un número</li>
+              <li data-complete={checks.symbol}>Un símbolo especial</li>
+            </ul>
+          </div>
 
           <div className={styles.passwordField}>
             <label htmlFor="confirm-password">Confirmar contraseña</label>
             <div className={styles.inputGroup}>
-              <input id="confirm-password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} onChange={(event) => setConfirmation(event.target.value)} required type={showConfirmation ? 'text' : 'password'} value={confirmation} />
-              <button aria-label={showConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'} className={styles.visibilityButton} onClick={() => setShowConfirmation((current) => !current)} type="button">
-                {showConfirmation ? 'Ocultar' : 'Mostrar'}
+              <input
+                id="confirm-password"
+                aria-describedby="password-match-status"
+                autoComplete="new-password"
+                minLength={MIN_PASSWORD_LENGTH}
+                onChange={(event) => setConfirmation(event.target.value)}
+                required
+                type={showConfirmation ? 'text' : 'password'}
+                value={confirmation}
+              />
+              <button
+                aria-label={showConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}
+                aria-pressed={showConfirmation}
+                className={styles.visibilityButton}
+                onClick={() => setShowConfirmation((current) => !current)}
+                type="button"
+              >
+                <span aria-hidden="true">{showConfirmation ? '◉' : '◎'}</span>
+                <span>{showConfirmation ? 'Ocultar' : 'Mostrar'}</span>
               </button>
             </div>
-            <p className={styles.matchStatus} data-complete={passwordsMatch}>
-              {passwordsMatch ? '✓ Las contraseñas coinciden' : '○ Confirma exactamente la nueva contraseña'}
+            <p
+              className={styles.matchStatus}
+              data-complete={passwordsMatch}
+              data-error={confirmationStarted && !passwordsMatch}
+              id="password-match-status"
+              aria-live="polite"
+            >
+              {!confirmationStarted
+                ? 'Escribe nuevamente la contraseña.'
+                : passwordsMatch
+                  ? '✓ Las contraseñas coinciden.'
+                  : '✕ Las contraseñas no coinciden.'}
             </p>
           </div>
 
-          <aside className={styles.guidance}>
-            <strong>Consejos de seguridad</strong>
-            <p>No reutilices contraseñas, evita datos personales y considera usar un gestor de contraseñas.</p>
+          <aside className={styles.guidance} aria-label="Consejos de seguridad">
+            <div className={styles.guidanceIcon} aria-hidden="true">i</div>
+            <div>
+              <strong>Consejos de seguridad</strong>
+              <ul>
+                <li>No reutilices contraseñas de otros servicios.</li>
+                <li>Evita nombres, fechas y datos personales fáciles de adivinar.</li>
+                <li>Considera utilizar un gestor de contraseñas.</li>
+              </ul>
+            </div>
           </aside>
 
           <div className={styles.actions}>
             <button disabled={!passwordValid || busy !== null} type="submit">
               {busy === 'password' ? 'Actualizando…' : 'Actualizar contraseña'}
             </button>
+            {!passwordValid ? <small>Completa todos los requisitos y confirma la contraseña para continuar.</small> : null}
           </div>
         </form>
       </section>
