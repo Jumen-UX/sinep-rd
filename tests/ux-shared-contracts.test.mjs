@@ -35,9 +35,17 @@ test('button exposes a reusable loading contract that prevents duplicate submiss
 
   assert.match(component, /loading\?: boolean/)
   assert.match(component, /loadingLabel\?: string/)
-  assert.match(component, /disabled=\{isNativeButton \? \(disabled \|\| loading\) : undefined\}/)
+  assert.match(component, /disabled=\{disabled \|\| loading\}/)
   assert.match(component, /aria-busy=\{loading \|\| undefined\}/)
   assert.match(component, /motion-reduce:animate-none/)
+})
+
+test('button preserves the Radix Slot single-child contract when rendered asChild', async () => {
+  const component = await read('src/components/ui/button.tsx')
+
+  assert.match(component, /if \(asChild\) \{[\s\S]*?<Slot[\s\S]*?>\s*\{children\}\s*<\/Slot>/)
+  assert.doesNotMatch(component, /const Comp = asChild \? Slot : 'button'/)
+  assert.doesNotMatch(component, /<Slot[\s\S]*?loading &&/)
 })
 
 test('alert tone does not force a live region', async () => {
