@@ -26,9 +26,10 @@ test('password change validates measurable criteria and prevents duplicate actio
   const manager = await readFile(managerPath, 'utf8')
 
   assert.match(manager, /MIN_PASSWORD_LENGTH = 12/)
-  assert.match(manager, /\/[A-Z]\//)
-  assert.match(manager, /\/[a-z]\//)
-  assert.match(manager, /\/\\d\//)
+  assert.match(manager, /upper: \/\[A-Z\]\//)
+  assert.match(manager, /lower: \/\[a-z\]\//)
+  assert.match(manager, /number: \/\\d\//)
+  assert.match(manager, /symbol: \/\[\^A-Za-z0-9\]\//)
   assert.match(manager, /password === confirmation/)
   assert.match(manager, /disabled=\{!passwordValid \|\| busy !== null\}/)
   assert.match(manager, /role="alert"/)
