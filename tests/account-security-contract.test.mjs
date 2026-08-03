@@ -38,12 +38,14 @@ test('password change validates measurable criteria and prevents duplicate actio
   assert.match(manager, /role="status"/)
 })
 
-test('security refinement exposes visibility strength contextual guidance and confirmation semantics', async () => {
+test('security refinement exposes visible fields strength guidance and confirmation semantics', async () => {
   const [manager, css] = await Promise.all([
     readFile(managerPath, 'utf8'),
     readFile(cssPath, 'utf8'),
   ])
 
+  assert.match(manager, /placeholder="Escribe una contraseña nueva"/)
+  assert.match(manager, /placeholder="Repite la nueva contraseña"/)
   assert.match(manager, /Mostrar nueva contraseña/)
   assert.match(manager, /Ocultar nueva contraseña/)
   assert.match(manager, /aria-pressed=\{showPassword\}/)
@@ -56,6 +58,11 @@ test('security refinement exposes visibility strength contextual guidance and co
   assert.match(manager, /Consejos de seguridad/)
   assert.match(manager, /Esta sesión permanece activa/)
   assert.match(manager, /emailConfirmed \? 'Verificado' : 'Pendiente'/)
+  assert.match(css, /\.inputGroup\{[^}]*position:relative/s)
+  assert.match(css, /\.inputGroup\{[^}]*border:1px solid/s)
+  assert.match(css, /\.inputGroup input\{[^}]*padding:0 112px 0 14px/s)
+  assert.match(css, /\.visibilityButton\{[^}]*position:absolute/s)
+  assert.match(css, /\.visibilityButton\{[^}]*right:4px/s)
   assert.match(css, /\.inputGroup:focus-within/)
   assert.match(css, /\.strengthTrack\[data-score='5'\]/)
   assert.match(css, /\.matchStatus\[data-error='true'\]/)
@@ -74,6 +81,7 @@ test('security workspace remains responsive touch-safe and does not invent devic
   assert.match(css, /min-height:44px/)
   assert.match(css, /@media\(max-width:800px\)/)
   assert.match(css, /@media\(max-width:480px\)/)
-  assert.match(css, /grid-template-columns:minmax\(0,1fr\) 48px/)
+  assert.match(css, /\.inputGroup input\{padding-right:88px\}/)
+  assert.match(css, /\.visibilityButton\{min-width:72px/)
   assert.match(css, /grid-template-columns:1fr/)
 })
