@@ -17,7 +17,7 @@ export default async function AccountSecurityPage() {
           <p>Actualiza tu contraseña, revisa el estado de verificación y controla las sesiones de tu cuenta.</p>
         </div>
       </header>
-      <AccountSecurityManager emailConfirmed={Boolean(user.email_confirmed_at)} />
+      <AccountSecurityManager email={user.email ?? 'Correo no disponible'} emailConfirmed={Boolean(user.email_confirmed_at)} />
     </main>
   )
 }
