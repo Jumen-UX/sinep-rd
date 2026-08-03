@@ -1,0 +1,137 @@
+.admin-scope-control,
+.admin-scope-control label,
+.admin-scope-control strong,
+.admin-scope-control small {
+  min-width: 0;
+}
+
+.admin-scope-control strong,
+.admin-scope-control small {
+  overflow-wrap: anywhere;
+}
+
+.admin-scope-control select {
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
+.admin-dashboard-metric-note {
+  grid-column: 1 / -1;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.admin-dashboard-heading,
+.admin-dashboard-panel-heading,
+.admin-dashboard-review-notice > div,
+.admin-dashboard-action-list a > span:nth-child(2) {
+  min-width: 0;
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .admin-scope-control {
+    margin-inline: 0;
+    padding: 10px;
+  }
+
+  .admin-dashboard-topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 1.25fr) auto;
+  }
+
+  .admin-dashboard-user {
+    max-width: 220px;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-dashboard-topbar {
+    align-items: center;
+  }
+
+  .admin-dashboard-search input,
+  .admin-dashboard-search button,
+  .admin-mobile-nav a,
+  .admin-mobile-nav button {
+    min-height: 44px;
+  }
+
+  .admin-mobile-nav a,
+  .admin-mobile-nav button {
+    padding-inline: 4px;
+  }
+
+  .admin-dashboard-metric-note {
+    border-radius: 12px;
+    line-height: 1.35;
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-dashboard-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dashboard-metric {
+    grid-template-columns: 34px minmax(0, 1fr);
+    min-height: auto;
+  }
+
+  .admin-dashboard-metric-value {
+    align-self: center;
+    grid-column: 1;
+  }
+
+  .admin-dashboard-metric-note {
+    align-self: center;
+    grid-column: 2;
+  }
+
+  .admin-dashboard-review-notice {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .admin-dashboard-review-notice a {
+    justify-self: stretch;
+    text-align: center;
+  }
+
+  .admin-dashboard-panel,
+  .admin-dashboard-review-notice,
+  .admin-dashboard-metric {
+    border-radius: 16px;
+  }
+
+  .admin-mobile-nav {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+}
+
+@media (max-width: 390px) {
+  .admin-workspace {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .admin-dashboard-topbar {
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .admin-dashboard-heading h1 {
+    font-size: 27px;
+  }
+
+  .admin-dashboard-metric {
+    grid-template-columns: 30px minmax(0, 1fr);
+    padding: 12px;
+  }
+
+  .admin-dashboard-metric-icon {
+    height: 30px;
+    width: 30px;
+  }
+}
