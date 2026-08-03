@@ -6,8 +6,10 @@ import { usePathname } from 'next/navigation'
 import styles from './account.module.css'
 
 const ITEMS = [
-  { href: '/cuenta', label: 'Resumen', description: 'Estado general de tu cuenta' },
-  { href: '/cuenta/perfil', label: 'Perfil', description: 'Datos personales y preferencias' },
+  { href: '/cuenta', label: 'Resumen', description: 'Estado general y acciones rápidas', icon: '⌂' },
+  { href: '/cuenta/perfil', label: 'Perfil', description: 'Datos personales y preferencias básicas', icon: '◉' },
+  { href: '/cuenta/accesos', label: 'Accesos', description: 'Roles y ámbitos autorizados', icon: '◇' },
+  { href: '/cuenta/solicitudes', label: 'Solicitudes', description: 'Seguimiento de trámites personales', icon: '▤' },
 ]
 
 export default function AccountShell({ children }: { children: ReactNode }) {
@@ -26,8 +28,11 @@ export default function AccountShell({ children }: { children: ReactNode }) {
             const active = pathname === item.href
             return (
               <Link aria-current={active ? 'page' : undefined} href={item.href} key={item.href}>
-                <strong>{item.label}</strong>
-                <small>{item.description}</small>
+                <span className={styles.navigationIcon} aria-hidden="true">{item.icon}</span>
+                <span>
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </span>
               </Link>
             )
           })}
