@@ -4,22 +4,17 @@ import { createClient } from '@/lib/supabase/server'
 import { loadMyAccountContext } from './services/account-service'
 import styles from './account.module.css'
 
-const REQUEST_LABELS: Record<string, string> = {
-  initial_access: 'Acceso inicial',
-  person_link: 'Vinculación con persona',
-  scope_change: 'Cambio de ámbito',
-  role_change: 'Cambio de rol',
-  account_closure: 'Cierre de cuenta',
-}
+const OPEN_REQUEST_STATUSES = ['submitted', 'under_review', 'information_required']
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Borrador',
-  submitted: 'Enviada',
-  under_review: 'En revisión',
-  information_required: 'Información requerida',
-  approved: 'Aprobada',
-  rejected: 'Rechazada',
-  cancelled: 'Cancelada',
+function calculateProfileCompletion(profile: {
+  full_name: string
+  phone: string | null
+  preferred_locale: string
+  timezone: string
+  person_id: string | null
+}) {
+  const values = [profile.full_name, profile.phone, profile.preferred_locale, profile.timezone, profile.person_id]
+  return Math.round((values.filter(Boolean).length / values.length) * 100)
 }
 
 export default async function AccountHomePage() {
@@ -29,16 +24,22 @@ export default async function AccountHomePage() {
 
   const context = await loadMyAccountContext(supabase)
   const { profile, roles, access_requests: requests } = context
-  const openRequests = requests.filter((request) => ['submitted', 'under_review', 'information_required'].includes(request.status))
+  const openRequests = requests.filter((request) => OPEN_REQUEST_STATUSES.includes(request.status))
   const hasAdminAccess = roles.length > 0 && profile.status === 'active' && profile.onboarding_completed_at
+  const profileCompletion = calculateProfileCompletion(profile)
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.eyebrow}>Centro personal</p>
-          <h1>Mi cuenta</h1>
-          <p>Gestiona tu perfil, consulta tu acceso y revisa el estado de tus solicitudes.</p>
+      <header className={styles.dashboardHero}>
+        <div className={styles.identitySummary}>
+          <div className={styles.avatar} aria-hidden="true">
+            {profile.full_name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}
+          </div>
+          <div>
+            <p className={styles.eyebrow}>Centro personal</p>
+            <h1>Hola, {profile.full_name}</h1>
+            <p>Gestiona tu identidad de acceso, tus autorizaciones y las solicitudes relacionadas con tu cuenta.</p>
+          </div>
         </div>
         <div className={styles.headerActions}>
           {hasAdminAccess ? <Link className={styles.secondaryAction} href="/admin">Ir a Administración</Link> : null}
@@ -46,32 +47,74 @@ export default async function AccountHomePage() {
         </div>
       </header>
 
+      <section className={styles.accountStatusBanner} aria-label="Estado general de la cuenta">
+        <div>
+          <span className={styles.statusIndicator} aria-hidden="true" />
+          <div>
+            <strong>{profile.status === 'active' ? 'Tu cuenta está activa' : 'Tu cuenta requiere completar pasos'}</strong>
+            <p>{profile.email}</p>
+          </div>
+        </div>
+        <span>{profile.onboarding_step === 'complete' ? 'Configuración inicial completada' : 'Configuración inicial pendiente'}</span>
+      </section>
+
       <section className={styles.summaryGrid} aria-label="Resumen de la cuenta">
         <article className={styles.summaryCard}>
-          <span>Estado de la cuenta</span>
-          <strong>{profile.status === 'active' ? 'Activa' : 'Pendiente'}</strong>
-          <small>{profile.email}</small>
+          <span>Perfil completado</span>
+          <strong>{profileCompletion}%</strong>
+          <small>{profile.person_id ? 'Cuenta vinculada con una ficha eclesial' : 'Falta vincular una ficha eclesial'}</small>
         </article>
         <article className={styles.summaryCard}>
           <span>Accesos activos</span>
           <strong>{roles.length}</strong>
-          <small>{roles.length ? 'Roles y ámbitos autorizados' : 'Todavía no tienes un rol administrativo'}</small>
+          <small>{roles.length ? 'Roles y ámbitos actualmente autorizados' : 'No tienes acceso administrativo asignado'}</small>
         </article>
         <article className={styles.summaryCard}>
           <span>Solicitudes abiertas</span>
           <strong>{openRequests.length}</strong>
-          <small>{openRequests.length ? 'Hay solicitudes que requieren seguimiento' : 'No tienes solicitudes pendientes'}</small>
+          <small>{openRequests.length ? 'Hay trámites que requieren seguimiento' : 'No tienes solicitudes pendientes'}</small>
         </article>
       </section>
 
+      <section className={styles.quickActionsPanel} aria-labelledby="quick-actions-title">
+        <div className={styles.panelHeader}>
+          <div>
+            <p className={styles.eyebrow}>Acciones rápidas</p>
+            <h2 id="quick-actions-title">¿Qué necesitas hacer?</h2>
+          </div>
+        </div>
+        <div className={styles.quickActionsGrid}>
+          <Link href="/cuenta/perfil">
+            <span aria-hidden="true">◉</span>
+            <strong>Actualizar mi perfil</strong>
+            <small>Nombre, teléfono, idioma, zona horaria y fotografía.</small>
+          </Link>
+          <Link href="/cuenta/accesos">
+            <span aria-hidden="true">◇</span>
+            <strong>Revisar mis accesos</strong>
+            <small>Consulta los roles y ámbitos que tienes autorizados.</small>
+          </Link>
+          <Link href="/cuenta/solicitudes">
+            <span aria-hidden="true">▤</span>
+            <strong>Gestionar solicitudes</strong>
+            <small>Consulta el estado de tus trámites personales.</small>
+          </Link>
+          <Link href="/">
+            <span aria-hidden="true">↗</span>
+            <strong>Ir al sitio público</strong>
+            <small>Consulta las fichas y directorios públicos de SINEP.</small>
+          </Link>
+        </div>
+      </section>
+
       <div className={styles.contentGrid}>
-        <section className={styles.panel} aria-labelledby="profile-title">
+        <section className={styles.panel} aria-labelledby="identity-title">
           <div className={styles.panelHeader}>
             <div>
               <p className={styles.eyebrow}>Identidad de acceso</p>
-              <h2 id="profile-title">Mi perfil</h2>
+              <h2 id="identity-title">Mi perfil</h2>
             </div>
-            <span className={styles.statusBadge}>{profile.onboarding_step === 'complete' ? 'Completo' : 'Por completar'}</span>
+            <Link className={styles.textAction} href="/cuenta/perfil">Editar</Link>
           </div>
           <dl className={styles.detailList}>
             <div><dt>Nombre</dt><dd>{profile.full_name}</dd></div>
@@ -83,58 +126,31 @@ export default async function AccountHomePage() {
           </dl>
         </section>
 
-        <section className={styles.panel} aria-labelledby="access-title">
+        <section className={styles.panel} aria-labelledby="access-preview-title">
           <div className={styles.panelHeader}>
             <div>
               <p className={styles.eyebrow}>Autorizaciones</p>
-              <h2 id="access-title">Mi acceso</h2>
+              <h2 id="access-preview-title">Mis accesos</h2>
             </div>
+            <Link className={styles.textAction} href="/cuenta/accesos">Ver todos</Link>
           </div>
           {roles.length ? (
             <ul className={styles.accessList}>
-              {roles.map((role) => (
+              {roles.slice(0, 3).map((role) => (
                 <li key={role.assignment_id}>
                   <strong>{role.role_name}</strong>
-                  <span>{role.scope_type}</span>
+                  <span>{role.scope_type === 'global' ? 'Ámbito global' : role.scope_type}</span>
                 </li>
               ))}
             </ul>
           ) : (
             <div className={styles.emptyState}>
               <h3>Acceso administrativo pendiente</h3>
-              <p>Puedes usar este centro personal, pero un administrador debe aprobar una solicitud y asignarte un rol y ámbito.</p>
+              <p>Puedes usar este centro personal mientras un administrador evalúa y configura tu acceso.</p>
             </div>
           )}
         </section>
       </div>
-
-      <section className={styles.panel} aria-labelledby="requests-title">
-        <div className={styles.panelHeader}>
-          <div>
-            <p className={styles.eyebrow}>Seguimiento</p>
-            <h2 id="requests-title">Mis solicitudes</h2>
-          </div>
-          <span className={styles.statusBadge}>{requests.length} total</span>
-        </div>
-        {requests.length ? (
-          <div className={styles.requestList}>
-            {requests.map((request) => (
-              <article key={request.id} className={styles.requestItem}>
-                <div>
-                  <strong>{REQUEST_LABELS[request.request_type] ?? request.request_type}</strong>
-                  <p>{request.justification || 'Sin descripción'}</p>
-                </div>
-                <span className={styles.requestStatus}>{STATUS_LABELS[request.status] ?? request.status}</span>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>
-            <h3>Aún no tienes solicitudes</h3>
-            <p>En el siguiente bloque podrás solicitar acceso inicial o vincular tu cuenta con una persona existente.</p>
-          </div>
-        )}
-      </section>
     </main>
   )
 }
