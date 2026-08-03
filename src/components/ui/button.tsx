@@ -55,28 +55,41 @@ function Button({
   children,
   ...props
 }: ButtonProps) {
-  const Comp = asChild ? Slot : 'button'
-  const isNativeButton = !asChild
+  const buttonClassName = cn(buttonVariants({ variant, size, className }))
+
+  if (asChild) {
+    return (
+      <Slot
+        data-slot="button"
+        data-loading={loading ? 'true' : undefined}
+        className={buttonClassName}
+        aria-busy={loading || undefined}
+        aria-disabled={disabled || loading ? true : undefined}
+        {...props}
+      >
+        {children}
+      </Slot>
+    )
+  }
 
   return (
-    <Comp
+    <button
       data-slot="button"
       data-loading={loading ? 'true' : undefined}
-      className={cn(buttonVariants({ variant, size, className }))}
-      type={isNativeButton ? (type ?? 'button') : undefined}
-      disabled={isNativeButton ? (disabled || loading) : undefined}
+      className={buttonClassName}
+      type={type ?? 'button'}
+      disabled={disabled || loading}
       aria-busy={loading || undefined}
-      aria-disabled={!isNativeButton && (disabled || loading) ? true : undefined}
       {...props}
     >
-      {loading && isNativeButton ? (
+      {loading ? (
         <span
           aria-hidden="true"
           className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
         />
       ) : null}
-      {loading && isNativeButton ? loadingLabel : children}
-    </Comp>
+      {loading ? loadingLabel : children}
+    </button>
   )
 }
 
