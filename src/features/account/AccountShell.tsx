@@ -8,7 +8,8 @@ import styles from './account.module.css'
 const ITEMS = [
   { href: '/cuenta', label: 'Resumen', description: 'Estado general y acciones rápidas', icon: '⌂' },
   { href: '/cuenta/perfil', label: 'Perfil', description: 'Datos personales y preferencias básicas', icon: '◉' },
-  { href: '/cuenta/accesos', label: 'Accesos', description: 'Roles y ámbitos autorizados', icon: '◇' },
+  { href: '/cuenta/seguridad', label: 'Seguridad', description: 'Contraseña y sesiones de la cuenta', icon: '◇' },
+  { href: '/cuenta/accesos', label: 'Accesos', description: 'Roles y ámbitos autorizados', icon: '◆' },
   { href: '/cuenta/solicitudes', label: 'Solicitudes', description: 'Seguimiento de trámites personales', icon: '▤' },
 ]
 
