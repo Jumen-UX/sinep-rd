@@ -65,7 +65,7 @@ jobs:
 
       - name: Setup pnpm
         if: steps.profile-matrix.outputs.enabled == 'true'
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@v6.0.9
         with:
           version: 10.18.3
 
