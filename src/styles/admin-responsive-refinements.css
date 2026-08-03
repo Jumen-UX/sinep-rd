@@ -152,20 +152,62 @@
 
 @media (max-width: 900px) {
   .admin-workspace {
-    padding: 0 20px 88px;
+    padding: 0 20px 96px;
   }
 
   .admin-dashboard-topbar {
-    align-items: center;
+    align-items: stretch;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
     margin-inline: -20px;
-    padding-inline: 20px;
+    min-height: auto;
+    padding: 10px 20px 12px;
+    position: static;
   }
 
-  .admin-dashboard-search input,
+  .admin-dashboard-search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-dashboard-search input {
+    font-size: 16px;
+    min-width: 0;
+    padding-inline: 12px;
+  }
+
   .admin-dashboard-search button,
   .admin-mobile-nav a,
   .admin-mobile-nav button {
     min-height: 44px;
+  }
+
+  .admin-dashboard-user {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .admin-dashboard-user > span {
+    height: 36px;
+    width: 36px;
+  }
+
+  .admin-dashboard-user strong {
+    font-size: 12px;
+  }
+
+  .admin-dashboard-user small {
+    font-size: 10px;
+  }
+
+  .admin-dashboard-user button {
+    min-height: 44px;
+    padding-inline: 8px;
   }
 
   .admin-mobile-nav a,
@@ -174,7 +216,35 @@
   }
 
   .admin-dashboard-heading {
-    padding-top: 14px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 12px;
+  }
+
+  .admin-dashboard-heading h1 {
+    font-size: clamp(30px, 9vw, 40px);
+    line-height: 1.02;
+  }
+
+  .admin-dashboard-heading p:not(.eyebrow) {
+    font-size: 15px;
+    line-height: 1.55;
+    max-width: 36rem;
+  }
+
+  .admin-dashboard-heading-actions {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .admin-dashboard-heading-actions .button {
+    justify-content: center;
+    min-width: 0;
+    width: 100%;
   }
 
   .admin-dashboard-metric-note {
@@ -194,6 +264,38 @@
     margin-right: -14px;
     padding-left: 14px;
     padding-right: 14px;
+  }
+
+  .admin-dashboard-search {
+    border-radius: 12px;
+  }
+
+  .admin-dashboard-search button {
+    font-size: 13px;
+    padding-inline: 12px;
+  }
+
+  .admin-dashboard-heading {
+    gap: 12px;
+  }
+
+  .admin-dashboard-heading h1 {
+    font-size: clamp(30px, 11vw, 38px);
+    max-width: 12ch;
+  }
+
+  .admin-dashboard-heading p:not(.eyebrow) {
+    font-size: 15px;
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+
+  .admin-dashboard-heading-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dashboard-heading-actions .button {
+    min-height: 48px;
   }
 
   .admin-dashboard-metrics {
@@ -250,7 +352,11 @@
   }
 
   .admin-dashboard-heading h1 {
-    font-size: 27px;
+    font-size: 30px;
+  }
+
+  .admin-dashboard-search button {
+    padding-inline: 10px;
   }
 
   .admin-dashboard-metric {
