@@ -23,6 +23,16 @@ test('admin dashboard protects long scope labels and KPI notes', async () => {
   assert.match(styles, /\.admin-dashboard-metric-note[\s\S]*white-space: normal/)
 })
 
+test('admin dashboard uses compact executive density without leaving partial KPI rows', async () => {
+  const styles = await read('src/styles/admin-responsive-refinements.css')
+
+  assert.match(styles, /\.admin-redesign\s*\{[\s\S]*grid-template-columns: 244px minmax\(0, 1fr\)/)
+  assert.match(styles, /\.admin-dashboard-heading h1\s*\{[\s\S]*clamp\(30px, 3vw, 40px\)/)
+  assert.match(styles, /\.admin-dashboard-metrics\s*\{[\s\S]*repeat\(auto-fit, minmax\(220px, 1fr\)\)/)
+  assert.match(styles, /\.admin-dashboard-metric\s*\{[\s\S]*min-height: 118px/)
+  assert.match(styles, /\.admin-dashboard-panel\s*\{[\s\S]*padding: 18px/)
+})
+
 test('admin dashboard becomes single-column and keeps touch targets on small screens', async () => {
   const styles = await read('src/styles/admin-responsive-refinements.css')
 
