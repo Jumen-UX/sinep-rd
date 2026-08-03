@@ -42,7 +42,7 @@ export default async function AccountHomePage() {
         </div>
         <div className={styles.headerActions}>
           {hasAdminAccess ? <Link className={styles.secondaryAction} href="/admin">Ir a Administración</Link> : null}
-          <Link className={styles.primaryAction} href="/">Ir al sitio público</Link>
+          <Link className={styles.primaryAction} href="/cuenta/perfil">Editar perfil</Link>
         </div>
       </header>
 
