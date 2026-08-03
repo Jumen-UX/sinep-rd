@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { loadMyAccountContext } from './services/account-service'
 import styles from './account.module.css'
+import dashboardStyles from './account-dashboard.module.css'
 
 const OPEN_REQUEST_STATUSES = ['submitted', 'under_review', 'information_required']
 
@@ -50,7 +51,7 @@ export default async function AccountHomePage() {
             <p className={styles.eyebrow}>Centro personal</p>
             <h1>{profile.full_name}</h1>
             <p>{profile.email}</p>
-            <div className={styles.identityBadges} aria-label="Estado de la cuenta">
+            <div className={dashboardStyles.identityBadges} aria-label="Estado de la cuenta">
               <span>{profile.status === 'active' ? 'Cuenta activa' : 'Cuenta con pasos pendientes'}</span>
               {roles.length ? <span>{roles[0].role_name}</span> : <span>Sin acceso administrativo</span>}
             </div>
@@ -77,7 +78,7 @@ export default async function AccountHomePage() {
         <article className={styles.summaryCard}>
           <span>Datos básicos</span>
           <strong>{profileCompletion}%</strong>
-          <div className={styles.progressTrack} aria-hidden="true"><span style={{ width: `${profileCompletion}%` }} /></div>
+          <div className={dashboardStyles.progressTrack} aria-hidden="true"><span style={{ width: `${profileCompletion}%` }} /></div>
           <small>{profileCompletion === 100 ? 'La información requerida está completa' : 'Hay datos requeridos pendientes'}</small>
         </article>
         <article className={styles.summaryCard}>
@@ -93,7 +94,7 @@ export default async function AccountHomePage() {
       </section>
 
       {optionalProfileItems.length ? (
-        <section className={styles.profileSuggestions} aria-labelledby="profile-suggestions-title">
+        <section className={dashboardStyles.profileSuggestions} aria-labelledby="profile-suggestions-title">
           <div>
             <p className={styles.eyebrow}>Mejoras opcionales</p>
             <h2 id="profile-suggestions-title">Puedes enriquecer tu perfil</h2>
@@ -112,7 +113,7 @@ export default async function AccountHomePage() {
             <h2 id="quick-actions-title">¿Qué necesitas hacer?</h2>
           </div>
         </div>
-        <div className={styles.quickActionsGrid}>
+        <div className={`${styles.quickActionsGrid} ${dashboardStyles.quickActionsGrid}`}>
           <Link href="/cuenta/perfil"><span aria-hidden="true">◉</span><strong>Actualizar mi perfil</strong><small>Nombre, teléfono, idioma, zona horaria y fotografía.</small><b aria-hidden="true">→</b></Link>
           <Link href="/cuenta/accesos"><span aria-hidden="true">◇</span><strong>Revisar mis accesos</strong><small>Consulta los roles y ámbitos que tienes autorizados.</small><b aria-hidden="true">→</b></Link>
           <Link href="/cuenta/solicitudes"><span aria-hidden="true">▤</span><strong>Gestionar solicitudes</strong><small>Consulta el estado de tus trámites personales.</small><b aria-hidden="true">→</b></Link>
@@ -133,7 +134,7 @@ export default async function AccountHomePage() {
             <div><dt>Idioma</dt><dd>{profile.preferred_locale}</dd></div>
             <div><dt>Zona horaria</dt><dd>{profile.timezone}</dd></div>
           </dl>
-          {profile.person_id ? <p className={styles.contextNote}>Esta cuenta tiene una vinculación personal verificada.</p> : null}
+          {profile.person_id ? <p className={dashboardStyles.contextNote}>Esta cuenta tiene una vinculación personal verificada.</p> : null}
         </section>
 
         <section className={styles.panel} aria-labelledby="access-preview-title">
@@ -142,7 +143,7 @@ export default async function AccountHomePage() {
             <Link className={styles.textAction} href="/cuenta/accesos">Ver todos</Link>
           </div>
           {roles.length ? (
-            <ul className={styles.accessList}>
+            <ul className={`${styles.accessList} ${dashboardStyles.accessList}`}>
               {roles.slice(0, 3).map((role) => (
                 <li key={role.assignment_id}><strong>{role.role_name}</strong><span>{role.scope_type === 'global' ? 'Ámbito global' : role.scope_type}</span><small>Activo</small></li>
               ))}
