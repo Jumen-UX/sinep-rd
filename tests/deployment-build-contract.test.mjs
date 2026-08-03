@@ -38,7 +38,7 @@ test('CI reuses dependency and incremental Next.js caches without caching build 
   const workflow = await read('.github/workflows/ci.yml')
 
   assert.match(workflow, /cache: pnpm/)
-  assert.match(workflow, /uses: actions\/cache@v4/)
+  assert.match(workflow, /uses: actions\/cache@v(?:[4-9]|[1-9]\d+)/)
   assert.match(workflow, /path: \.next\/cache/)
   assert.match(workflow, /hashFiles\('pnpm-lock\.yaml'\)/)
   assert.match(workflow, /github\.sha/)
