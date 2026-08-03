@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import AccountRequestManager from '@/features/account/AccountRequestManager'
 import { loadMyAccountContext } from '@/features/account/services/account-service'
 import styles from '@/features/account/account.module.css'
 
@@ -31,8 +32,9 @@ export default async function AccountRequestsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login?next=/cuenta/solicitudes')
 
-  const { access_requests: requests } = await loadMyAccountContext(supabase)
+  const { access_requests: requests, roles } = await loadMyAccountContext(supabase)
   const openCount = requests.filter((request) => ['submitted', 'under_review', 'information_required'].includes(request.status)).length
+  const finalizedCount = requests.filter((request) => ['approved', 'rejected', 'cancelled'].includes(request.status)).length
 
   return (
     <main className={styles.page}>
@@ -40,7 +42,7 @@ export default async function AccountRequestsPage() {
         <div>
           <p className={styles.eyebrow}>Seguimiento</p>
           <h1>Mis solicitudes</h1>
-          <p>Consulta el estado, las observaciones y el historial de los trámites asociados a tu cuenta.</p>
+          <p>Crea trámites personales, aporta información y consulta las decisiones del equipo revisor.</p>
         </div>
       </header>
 
@@ -57,10 +59,12 @@ export default async function AccountRequestsPage() {
         </article>
         <article className={styles.summaryCard}>
           <span>Finalizadas</span>
-          <strong>{requests.length - openCount}</strong>
-          <small>Aprobadas, rechazadas, canceladas o en borrador</small>
+          <strong>{finalizedCount}</strong>
+          <small>Aprobadas, rechazadas o canceladas</small>
         </article>
       </section>
+
+      <AccountRequestManager requests={requests} roles={roles} />
 
       <section className={styles.panel} aria-labelledby="request-history-title">
         <div className={styles.panelHeader}>
@@ -99,7 +103,7 @@ export default async function AccountRequestsPage() {
         ) : (
           <div className={styles.emptyState}>
             <h3>Aún no tienes solicitudes</h3>
-            <p>La creación de nuevas solicitudes se habilitará en el siguiente bloque, usando los contratos seguros ya disponibles.</p>
+            <p>Usa el formulario anterior para iniciar un trámite relacionado con tu cuenta.</p>
           </div>
         )}
       </section>
