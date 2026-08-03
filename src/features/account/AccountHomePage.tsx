@@ -10,11 +10,21 @@ const OPEN_REQUEST_STATUSES = ['submitted', 'under_review', 'information_require
 function calculateProfileCompletion(profile: {
   email: string
   full_name: string
+  phone: string | null
   preferred_locale: string
   timezone: string
+  avatar_url: string | null
 }) {
-  const requiredValues = [profile.email, profile.full_name, profile.preferred_locale, profile.timezone]
-  return Math.round((requiredValues.filter(Boolean).length / requiredValues.length) * 100)
+  const profileValues = [
+    profile.email,
+    profile.full_name,
+    profile.phone,
+    profile.preferred_locale,
+    profile.timezone,
+    profile.avatar_url,
+  ]
+
+  return Math.round((profileValues.filter(Boolean).length / profileValues.length) * 100)
 }
 
 function accountInitials(fullName: string) {
@@ -37,7 +47,7 @@ export default async function AccountHomePage() {
   const openRequests = requests.filter((request) => OPEN_REQUEST_STATUSES.includes(request.status))
   const hasAdminAccess = roles.length > 0 && profile.status === 'active' && profile.onboarding_completed_at
   const profileCompletion = calculateProfileCompletion(profile)
-  const optionalProfileItems = [
+  const incompleteProfileItems = [
     !profile.phone ? 'Agregar un teléfono de contacto' : null,
     !profile.avatar_url ? 'Agregar una fotografía' : null,
   ].filter(Boolean) as string[]
@@ -76,10 +86,10 @@ export default async function AccountHomePage() {
 
       <section className={styles.summaryGrid} aria-label="Resumen de la cuenta">
         <article className={styles.summaryCard}>
-          <span>Datos básicos</span>
+          <span>Perfil completado</span>
           <strong>{profileCompletion}%</strong>
           <div className={dashboardStyles.progressTrack} aria-hidden="true"><span style={{ width: `${profileCompletion}%` }} /></div>
-          <small>{profileCompletion === 100 ? 'La información requerida está completa' : 'Hay datos requeridos pendientes'}</small>
+          <small>{profileCompletion === 100 ? 'Tu perfil está completo' : `${incompleteProfileItems.length} dato${incompleteProfileItems.length === 1 ? '' : 's'} por completar`}</small>
         </article>
         <article className={styles.summaryCard}>
           <span>Accesos activos</span>
@@ -93,14 +103,14 @@ export default async function AccountHomePage() {
         </article>
       </section>
 
-      {optionalProfileItems.length ? (
+      {incompleteProfileItems.length ? (
         <section className={dashboardStyles.profileSuggestions} aria-labelledby="profile-suggestions-title">
           <div>
-            <p className={styles.eyebrow}>Mejoras opcionales</p>
-            <h2 id="profile-suggestions-title">Puedes enriquecer tu perfil</h2>
+            <p className={styles.eyebrow}>Datos pendientes</p>
+            <h2 id="profile-suggestions-title">Completa tu perfil</h2>
           </div>
           <ul>
-            {optionalProfileItems.map((item) => <li key={item}>{item}</li>)}
+            {incompleteProfileItems.map((item) => <li key={item}>{item}</li>)}
           </ul>
           <Link className={styles.secondaryAction} href="/cuenta/perfil">Completar ahora</Link>
         </section>
