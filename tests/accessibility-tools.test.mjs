@@ -67,5 +67,5 @@ test('accessibility presentation supports contrast text motion links and mobile 
   assert.match(styles, /\.accessibility-tools__trigger\s*\{[^}]*min-height:\s*3rem/s)
   assert.match(styles, /\.accessibility-tools__panel\s*\{[^}]*max-height:/s)
   assert.match(styles, /body:has\(\.public-dashboard-layout\) \.accessibility-tools\s*\{[^}]*bottom:\s*calc\(5\.5rem/s)
-  assert.match(styles, /body:has\(\.admin-area\) \.accessibility-tools\s*\{[^}]*bottom:\s*calc\(5\.5rem/s)
+  assert.match(styles, /body:has\(\.admin-area\) \.accessibility-tools\s*\{[^}]*bottom:\s*calc\(7rem/s)
 })
