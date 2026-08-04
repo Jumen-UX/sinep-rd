@@ -52,6 +52,15 @@ function EyeIcon({ hidden }: { hidden: boolean }) {
   )
 }
 
+function LockIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+      <rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 10V7a4 4 0 018 0v3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export default function AccountSecurityManager({ email, emailConfirmed }: { email: string; emailConfirmed: boolean }) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -82,6 +91,12 @@ export default function AccountSecurityManager({ email, emailConfirmed }: { emai
     if (!confirmSessions && dialog.open) dialog.close()
   }, [confirmSessions])
 
+  useEffect(() => {
+    if (!message) return
+    const timeout = window.setTimeout(() => setMessage(null), 4000)
+    return () => window.clearTimeout(timeout)
+  }, [message])
+
   async function changePassword(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!passwordValid) return
@@ -102,14 +117,14 @@ export default function AccountSecurityManager({ email, emailConfirmed }: { emai
   }
 
   async function closeOtherSessions() {
-    setConfirmSessions(false)
     setBusy('sessions')
     setMessage(null)
     setError(null)
     try {
       const { error: signOutError } = await supabase.auth.signOut({ scope: 'others' })
       if (signOutError) throw signOutError
-      setMessage('Las demás sesiones fueron cerradas. Esta sesión permanece activa.')
+      setConfirmSessions(false)
+      setMessage('Todas las demás sesiones fueron cerradas correctamente. Esta sesión permanece activa.')
       router.refresh()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'No se pudieron cerrar las demás sesiones.')
@@ -121,7 +136,7 @@ export default function AccountSecurityManager({ email, emailConfirmed }: { emai
   return (
     <div className={styles.securityStack}>
       {error ? <p className={styles.error} role="alert">{error}</p> : null}
-      {message ? <p className={styles.success} role="status">{message}</p> : null}
+      {message ? <p className={`${styles.success} ${lowerStyles.toast}`} role="status">{message}</p> : null}
 
       <section className={styles.panel} aria-labelledby="password-title">
         <div className={styles.panelHeader}>
@@ -137,9 +152,7 @@ export default function AccountSecurityManager({ email, emailConfirmed }: { emai
             <label htmlFor="new-password">Nueva contraseña</label>
             <div className={styles.inputGroup}>
               <input id="new-password" aria-describedby="password-strength password-requirements" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} onChange={(event) => setPassword(event.target.value)} placeholder="Escribe una contraseña nueva" required type={showPassword ? 'text' : 'password'} value={password} />
-              <button aria-label={showPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'} aria-pressed={showPassword} className={styles.visibilityButton} onClick={() => setShowPassword((current) => !current)} type="button">
-                <EyeIcon hidden={showPassword} /><span>{showPassword ? 'Ocultar' : 'Mostrar'}</span>
-              </button>
+              <button aria-label={showPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'} aria-pressed={showPassword} className={styles.visibilityButton} onClick={() => setShowPassword((current) => !current)} type="button"><EyeIcon hidden={showPassword} /><span>{showPassword ? 'Ocultar' : 'Mostrar'}</span></button>
             </div>
           </div>
 
@@ -151,30 +164,21 @@ export default function AccountSecurityManager({ email, emailConfirmed }: { emai
 
           <div className={styles.requirements} id="password-requirements">
             <strong>Requisitos</strong>
-            <ul className={styles.criteria} aria-label="Requisitos de contraseña">
-              <li data-complete={checks.length}>Al menos {MIN_PASSWORD_LENGTH} caracteres</li><li data-complete={checks.upper}>Una letra mayúscula</li><li data-complete={checks.lower}>Una letra minúscula</li><li data-complete={checks.number}>Un número</li><li data-complete={checks.symbol}>Un símbolo especial</li>
-            </ul>
+            <ul className={styles.criteria} aria-label="Requisitos de contraseña"><li data-complete={checks.length}>Al menos {MIN_PASSWORD_LENGTH} caracteres</li><li data-complete={checks.upper}>Una letra mayúscula</li><li data-complete={checks.lower}>Una letra minúscula</li><li data-complete={checks.number}>Un número</li><li data-complete={checks.symbol}>Un símbolo especial</li></ul>
           </div>
 
           <div className={styles.passwordField}>
             <label htmlFor="confirm-password">Confirmar contraseña</label>
             <div className={styles.inputGroup}>
               <input id="confirm-password" aria-describedby="password-match-status" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} onChange={(event) => setConfirmation(event.target.value)} placeholder="Repite la nueva contraseña" required type={showConfirmation ? 'text' : 'password'} value={confirmation} />
-              <button aria-label={showConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'} aria-pressed={showConfirmation} className={styles.visibilityButton} onClick={() => setShowConfirmation((current) => !current)} type="button">
-                <EyeIcon hidden={showConfirmation} /><span>{showConfirmation ? 'Ocultar' : 'Mostrar'}</span>
-              </button>
+              <button aria-label={showConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'} aria-pressed={showConfirmation} className={styles.visibilityButton} onClick={() => setShowConfirmation((current) => !current)} type="button"><EyeIcon hidden={showConfirmation} /><span>{showConfirmation ? 'Ocultar' : 'Mostrar'}</span></button>
             </div>
-            <p className={styles.matchStatus} data-complete={passwordsMatch} data-error={confirmationStarted && !passwordsMatch} id="password-match-status" aria-live="polite">
-              {!confirmationStarted ? 'Escribe nuevamente la contraseña.' : passwordsMatch ? '✓ Las contraseñas coinciden.' : '✕ Las contraseñas no coinciden.'}
-            </p>
+            <p className={styles.matchStatus} data-complete={passwordsMatch} data-error={confirmationStarted && !passwordsMatch} id="password-match-status" aria-live="polite">{!confirmationStarted ? 'Escribe nuevamente la contraseña.' : passwordsMatch ? '✓ Las contraseñas coinciden.' : '✕ Las contraseñas no coinciden.'}</p>
           </div>
 
           <aside className={styles.guidance} aria-label="Consejos de seguridad"><div className={styles.guidanceIcon} aria-hidden="true">i</div><div><strong>Consejos de seguridad</strong><ul><li>No reutilices contraseñas de otros servicios.</li><li>Evita nombres, fechas y datos personales fáciles de adivinar.</li><li>Considera utilizar un gestor de contraseñas.</li></ul></div></aside>
 
-          <div className={styles.actions}>
-            <button className={lowerStyles.passwordAction} disabled={!passwordValid || busy !== null} type="submit">{busy === 'password' ? 'Actualizando…' : 'Actualizar contraseña'}</button>
-            {!passwordValid ? <small>Completa todos los requisitos y confirma la contraseña para continuar.</small> : null}
-          </div>
+          <div className={styles.actions}><button className={lowerStyles.passwordAction} disabled={!passwordValid || busy !== null} type="submit">{busy === 'password' ? 'Actualizando…' : 'Actualizar contraseña'}</button>{!passwordValid ? <small>Completa todos los requisitos y confirma la contraseña para continuar.</small> : null}</div>
         </form>
       </section>
 
@@ -191,13 +195,13 @@ export default function AccountSecurityManager({ email, emailConfirmed }: { emai
         <article><div className={styles.statusHeading}><span>Control de sesiones</span><span className={styles.statusNeutral}>Control global</span></div><strong>Cierre global disponible</strong><p>Puedes cerrar las demás sesiones. El detalle individual de dispositivos todavía no está disponible.</p></article>
       </section>
 
-      <dialog className={lowerStyles.confirmDialog} onCancel={() => setConfirmSessions(false)} onClose={() => setConfirmSessions(false)} ref={confirmationDialogRef}>
+      <dialog className={lowerStyles.confirmDialog} onCancel={(event) => { if (busy === 'sessions') event.preventDefault(); else setConfirmSessions(false) }} onClose={() => setConfirmSessions(false)} ref={confirmationDialogRef}>
         <form method="dialog" className={lowerStyles.dialogContent} onSubmit={(event) => event.preventDefault()}>
           <div className={lowerStyles.dialogIcon} aria-hidden="true">!</div>
           <div><p className={styles.eyebrow}>Confirmación de seguridad</p><h2>Cerrar otras sesiones</h2><p>Se cerrarán todas las demás sesiones de tu cuenta. Esta sesión permanecerá activa.</p></div>
           <div className={lowerStyles.dialogActions}>
-            <button ref={cancelDialogButtonRef} className={lowerStyles.cancelButton} onClick={() => setConfirmSessions(false)} type="button">Cancelar</button>
-            <button className={lowerStyles.confirmButton} disabled={busy !== null} onClick={closeOtherSessions} type="button">Cerrar otras sesiones</button>
+            <button ref={cancelDialogButtonRef} className={lowerStyles.cancelButton} disabled={busy === 'sessions'} onClick={() => setConfirmSessions(false)} type="button">Cancelar</button>
+            <button className={lowerStyles.confirmButton} disabled={busy === 'sessions'} onClick={closeOtherSessions} type="button"><LockIcon />{busy === 'sessions' ? <><span className={lowerStyles.spinner} aria-hidden="true" /> Cerrando sesiones…</> : 'Cerrar otras sesiones'}</button>
           </div>
         </form>
       </dialog>
