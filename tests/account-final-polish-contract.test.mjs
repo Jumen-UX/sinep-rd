@@ -19,7 +19,7 @@ test('dashboard actions preserve focus visibility and content clearance', async 
   const styles = await read('src/features/account/account-dashboard.module.css')
 
   assert.match(styles, /\.quickActionsGrid a:focus-visible/)
-  assert.match(styles, /padding-right:44px!important/)
+  assert.match(styles, /padding:20px 48px 20px 20px!important/)
   assert.match(styles, /\.srOnly\{/)
 })
 
