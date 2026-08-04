@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AccountSecurityManager from '@/features/account/AccountSecurityManager'
 import styles from '@/features/account/account.module.css'
+import overviewStyles from '@/features/account/account-security-overview.module.css'
 
 export default async function AccountSecurityPage() {
   const supabase = await createClient()
@@ -9,7 +10,6 @@ export default async function AccountSecurityPage() {
   if (!user) redirect('/admin/login?next=/cuenta/seguridad')
 
   const emailConfirmed = Boolean(user.email_confirmed_at)
-  const availableControlsComplete = emailConfirmed ? 2 : 1
 
   return (
     <main className={styles.page}>
@@ -21,22 +21,26 @@ export default async function AccountSecurityPage() {
         </div>
       </header>
 
-      <section className={styles.summaryGrid} aria-label="Resumen de seguridad">
-        <article className={styles.summaryCard}>
-          <span>Controles disponibles</span>
-          <strong>{availableControlsComplete}/2</strong>
-          <small>{emailConfirmed ? 'Correo verificado y control global de sesiones disponibles' : 'Verifica tu correo para completar los controles disponibles'}</small>
-        </article>
-        <article className={styles.summaryCard}>
-          <span>Correo de recuperación</span>
-          <strong>{emailConfirmed ? 'Listo' : 'Pendiente'}</strong>
-          <small>{emailConfirmed ? 'Puede utilizarse en procesos de recuperación' : 'La verificación todavía no está completa'}</small>
-        </article>
-        <article className={styles.summaryCard}>
-          <span>Protección adicional</span>
-          <strong>En preparación</strong>
-          <small>La autenticación en dos pasos se mostrará cuando esté integrada y probada</small>
-        </article>
+      <section className={overviewStyles.overview} aria-labelledby="security-overview-title">
+        <div className={overviewStyles.summary}>
+          <span className={overviewStyles.badge}>{emailConfirmed ? 'Protección disponible' : 'Revisión recomendada'}</span>
+          <h2 id="security-overview-title">Tu cuenta cuenta con los controles básicos activos</h2>
+          <p>El correo de recuperación y el cierre global de sesiones están disponibles. La autenticación en dos pasos aparecerá cuando el flujo completo esté integrado y probado.</p>
+        </div>
+        <ul className={overviewStyles.checks} aria-label="Controles de seguridad">
+          <li>
+            <span className={overviewStyles.icon} aria-hidden="true">✓</span>
+            <div><strong>Correo de recuperación</strong><small>{emailConfirmed ? 'Verificado y listo para recuperación.' : 'Pendiente de verificación.'}</small></div>
+          </li>
+          <li>
+            <span className={overviewStyles.icon} aria-hidden="true">✓</span>
+            <div><strong>Control de sesiones</strong><small>Puedes cerrar todas las demás sesiones.</small></div>
+          </li>
+          <li className={overviewStyles.pending}>
+            <span className={overviewStyles.icon} aria-hidden="true">○</span>
+            <div><strong>Autenticación en dos pasos</strong><small>En preparación; todavía no está disponible.</small></div>
+          </li>
+        </ul>
       </section>
 
       <AccountSecurityManager email={user.email ?? 'Correo no disponible'} emailConfirmed={emailConfirmed} />
