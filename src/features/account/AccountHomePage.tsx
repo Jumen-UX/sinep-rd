@@ -8,16 +8,7 @@ import dashboardStyles from './account-dashboard.module.css'
 
 const OPEN_REQUEST_STATUSES = ['submitted', 'under_review', 'information_required']
 
-const PROFILE_FIELDS = [
-  'email',
-  'full_name',
-  'phone',
-  'preferred_locale',
-  'timezone',
-  'avatar_url',
-] as const
-
-function profileCompletionDetails(profile: {
+function calculateProfileCompletion(profile: {
   email: string
   full_name: string
   phone: string | null
@@ -25,11 +16,20 @@ function profileCompletionDetails(profile: {
   timezone: string
   avatar_url: string | null
 }) {
-  const completed = PROFILE_FIELDS.filter((field) => Boolean(profile[field])).length
+  const fields = [
+    profile.email,
+    profile.full_name,
+    profile.phone,
+    profile.preferred_locale,
+    profile.timezone,
+    profile.avatar_url,
+  ]
+  const completed = fields.filter(Boolean).length
+
   return {
     completed,
-    total: PROFILE_FIELDS.length,
-    percentage: Math.round((completed / PROFILE_FIELDS.length) * 100),
+    total: fields.length,
+    percentage: Math.round((completed / fields.length) * 100),
   }
 }
 
@@ -52,7 +52,7 @@ export default async function AccountHomePage() {
   const { profile, roles, access_requests: requests } = context
   const openRequests = requests.filter((request) => OPEN_REQUEST_STATUSES.includes(request.status))
   const hasAdminAccess = roles.length > 0 && profile.status === 'active' && profile.onboarding_completed_at
-  const completion = profileCompletionDetails(profile)
+  const completion = calculateProfileCompletion(profile)
   const incompleteProfileItems = [
     !profile.phone ? { label: 'Agregar un teléfono de contacto', detail: 'Facilita la recuperación y el contacto institucional.' } : null,
     !profile.avatar_url ? { label: 'Agregar una fotografía', detail: 'Ayuda a identificar tu cuenta dentro del sistema.' } : null,
