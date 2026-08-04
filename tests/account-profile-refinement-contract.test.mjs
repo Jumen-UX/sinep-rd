@@ -89,7 +89,7 @@ test('profile controls and avatar resist global element overrides', async () => 
   assert.match(styles, /\.protectedBadge>\.lockIcon\{[^}]*width:14px!important/s)
   assert.match(styles, /\.checklist\{[^}]*display:grid!important/s)
   assert.match(styles, /\.dataCard\{[^}]*display:grid!important/s)
-  assert.match(modernStyles, /\.avatarSurface\{[^}]*width:94px!important/s)
+  assert.match(modernStyles, /\.avatarSurface\{[^}]*width:104px!important/s)
   assert.match(modernStyles, /\.uploadPanel\{[^}]*display:grid!important/s)
   assert.match(modernStyles, /\.fileChooser\{[^}]*display:block!important/s)
   assert.match(modernStyles, /\.fileChooser::file-selector-button\{[^}]*background:var\(--brand-primary\)!important/s)
