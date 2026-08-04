@@ -34,22 +34,19 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<FormState>(profileState)
   const [baseline, setBaseline] = useState<FormState>(profileState)
-  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const [removeAvatar, setRemoveAvatar] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [avatarSaving, setAvatarSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => { setForm(profileState); setBaseline(profileState); setPendingAvatar(null); setRemoveAvatar(false) }, [profileState])
-  useEffect(() => { if (!pendingAvatar) { setAvatarPreview(null); return }; const objectUrl = URL.createObjectURL(pendingAvatar); setAvatarPreview(objectUrl); return () => URL.revokeObjectURL(objectUrl) }, [pendingAvatar])
+  useEffect(() => { setForm(profileState); setBaseline(profileState); setAvatarPreview(null) }, [profileState])
+  useEffect(() => () => { if (avatarPreview) URL.revokeObjectURL(avatarPreview) }, [avatarPreview])
   useEffect(() => { if (!message) return; const timer = window.setTimeout(() => setMessage(null), 4000); return () => window.clearTimeout(timer) }, [message])
 
   const normalizedForm = useMemo(() => normalizeForm(form), [form])
-  const hasStoredAvatar = Boolean(normalizedForm.avatarUrl) && !removeAvatar
-  const hasAvatar = Boolean(pendingAvatar) || hasStoredAvatar
-  const isProfileDirty = useMemo(() => JSON.stringify(normalizedForm) !== JSON.stringify(normalizeForm(baseline)), [baseline, normalizedForm])
-  const isDirty = isProfileDirty || Boolean(pendingAvatar) || removeAvatar
+  const hasAvatar = Boolean(normalizedForm.avatarUrl) || Boolean(avatarPreview)
+  const isDirty = useMemo(() => JSON.stringify(normalizedForm) !== JSON.stringify(normalizeForm(baseline)), [baseline, normalizedForm])
   const completionFields = useMemo(() => [
     { label: 'Nombre', complete: Boolean(normalizedForm.fullName), target: '#profile-name' },
     { label: 'Correo', complete: Boolean(profile.email.trim()), target: '#profile-email' },
@@ -62,26 +59,69 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
   const completionPercentage = Math.round((completeCount / completionFields.length) * 100)
   const pendingFields = completionFields.filter((field) => !field.complete)
   const initials = getInitials(form.fullName, profile.email)
-  const canSubmit = isDirty && !saving && Boolean(normalizedForm.fullName) && Boolean(normalizedForm.timezone)
+  const canSubmit = isDirty && !saving && !avatarSaving && Boolean(normalizedForm.fullName) && Boolean(normalizedForm.timezone)
   const completionLabel = completionPercentage === 100 ? 'Perfil completo' : completionPercentage >= 80 ? 'Perfil casi completo' : 'Perfil en progreso'
-  const displayedAvatar = avatarPreview ?? (hasStoredAvatar ? form.avatarUrl : null)
+  const displayedAvatar = avatarPreview ?? normalizedForm.avatarUrl || null
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) { setForm((current) => ({ ...current, [key]: value })); setMessage(null); setError(null) }
-  function chooseAvatar() { fileInputRef.current?.click() }
-  function handleAvatarSelection(file: File | undefined) { if (!file) return; try { validateProfileAvatar(file); setPendingAvatar(file); setRemoveAvatar(false); setError(null); setMessage(null) } catch (caught) { setError(caught instanceof Error ? caught.message : 'No se pudo usar esta fotografía.'); if (fileInputRef.current) fileInputRef.current.value = '' } }
-  function requestAvatarRemoval() { setPendingAvatar(null); setRemoveAvatar(true); setMessage(null); setError(null); if (fileInputRef.current) fileInputRef.current.value = '' }
+
+  async function handleAvatarSelection(file: File | undefined) {
+    if (!file || avatarSaving) return
+    let temporaryUrl: string | null = null
+    let uploadedUrl: string | null = null
+    try {
+      validateProfileAvatar(file)
+      temporaryUrl = URL.createObjectURL(file)
+      setAvatarPreview((current) => { if (current) URL.revokeObjectURL(current); return temporaryUrl })
+      setAvatarSaving(true)
+      setError(null)
+      setMessage(null)
+
+      uploadedUrl = await uploadMyProfileAvatar(supabase, file, normalizedForm.avatarUrl)
+      const context = await saveMyAccountProfile(supabase, { ...normalizedForm, avatarUrl: uploadedUrl })
+      const saved = normalizeProfile(context.profile)
+      setForm(saved)
+      setBaseline(saved)
+      setAvatarPreview((current) => { if (current) URL.revokeObjectURL(current); return null })
+      setMessage('Tu fotografía fue actualizada correctamente.')
+    } catch (caught) {
+      if (uploadedUrl) {
+        try { await removeMyProfileAvatar(supabase, uploadedUrl) } catch { /* La limpieza secundaria no debe ocultar el error principal. */ }
+      }
+      setAvatarPreview((current) => { if (current) URL.revokeObjectURL(current); return null })
+      setError(caught instanceof Error ? caught.message : 'No se pudo subir la fotografía.')
+    } finally {
+      setAvatarSaving(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleAvatarRemoval() {
+    if (!normalizedForm.avatarUrl || avatarSaving) return
+    setAvatarSaving(true)
+    setMessage(null)
+    setError(null)
+    try {
+      const context = await saveMyAccountProfile(supabase, { ...normalizedForm, avatarUrl: '' })
+      await removeMyProfileAvatar(supabase, normalizedForm.avatarUrl)
+      const saved = normalizeProfile(context.profile)
+      setForm(saved)
+      setBaseline(saved)
+      setMessage('Tu fotografía fue eliminada correctamente.')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'No se pudo eliminar la fotografía.')
+    } finally {
+      setAvatarSaving(false)
+    }
+  }
 
   async function handleSubmit() {
     if (!canSubmit) return
     setSaving(true); setMessage(null); setError(null)
     try {
-      let avatarUrl = normalizedForm.avatarUrl
-      if (pendingAvatar) avatarUrl = await uploadMyProfileAvatar(supabase, pendingAvatar, baseline.avatarUrl)
-      else if (removeAvatar) { await removeMyProfileAvatar(supabase, baseline.avatarUrl); avatarUrl = '' }
-      const context = await saveMyAccountProfile(supabase, { ...normalizedForm, avatarUrl })
+      const context = await saveMyAccountProfile(supabase, normalizedForm)
       const saved = normalizeProfile(context.profile)
-      setForm(saved); setBaseline(saved); setPendingAvatar(null); setRemoveAvatar(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      setForm(saved); setBaseline(saved)
       setMessage('Tu perfil fue actualizado correctamente.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'No se pudo guardar tu perfil.') }
     finally { setSaving(false) }
@@ -92,7 +132,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
       <div className={styles.identityMain}>
         <div className={modernStyles.avatarCluster}>
           <div aria-hidden="true" className={modernStyles.avatarSurface} style={displayedAvatar ? { backgroundImage: `url(${displayedAvatar})`, color: 'transparent' } : undefined}>{initials}</div>
-          <button className={modernStyles.avatarEditButton} onClick={chooseAvatar} type="button"><CameraIcon /> Editar fotografía</button>
+          <label className={modernStyles.avatarEditButton} htmlFor="profile-photo-input"><CameraIcon /> {avatarSaving ? 'Subiendo…' : 'Editar fotografía'}</label>
         </div>
         <div className={styles.identityText}><h2 id="profile-identity-title">{form.fullName || 'Tu perfil'}</h2><p>{profile.email}</p><div className={styles.identityMeta}><span className={styles.badge}>Cuenta activa</span><span className={styles.badge}>{completionLabel}</span></div></div>
       </div>
@@ -107,7 +147,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
 
       <section className={styles.sectionCard} aria-labelledby="preferences-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Preferencias regionales</p><h2 id="preferences-title">Idioma y zona horaria</h2></div></div><div className={styles.grid}><label className={`${styles.field} ${styles.dataCard}`} htmlFor="profile-locale"><span>Idioma</span><select className={modernStyles.controlSurface} id="profile-locale" name="preferred_locale" onChange={(event) => updateField('preferredLocale', event.target.value)} value={form.preferredLocale}><option value="es-419">Español latinoamericano</option><option value="es-ES">Español</option><option value="en">English</option></select></label><label className={`${styles.field} ${styles.dataCard}`} htmlFor="profile-timezone"><span>Zona horaria</span><select className={modernStyles.controlSurface} id="profile-timezone" name="timezone" onChange={(event) => updateField('timezone', event.target.value)} required value={form.timezone}>{TIMEZONE_OPTIONS.map((timezone) => <option key={timezone} value={timezone}>{timezone}</option>)}</select><small>Las fechas y notificaciones se mostrarán usando esta zona.</small></label></div></section>
 
-      <section className={styles.sectionCard} aria-labelledby="photo-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Fotografía</p><h2 id="photo-title">Imagen de perfil</h2></div></div><div className={styles.photoGrid}><div aria-label={displayedAvatar ? 'Vista previa de la fotografía de perfil' : 'Vista previa con iniciales'} className={modernStyles.photoSurface} role="img" style={displayedAvatar ? { backgroundImage: `url(${displayedAvatar})`, color: 'transparent' } : undefined}>{initials}</div><div className={styles.photoActions}><input ref={fileInputRef} accept="image/jpeg,image/png,image/webp" className={modernStyles.fileInput} id="profile-photo-input" onChange={(event) => handleAvatarSelection(event.target.files?.[0])} type="file" /><div className={modernStyles.uploadPanel}><div><strong>{pendingAvatar ? pendingAvatar.name : hasStoredAvatar ? 'Fotografía actual' : 'Añade una fotografía'}</strong><p>JPG, PNG o WEBP. Máximo 5 MB.</p></div><button className={modernStyles.uploadButton} onClick={chooseAvatar} type="button"><CameraIcon />{hasAvatar ? 'Reemplazar fotografía' : 'Subir fotografía'}</button></div>{hasAvatar ? <button className={modernStyles.removeButton} onClick={requestAvatarRemoval} type="button">Eliminar fotografía</button> : null}</div></div></section>
+      <section className={styles.sectionCard} aria-labelledby="photo-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Fotografía</p><h2 id="photo-title">Imagen de perfil</h2></div></div><div className={styles.photoGrid}><div aria-label={displayedAvatar ? 'Vista previa de la fotografía de perfil' : 'Vista previa con iniciales'} className={modernStyles.photoSurface} role="img" style={displayedAvatar ? { backgroundImage: `url(${displayedAvatar})`, color: 'transparent' } : undefined}>{initials}</div><div className={styles.photoActions}><input ref={fileInputRef} accept="image/jpeg,image/png,image/webp" aria-describedby="profile-photo-help" className={modernStyles.fileInput} disabled={avatarSaving} id="profile-photo-input" onChange={(event) => void handleAvatarSelection(event.target.files?.[0])} type="file" /><div className={modernStyles.uploadPanel}><div><strong>{avatarSaving ? 'Subiendo fotografía…' : normalizedForm.avatarUrl ? 'Fotografía actual' : 'Añade una fotografía'}</strong><p id="profile-photo-help">JPG, PNG o WEBP. Máximo 5 MB. El cambio se guarda automáticamente.</p></div><label aria-disabled={avatarSaving} className={modernStyles.uploadButton} htmlFor="profile-photo-input"><CameraIcon />{avatarSaving ? 'Subiendo…' : normalizedForm.avatarUrl ? 'Reemplazar fotografía' : 'Subir fotografía'}</label></div>{normalizedForm.avatarUrl ? <button className={modernStyles.removeButton} disabled={avatarSaving} onClick={() => void handleAvatarRemoval()} type="button">{avatarSaving ? 'Procesando…' : 'Eliminar fotografía'}</button> : null}</div></div></section>
 
       {(isDirty || saving) ? <div className={styles.actions}><p>{saving ? 'Guardando los cambios…' : 'Tienes cambios sin guardar.'}</p><button className={styles.saveButton} disabled={!canSubmit} type="submit">{saving ? <><span aria-hidden="true" className={styles.spinner} />Guardando…</> : 'Guardar cambios'}</button></div> : null}
     </form>
