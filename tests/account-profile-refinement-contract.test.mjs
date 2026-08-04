@@ -41,13 +41,14 @@ test('profile success feedback is temporary and accessible', async () => {
   assert.match(form, /Tu perfil fue actualizado correctamente/)
 })
 
-test('profile avatar uses direct observable storage upload instead of external url input', async () => {
+test('profile avatar uses a visible native file chooser and automatic storage upload', async () => {
   const [form, service, migration] = await Promise.all([read(formPath), read(servicePath), read(migrationPath)])
   assert.match(form, /accept="image\/jpeg,image\/png,image\/webp"/)
+  assert.match(form, /className=\{modernStyles\.fileChooser\}/)
   assert.match(form, /type="file"/)
-  assert.match(form, /htmlFor="profile-photo-input"/)
-  assert.match(form, /void handleAvatarSelection\(event\.target\.files\?\.\[0\]\)/)
-  assert.match(form, /const \[avatarSaving,\s*setAvatarSaving\]/)
+  assert.match(form, /input\.files\?\.\[0\]/)
+  assert.match(form, /input\.value = ''/)
+  assert.match(form, /avatarFileName/)
   assert.match(form, /uploadMyProfileAvatar/)
   assert.match(form, /saveMyAccountProfile\(supabase,\s*\{\s*\.\.\.normalizedForm,\s*avatarUrl:\s*uploadedUrl\s*\}\)/s)
   assert.match(form, /El cambio se guarda automáticamente/)
@@ -55,6 +56,7 @@ test('profile avatar uses direct observable storage upload instead of external u
   assert.match(form, /removeMyProfileAvatar/)
   assert.match(form, /JPG, PNG o WEBP\. Máximo 5 MB/)
   assert.doesNotMatch(form, /URL de la fotografía/)
+  assert.doesNotMatch(form, /className=\{modernStyles\.fileInput\}/)
   assert.match(service, /AVATAR_BUCKET = 'profile-avatars'/)
   assert.match(service, /MAX_AVATAR_BYTES = 5 \* 1024 \* 1024/)
   assert.match(service, /storage\.from\(AVATAR_BUCKET\)\.getPublicUrl/)
@@ -80,13 +82,9 @@ test('profile controls and avatar resist global element overrides', async () => 
   assert.match(styles, /\.dataCard\{[^}]*display:grid!important/s)
   assert.match(modernStyles, /\.controlSurface\{[^}]*appearance:none!important/s)
   assert.match(modernStyles, /\.avatarSurface\{[^}]*width:94px!important/s)
-  assert.match(modernStyles, /\.uploadPanel\{[^}]*display:flex!important/s)
-  assert.match(modernStyles, /\.uploadButton\{[^}]*background:var\(--brand-primary\)!important/s)
-  assert.match(modernStyles, /\.fileInput\{[^}]*width:100%!important/s)
-  assert.match(modernStyles, /\.fileInput\{[^}]*height:104px!important/s)
-  assert.match(modernStyles, /\.fileInput\{[^}]*margin:0 0 -104px!important/s)
-  assert.match(modernStyles, /\.fileInput\{[^}]*opacity:0!important/s)
-  assert.match(modernStyles, /\.fileInput\{[^}]*z-index:5!important/s)
+  assert.match(modernStyles, /\.uploadPanel\{[^}]*display:grid!important/s)
+  assert.match(modernStyles, /\.fileChooser\{[^}]*display:block!important/s)
+  assert.match(modernStyles, /\.fileChooser::file-selector-button\{[^}]*background:var\(--brand-primary\)!important/s)
 })
 
 test('profile preferences use controlled locale and timezone selects', async () => {
