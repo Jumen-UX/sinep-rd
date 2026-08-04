@@ -7,7 +7,16 @@ import dashboardStyles from './account-dashboard.module.css'
 
 const OPEN_REQUEST_STATUSES = ['submitted', 'under_review', 'information_required']
 
-function calculateProfileCompletion(profile: {
+const PROFILE_FIELDS = [
+  'email',
+  'full_name',
+  'phone',
+  'preferred_locale',
+  'timezone',
+  'avatar_url',
+] as const
+
+function profileCompletionDetails(profile: {
   email: string
   full_name: string
   phone: string | null
@@ -15,16 +24,12 @@ function calculateProfileCompletion(profile: {
   timezone: string
   avatar_url: string | null
 }) {
-  const profileValues = [
-    profile.email,
-    profile.full_name,
-    profile.phone,
-    profile.preferred_locale,
-    profile.timezone,
-    profile.avatar_url,
-  ]
-
-  return Math.round((profileValues.filter(Boolean).length / profileValues.length) * 100)
+  const completed = PROFILE_FIELDS.filter((field) => Boolean(profile[field])).length
+  return {
+    completed,
+    total: PROFILE_FIELDS.length,
+    percentage: Math.round((completed / PROFILE_FIELDS.length) * 100),
+  }
 }
 
 function accountInitials(fullName: string) {
@@ -46,17 +51,24 @@ export default async function AccountHomePage() {
   const { profile, roles, access_requests: requests } = context
   const openRequests = requests.filter((request) => OPEN_REQUEST_STATUSES.includes(request.status))
   const hasAdminAccess = roles.length > 0 && profile.status === 'active' && profile.onboarding_completed_at
-  const profileCompletion = calculateProfileCompletion(profile)
+  const completion = profileCompletionDetails(profile)
   const incompleteProfileItems = [
-    !profile.phone ? 'Agregar un teléfono de contacto' : null,
-    !profile.avatar_url ? 'Agregar una fotografía' : null,
-  ].filter(Boolean) as string[]
+    !profile.phone ? { label: 'Agregar un teléfono de contacto', detail: 'Facilita la recuperación y el contacto institucional.' } : null,
+    !profile.avatar_url ? { label: 'Agregar una fotografía', detail: 'Ayuda a identificar tu cuenta dentro del sistema.' } : null,
+  ].filter(Boolean) as Array<{ label: string; detail: string }>
 
   return (
     <main className={styles.page}>
-      <header className={styles.dashboardHero}>
+      <header className={`${styles.dashboardHero} ${dashboardStyles.hero}`}>
         <div className={styles.identitySummary}>
-          <div className={styles.avatar} aria-hidden="true">{accountInitials(profile.full_name)}</div>
+          <div className={dashboardStyles.avatarWrap}>
+            {profile.avatar_url ? (
+              <img className={dashboardStyles.heroAvatar} src={profile.avatar_url} alt={`Fotografía de ${profile.full_name}`} />
+            ) : (
+              <div className={`${styles.avatar} ${dashboardStyles.heroAvatarFallback}`} aria-hidden="true">{accountInitials(profile.full_name)}</div>
+            )}
+            <span className={dashboardStyles.activeDot} aria-label="Cuenta activa" />
+          </div>
           <div>
             <p className={styles.eyebrow}>Centro personal</p>
             <h1>{profile.full_name}</h1>
@@ -68,7 +80,7 @@ export default async function AccountHomePage() {
           </div>
         </div>
         <div className={styles.headerActions}>
-          <Link className={styles.primaryAction} href="/cuenta/perfil">Editar perfil</Link>
+          <Link className={styles.primaryAction} href="/cuenta/perfil">Ir a mi perfil</Link>
           {hasAdminAccess ? <Link className={styles.secondaryAction} href="/admin">Ir a Administración</Link> : null}
         </div>
       </header>
@@ -81,38 +93,46 @@ export default async function AccountHomePage() {
             <p>{profile.onboarding_step === 'complete' ? 'Configuración inicial completada' : 'Configuración inicial pendiente'}</p>
           </div>
         </div>
-        <Link className={styles.textAction} href="/cuenta/perfil">Revisar datos</Link>
+        <Link className={styles.textAction} href="/cuenta/perfil">Revisar mi información</Link>
       </section>
 
       <section className={styles.summaryGrid} aria-label="Resumen de la cuenta">
-        <article className={styles.summaryCard}>
-          <span>Perfil completado</span>
-          <strong>{profileCompletion}%</strong>
-          <div className={dashboardStyles.progressTrack} aria-hidden="true"><span style={{ width: `${profileCompletion}%` }} /></div>
-          <small>{profileCompletion === 100 ? 'Tu perfil está completo' : `${incompleteProfileItems.length} dato${incompleteProfileItems.length === 1 ? '' : 's'} por completar`}</small>
+        <article className={`${styles.summaryCard} ${dashboardStyles.metricCard}`}>
+          <span className={dashboardStyles.metricIcon} aria-hidden="true">◉</span>
+          <div>
+            <span>Mi identidad</span>
+            <strong>{completion.completed} de {completion.total}</strong>
+            <div className={dashboardStyles.progressTrack} aria-hidden="true"><span style={{ width: `${completion.percentage}%` }} /></div>
+            <small>{completion.percentage === 100 ? 'Tu perfil está completo' : `${incompleteProfileItems.length} elemento${incompleteProfileItems.length === 1 ? '' : 's'} pendiente${incompleteProfileItems.length === 1 ? '' : 's'}`}</small>
+          </div>
         </article>
-        <article className={styles.summaryCard}>
-          <span>Accesos activos</span>
-          <strong>{roles.length}</strong>
-          <small>{roles.length ? 'Roles y ámbitos actualmente autorizados' : 'Puedes usar tu cuenta sin acceso administrativo'}</small>
+        <article className={`${styles.summaryCard} ${dashboardStyles.metricCard}`}>
+          <span className={dashboardStyles.metricIcon} aria-hidden="true">◇</span>
+          <div>
+            <span>Mis accesos</span>
+            <strong>{roles.length}</strong>
+            <small>{roles.length ? 'Roles y ámbitos actualmente autorizados' : 'Puedes usar tu cuenta sin acceso administrativo'}</small>
+          </div>
         </article>
-        <article className={styles.summaryCard}>
-          <span>Solicitudes abiertas</span>
-          <strong>{openRequests.length}</strong>
-          <small>{openRequests.length ? 'Hay trámites que requieren seguimiento' : 'No tienes solicitudes pendientes'}</small>
+        <article className={`${styles.summaryCard} ${dashboardStyles.metricCard}`}>
+          <span className={dashboardStyles.metricIcon} aria-hidden="true">▤</span>
+          <div>
+            <span>Mi actividad</span>
+            <strong>{openRequests.length}</strong>
+            <small>{openRequests.length ? 'Hay trámites que requieren seguimiento' : 'No tienes solicitudes pendientes'}</small>
+          </div>
         </article>
       </section>
 
       {incompleteProfileItems.length ? (
-        <section className={dashboardStyles.profileSuggestions} aria-labelledby="profile-suggestions-title">
+        <section className={dashboardStyles.profileTask} aria-labelledby="profile-suggestions-title">
+          <span className={dashboardStyles.taskIcon} aria-hidden="true">!</span>
           <div>
-            <p className={styles.eyebrow}>Datos pendientes</p>
-            <h2 id="profile-suggestions-title">Completa tu perfil</h2>
+            <p className={styles.eyebrow}>Siguiente paso</p>
+            <h2 id="profile-suggestions-title">Solo falta {incompleteProfileItems.length === 1 ? 'una tarea' : `${incompleteProfileItems.length} tareas`}</h2>
+            <p>{incompleteProfileItems[0].label}. {incompleteProfileItems[0].detail}</p>
           </div>
-          <ul>
-            {incompleteProfileItems.map((item) => <li key={item}>{item}</li>)}
-          </ul>
-          <Link className={styles.secondaryAction} href="/cuenta/perfil">Completar ahora</Link>
+          <Link className={styles.primaryAction} href="/cuenta/perfil#profile-photo-input">{incompleteProfileItems[0].label}</Link>
         </section>
       ) : null}
 
@@ -124,9 +144,9 @@ export default async function AccountHomePage() {
           </div>
         </div>
         <div className={`${styles.quickActionsGrid} ${dashboardStyles.quickActionsGrid}`}>
-          <Link href="/cuenta/perfil"><span aria-hidden="true">◉</span><strong>Actualizar mi perfil</strong><small>Nombre, teléfono, idioma, zona horaria y fotografía.</small><b aria-hidden="true">→</b></Link>
+          <Link className={dashboardStyles.primaryQuickAction} href="/cuenta/perfil"><span aria-hidden="true">◉</span><strong>Actualizar mi perfil</strong><small>Nombre, teléfono, idioma, zona horaria y fotografía.</small><b aria-hidden="true">→</b></Link>
+          <Link className={dashboardStyles.primaryQuickAction} href="/cuenta/solicitudes"><span aria-hidden="true">▤</span><strong>Gestionar solicitudes</strong><small>Consulta el estado de tus trámites personales.</small><b aria-hidden="true">→</b></Link>
           <Link href="/cuenta/accesos"><span aria-hidden="true">◇</span><strong>Revisar mis accesos</strong><small>Consulta los roles y ámbitos que tienes autorizados.</small><b aria-hidden="true">→</b></Link>
-          <Link href="/cuenta/solicitudes"><span aria-hidden="true">▤</span><strong>Gestionar solicitudes</strong><small>Consulta el estado de tus trámites personales.</small><b aria-hidden="true">→</b></Link>
           <Link href="/"><span aria-hidden="true">↗</span><strong>Ir al sitio público</strong><small>Consulta las fichas y directorios públicos de SINEP.</small><b aria-hidden="true">→</b></Link>
         </div>
       </section>
