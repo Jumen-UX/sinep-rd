@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import styles from './account-security.module.css'
+import lowerStyles from './account-security-lower.module.css'
 
 const MIN_PASSWORD_LENGTH = 12
 
@@ -51,19 +52,16 @@ function EyeIcon({ hidden }: { hidden: boolean }) {
   )
 }
 
-export default function AccountSecurityManager({
-  email,
-  emailConfirmed,
-}: {
-  email: string
-  emailConfirmed: boolean
-}) {
+export default function AccountSecurityManager({ email, emailConfirmed }: { email: string; emailConfirmed: boolean }) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const confirmationDialogRef = useRef<HTMLDialogElement>(null)
+  const cancelDialogButtonRef = useRef<HTMLButtonElement>(null)
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const [confirmSessions, setConfirmSessions] = useState(false)
   const [busy, setBusy] = useState<'password' | 'sessions' | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -73,6 +71,16 @@ export default function AccountSecurityManager({
   const passwordsMatch = password.length > 0 && password === confirmation
   const confirmationStarted = confirmation.length > 0
   const passwordValid = Object.values(checks).every(Boolean) && passwordsMatch
+
+  useEffect(() => {
+    const dialog = confirmationDialogRef.current
+    if (!dialog) return
+    if (confirmSessions && !dialog.open) {
+      dialog.showModal()
+      requestAnimationFrame(() => cancelDialogButtonRef.current?.focus())
+    }
+    if (!confirmSessions && dialog.open) dialog.close()
+  }, [confirmSessions])
 
   async function changePassword(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -94,6 +102,7 @@ export default function AccountSecurityManager({
   }
 
   async function closeOtherSessions() {
+    setConfirmSessions(false)
     setBusy('sessions')
     setMessage(null)
     setError(null)
@@ -127,116 +136,43 @@ export default function AccountSecurityManager({
           <div className={styles.passwordField}>
             <label htmlFor="new-password">Nueva contraseña</label>
             <div className={styles.inputGroup}>
-              <input
-                id="new-password"
-                aria-describedby="password-strength password-requirements"
-                autoComplete="new-password"
-                minLength={MIN_PASSWORD_LENGTH}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Escribe una contraseña nueva"
-                required
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-              />
-              <button
-                aria-label={showPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'}
-                aria-pressed={showPassword}
-                className={styles.visibilityButton}
-                onClick={() => setShowPassword((current) => !current)}
-                type="button"
-              >
-                <EyeIcon hidden={showPassword} />
-                <span>{showPassword ? 'Ocultar' : 'Mostrar'}</span>
+              <input id="new-password" aria-describedby="password-strength password-requirements" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} onChange={(event) => setPassword(event.target.value)} placeholder="Escribe una contraseña nueva" required type={showPassword ? 'text' : 'password'} value={password} />
+              <button aria-label={showPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'} aria-pressed={showPassword} className={styles.visibilityButton} onClick={() => setShowPassword((current) => !current)} type="button">
+                <EyeIcon hidden={showPassword} /><span>{showPassword ? 'Ocultar' : 'Mostrar'}</span>
               </button>
             </div>
           </div>
 
           <div className={styles.strength} id="password-strength" aria-live="polite">
-            <div className={styles.strengthHeader}>
-              <span>Fortaleza de la contraseña</span>
-              <strong className={styles.strengthBadge} data-score={strength.score}>{strength.label}</strong>
-            </div>
-            <div
-              aria-label={`Fortaleza de contraseña: ${strength.label}`}
-              className={styles.strengthTrack}
-              data-score={strength.score}
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={5}
-              aria-valuenow={strength.score}
-            >
-              <span style={{ width: `${(strength.score / 5) * 100}%` }} />
-            </div>
+            <div className={styles.strengthHeader}><span>Fortaleza de la contraseña</span><strong className={styles.strengthBadge} data-score={strength.score}>{strength.label}</strong></div>
+            <div aria-label={`Fortaleza de contraseña: ${strength.label}`} className={styles.strengthTrack} data-score={strength.score} role="progressbar" aria-valuemin={0} aria-valuemax={5} aria-valuenow={strength.score}><span style={{ width: `${(strength.score / 5) * 100}%` }} /></div>
             <p className={styles.strengthHint}>{strengthHint}</p>
           </div>
 
           <div className={styles.requirements} id="password-requirements">
             <strong>Requisitos</strong>
             <ul className={styles.criteria} aria-label="Requisitos de contraseña">
-              <li data-complete={checks.length}>Al menos {MIN_PASSWORD_LENGTH} caracteres</li>
-              <li data-complete={checks.upper}>Una letra mayúscula</li>
-              <li data-complete={checks.lower}>Una letra minúscula</li>
-              <li data-complete={checks.number}>Un número</li>
-              <li data-complete={checks.symbol}>Un símbolo especial</li>
+              <li data-complete={checks.length}>Al menos {MIN_PASSWORD_LENGTH} caracteres</li><li data-complete={checks.upper}>Una letra mayúscula</li><li data-complete={checks.lower}>Una letra minúscula</li><li data-complete={checks.number}>Un número</li><li data-complete={checks.symbol}>Un símbolo especial</li>
             </ul>
           </div>
 
           <div className={styles.passwordField}>
             <label htmlFor="confirm-password">Confirmar contraseña</label>
             <div className={styles.inputGroup}>
-              <input
-                id="confirm-password"
-                aria-describedby="password-match-status"
-                autoComplete="new-password"
-                minLength={MIN_PASSWORD_LENGTH}
-                onChange={(event) => setConfirmation(event.target.value)}
-                placeholder="Repite la nueva contraseña"
-                required
-                type={showConfirmation ? 'text' : 'password'}
-                value={confirmation}
-              />
-              <button
-                aria-label={showConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}
-                aria-pressed={showConfirmation}
-                className={styles.visibilityButton}
-                onClick={() => setShowConfirmation((current) => !current)}
-                type="button"
-              >
-                <EyeIcon hidden={showConfirmation} />
-                <span>{showConfirmation ? 'Ocultar' : 'Mostrar'}</span>
+              <input id="confirm-password" aria-describedby="password-match-status" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} onChange={(event) => setConfirmation(event.target.value)} placeholder="Repite la nueva contraseña" required type={showConfirmation ? 'text' : 'password'} value={confirmation} />
+              <button aria-label={showConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'} aria-pressed={showConfirmation} className={styles.visibilityButton} onClick={() => setShowConfirmation((current) => !current)} type="button">
+                <EyeIcon hidden={showConfirmation} /><span>{showConfirmation ? 'Ocultar' : 'Mostrar'}</span>
               </button>
             </div>
-            <p
-              className={styles.matchStatus}
-              data-complete={passwordsMatch}
-              data-error={confirmationStarted && !passwordsMatch}
-              id="password-match-status"
-              aria-live="polite"
-            >
-              {!confirmationStarted
-                ? 'Escribe nuevamente la contraseña.'
-                : passwordsMatch
-                  ? '✓ Las contraseñas coinciden.'
-                  : '✕ Las contraseñas no coinciden.'}
+            <p className={styles.matchStatus} data-complete={passwordsMatch} data-error={confirmationStarted && !passwordsMatch} id="password-match-status" aria-live="polite">
+              {!confirmationStarted ? 'Escribe nuevamente la contraseña.' : passwordsMatch ? '✓ Las contraseñas coinciden.' : '✕ Las contraseñas no coinciden.'}
             </p>
           </div>
 
-          <aside className={styles.guidance} aria-label="Consejos de seguridad">
-            <div className={styles.guidanceIcon} aria-hidden="true">i</div>
-            <div>
-              <strong>Consejos de seguridad</strong>
-              <ul>
-                <li>No reutilices contraseñas de otros servicios.</li>
-                <li>Evita nombres, fechas y datos personales fáciles de adivinar.</li>
-                <li>Considera utilizar un gestor de contraseñas.</li>
-              </ul>
-            </div>
-          </aside>
+          <aside className={styles.guidance} aria-label="Consejos de seguridad"><div className={styles.guidanceIcon} aria-hidden="true">i</div><div><strong>Consejos de seguridad</strong><ul><li>No reutilices contraseñas de otros servicios.</li><li>Evita nombres, fechas y datos personales fáciles de adivinar.</li><li>Considera utilizar un gestor de contraseñas.</li></ul></div></aside>
 
           <div className={styles.actions}>
-            <button disabled={!passwordValid || busy !== null} type="submit">
-              {busy === 'password' ? 'Actualizando…' : 'Actualizar contraseña'}
-            </button>
+            <button className={lowerStyles.passwordAction} disabled={!passwordValid || busy !== null} type="submit">{busy === 'password' ? 'Actualizando…' : 'Actualizar contraseña'}</button>
             {!passwordValid ? <small>Completa todos los requisitos y confirma la contraseña para continuar.</small> : null}
           </div>
         </form>
@@ -244,43 +180,27 @@ export default function AccountSecurityManager({
 
       <section className={styles.panel} aria-labelledby="sessions-title">
         <div className={styles.sessionLayout}>
-          <div>
-            <p className={styles.eyebrow}>Sesiones</p>
-            <h2 id="sessions-title">Control global de sesiones</h2>
-            <p>Conserva esta sesión y cierra las demás sesiones abiertas de tu cuenta.</p>
-          </div>
-          <button className={styles.secondaryButton} disabled={busy !== null} onClick={closeOtherSessions} type="button">
-            {busy === 'sessions' ? 'Cerrando…' : 'Cerrar otras sesiones'}
-          </button>
+          <div><p className={styles.eyebrow}>Sesiones</p><h2 id="sessions-title">Control global de sesiones</h2><p>Conserva esta sesión y cierra todas las demás sesiones abiertas de tu cuenta.</p></div>
+          <button className={styles.secondaryButton} disabled={busy !== null} onClick={() => setConfirmSessions(true)} type="button">{busy === 'sessions' ? 'Cerrando…' : 'Cerrar otras sesiones'}</button>
         </div>
       </section>
 
-      <section className={styles.statusGrid} aria-label="Estado de seguridad">
-        <article>
-          <div className={styles.statusHeading}>
-            <span>Correo</span>
-            <span className={emailConfirmed ? styles.statusGood : styles.statusPending}>{emailConfirmed ? 'Verificado' : 'Pendiente'}</span>
-          </div>
-          <strong>{email}</strong>
-          <p>La verificación protege la recuperación de la cuenta.</p>
-        </article>
-        <article>
-          <div className={styles.statusHeading}>
-            <span>Autenticación en dos pasos</span>
-            <span className={styles.statusPending}>No configurada</span>
-          </div>
-          <strong>MFA pendiente</strong>
-          <p>La activación estará disponible cuando el flujo completo esté integrado y probado.</p>
-        </article>
-        <article>
-          <div className={styles.statusHeading}>
-            <span>Dispositivos y sesiones</span>
-            <span className={styles.statusNeutral}>Control global</span>
-          </div>
-          <strong>Gestión disponible</strong>
-          <p>Supabase no expone aquí un inventario confiable de dispositivos individuales.</p>
-        </article>
+      <section className={`${styles.statusGrid} ${lowerStyles.statusGrid}`} aria-label="Estado de protección de la cuenta">
+        <article><div className={styles.statusHeading}><span>Correo</span><span className={emailConfirmed ? styles.statusGood : styles.statusPending}>{emailConfirmed ? 'Verificado' : 'Pendiente'}</span></div><strong>{email}</strong><p>{emailConfirmed ? 'Tu correo está listo para los procesos de recuperación de la cuenta.' : 'Verifica tu correo para proteger la recuperación de la cuenta.'}</p></article>
+        <article><div className={styles.statusHeading}><span>Autenticación en dos pasos</span><span className={styles.statusPending}>Próximamente</span></div><strong>Aún no disponible</strong><p>La activación se habilitará cuando el flujo de enrolamiento, verificación y recuperación esté integrado y probado.</p></article>
+        <article><div className={styles.statusHeading}><span>Control de sesiones</span><span className={styles.statusNeutral}>Control global</span></div><strong>Cierre global disponible</strong><p>Puedes cerrar las demás sesiones. El detalle individual de dispositivos todavía no está disponible.</p></article>
       </section>
+
+      <dialog className={lowerStyles.confirmDialog} onCancel={() => setConfirmSessions(false)} onClose={() => setConfirmSessions(false)} ref={confirmationDialogRef}>
+        <form method="dialog" className={lowerStyles.dialogContent} onSubmit={(event) => event.preventDefault()}>
+          <div className={lowerStyles.dialogIcon} aria-hidden="true">!</div>
+          <div><p className={styles.eyebrow}>Confirmación de seguridad</p><h2>Cerrar otras sesiones</h2><p>Se cerrarán todas las demás sesiones de tu cuenta. Esta sesión permanecerá activa.</p></div>
+          <div className={lowerStyles.dialogActions}>
+            <button ref={cancelDialogButtonRef} className={lowerStyles.cancelButton} onClick={() => setConfirmSessions(false)} type="button">Cancelar</button>
+            <button className={lowerStyles.confirmButton} disabled={busy !== null} onClick={closeOtherSessions} type="button">Cerrar otras sesiones</button>
+          </div>
+        </form>
+      </dialog>
     </div>
   )
 }
