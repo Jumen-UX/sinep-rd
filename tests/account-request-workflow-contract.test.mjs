@@ -42,7 +42,7 @@ test('personal request controls remain keyboard visible and mobile touch accessi
 
   assert.match(css, /min-height:46px/)
   assert.match(css, /focus-visible/)
-  assert.match(css, /min-height:44px/)
+  assert.match(css, /min-height:48px/)
   assert.match(css, /@media\(max-width:800px\)/)
   assert.match(css, /width:100%/)
 })
