@@ -34,10 +34,10 @@ test('account readiness remains separate from visual profile completion', async 
   ])
 
   assert.match(source, /Tu cuenta está operativa/)
-  assert.match(source, /Perfil completado/)
-  assert.match(source, /Datos pendientes/)
+  assert.match(source, /Tu perfil está completo/)
+  assert.match(source, /Siguiente paso/)
   assert.match(source, /Agregar un teléfono de contacto/)
   assert.match(source, /Agregar una fotografía/)
-  assert.match(styles, /\.profileSuggestions\{/)
+  assert.match(styles, /\.profileTask\{/)
   assert.match(styles, /\.progressTrack\{/)
 })
