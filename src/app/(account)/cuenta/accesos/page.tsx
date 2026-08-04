@@ -95,11 +95,14 @@ export default async function AccountAccessPage() {
         )}
       </section>
 
-      <section className={styles.informationPanel} aria-labelledby="access-help-title">
-        <p className={styles.eyebrow}>Cómo funciona</p>
-        <h2 id="access-help-title">Roles, ámbitos y cambios</h2>
-        <p>Los roles definen las operaciones permitidas y los ámbitos limitan dónde pueden realizarse. Solo un administrador autorizado puede modificar estas asignaciones; cualquier cambio debe tramitarse desde tus solicitudes.</p>
-      </section>
+      <details className={styles.informationPanel}>
+        <summary><strong>Más información sobre roles y ámbitos</strong></summary>
+        <div>
+          <p className={styles.eyebrow}>Cómo funciona</p>
+          <h2>Roles, ámbitos y cambios</h2>
+          <p>Los roles definen las operaciones permitidas y los ámbitos limitan dónde pueden realizarse. Solo un administrador autorizado puede modificar estas asignaciones; cualquier cambio debe tramitarse desde tus solicitudes.</p>
+        </div>
+      </details>
     </main>
   )
 }
