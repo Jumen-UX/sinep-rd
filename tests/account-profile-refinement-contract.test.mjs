@@ -27,7 +27,7 @@ test('profile state is normalized and never reports initial changes',async()=>{
   assert.match(form,/const \[baseline,setBaseline\]/)
   assert.match(form,/JSON\.stringify\(normalizedForm\)!==JSON\.stringify\(normalizeForm\(baseline\)\)/)
   assert.match(form,/setBaseline\(saved\)/)
-  assert.match(form,/\(isDirty\|\|saving\)\?/) 
+  assert.match(form,/\(isDirty\|\|saving\)\?/)
 })
 
 test('profile form validates https photos without blocking unrelated edits',async()=>{
@@ -54,6 +54,16 @@ test('profile protected icon remains compact despite global svg rules',async()=>
   assert.match(styles,/\.protectedBadge>\.lockIcon\{[^}]*height:14px!important/s)
   assert.match(styles,/\.protectedBadge>\.lockIcon\{[^}]*max-width:14px!important/s)
   assert.match(styles,/\.protectedBadge>\.lockIcon\{[^}]*flex:0 0 14px!important/s)
+})
+
+test('profile layout is protected from global element overrides',async()=>{
+  const styles=await read(stylesPath)
+  assert.match(styles,/\.completionCard>\.checklist\{[^}]*display:grid!important/s)
+  assert.match(styles,/\.completionCard>\.checklist>li\{[^}]*grid-template-columns:auto minmax\(0,1fr\) auto!important/s)
+  assert.match(styles,/\.sectionCard \.grid\{[^}]*display:grid!important/s)
+  assert.match(styles,/\.sectionCard \.dataCard\{[^}]*display:grid!important/s)
+  assert.match(styles,/\.sectionCard \.protectedHeading\{[^}]*display:flex!important/s)
+  assert.match(styles,/\.sectionCard \.protectedValue\{[^}]*overflow-wrap:anywhere!important/s)
 })
 
 test('profile preferences use controlled locale and IANA timezone suggestions',async()=>{
