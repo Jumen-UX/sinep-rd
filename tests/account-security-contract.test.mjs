@@ -46,9 +46,11 @@ test('security refinement exposes visible fields strength guidance and confirmat
 
   assert.match(manager, /placeholder="Escribe una contraseña nueva"/)
   assert.match(manager, /placeholder="Repite la nueva contraseña"/)
+  assert.match(manager, /function EyeIcon/)
   assert.match(manager, /Mostrar nueva contraseña/)
   assert.match(manager, /Ocultar nueva contraseña/)
   assert.match(manager, /aria-pressed=\{showPassword\}/)
+  assert.match(manager, /className=\{styles\.strengthBadge\}/)
   assert.match(manager, /role="progressbar"/)
   assert.match(manager, /Fortaleza de la contraseña/)
   assert.match(manager, /Agrega un símbolo especial, por ejemplo:/)
@@ -58,19 +60,21 @@ test('security refinement exposes visible fields strength guidance and confirmat
   assert.match(manager, /Consejos de seguridad/)
   assert.match(manager, /Esta sesión permanece activa/)
   assert.match(manager, /emailConfirmed \? 'Verificado' : 'Pendiente'/)
+  assert.match(css, /:global\(html\[data-theme='light'\]\) \.securityStack/)
   assert.match(css, /\.inputGroup\{[^}]*position:relative/s)
   assert.match(css, /\.inputGroup\{[^}]*border:1px solid/s)
-  assert.match(css, /\.inputGroup input\{[^}]*padding:0 112px 0 14px/s)
+  assert.match(css, /\.inputGroup input\{[^}]*padding:0 118px 0 14px/s)
   assert.match(css, /\.visibilityButton\{[^}]*position:absolute/s)
-  assert.match(css, /\.visibilityButton\{[^}]*right:4px/s)
+  assert.match(css, /\.visibilityButton svg/)
   assert.match(css, /\.inputGroup:focus-within/)
-  assert.match(css, /\.strengthTrack\[data-score='5'\]/)
+  assert.match(css, /\.strengthBadge\[data-score='5'\]/)
+  assert.match(css, /\.strengthTrack\{[^}]*height:12px/s)
   assert.match(css, /\.matchStatus\[data-error='true'\]/)
   assert.match(css, /max-width:680px/)
   assert.match(css, /\.statusGood/)
 })
 
-test('security workspace remains responsive touch-safe and does not invent device inventory', async () => {
+test('security workspace remains responsive touch-safe reduced-motion-aware and does not invent device inventory', async () => {
   const [manager, css] = await Promise.all([
     readFile(managerPath, 'utf8'),
     readFile(cssPath, 'utf8'),
@@ -81,7 +85,8 @@ test('security workspace remains responsive touch-safe and does not invent devic
   assert.match(css, /min-height:44px/)
   assert.match(css, /@media\(max-width:800px\)/)
   assert.match(css, /@media\(max-width:480px\)/)
-  assert.match(css, /\.inputGroup input\{padding-right:88px\}/)
-  assert.match(css, /\.visibilityButton\{min-width:72px/)
+  assert.match(css, /\.inputGroup input\{padding-right:92px\}/)
+  assert.match(css, /\.visibilityButton\{min-width:76px/)
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/)
   assert.match(css, /grid-template-columns:1fr/)
 })
