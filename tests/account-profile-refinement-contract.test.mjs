@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const formPath = new URL('../src/features/account/AccountProfileForm.tsx', import.meta.url)
+const comboboxPath = new URL('../src/features/account/ProfileCombobox.tsx', import.meta.url)
+const comboboxStylesPath = new URL('../src/features/account/profile-combobox.module.css', import.meta.url)
 const pagePath = new URL('../src/app/(account)/cuenta/perfil/page.tsx', import.meta.url)
 const stylesPath = new URL('../src/features/account/account-profile.module.css', import.meta.url)
 const modernStylesPath = new URL('../src/features/account/account-profile-modern.module.css', import.meta.url)
@@ -87,7 +89,6 @@ test('profile controls and avatar resist global element overrides', async () => 
   assert.match(styles, /\.protectedBadge>\.lockIcon\{[^}]*width:14px!important/s)
   assert.match(styles, /\.checklist\{[^}]*display:grid!important/s)
   assert.match(styles, /\.dataCard\{[^}]*display:grid!important/s)
-  assert.match(modernStyles, /\.controlSurface\{[^}]*appearance:none!important/s)
   assert.match(modernStyles, /\.avatarSurface\{[^}]*width:94px!important/s)
   assert.match(modernStyles, /\.uploadPanel\{[^}]*display:grid!important/s)
   assert.match(modernStyles, /\.fileChooser\{[^}]*display:block!important/s)
@@ -95,15 +96,28 @@ test('profile controls and avatar resist global element overrides', async () => 
   assert.match(modernStyles, /\.uploadStatus,\.uploadError\{[^}]*display:flex!important/s)
 })
 
-test('profile preferences use controlled locale and timezone selects', async () => {
-  const form = await read(formPath)
+test('profile preferences use accessible custom comboboxes instead of native selects', async () => {
+  const [form, combobox, comboboxStyles] = await Promise.all([read(formPath), read(comboboxPath), read(comboboxStylesPath)])
+  assert.match(form, /import ProfileCombobox/)
+  assert.match(form, /LOCALE_OPTIONS/)
   assert.match(form, /TIMEZONE_OPTIONS/)
+  assert.match(form, /id="profile-locale"/)
   assert.match(form, /id="profile-timezone"/)
-  assert.match(form, /TIMEZONE_OPTIONS\.map/)
-  assert.match(form, /America\/Santo_Domingo/)
-  assert.match(form, /value=\{form\.preferredLocale\}/)
-  assert.match(form, /value=\{form\.timezone\}/)
+  assert.match(form, /searchable/)
+  assert.match(form, /Buscar ciudad o zona horaria/)
+  assert.doesNotMatch(form, /<select/)
   assert.doesNotMatch(form, /<datalist/)
+  assert.match(combobox, /aria-haspopup="listbox"/)
+  assert.match(combobox, /aria-expanded=\{open\}/)
+  assert.match(combobox, /role="listbox"/)
+  assert.match(combobox, /role="option"/)
+  assert.match(combobox, /aria-selected=\{selected\}/)
+  assert.match(combobox, /event\.key === 'Escape'/)
+  assert.match(combobox, /event\.key === 'ArrowDown'/)
+  assert.match(combobox, /event\.key === 'ArrowUp'/)
+  assert.match(comboboxStyles, /\.popover\{[^}]*position:absolute!important/s)
+  assert.match(comboboxStyles, /@media\(max-width:700px\)/)
+  assert.doesNotMatch(comboboxStyles, /#[0-9a-f]{3,8}/i)
 })
 
 test('profile presentation includes progress toast and responsive rules', async () => {
