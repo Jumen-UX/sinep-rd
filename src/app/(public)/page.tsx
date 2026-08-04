@@ -27,6 +27,8 @@ export default async function HomePage({ searchParams }: PageProps) {
   const requestedCountry = firstValue(params.pais)?.toUpperCase()
   const requestedProvince = firstValue(params.provincia) ?? ''
   const requestedJurisdictionId = firstValue(params.jurisdiccion) ?? ''
+  const requestedStructureNodeId = firstValue(params.nodo) ?? ''
+  const requestedParishId = firstValue(params.parroquia) ?? ''
   const initialView = allowedViews.has(requestedView as PublicView) ? requestedView as PublicView : 'territorial'
   const initialDataComplete = initialView !== 'territorial'
 
@@ -49,6 +51,9 @@ export default async function HomePage({ searchParams }: PageProps) {
       item.id === requestedJurisdictionId
       && (!initialProvince || item.ecclesiastical_province_name === initialProvince)
     ))?.id ?? ''
+    const initialParishId = initialJurisdictionId
+      ? initialData.parishes.find((item) => item.id === requestedParishId && item.diocese_id === initialJurisdictionId)?.id ?? ''
+      : ''
 
     return (
       <PublicDashboardShell
@@ -56,7 +61,9 @@ export default async function HomePage({ searchParams }: PageProps) {
         initialData={initialData}
         initialDataComplete={initialDataComplete}
         initialJurisdictionId={initialJurisdictionId}
+        initialParishId={initialParishId}
         initialProvince={initialProvince}
+        initialStructureNodeId={requestedStructureNodeId}
         initialSummary={initialSummary}
         initialView={initialView}
       />
