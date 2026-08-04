@@ -32,6 +32,7 @@ export default function ProfileCombobox({
 }: Props) {
   const listboxId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
   const [open, setOpen] = useState(false)
@@ -58,17 +59,26 @@ export default function ProfileCombobox({
       setQuery('')
       return
     }
+
     const selectedIndex = filteredOptions.findIndex((option) => option.value === value)
-    setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0)
+    const nextIndex = selectedIndex >= 0 ? selectedIndex : 0
+    setActiveIndex(nextIndex)
+
     window.requestAnimationFrame(() => {
+      rootRef.current?.scrollIntoView({ block: 'nearest' })
       if (searchable) searchRef.current?.focus()
-      else optionRefs.current[selectedIndex >= 0 ? selectedIndex : 0]?.focus()
+      else optionRefs.current[nextIndex]?.focus()
     })
   }, [filteredOptions, open, searchable, value])
 
+  function closeAndRestoreFocus() {
+    setOpen(false)
+    window.requestAnimationFrame(() => triggerRef.current?.focus())
+  }
+
   function selectOption(option: ProfileComboboxOption) {
     onChange(option.value)
-    setOpen(false)
+    closeAndRestoreFocus()
   }
 
   function moveActive(delta: number) {
@@ -81,8 +91,7 @@ export default function ProfileCombobox({
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === 'Escape') {
       event.preventDefault()
-      setOpen(false)
-      document.getElementById(id)?.focus()
+      closeAndRestoreFocus()
       return
     }
     if (event.key === 'ArrowDown') {
@@ -110,7 +119,7 @@ export default function ProfileCombobox({
   }
 
   return (
-    <div className={styles.root} ref={rootRef}>
+    <div className={`${styles.root} ${open ? styles.rootOpen : ''}`} ref={rootRef}>
       <button
         aria-controls={listboxId}
         aria-expanded={open}
@@ -119,6 +128,7 @@ export default function ProfileCombobox({
         className={styles.trigger}
         id={id}
         onClick={() => setOpen((current) => !current)}
+        ref={triggerRef}
         type="button"
       >
         <span>{selectedOption?.label ?? value}</span>
@@ -126,7 +136,7 @@ export default function ProfileCombobox({
       </button>
 
       {open ? (
-        <div className={styles.popover} onKeyDown={handleKeyDown}>
+        <div className={styles.popover} data-searchable={searchable} onKeyDown={handleKeyDown}>
           {searchable ? (
             <div className={styles.searchWrap}>
               <svg aria-hidden="true" viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" fill="none" r="5.5" stroke="currentColor" strokeWidth="1.6" /><path d="m13 13 4 4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" /></svg>
