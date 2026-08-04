@@ -8,6 +8,12 @@ import dashboardStyles from './account-dashboard.module.css'
 
 const OPEN_REQUEST_STATUSES = ['submitted', 'under_review', 'information_required']
 
+const LOCALE_LABELS: Record<string, string> = {
+  'es-419': 'Español latinoamericano',
+  es: 'Español',
+  en: 'English',
+}
+
 function calculateProfileCompletion(profile: {
   email: string
   full_name: string
@@ -43,6 +49,15 @@ function accountInitials(fullName: string) {
     .toUpperCase()
 }
 
+function localeLabel(locale: string) {
+  return LOCALE_LABELS[locale] ?? locale
+}
+
+function timezoneLabel(timezone: string) {
+  const [, city = timezone] = timezone.split('/')
+  return city.replaceAll('_', ' ')
+}
+
 export default async function AccountHomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -54,9 +69,18 @@ export default async function AccountHomePage() {
   const hasAdminAccess = roles.length > 0 && profile.status === 'active' && profile.onboarding_completed_at
   const completion = calculateProfileCompletion(profile)
   const incompleteProfileItems = [
-    !profile.phone ? { label: 'Agregar un teléfono de contacto', detail: 'Facilita la recuperación y el contacto institucional.' } : null,
-    !profile.avatar_url ? { label: 'Agregar una fotografía', detail: 'Ayuda a identificar tu cuenta dentro del sistema.' } : null,
-  ].filter(Boolean) as Array<{ label: string; detail: string }>
+    !profile.phone ? {
+      label: 'Agregar un teléfono de contacto',
+      detail: 'Facilita la recuperación y el contacto institucional.',
+      href: '/cuenta/perfil#profile-phone-input',
+    } : null,
+    !profile.avatar_url ? {
+      label: 'Agregar una fotografía',
+      detail: 'Ayuda a identificar tu cuenta dentro del sistema.',
+      href: '/cuenta/perfil#profile-photo-input',
+    } : null,
+  ].filter(Boolean) as Array<{ label: string; detail: string; href: string }>
+  const nextProfileTask = incompleteProfileItems[0]
 
   return (
     <main className={styles.page}>
@@ -75,7 +99,8 @@ export default async function AccountHomePage() {
             ) : (
               <div className={`${styles.avatar} ${dashboardStyles.heroAvatarFallback}`} aria-hidden="true">{accountInitials(profile.full_name)}</div>
             )}
-            <span className={dashboardStyles.activeDot} aria-label="Cuenta activa" />
+            <span className={dashboardStyles.activeDot} aria-hidden="true" />
+            <span className={dashboardStyles.srOnly}>Cuenta activa</span>
           </div>
           <div>
             <p className={styles.eyebrow}>Centro personal</p>
@@ -132,15 +157,15 @@ export default async function AccountHomePage() {
         </article>
       </section>
 
-      {incompleteProfileItems.length ? (
+      {nextProfileTask ? (
         <section className={dashboardStyles.profileTask} aria-labelledby="profile-suggestions-title">
           <span className={dashboardStyles.taskIcon} aria-hidden="true">!</span>
           <div>
             <p className={styles.eyebrow}>Siguiente paso</p>
             <h2 id="profile-suggestions-title">Solo falta {incompleteProfileItems.length === 1 ? 'una tarea' : `${incompleteProfileItems.length} tareas`}</h2>
-            <p>{incompleteProfileItems[0].label}. {incompleteProfileItems[0].detail}</p>
+            <p>{nextProfileTask.label}. {nextProfileTask.detail}</p>
           </div>
-          <Link className={styles.primaryAction} href="/cuenta/perfil#profile-photo-input">{incompleteProfileItems[0].label}</Link>
+          <Link className={styles.primaryAction} href={nextProfileTask.href}>{nextProfileTask.label}</Link>
         </section>
       ) : null}
 
@@ -169,8 +194,8 @@ export default async function AccountHomePage() {
             <div><dt>Nombre</dt><dd>{profile.full_name}</dd></div>
             <div><dt>Correo</dt><dd>{profile.email}</dd></div>
             <div><dt>Teléfono</dt><dd>{profile.phone || 'No registrado'}</dd></div>
-            <div><dt>Idioma</dt><dd>{profile.preferred_locale}</dd></div>
-            <div><dt>Zona horaria</dt><dd>{profile.timezone}</dd></div>
+            <div><dt>Idioma</dt><dd>{localeLabel(profile.preferred_locale)}</dd></div>
+            <div><dt>Zona horaria</dt><dd>{timezoneLabel(profile.timezone)}</dd></div>
           </dl>
           {profile.person_id ? <p className={dashboardStyles.contextNote}>Esta cuenta tiene una vinculación personal verificada.</p> : null}
         </section>
