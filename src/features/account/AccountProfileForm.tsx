@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import ProfileCombobox, { type ProfileComboboxOption } from './ProfileCombobox'
 import {
   optimizeProfileAvatar,
   removeMyProfileAvatar,
@@ -12,12 +13,34 @@ import {
 import styles from './account-profile.module.css'
 import modernStyles from './account-profile-modern.module.css'
 
-const TIMEZONE_OPTIONS = [
-  'America/Santo_Domingo', 'America/Puerto_Rico', 'America/New_York', 'America/Chicago',
-  'America/Denver', 'America/Los_Angeles', 'America/Mexico_City', 'America/Bogota',
-  'America/Lima', 'America/Caracas', 'America/Santiago', 'America/Argentina/Buenos_Aires',
-  'America/Sao_Paulo', 'Europe/Madrid', 'Europe/Rome', 'Europe/London', 'Africa/Abidjan',
-  'Africa/Johannesburg', 'Asia/Jerusalem', 'Asia/Manila', 'UTC',
+const LOCALE_OPTIONS: ProfileComboboxOption[] = [
+  { value: 'es-419', label: 'Español latinoamericano', keywords: 'español latinoamérica' },
+  { value: 'es-ES', label: 'Español', keywords: 'españa castellano' },
+  { value: 'en', label: 'English', keywords: 'inglés english' },
+]
+
+const TIMEZONE_OPTIONS: ProfileComboboxOption[] = [
+  { value: 'America/Santo_Domingo', label: 'América / Santo Domingo', keywords: 'República Dominicana RD Caribe' },
+  { value: 'America/Puerto_Rico', label: 'América / Puerto Rico', keywords: 'Caribe' },
+  { value: 'America/New_York', label: 'América / Nueva York', keywords: 'Estados Unidos US Eastern' },
+  { value: 'America/Chicago', label: 'América / Chicago', keywords: 'Estados Unidos US Central' },
+  { value: 'America/Denver', label: 'América / Denver', keywords: 'Estados Unidos US Mountain' },
+  { value: 'America/Los_Angeles', label: 'América / Los Ángeles', keywords: 'Estados Unidos US Pacific' },
+  { value: 'America/Mexico_City', label: 'América / Ciudad de México', keywords: 'México CDMX' },
+  { value: 'America/Bogota', label: 'América / Bogotá', keywords: 'Colombia' },
+  { value: 'America/Lima', label: 'América / Lima', keywords: 'Perú' },
+  { value: 'America/Caracas', label: 'América / Caracas', keywords: 'Venezuela' },
+  { value: 'America/Santiago', label: 'América / Santiago', keywords: 'Chile' },
+  { value: 'America/Argentina/Buenos_Aires', label: 'América / Buenos Aires', keywords: 'Argentina' },
+  { value: 'America/Sao_Paulo', label: 'América / São Paulo', keywords: 'Brasil Brazil' },
+  { value: 'Europe/Madrid', label: 'Europa / Madrid', keywords: 'España' },
+  { value: 'Europe/Rome', label: 'Europa / Roma', keywords: 'Italia' },
+  { value: 'Europe/London', label: 'Europa / Londres', keywords: 'Reino Unido UK' },
+  { value: 'Africa/Abidjan', label: 'África / Abiyán', keywords: 'Costa de Marfil' },
+  { value: 'Africa/Johannesburg', label: 'África / Johannesburgo', keywords: 'Sudáfrica' },
+  { value: 'Asia/Jerusalem', label: 'Asia / Jerusalén', keywords: 'Israel Tierra Santa' },
+  { value: 'Asia/Manila', label: 'Asia / Manila', keywords: 'Filipinas' },
+  { value: 'UTC', label: 'UTC', keywords: 'Tiempo universal coordinado' },
 ]
 
 type FormState = { fullName: string; phone: string; preferredLocale: string; timezone: string; avatarUrl: string }
@@ -158,7 +181,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
       {error ? <p className={styles.status} role="alert">{error}</p> : null}
       <section className={styles.sectionCard} aria-labelledby="identity-contact-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Identidad y contacto</p><h2 id="identity-contact-title">Información básica</h2></div></div><div className={styles.grid}><label className={`${styles.field} ${styles.dataCard}`} htmlFor="profile-name"><span>Nombre completo</span><input id="profile-name" autoComplete="name" maxLength={180} name="full_name" onChange={(event) => updateField('fullName', event.target.value)} required value={form.fullName} /></label><div className={`${styles.dataCard} ${styles.protectedField}`} id="profile-email"><div className={styles.protectedHeading}><span>Correo</span><span className={styles.protectedBadge}><LockIcon />Protegido</span></div><strong className={styles.protectedValue}>{profile.email}</strong><small>El cambio de correo requiere un flujo de seguridad separado.</small></div><label className={`${styles.field} ${styles.dataCard}`} htmlFor="profile-phone"><span>Teléfono</span><input id="profile-phone" autoComplete="tel" maxLength={80} name="phone" onChange={(event) => updateField('phone', event.target.value)} type="tel" value={form.phone} /><small>Incluye el código de país cuando corresponda.</small></label></div></section>
 
-      <section className={styles.sectionCard} aria-labelledby="preferences-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Preferencias regionales</p><h2 id="preferences-title">Idioma y zona horaria</h2></div></div><div className={styles.grid}><label className={`${styles.field} ${styles.dataCard}`} htmlFor="profile-locale"><span>Idioma</span><select className={modernStyles.controlSurface} id="profile-locale" name="preferred_locale" onChange={(event) => updateField('preferredLocale', event.target.value)} value={form.preferredLocale}><option value="es-419">Español latinoamericano</option><option value="es-ES">Español</option><option value="en">English</option></select></label><label className={`${styles.field} ${styles.dataCard}`} htmlFor="profile-timezone"><span>Zona horaria</span><select className={modernStyles.controlSurface} id="profile-timezone" name="timezone" onChange={(event) => updateField('timezone', event.target.value)} required value={form.timezone}>{TIMEZONE_OPTIONS.map((timezone) => <option key={timezone} value={timezone}>{timezone}</option>)}</select><small>Las fechas y notificaciones se mostrarán usando esta zona.</small></label></div></section>
+      <section className={styles.sectionCard} aria-labelledby="preferences-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Preferencias regionales</p><h2 id="preferences-title">Idioma y zona horaria</h2></div></div><div className={styles.grid}><div className={`${styles.field} ${styles.dataCard}`}><span>Idioma</span><ProfileCombobox ariaLabel="Seleccionar idioma" id="profile-locale" onChange={(value) => updateField('preferredLocale', value)} options={LOCALE_OPTIONS} value={form.preferredLocale} /></div><div className={`${styles.field} ${styles.dataCard}`}><span>Zona horaria</span><ProfileCombobox ariaLabel="Seleccionar zona horaria" emptyMessage="No encontramos una zona horaria con esa búsqueda." id="profile-timezone" onChange={(value) => updateField('timezone', value)} options={TIMEZONE_OPTIONS} searchable searchPlaceholder="Buscar ciudad o zona horaria…" value={form.timezone} /><small>Las fechas y notificaciones se mostrarán usando esta zona.</small></div></div></section>
 
       <section className={styles.sectionCard} aria-labelledby="photo-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Fotografía</p><h2 id="photo-title">Imagen de perfil</h2></div></div><div className={styles.photoGrid}><div aria-label={displayedAvatar ? 'Vista previa de la fotografía de perfil' : 'Vista previa con iniciales'} className={modernStyles.photoSurface} role="img" style={displayedAvatar ? { backgroundImage: `url(${displayedAvatar})`, color: 'transparent' } : undefined}>{initials}</div><div className={styles.photoActions}><div className={modernStyles.uploadPanel}><div><strong>{normalizedForm.avatarUrl ? 'Fotografía actual' : 'Añade una fotografía'}</strong><p id="profile-photo-help">JPG, PNG o WEBP. Hasta 20 MB; las imágenes grandes se optimizan automáticamente.</p>{avatarFileName ? <small className={modernStyles.fileName}>Archivo: {avatarFileName}</small> : null}</div><input accept="image/jpeg,image/png,image/webp" aria-describedby="profile-photo-help profile-photo-feedback" className={modernStyles.fileChooser} disabled={avatarSaving} id="profile-photo-input" onChange={(event) => { const input = event.currentTarget; void handleAvatarSelection(input.files?.[0]).finally(() => { input.value = '' }) }} type="file" /></div>{avatarStatus ? <p aria-live="polite" className={modernStyles.uploadStatus} id="profile-photo-feedback" role="status"><span aria-hidden="true" className={styles.spinner} />{avatarStatus}</p> : null}{avatarError ? <p className={modernStyles.uploadError} id="profile-photo-feedback" role="alert">{avatarError}</p> : null}{normalizedForm.avatarUrl ? <button className={modernStyles.removeButton} disabled={avatarSaving} onClick={() => void handleAvatarRemoval()} type="button">{avatarStage === 'removing' ? 'Eliminando…' : 'Eliminar fotografía'}</button> : null}</div></div></section>
 
