@@ -11,7 +11,8 @@ test('personal center exposes its own navigation shell', async () => {
     read('src/features/account/account.module.css'),
   ])
 
-  assert.match(layout, /<AccountShell>\{children\}<\/AccountShell>/)
+  assert.match(layout, /<AccountShell identity=\{identity\}>\{children\}<\/AccountShell>/)
+  assert.match(layout, /loadMyAccountContext\(supabase\)/)
   assert.match(shell, /aria-label="Navegación del Centro Personal"/)
   assert.match(shell, /href: '\/cuenta\/perfil'/)
   assert.match(shell, /href: '\/cuenta\/accesos'/)
