@@ -1,9 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import type { OrganizationUnit, PublicView } from '@/lib/public/dashboard'
+import { useEffect, useMemo, useReducer, useState } from 'react'
+import type { OrganizationUnit } from '@/lib/public/dashboard'
 import { personTypeLabel, views, type PersonCard, type Props } from './PublicDashboardShared'
 import { buildPublicDashboardScope } from './buildPublicDashboardScope'
+import {
+  createPublicDashboardHierarchyState,
+  publicDashboardHierarchyReducer,
+} from './PublicDashboardHierarchyState'
 import { buildPublicDashboardSearch } from './PublicDashboardUrlState'
 import { useDeferredPublicDashboardData } from './useDeferredPublicDashboardData'
 
@@ -16,10 +20,16 @@ export function usePublicDashboardModel({
   initialProvince,
   initialJurisdictionId,
 }: Props) {
-  const [activeView, setActiveView] = useState<PublicView>(initialView)
-  const [country, setCountry] = useState(initialCountry)
-  const [province, setProvince] = useState(initialProvince)
-  const [jurisdictionId, setJurisdictionId] = useState(initialJurisdictionId)
+  const [hierarchy, dispatchHierarchy] = useReducer(
+    publicDashboardHierarchyReducer,
+    createPublicDashboardHierarchyState({
+      activeView: initialView,
+      country: initialCountry,
+      province: initialProvince,
+      jurisdictionId: initialJurisdictionId,
+    }),
+  )
+  const { activeView, country, province, jurisdictionId, structureNodeId, parishId } = hierarchy
   const [personType, setPersonType] = useState('')
   const [pastoralLevel, setPastoralLevel] = useState('')
   const {
@@ -103,9 +113,7 @@ export function usePublicDashboardModel({
   )
 
   function resetScope() {
-    setCountry('')
-    setProvince('')
-    setJurisdictionId('')
+    dispatchHierarchy({ type: 'reset_scope' })
     setPersonType('')
     setPastoralLevel('')
   }
@@ -113,14 +121,19 @@ export function usePublicDashboardModel({
   return {
     initialData: dashboardData,
     initialSummary: dashboardSummary,
+    hierarchy,
     activeView,
-    setActiveView,
+    setActiveView: (value: typeof activeView) => dispatchHierarchy({ type: 'set_view', value }),
     country,
-    setCountry,
+    setCountry: (value: string) => dispatchHierarchy({ type: 'set_country', value }),
     province,
-    setProvince,
+    setProvince: (value: string) => dispatchHierarchy({ type: 'set_province', value }),
     jurisdictionId,
-    setJurisdictionId,
+    setJurisdictionId: (value: string) => dispatchHierarchy({ type: 'set_jurisdiction', value }),
+    structureNodeId,
+    setStructureNodeId: (value: string) => dispatchHierarchy({ type: 'set_structure_node', value }),
+    parishId,
+    setParishId: (value: string) => dispatchHierarchy({ type: 'set_parish', value }),
     personType,
     setPersonType,
     pastoralLevel,
