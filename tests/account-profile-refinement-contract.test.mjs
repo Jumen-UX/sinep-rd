@@ -58,6 +58,15 @@ test('profile information cards distinguish editable and protected data', async 
   assert.match(form, />Protegido<\/span>/)
 })
 
+test('profile protected icon remains compact despite global svg rules', async () => {
+  const styles = await read(stylesPath)
+
+  assert.match(styles, /\.protectedBadge>\.lockIcon\{[^}]*width:14px!important/s)
+  assert.match(styles, /\.protectedBadge>\.lockIcon\{[^}]*height:14px!important/s)
+  assert.match(styles, /\.protectedBadge>\.lockIcon\{[^}]*max-width:14px!important/s)
+  assert.match(styles, /\.protectedBadge>\.lockIcon\{[^}]*flex:0 0 14px!important/s)
+})
+
 test('profile preferences use controlled locale and IANA timezone suggestions', async () => {
   const form = await read(formPath)
 
