@@ -23,17 +23,27 @@ test('profile workspace exposes identity completion preferences and photo sectio
   assert.match(form, /La vinculación con una ficha eclesial es opcional/)
 })
 
-test('profile form validates direct https images and detects unsaved changes', async () => {
+test('profile state is normalized and never reports initial changes', async () => {
+  const form = await read(formPath)
+
+  assert.match(form, /function normalizeValue/)
+  assert.match(form, /function normalizeForm/)
+  assert.match(form, /const \[baseline, setBaseline\]/)
+  assert.match(form, /JSON\.stringify\(normalizedForm\) !== JSON\.stringify\(normalizeForm\(baseline\)\)/)
+  assert.match(form, /setBaseline\(saved\)/)
+  assert.match(form, /\{\(isDirty \|\| saving\) \? \(/)
+  assert.doesNotMatch(form, /No hay cambios pendientes/)
+})
+
+test('profile form validates https photos without blocking unrelated edits', async () => {
   const form = await read(formPath)
 
   assert.match(form, /IMAGE_PATH_PATTERN/)
   assert.match(form, /parsed\.protocol !== 'https:'/)
-  assert.match(form, /La URL debe apuntar directamente a una imagen/)
-  assert.match(form, /const isDirty = useMemo/)
+  assert.match(form, /warning: 'La URL es válida, pero no parece apuntar directamente a una imagen/)
+  assert.match(form, /avatarInspection\.previewable/)
   assert.match(form, /const canSubmit = isDirty && !saving/)
   assert.match(form, /disabled=\{!canSubmit\}/)
-  assert.match(form, /Tienes cambios sin guardar/)
-  assert.match(form, /No hay cambios pendientes/)
 })
 
 test('profile preferences use controlled locale and IANA timezone suggestions', async () => {
@@ -43,17 +53,20 @@ test('profile preferences use controlled locale and IANA timezone suggestions', 
   assert.match(form, /list="account-timezones"/)
   assert.match(form, /<datalist id="account-timezones">/)
   assert.match(form, /America\/Santo_Domingo/)
+  assert.match(form, /timezone: normalizeValue\(profile\.timezone\)/)
   assert.match(form, /value=\{form\.preferredLocale\}/)
   assert.match(form, /value=\{form\.timezone\}/)
 })
 
-test('profile presentation is responsive theme-aware and reduced-motion safe', async () => {
+test('profile presentation keeps fields visible and actions outside content', async () => {
   const styles = await read(stylesPath)
 
-  assert.match(styles, /\.identityCard/)
+  assert.match(styles, /\.identityProgress/)
   assert.match(styles, /\.completionCard/)
   assert.match(styles, /\.photoGrid/)
-  assert.match(styles, /\.actions\{position:sticky/)
+  assert.match(styles, /\.field input,\.field select\{[^}]*box-shadow:inset/s)
+  assert.match(styles, /\.actions\{display:flex/)
+  assert.doesNotMatch(styles, /\.actions\{position:sticky/)
   assert.match(styles, /@media\(max-width:800px\)/)
   assert.match(styles, /@media\(max-width:480px\)/)
   assert.match(styles, /@media\(prefers-reduced-motion:reduce\)/)
