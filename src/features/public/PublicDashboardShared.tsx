@@ -18,6 +18,8 @@ export type Props = {
   initialCountry: string
   initialProvince: string
   initialJurisdictionId: string
+  initialStructureNodeId: string
+  initialParishId: string
 }
 
 export type PersonCard = {
