@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   removeMyProfileAvatar,
@@ -31,16 +31,16 @@ function CameraIcon() { return <svg aria-hidden="true" className={modernStyles.c
 export default function AccountProfileForm({ profile }: { profile: AccountProfile }) {
   const supabase = useMemo(() => createClient(), [])
   const profileState = useMemo(() => normalizeProfile(profile), [profile])
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<FormState>(profileState)
   const [baseline, setBaseline] = useState<FormState>(profileState)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [avatarFileName, setAvatarFileName] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [avatarSaving, setAvatarSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => { setForm(profileState); setBaseline(profileState); setAvatarPreview(null) }, [profileState])
+  useEffect(() => { setForm(profileState); setBaseline(profileState); setAvatarPreview(null); setAvatarFileName(null) }, [profileState])
   useEffect(() => () => { if (avatarPreview) URL.revokeObjectURL(avatarPreview) }, [avatarPreview])
   useEffect(() => { if (!message) return; const timer = window.setTimeout(() => setMessage(null), 4000); return () => window.clearTimeout(timer) }, [message])
 
@@ -67,6 +67,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
 
   async function handleAvatarSelection(file: File | undefined) {
     if (!file || avatarSaving) return
+    setAvatarFileName(file.name)
     try {
       validateProfileAvatar(file)
       const temporaryUrl = URL.createObjectURL(file)
@@ -87,7 +88,6 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
       setError(caught instanceof Error ? caught.message : 'No se pudo subir la fotografía.')
     } finally {
       setAvatarSaving(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -102,6 +102,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
       const saved = normalizeProfile(context.profile)
       setForm(saved)
       setBaseline(saved)
+      setAvatarFileName(null)
       setMessage('Tu fotografía fue eliminada correctamente.')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'No se pudo eliminar la fotografía.')
@@ -127,7 +128,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
       <div className={styles.identityMain}>
         <div className={modernStyles.avatarCluster}>
           <div aria-hidden="true" className={modernStyles.avatarSurface} style={displayedAvatar ? { backgroundImage: `url(${displayedAvatar})`, color: 'transparent' } : undefined}>{initials}</div>
-          <label aria-disabled={avatarSaving} className={modernStyles.avatarEditButton} htmlFor="profile-photo-input"><CameraIcon /> {avatarSaving ? 'Subiendo…' : 'Editar fotografía'}</label>
+          <a className={modernStyles.avatarEditButton} href="#profile-photo-input"><CameraIcon />Editar fotografía</a>
         </div>
         <div className={styles.identityText}><h2 id="profile-identity-title">{form.fullName || 'Tu perfil'}</h2><p>{profile.email}</p><div className={styles.identityMeta}><span className={styles.badge}>Cuenta activa</span><span className={styles.badge}>{completionLabel}</span></div></div>
       </div>
@@ -142,7 +143,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
 
       <section className={styles.sectionCard} aria-labelledby="preferences-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Preferencias regionales</p><h2 id="preferences-title">Idioma y zona horaria</h2></div></div><div className={styles.grid}><label className={`${styles.field} ${styles.dataCard}`} htmlFor="profile-locale"><span>Idioma</span><select className={modernStyles.controlSurface} id="profile-locale" name="preferred_locale" onChange={(event) => updateField('preferredLocale', event.target.value)} value={form.preferredLocale}><option value="es-419">Español latinoamericano</option><option value="es-ES">Español</option><option value="en">English</option></select></label><label className={`${styles.field} ${styles.dataCard}`} htmlFor="profile-timezone"><span>Zona horaria</span><select className={modernStyles.controlSurface} id="profile-timezone" name="timezone" onChange={(event) => updateField('timezone', event.target.value)} required value={form.timezone}>{TIMEZONE_OPTIONS.map((timezone) => <option key={timezone} value={timezone}>{timezone}</option>)}</select><small>Las fechas y notificaciones se mostrarán usando esta zona.</small></label></div></section>
 
-      <section className={styles.sectionCard} aria-labelledby="photo-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Fotografía</p><h2 id="photo-title">Imagen de perfil</h2></div></div><div className={styles.photoGrid}><div aria-label={displayedAvatar ? 'Vista previa de la fotografía de perfil' : 'Vista previa con iniciales'} className={modernStyles.photoSurface} role="img" style={displayedAvatar ? { backgroundImage: `url(${displayedAvatar})`, color: 'transparent' } : undefined}>{initials}</div><div className={styles.photoActions}><input ref={fileInputRef} accept="image/jpeg,image/png,image/webp" aria-describedby="profile-photo-help" className={modernStyles.fileInput} disabled={avatarSaving} id="profile-photo-input" onChange={(event) => void handleAvatarSelection(event.target.files?.[0])} type="file" /><div className={modernStyles.uploadPanel}><div><strong>{avatarSaving ? 'Subiendo fotografía…' : normalizedForm.avatarUrl ? 'Fotografía actual' : 'Añade una fotografía'}</strong><p id="profile-photo-help">JPG, PNG o WEBP. Máximo 5 MB. El cambio se guarda automáticamente.</p></div><label aria-disabled={avatarSaving} className={modernStyles.uploadButton} htmlFor="profile-photo-input"><CameraIcon />{avatarSaving ? 'Subiendo…' : normalizedForm.avatarUrl ? 'Reemplazar fotografía' : 'Subir fotografía'}</label></div>{normalizedForm.avatarUrl ? <button className={modernStyles.removeButton} disabled={avatarSaving} onClick={() => void handleAvatarRemoval()} type="button">{avatarSaving ? 'Procesando…' : 'Eliminar fotografía'}</button> : null}</div></div></section>
+      <section className={styles.sectionCard} aria-labelledby="photo-title"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>Fotografía</p><h2 id="photo-title">Imagen de perfil</h2></div></div><div className={styles.photoGrid}><div aria-label={displayedAvatar ? 'Vista previa de la fotografía de perfil' : 'Vista previa con iniciales'} className={modernStyles.photoSurface} role="img" style={displayedAvatar ? { backgroundImage: `url(${displayedAvatar})`, color: 'transparent' } : undefined}>{initials}</div><div className={styles.photoActions}><div className={modernStyles.uploadPanel}><div><strong>{avatarSaving ? 'Subiendo fotografía…' : normalizedForm.avatarUrl ? 'Fotografía actual' : 'Añade una fotografía'}</strong><p id="profile-photo-help">JPG, PNG o WEBP. Máximo 5 MB. El cambio se guarda automáticamente.</p>{avatarFileName ? <small className={modernStyles.fileName}>Archivo: {avatarFileName}</small> : null}</div><input accept="image/jpeg,image/png,image/webp" aria-describedby="profile-photo-help" className={modernStyles.fileChooser} disabled={avatarSaving} id="profile-photo-input" onChange={(event) => { const input = event.currentTarget; void handleAvatarSelection(input.files?.[0]).finally(() => { input.value = '' }) }} type="file" /></div>{normalizedForm.avatarUrl ? <button className={modernStyles.removeButton} disabled={avatarSaving} onClick={() => void handleAvatarRemoval()} type="button">{avatarSaving ? 'Procesando…' : 'Eliminar fotografía'}</button> : null}</div></div></section>
 
       {(isDirty || saving) ? <div className={styles.actions}><p>{saving ? 'Guardando los cambios…' : 'Tienes cambios sin guardar.'}</p><button className={styles.saveButton} disabled={!canSubmit} type="submit">{saving ? <><span aria-hidden="true" className={styles.spinner} />Guardando…</> : 'Guardar cambios'}</button></div> : null}
     </form>
