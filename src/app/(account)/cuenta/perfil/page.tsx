@@ -17,18 +17,10 @@ export default async function AccountProfilePage() {
         <div>
           <p className={styles.eyebrow}>Identidad de acceso</p>
           <h1>Mi perfil</h1>
-          <p>Actualiza los datos personales y preferencias básicas asociados a tu cuenta.</p>
+          <p>Administra tu identidad, datos de contacto y preferencias regionales.</p>
         </div>
       </header>
-      <section className={styles.panel} aria-labelledby="profile-form-title">
-        <div className={styles.panelHeader}>
-          <div>
-            <p className={styles.eyebrow}>Datos personales</p>
-            <h2 id="profile-form-title">Información de la cuenta</h2>
-          </div>
-        </div>
-        <AccountProfileForm profile={profile} />
-      </section>
+      <AccountProfileForm profile={profile} />
     </main>
   )
 }
