@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -63,7 +64,14 @@ export default async function AccountHomePage() {
         <div className={styles.identitySummary}>
           <div className={dashboardStyles.avatarWrap}>
             {profile.avatar_url ? (
-              <img className={dashboardStyles.heroAvatar} src={profile.avatar_url} alt={`Fotografía de ${profile.full_name}`} />
+              <Image
+                alt={`Fotografía de ${profile.full_name}`}
+                className={dashboardStyles.heroAvatar}
+                height={96}
+                src={profile.avatar_url}
+                unoptimized
+                width={96}
+              />
             ) : (
               <div className={`${styles.avatar} ${dashboardStyles.heroAvatarFallback}`} aria-hidden="true">{accountInitials(profile.full_name)}</div>
             )}
