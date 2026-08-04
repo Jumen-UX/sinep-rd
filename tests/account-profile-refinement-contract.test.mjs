@@ -82,7 +82,11 @@ test('profile controls and avatar resist global element overrides', async () => 
   assert.match(modernStyles, /\.avatarSurface\{[^}]*width:94px!important/s)
   assert.match(modernStyles, /\.uploadPanel\{[^}]*display:flex!important/s)
   assert.match(modernStyles, /\.uploadButton\{[^}]*background:var\(--brand-primary\)!important/s)
-  assert.match(modernStyles, /\.fileInput\{[^}]*clip:rect/s)
+  assert.match(modernStyles, /\.fileInput\{[^}]*width:100%!important/s)
+  assert.match(modernStyles, /\.fileInput\{[^}]*height:104px!important/s)
+  assert.match(modernStyles, /\.fileInput\{[^}]*margin:0 0 -104px!important/s)
+  assert.match(modernStyles, /\.fileInput\{[^}]*opacity:0!important/s)
+  assert.match(modernStyles, /\.fileInput\{[^}]*z-index:5!important/s)
 })
 
 test('profile preferences use controlled locale and timezone selects', async () => {
