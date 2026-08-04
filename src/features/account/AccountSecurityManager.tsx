@@ -151,7 +151,7 @@ export default function AccountSecurityManager({ email, emailConfirmed }: { emai
       {error ? <p className={styles.error} role="alert">{error}</p> : null}
       {message ? <p className={`${styles.success} ${lowerStyles.toast}`} role="status">{message}</p> : null}
 
-      <section className={`${styles.panel} ${styles.passwordPanel}`} aria-labelledby="password-title">
+      <section className={`${styles.panel} ${styles.passwordPanel} ${lowerStyles.progressiveSecurity}`} aria-labelledby="password-title">
         <div className={styles.passwordSummary}>
           <div className={styles.passwordSummaryIcon} aria-hidden="true"><LockIcon /></div>
           <div>
