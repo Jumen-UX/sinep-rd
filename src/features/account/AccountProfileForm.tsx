@@ -89,6 +89,14 @@ function inspectAvatarUrl(value: string) {
   }
 }
 
+function LockIcon() {
+  return (
+    <svg aria-hidden="true" className={styles.lockIcon} viewBox="0 0 24 24">
+      <path d="M7 10V8a5 5 0 0 1 10 0v2m-9 0h8a2 2 0 0 1 2 2v7H6v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
 export default function AccountProfileForm({ profile }: { profile: AccountProfile }) {
   const supabase = useMemo(() => createClient(), [])
   const profileState = useMemo(() => normalizeProfile(profile), [profile])
@@ -164,13 +172,14 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
             <p>{profile.email}</p>
             <div className={styles.identityMeta}>
               <span className={styles.badge}>Cuenta activa</span>
-              <span className={styles.badge}>{completionPercentage}% completado</span>
             </div>
           </div>
         </div>
         <div className={styles.identityProgress} aria-label={`Perfil completado al ${completionPercentage}%`}>
-          <strong>{completionPercentage}%</strong>
-          <span>Completitud del perfil</span>
+          <div className={styles.progressHeading}>
+            <strong>{completionPercentage}%</strong>
+            <span>Completitud del perfil</span>
+          </div>
           <div className={styles.progressTrack} aria-hidden="true">
             <div className={styles.progressBar} style={{ width: `${completionPercentage}%` }} />
           </div>
@@ -178,20 +187,24 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
       </section>
 
       <section className={styles.completionCard} aria-labelledby="profile-completion-title">
-        <div className={styles.completionScore}>
-          <span>Perfil completado</span>
-          <strong>{completionPercentage}%</strong>
-          <div className={styles.progressTrack} aria-hidden="true">
-            <div className={styles.progressBar} style={{ width: `${completionPercentage}%` }} />
-          </div>
-        </div>
         <div className={styles.completionDetails}>
-          <h2 id="profile-completion-title">{pendingFields.length === 0 ? 'Tu información está completa' : 'Datos pendientes'}</h2>
+          <div className={styles.completionHeading}>
+            <div>
+              <p className={styles.eyebrow}>Estado del perfil</p>
+              <h2 id="profile-completion-title">{pendingFields.length === 0 ? 'Tu información está completa' : 'Datos pendientes'}</h2>
+            </div>
+            <span className={styles.pendingCount}>
+              {pendingFields.length === 0 ? 'Sin pendientes' : `${pendingFields.length} ${pendingFields.length === 1 ? 'elemento pendiente' : 'elementos pendientes'}`}
+            </span>
+          </div>
           <p>La vinculación con una ficha eclesial es opcional y no afecta este porcentaje.</p>
           {pendingFields.length > 0 ? (
-            <ul className={styles.pendingList}>
-              {pendingFields.map((field) => <li key={field.label}><span aria-hidden="true">○</span>{field.label}</li>)}
-            </ul>
+            <div className={styles.pendingPanel}>
+              <p>Para completar tu perfil falta:</p>
+              <ul className={styles.pendingList}>
+                {pendingFields.map((field) => <li key={field.label}><span aria-hidden="true">○</span>Añadir {field.label.toLowerCase()}</li>)}
+              </ul>
+            </div>
           ) : null}
         </div>
       </section>
@@ -208,16 +221,19 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
             </div>
           </div>
           <div className={styles.grid}>
-            <label className={styles.field}>
+            <label className={`${styles.field} ${styles.dataCard}`}>
               <span>Nombre completo</span>
               <input autoComplete="name" maxLength={180} name="full_name" onChange={(event) => updateField('fullName', event.target.value)} required value={form.fullName} />
             </label>
-            <label className={styles.field}>
-              <span>Correo</span>
+            <label className={`${styles.field} ${styles.dataCard} ${styles.protectedField}`}>
+              <span className={styles.protectedHeading}>
+                <span>Correo</span>
+                <span className={styles.protectedBadge}><LockIcon />Protegido</span>
+              </span>
               <input disabled type="email" value={profile.email} />
               <small>El cambio de correo requiere un flujo de seguridad separado.</small>
             </label>
-            <label className={styles.field}>
+            <label className={`${styles.field} ${styles.dataCard}`}>
               <span>Teléfono</span>
               <input autoComplete="tel" maxLength={80} name="phone" onChange={(event) => updateField('phone', event.target.value)} type="tel" value={form.phone} />
               <small>Incluye el código de país cuando corresponda.</small>
@@ -233,7 +249,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
             </div>
           </div>
           <div className={styles.grid}>
-            <label className={styles.field}>
+            <label className={`${styles.field} ${styles.dataCard}`}>
               <span>Idioma</span>
               <select name="preferred_locale" onChange={(event) => updateField('preferredLocale', event.target.value)} value={form.preferredLocale}>
                 <option value="es-419">Español latinoamericano</option>
@@ -241,7 +257,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
                 <option value="en">English</option>
               </select>
             </label>
-            <label className={styles.field}>
+            <label className={`${styles.field} ${styles.dataCard}`}>
               <span>Zona horaria</span>
               <input autoComplete="off" list="account-timezones" maxLength={80} name="timezone" onChange={(event) => updateField('timezone', event.target.value)} required value={form.timezone} />
               <datalist id="account-timezones">
@@ -262,7 +278,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
           <div className={styles.photoGrid}>
             <div aria-label={avatarInspection.previewable ? 'Vista previa de la fotografía de perfil' : 'Vista previa con iniciales'} className={styles.photoPreview} role="img" style={avatarInspection.previewable ? { backgroundImage: `url(${form.avatarUrl})`, color: 'transparent' } : undefined}>{initials}</div>
             <div className={styles.photoActions}>
-              <label className={styles.field}>
+              <label className={`${styles.field} ${styles.dataCard}`}>
                 <span>URL de la fotografía</span>
                 <input aria-describedby="avatar-help avatar-feedback" aria-invalid={Boolean(avatarInspection.error)} name="avatar_url" onChange={(event) => updateField('avatarUrl', event.target.value)} placeholder="https://sitio.example/foto.webp" type="url" value={form.avatarUrl} />
                 <small id="avatar-help">Debe ser una URL HTTPS. Para mostrar vista previa y contar como completa, debe apuntar directamente a una imagen.</small>
