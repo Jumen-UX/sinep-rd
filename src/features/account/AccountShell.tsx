@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import styles from './account.module.css'
@@ -48,7 +49,11 @@ export default function AccountShell({ children, identity }: { children: ReactNo
         <Link className={styles.brand} href="/cuenta"><span aria-hidden="true">SD</span><strong>SINEP</strong><small>Centro Personal</small></Link>
         {identity ? (
           <section className={shellStyles.identity} aria-label="Cuenta actual">
-            {identity.avatarUrl ? <img className={shellStyles.avatar} src={identity.avatarUrl} alt="" /> : <span className={shellStyles.fallback} aria-hidden="true">{accountInitials(identity.fullName)}</span>}
+            {identity.avatarUrl ? (
+              <Image alt="" className={shellStyles.avatar} height={44} src={identity.avatarUrl} unoptimized width={44} />
+            ) : (
+              <span className={shellStyles.fallback} aria-hidden="true">{accountInitials(identity.fullName)}</span>
+            )}
             <div><strong title={identity.fullName}>{identity.fullName}</strong><small title={identity.email}>{identity.email}</small><span>{identity.roleName}</span></div>
           </section>
         ) : null}
