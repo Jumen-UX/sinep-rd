@@ -10,17 +10,19 @@ async function read(path) {
   return readFile(path, 'utf8')
 }
 
-test('profile workspace exposes identity completion preferences and photo sections', async () => {
+test('profile workspace exposes one completion summary plus pending guidance', async () => {
   const [form, page] = await Promise.all([read(formPath), read(pagePath)])
 
   assert.match(page, /<AccountProfileForm profile=\{profile\}/)
   assert.doesNotMatch(page, /className=\{styles\.panel\}/)
   assert.match(form, /profile-identity-title/)
   assert.match(form, /profile-completion-title/)
-  assert.match(form, /identity-contact-title/)
-  assert.match(form, /preferences-title/)
-  assert.match(form, /photo-title/)
+  assert.match(form, /Completitud del perfil/)
+  assert.match(form, /Datos pendientes/)
+  assert.match(form, /elemento pendiente/)
+  assert.match(form, /Para completar tu perfil falta:/)
   assert.match(form, /La vinculación con una ficha eclesial es opcional/)
+  assert.doesNotMatch(form, /Perfil completado<\/span>/)
 })
 
 test('profile state is normalized and never reports initial changes', async () => {
@@ -46,6 +48,16 @@ test('profile form validates https photos without blocking unrelated edits', asy
   assert.match(form, /disabled=\{!canSubmit\}/)
 })
 
+test('profile information cards distinguish editable and protected data', async () => {
+  const form = await read(formPath)
+
+  assert.match(form, /styles\.dataCard/)
+  assert.match(form, /styles\.protectedField/)
+  assert.match(form, /styles\.protectedBadge/)
+  assert.match(form, /<LockIcon \/>/)
+  assert.match(form, />Protegido<\/span>/)
+})
+
 test('profile preferences use controlled locale and IANA timezone suggestions', async () => {
   const form = await read(formPath)
 
@@ -58,15 +70,18 @@ test('profile preferences use controlled locale and IANA timezone suggestions', 
   assert.match(form, /value=\{form\.timezone\}/)
 })
 
-test('profile presentation keeps fields visible and actions outside content', async () => {
+test('profile presentation keeps controls visible and actions conditional', async () => {
   const styles = await read(stylesPath)
 
   assert.match(styles, /\.identityProgress/)
   assert.match(styles, /\.completionCard/)
+  assert.match(styles, /\.pendingPanel/)
+  assert.match(styles, /\.dataCard/)
+  assert.match(styles, /\.protectedBadge/)
   assert.match(styles, /\.photoGrid/)
   assert.match(styles, /\.field input,\.field select\{[^}]*box-shadow:inset/s)
   assert.match(styles, /\.actions\{display:flex/)
-  assert.doesNotMatch(styles, /\.actions\{position:sticky/)
+  assert.match(styles, /\.saveButton\{[^}]*box-shadow:/s)
   assert.match(styles, /@media\(max-width:800px\)/)
   assert.match(styles, /@media\(max-width:480px\)/)
   assert.match(styles, /@media\(prefers-reduced-motion:reduce\)/)
