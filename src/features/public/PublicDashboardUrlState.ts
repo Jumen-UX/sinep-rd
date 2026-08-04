@@ -6,6 +6,8 @@ export type PublicDashboardUrlState = {
   defaultCountry: string
   province: string
   jurisdictionId: string
+  structureNodeId: string
+  parishId: string
 }
 
 function setOptionalParam(params: URLSearchParams, key: string, value: string, defaultValue = '') {
@@ -15,7 +17,15 @@ function setOptionalParam(params: URLSearchParams, key: string, value: string, d
 
 export function buildPublicDashboardSearch(
   currentSearch: string,
-  { activeView, country, defaultCountry, province, jurisdictionId }: PublicDashboardUrlState,
+  {
+    activeView,
+    country,
+    defaultCountry,
+    province,
+    jurisdictionId,
+    structureNodeId,
+    parishId,
+  }: PublicDashboardUrlState,
 ) {
   const params = new URLSearchParams(currentSearch)
 
@@ -23,6 +33,8 @@ export function buildPublicDashboardSearch(
   setOptionalParam(params, 'pais', country, defaultCountry)
   setOptionalParam(params, 'provincia', province)
   setOptionalParam(params, 'jurisdiccion', jurisdictionId)
+  setOptionalParam(params, 'nodo', structureNodeId)
+  setOptionalParam(params, 'parroquia', parishId)
 
   return params.toString()
 }
