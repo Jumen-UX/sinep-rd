@@ -61,23 +61,21 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
   const initials = getInitials(form.fullName, profile.email)
   const canSubmit = isDirty && !saving && !avatarSaving && Boolean(normalizedForm.fullName) && Boolean(normalizedForm.timezone)
   const completionLabel = completionPercentage === 100 ? 'Perfil completo' : completionPercentage >= 80 ? 'Perfil casi completo' : 'Perfil en progreso'
-  const displayedAvatar = avatarPreview ?? normalizedForm.avatarUrl || null
+  const displayedAvatar = avatarPreview ?? (normalizedForm.avatarUrl || null)
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) { setForm((current) => ({ ...current, [key]: value })); setMessage(null); setError(null) }
 
   async function handleAvatarSelection(file: File | undefined) {
     if (!file || avatarSaving) return
-    let temporaryUrl: string | null = null
-    let uploadedUrl: string | null = null
     try {
       validateProfileAvatar(file)
-      temporaryUrl = URL.createObjectURL(file)
+      const temporaryUrl = URL.createObjectURL(file)
       setAvatarPreview((current) => { if (current) URL.revokeObjectURL(current); return temporaryUrl })
       setAvatarSaving(true)
       setError(null)
       setMessage(null)
 
-      uploadedUrl = await uploadMyProfileAvatar(supabase, file, normalizedForm.avatarUrl)
+      const uploadedUrl = await uploadMyProfileAvatar(supabase, file, normalizedForm.avatarUrl)
       const context = await saveMyAccountProfile(supabase, { ...normalizedForm, avatarUrl: uploadedUrl })
       const saved = normalizeProfile(context.profile)
       setForm(saved)
@@ -85,9 +83,6 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
       setAvatarPreview((current) => { if (current) URL.revokeObjectURL(current); return null })
       setMessage('Tu fotografía fue actualizada correctamente.')
     } catch (caught) {
-      if (uploadedUrl) {
-        try { await removeMyProfileAvatar(supabase, uploadedUrl) } catch { /* La limpieza secundaria no debe ocultar el error principal. */ }
-      }
       setAvatarPreview((current) => { if (current) URL.revokeObjectURL(current); return null })
       setError(caught instanceof Error ? caught.message : 'No se pudo subir la fotografía.')
     } finally {
@@ -132,7 +127,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
       <div className={styles.identityMain}>
         <div className={modernStyles.avatarCluster}>
           <div aria-hidden="true" className={modernStyles.avatarSurface} style={displayedAvatar ? { backgroundImage: `url(${displayedAvatar})`, color: 'transparent' } : undefined}>{initials}</div>
-          <label className={modernStyles.avatarEditButton} htmlFor="profile-photo-input"><CameraIcon /> {avatarSaving ? 'Subiendo…' : 'Editar fotografía'}</label>
+          <label aria-disabled={avatarSaving} className={modernStyles.avatarEditButton} htmlFor="profile-photo-input"><CameraIcon /> {avatarSaving ? 'Subiendo…' : 'Editar fotografía'}</label>
         </div>
         <div className={styles.identityText}><h2 id="profile-identity-title">{form.fullName || 'Tu perfil'}</h2><p>{profile.email}</p><div className={styles.identityMeta}><span className={styles.badge}>Cuenta activa</span><span className={styles.badge}>{completionLabel}</span></div></div>
       </div>
