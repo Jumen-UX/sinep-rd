@@ -31,7 +31,8 @@ test('account overview exposes profile, access and request states without write 
 
   assert.match(page, /Mi perfil/)
   assert.match(page, /Mis accesos/)
-  assert.match(page, /Solicitudes abiertas/)
+  assert.match(page, /Mi actividad/)
+  assert.match(page, /No tienes solicitudes pendientes/)
   assert.match(page, /Sin acceso administrativo/)
   assert.match(page, /Puedes usar tu cuenta sin acceso administrativo/)
   assert.match(page, /href="\/cuenta\/accesos"/)
