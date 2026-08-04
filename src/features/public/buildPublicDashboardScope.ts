@@ -6,6 +6,7 @@ export function buildPublicDashboardScope(
   country: string,
   province: string,
   jurisdictionId: string,
+  parishId = '',
 ) {
   const countryDioceses = country
     ? initialData.dioceses.filter((item) => (
@@ -28,11 +29,18 @@ export function buildPublicDashboardScope(
   const scopedDioceses = selectedJurisdiction ? [selectedJurisdiction] : provinceDioceses
   const scopedIds = new Set(scopedDioceses.map((item) => item.id))
   const scopedSlugs = new Set(scopedDioceses.map((item) => item.slug))
-  const scopeFiltered = Boolean(country || province || selectedJurisdiction)
+  const jurisdictionParishes = initialData.parishes.filter((item) => (
+    (item.diocese_id && scopedIds.has(item.diocese_id))
+    || (item.diocese_slug && scopedSlugs.has(item.diocese_slug))
+  ))
+  const selectedParish = jurisdictionParishes.find((item) => item.id === parishId) ?? null
+  const scopedParishes = selectedParish ? [selectedParish] : jurisdictionParishes
+  const selectedParishSlugs = new Set(selectedParish?.slug ? [selectedParish.slug] : [])
+  const effectiveSlugs = selectedParish ? selectedParishSlugs : scopedSlugs
+  const scopeFiltered = Boolean(country || province || selectedJurisdiction || selectedParish)
   const inTerritorialScope = (dioceseId: string | null, dioceseSlug: string | null) => Boolean(
     (dioceseId && scopedIds.has(dioceseId)) || (dioceseSlug && scopedSlugs.has(dioceseSlug)),
   )
-  const scopedParishes = initialData.parishes.filter((item) => inTerritorialScope(item.diocese_id, item.diocese_slug))
   const scopedPastoral = initialData.organization_units.filter((item) => inTerritorialScope(item.ecclesiastical_entity_id, item.ecclesiastical_entity_slug))
   const pastoralGroups = Array.from(scopedPastoral.reduce((map, item) => {
     const name = item.organization_chart_name ?? 'Sin organigrama configurado'
@@ -49,7 +57,7 @@ export function buildPublicDashboardScope(
     .sort((a, b) => a.order - b.order)
 
   const assignmentPeople = Array.from(new Map(initialData.assignments
-    .filter((item) => assignmentMatches(item, scopedSlugs))
+    .filter((item) => assignmentMatches(item, effectiveSlugs))
     .map((item) => [item.person_id, {
       id: item.person_id,
       name: item.person_name ?? 'Persona sin nombre',
@@ -58,7 +66,7 @@ export function buildPublicDashboardScope(
       role: item.position_title ?? item.base_role_name ?? 'Asignación vigente',
       scope: item.direct_entity_name ?? item.organization_unit_name ?? item.parish_name ?? item.diocese_name ?? 'Ámbito no indicado',
     } satisfies PersonCard])).values())
-  const ordinaryPeople: PersonCard[] = scopedDioceses.flatMap((item) => {
+  const ordinaryPeople: PersonCard[] = selectedParish ? [] : scopedDioceses.flatMap((item) => {
     const names = splitValues(item.current_ordinary_name).filter((name) => !normalize(name).includes('vacante'))
     const titles = splitValues(item.current_ordinary_title)
     const territorialScope = [item.name, country ? null : item.country_name].filter(Boolean).join(' · ')
@@ -77,6 +85,8 @@ export function buildPublicDashboardScope(
     provinces,
     provinceDioceses,
     selectedJurisdiction,
+    jurisdictionParishes,
+    selectedParish,
     scopedDioceses,
     scopedParishes,
     scopedPastoral,
