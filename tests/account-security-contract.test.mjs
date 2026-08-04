@@ -105,8 +105,22 @@ test('security toast remains above accessibility and mobile navigation without b
   assert.match(lowerCss, /\.toast\{[^}]*z-index:10010/s)
   assert.match(lowerCss, /\.toast\{[^}]*pointer-events:none/s)
   assert.match(lowerCss, /width:min\(420px,calc\(100vw - 2rem\)\)/)
-  assert.match(lowerCss, /@media\(max-width:800px\)\{[^}]*\.toast\{[^}]*bottom:calc\(7\.25rem \+ env\(safe-area-inset-bottom\)\)/s)
-  assert.match(lowerCss, /@media\(max-width:480px\)\{[^}]*\.toast\{[^}]*bottom:calc\(7\.5rem \+ env\(safe-area-inset-bottom\)\)/s)
+
+  const mobile800Start = lowerCss.indexOf('@media(max-width:800px)')
+  const mobile480Start = lowerCss.indexOf('@media(max-width:480px)')
+  const reducedMotionStart = lowerCss.indexOf('@media(prefers-reduced-motion:reduce)')
+
+  assert.notEqual(mobile800Start, -1)
+  assert.notEqual(mobile480Start, -1)
+  assert.notEqual(reducedMotionStart, -1)
+  assert.ok(mobile800Start < mobile480Start)
+  assert.ok(mobile480Start < reducedMotionStart)
+
+  const mobile800Css = lowerCss.slice(mobile800Start, mobile480Start)
+  const mobile480Css = lowerCss.slice(mobile480Start, reducedMotionStart)
+
+  assert.match(mobile800Css, /\.toast\{[^}]*bottom:calc\(7\.25rem \+ env\(safe-area-inset-bottom\)\)/s)
+  assert.match(mobile480Css, /\.toast\{[^}]*bottom:calc\(7\.5rem \+ env\(safe-area-inset-bottom\)\)/s)
 })
 
 test('security workspace remains responsive touch-safe reduced-motion-aware and does not invent device inventory', async () => {
