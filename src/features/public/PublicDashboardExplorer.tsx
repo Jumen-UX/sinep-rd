@@ -105,11 +105,7 @@ export default function PublicDashboardExplorer(props: Props) {
         <div className="public-filter-grid">
           <PublicSearchableSelect
             label="País"
-            onChange={(nextCountry) => {
-              setCountry(nextCountry)
-              setProvince('')
-              setJurisdictionId('')
-            }}
+            onChange={setCountry}
             options={countryOptions}
             placeholder="Buscar país"
             value={country}
@@ -117,10 +113,7 @@ export default function PublicDashboardExplorer(props: Props) {
           <PublicSearchableSelect
             disabled={!country}
             label="Provincia eclesiástica"
-            onChange={(nextProvince) => {
-              setProvince(nextProvince)
-              setJurisdictionId('')
-            }}
+            onChange={setProvince}
             options={provinceOptions}
             placeholder={country ? 'Buscar provincia' : 'Selecciona primero un país'}
             value={province}
