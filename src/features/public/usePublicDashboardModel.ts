@@ -19,6 +19,8 @@ export function usePublicDashboardModel({
   initialCountry,
   initialProvince,
   initialJurisdictionId,
+  initialStructureNodeId,
+  initialParishId,
 }: Props) {
   const [hierarchy, dispatchHierarchy] = useReducer(
     publicDashboardHierarchyReducer,
@@ -27,6 +29,8 @@ export function usePublicDashboardModel({
       country: initialCountry,
       province: initialProvince,
       jurisdictionId: initialJurisdictionId,
+      structureNodeId: initialStructureNodeId,
+      parishId: initialParishId,
     }),
   )
   const { activeView, country, province, jurisdictionId, structureNodeId, parishId } = hierarchy
@@ -53,6 +57,8 @@ export function usePublicDashboardModel({
       defaultCountry,
       province,
       jurisdictionId,
+      structureNodeId,
+      parishId,
     })
     const nextUrl = `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`
@@ -60,11 +66,11 @@ export function usePublicDashboardModel({
     if (nextUrl !== currentUrl) {
       window.history.replaceState(window.history.state, '', nextUrl)
     }
-  }, [activeView, country, jurisdictionId, province])
+  }, [activeView, country, jurisdictionId, parishId, province, structureNodeId])
 
   const scope = useMemo(
-    () => buildPublicDashboardScope(dashboardData, country, province, jurisdictionId),
-    [country, dashboardData, jurisdictionId, province],
+    () => buildPublicDashboardScope(dashboardData, country, province, jurisdictionId, parishId),
+    [country, dashboardData, jurisdictionId, parishId, province],
   )
   const countryName = useMemo(
     () => country
@@ -103,7 +109,8 @@ export function usePublicDashboardModel({
 
     return { administrativeUnits: administrative, collegialUnits: collegial }
   }, [dashboardData.organization_units])
-  const scopeTitle = scope.selectedJurisdiction?.name
+  const scopeTitle = scope.selectedParish?.name
+    || scope.selectedJurisdiction?.name
     || province
     || countryName
     || 'Ámbito seleccionado'
