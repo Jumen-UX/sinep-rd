@@ -37,6 +37,18 @@ test('personal request form excludes unsafe person linkage and exposes explicit 
   assert.match(manager, /Cancelar solicitud/)
 })
 
+test('new request workflow progressively discloses optional details', async () => {
+  const manager = await readFile(managerPath, 'utf8')
+
+  assert.match(manager, /showAdditional/)
+  assert.match(manager, /aria-expanded=\{showAdditional\}/)
+  assert.match(manager, /Información adicional/)
+  assert.match(manager, /Opcional/)
+  assert.match(manager, /REQUEST_HELP/)
+  assert.match(manager, /Mínimo 20 caracteres/)
+  assert.match(manager, /La solicitud será revisada por un administrador autorizado/)
+})
+
 test('personal request controls remain keyboard visible and mobile touch accessible', async () => {
   const css = await readFile(stylePath, 'utf8')
 
@@ -45,4 +57,6 @@ test('personal request controls remain keyboard visible and mobile touch accessi
   assert.match(css, /min-height:48px/)
   assert.match(css, /@media\(max-width:800px\)/)
   assert.match(css, /width:100%/)
+  assert.match(css, /\.optionalToggle/)
+  assert.match(css, /\.submitRow/)
 })
