@@ -70,6 +70,8 @@ export type AccountRequestInput = {
 const AVATAR_BUCKET = 'profile-avatars'
 const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
+const MAX_SOURCE_AVATAR_BYTES = 20 * 1024 * 1024
+const MAX_AVATAR_DIMENSION = 1600
 
 function avatarExtension(file: File) {
   if (file.type === 'image/png') return 'png'
@@ -89,8 +91,51 @@ export function validateProfileAvatar(file: File) {
   if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
     throw new Error('Selecciona una imagen JPG, PNG o WEBP.')
   }
-  if (file.size > MAX_AVATAR_BYTES) {
-    throw new Error('La fotografía no puede superar los 5 MB.')
+  if (file.size > MAX_SOURCE_AVATAR_BYTES) {
+    throw new Error('La fotografía no puede superar los 20 MB.')
+  }
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => blob ? resolve(blob) : reject(new Error('No se pudo preparar la fotografía.')),
+      'image/webp',
+      quality,
+    )
+  })
+}
+
+export async function optimizeProfileAvatar(file: File): Promise<File> {
+  validateProfileAvatar(file)
+
+  if (file.size <= MAX_AVATAR_BYTES) return file
+  if (typeof window === 'undefined' || typeof createImageBitmap !== 'function') {
+    throw new Error('La fotografía supera 5 MB y este navegador no puede optimizarla automáticamente.')
+  }
+
+  const bitmap = await createImageBitmap(file)
+  try {
+    const scale = Math.min(1, MAX_AVATAR_DIMENSION / Math.max(bitmap.width, bitmap.height))
+    const width = Math.max(1, Math.round(bitmap.width * scale))
+    const height = Math.max(1, Math.round(bitmap.height * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('No se pudo preparar la fotografía.')
+    context.drawImage(bitmap, 0, 0, width, height)
+
+    for (const quality of [0.86, 0.76, 0.66, 0.56]) {
+      const blob = await canvasToBlob(canvas, quality)
+      if (blob.size <= MAX_AVATAR_BYTES) {
+        return new File([blob], 'avatar.webp', { type: 'image/webp', lastModified: Date.now() })
+      }
+    }
+
+    throw new Error('No se pudo reducir la fotografía por debajo de 5 MB. Selecciona una imagen más pequeña.')
+  } finally {
+    bitmap.close()
   }
 }
 
@@ -124,6 +169,9 @@ export async function uploadMyProfileAvatar(
   previousAvatarUrl?: string | null,
 ) {
   validateProfileAvatar(file)
+  if (file.size > MAX_AVATAR_BYTES) {
+    throw new Error('La fotografía preparada supera el límite de 5 MB.')
+  }
 
   const { data: userData, error: userError } = await supabase.auth.getUser()
   if (userError || !userData.user) throw new Error('Tu sesión no está disponible para subir la fotografía.')
@@ -131,15 +179,16 @@ export async function uploadMyProfileAvatar(
   const objectPath = `${userData.user.id}/avatar.${avatarExtension(file)}`
   const previousPath = avatarObjectPathFromUrl(previousAvatarUrl)
 
-  if (previousPath && previousPath !== objectPath) {
-    await supabase.storage.from(AVATAR_BUCKET).remove([previousPath])
-  }
-
   const { error: uploadError } = await supabase.storage
     .from(AVATAR_BUCKET)
     .upload(objectPath, file, { cacheControl: '3600', contentType: file.type, upsert: true })
 
-  if (uploadError) throw new Error(uploadError.message || 'No se pudo subir la fotografía.')
+  if (uploadError) throw new Error(`No se pudo subir la fotografía: ${uploadError.message}`)
+
+  if (previousPath && previousPath !== objectPath) {
+    const { error: removeError } = await supabase.storage.from(AVATAR_BUCKET).remove([previousPath])
+    if (removeError) console.warn('No se pudo retirar el avatar anterior.', removeError)
+  }
 
   const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(objectPath)
   return `${data.publicUrl}?v=${Date.now()}`
