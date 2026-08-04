@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import styles from './profile-combobox.module.css'
 
 export type ProfileComboboxOption = {
@@ -78,7 +78,7 @@ export default function ProfileCombobox({
     optionRefs.current[next]?.focus()
   }
 
-  function handleKeyDown(event: React.KeyboardEvent) {
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === 'Escape') {
       event.preventDefault()
       setOpen(false)
