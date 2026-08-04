@@ -99,6 +99,16 @@ test('security confirmation dialog is centered safe animated and reports progres
   assert.match(lowerCss, /\.toast\{[^}]*position:fixed/s)
 })
 
+test('security toast remains above accessibility and mobile navigation without blocking the page', async () => {
+  const lowerCss = await readFile(lowerCssPath, 'utf8')
+  assert.match(lowerCss, /\.toast\{[^}]*bottom:calc\(5\.75rem \+ env\(safe-area-inset-bottom\)\)/s)
+  assert.match(lowerCss, /\.toast\{[^}]*z-index:10010/s)
+  assert.match(lowerCss, /\.toast\{[^}]*pointer-events:none/s)
+  assert.match(lowerCss, /width:min\(420px,calc\(100vw - 2rem\)\)/)
+  assert.match(lowerCss, /@media\(max-width:800px\)\{[^}]*\.toast\{[^}]*bottom:calc\(7\.25rem \+ env\(safe-area-inset-bottom\)\)/s)
+  assert.match(lowerCss, /@media\(max-width:480px\)\{[^}]*\.toast\{[^}]*bottom:calc\(7\.5rem \+ env\(safe-area-inset-bottom\)\)/s)
+})
+
 test('security workspace remains responsive touch-safe reduced-motion-aware and does not invent device inventory', async () => {
   const [manager, css, lowerCss] = await Promise.all([readFile(managerPath, 'utf8'), readFile(cssPath, 'utf8'), readFile(lowerCssPath, 'utf8')])
   assert.match(manager, /detalle individual de dispositivos todavía no está disponible/)
