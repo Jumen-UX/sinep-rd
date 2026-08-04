@@ -9,6 +9,7 @@ import {
   type AccountAccessRequest,
   type AccountRole,
 } from './services/account-service'
+import ProfileCombobox from './ProfileCombobox'
 import styles from './account.module.css'
 import requestStyles from './account-request.module.css'
 
@@ -66,7 +67,16 @@ export default function AccountRequestManager({ requests, roles }: { requests: A
       <section className={styles.panel} aria-labelledby="new-request-title">
         <div className={styles.panelHeader}><div><p className={styles.eyebrow}>Nuevo trámite</p><h2 id="new-request-title">Crear una solicitud</h2></div></div>
         <form action={submit} className={requestStyles.requestForm}>
-          <label><span>Tipo de solicitud</span><select value={requestType} onChange={(event) => setRequestType(event.target.value as RequestType)}>{REQUEST_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+          <div className={requestStyles.field}>
+            <span id="request-type-label">Tipo de solicitud</span>
+            <ProfileCombobox
+              ariaLabel="Tipo de solicitud"
+              id="request-type"
+              onChange={(value) => setRequestType(value as RequestType)}
+              options={[...REQUEST_OPTIONS]}
+              value={requestType}
+            />
+          </div>
           <label><span>Motivo</span><textarea maxLength={1200} minLength={20} name="justification" required rows={5} /><small>Explica qué necesitas, para qué ámbito y quién puede validar la solicitud.</small></label>
           <label><span>Información adicional</span><textarea maxLength={2000} name="requester_notes" rows={4} /></label>
           <div className={styles.formActions}><button disabled={busyId !== null} type="submit">{busyId === 'new' ? 'Enviando…' : 'Enviar solicitud'}</button></div>
