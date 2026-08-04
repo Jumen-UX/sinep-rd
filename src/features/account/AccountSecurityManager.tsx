@@ -38,6 +38,19 @@ function getPasswordHint(checks: PasswordChecks, password: string) {
   return 'La contraseña cumple todos los requisitos.'
 }
 
+function EyeIcon({ hidden }: { hidden: boolean }) {
+  return hidden ? (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+      <path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.4 0 9 5 9 5a16.8 16.8 0 01-3.1 3.6M6.2 6.2C4.1 7.6 3 9 3 9s3.6 5 9 5c1 0 1.9-.2 2.7-.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ) : (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+      <path d="M3 12s3.6-5 9-5 9 5 9 5-3.6 5-9 5-9-5-9-5z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
 export default function AccountSecurityManager({
   email,
   emailConfirmed,
@@ -132,7 +145,8 @@ export default function AccountSecurityManager({
                 onClick={() => setShowPassword((current) => !current)}
                 type="button"
               >
-                {showPassword ? 'Ocultar' : 'Mostrar'}
+                <EyeIcon hidden={showPassword} />
+                <span>{showPassword ? 'Ocultar' : 'Mostrar'}</span>
               </button>
             </div>
           </div>
@@ -140,7 +154,7 @@ export default function AccountSecurityManager({
           <div className={styles.strength} id="password-strength" aria-live="polite">
             <div className={styles.strengthHeader}>
               <span>Fortaleza de la contraseña</span>
-              <strong data-score={strength.score}>{strength.label}</strong>
+              <strong className={styles.strengthBadge} data-score={strength.score}>{strength.label}</strong>
             </div>
             <div
               aria-label={`Fortaleza de contraseña: ${strength.label}`}
@@ -188,7 +202,8 @@ export default function AccountSecurityManager({
                 onClick={() => setShowConfirmation((current) => !current)}
                 type="button"
               >
-                {showConfirmation ? 'Ocultar' : 'Mostrar'}
+                <EyeIcon hidden={showConfirmation} />
+                <span>{showConfirmation ? 'Ocultar' : 'Mostrar'}</span>
               </button>
             </div>
             <p
