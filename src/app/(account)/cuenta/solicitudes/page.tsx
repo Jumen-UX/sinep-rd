@@ -34,6 +34,7 @@ export default async function AccountRequestsPage() {
 
   const { access_requests: requests, roles } = await loadMyAccountContext(supabase)
   const openCount = requests.filter((request) => ['submitted', 'under_review', 'information_required'].includes(request.status)).length
+  const informationRequiredCount = requests.filter((request) => request.status === 'information_required').length
   const finalizedCount = requests.filter((request) => ['approved', 'rejected', 'cancelled'].includes(request.status)).length
 
   return (
@@ -42,9 +43,22 @@ export default async function AccountRequestsPage() {
         <div>
           <p className={styles.eyebrow}>Seguimiento</p>
           <h1>Mis solicitudes</h1>
-          <p>Crea trámites personales, aporta información y consulta las decisiones del equipo revisor.</p>
+          <p>Inicia trámites relacionados con tu cuenta, aporta información y consulta cada decisión del equipo revisor.</p>
         </div>
       </header>
+
+      {informationRequiredCount ? (
+        <section className={styles.accountStatusBanner} aria-label="Solicitudes que requieren atención">
+          <div>
+            <span className={styles.statusIndicator} aria-hidden="true" />
+            <div>
+              <strong>Tienes {informationRequiredCount} solicitud{informationRequiredCount === 1 ? '' : 'es'} que requiere{informationRequiredCount === 1 ? '' : 'n'} información</strong>
+              <p>Responde desde el bloque de acción disponible para que el equipo pueda continuar la revisión.</p>
+            </div>
+          </div>
+          <span>Atención requerida</span>
+        </section>
+      ) : null}
 
       <section className={styles.summaryGrid} aria-label="Resumen de solicitudes">
         <article className={styles.summaryCard}>
@@ -53,7 +67,7 @@ export default async function AccountRequestsPage() {
           <small>Solicitudes registradas en tu cuenta</small>
         </article>
         <article className={styles.summaryCard}>
-          <span>Abiertas</span>
+          <span>En curso</span>
           <strong>{openCount}</strong>
           <small>Enviadas, en revisión o con información requerida</small>
         </article>
@@ -69,8 +83,8 @@ export default async function AccountRequestsPage() {
       <section className={styles.panel} aria-labelledby="request-history-title">
         <div className={styles.panelHeader}>
           <div>
-            <p className={styles.eyebrow}>Historial</p>
-            <h2 id="request-history-title">Trámites de mi cuenta</h2>
+            <p className={styles.eyebrow}>Actividad</p>
+            <h2 id="request-history-title">Historial de trámites</h2>
           </div>
           <span className={styles.statusBadge}>{requests.length} total</span>
         </div>
@@ -93,7 +107,7 @@ export default async function AccountRequestsPage() {
                 </dl>
                 {request.reviewer_notes ? (
                   <div className={styles.reviewerNote}>
-                    <strong>Observación del revisor</strong>
+                    <strong>Observación del equipo revisor</strong>
                     <p>{request.reviewer_notes}</p>
                   </div>
                 ) : null}
