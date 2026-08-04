@@ -1,7 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { saveMyAccountProfile, type AccountProfile } from './services/account-service'
 import styles from './account-profile.module.css'
@@ -40,13 +39,27 @@ type FormState = {
   avatarUrl: string
 }
 
+function normalizeValue(value: string | null | undefined) {
+  return value?.trim() ?? ''
+}
+
 function normalizeProfile(profile: AccountProfile): FormState {
   return {
-    fullName: profile.full_name.trim(),
-    phone: profile.phone?.trim() ?? '',
-    preferredLocale: profile.preferred_locale,
-    timezone: profile.timezone,
-    avatarUrl: profile.avatar_url?.trim() ?? '',
+    fullName: normalizeValue(profile.full_name),
+    phone: normalizeValue(profile.phone),
+    preferredLocale: normalizeValue(profile.preferred_locale) || 'es-419',
+    timezone: normalizeValue(profile.timezone),
+    avatarUrl: normalizeValue(profile.avatar_url),
+  }
+}
+
+function normalizeForm(form: FormState): FormState {
+  return {
+    fullName: normalizeValue(form.fullName),
+    phone: normalizeValue(form.phone),
+    preferredLocale: normalizeValue(form.preferredLocale) || 'es-419',
+    timezone: normalizeValue(form.timezone),
+    avatarUrl: normalizeValue(form.avatarUrl),
   }
 }
 
@@ -56,44 +69,59 @@ function getInitials(value: string, email: string) {
   return email[0]?.toUpperCase() ?? 'U'
 }
 
-function validateAvatarUrl(value: string) {
-  if (!value) return null
+function inspectAvatarUrl(value: string) {
+  if (!value) return { error: null, warning: null, previewable: false }
   try {
     const parsed = new URL(value)
-    if (parsed.protocol !== 'https:') return 'La fotografía debe usar una URL HTTPS.'
-    if (!IMAGE_PATH_PATTERN.test(parsed.href)) {
-      return 'La URL debe apuntar directamente a una imagen JPG, PNG, WEBP, GIF o AVIF.'
+    if (parsed.protocol !== 'https:') {
+      return { error: 'La fotografía debe usar una URL HTTPS.', warning: null, previewable: false }
     }
-    return null
+    if (!IMAGE_PATH_PATTERN.test(parsed.href)) {
+      return {
+        error: null,
+        warning: 'La URL es válida, pero no parece apuntar directamente a una imagen. La fotografía no contará como completa hasta usar un archivo JPG, PNG, WEBP, GIF o AVIF.',
+        previewable: false,
+      }
+    }
+    return { error: null, warning: null, previewable: true }
   } catch {
-    return 'Escribe una URL válida para la fotografía.'
+    return { error: 'Escribe una URL válida para la fotografía.', warning: null, previewable: false }
   }
 }
 
 export default function AccountProfileForm({ profile }: { profile: AccountProfile }) {
-  const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
-  const initial = useMemo(() => normalizeProfile(profile), [profile])
-  const [form, setForm] = useState<FormState>(initial)
+  const profileState = useMemo(() => normalizeProfile(profile), [profile])
+  const [form, setForm] = useState<FormState>(profileState)
+  const [baseline, setBaseline] = useState<FormState>(profileState)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const avatarError = useMemo(() => validateAvatarUrl(form.avatarUrl), [form.avatarUrl])
-  const isDirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(initial), [form, initial])
+  useEffect(() => {
+    setForm(profileState)
+    setBaseline(profileState)
+  }, [profileState])
+
+  const avatarInspection = useMemo(() => inspectAvatarUrl(form.avatarUrl), [form.avatarUrl])
+  const normalizedForm = useMemo(() => normalizeForm(form), [form])
+  const isDirty = useMemo(
+    () => JSON.stringify(normalizedForm) !== JSON.stringify(normalizeForm(baseline)),
+    [baseline, normalizedForm],
+  )
   const completionFields = useMemo(() => [
-    { label: 'Nombre', complete: Boolean(form.fullName.trim()) },
+    { label: 'Nombre', complete: Boolean(normalizedForm.fullName) },
     { label: 'Correo', complete: Boolean(profile.email.trim()) },
-    { label: 'Teléfono', complete: Boolean(form.phone.trim()) },
-    { label: 'Idioma', complete: Boolean(form.preferredLocale.trim()) },
-    { label: 'Zona horaria', complete: Boolean(form.timezone.trim()) },
-    { label: 'Fotografía', complete: Boolean(form.avatarUrl.trim()) && !avatarError },
-  ], [avatarError, form, profile.email])
+    { label: 'Teléfono', complete: Boolean(normalizedForm.phone) },
+    { label: 'Idioma', complete: Boolean(normalizedForm.preferredLocale) },
+    { label: 'Zona horaria', complete: Boolean(normalizedForm.timezone) },
+    { label: 'Fotografía', complete: Boolean(normalizedForm.avatarUrl) && avatarInspection.previewable },
+  ], [avatarInspection.previewable, normalizedForm, profile.email])
   const completeCount = completionFields.filter((field) => field.complete).length
   const completionPercentage = Math.round((completeCount / completionFields.length) * 100)
   const pendingFields = completionFields.filter((field) => !field.complete)
   const initials = getInitials(form.fullName, profile.email)
-  const canSubmit = isDirty && !saving && Boolean(form.fullName.trim()) && Boolean(form.timezone.trim()) && !avatarError
+  const canSubmit = isDirty && !saving && Boolean(normalizedForm.fullName) && Boolean(normalizedForm.timezone) && !avatarInspection.error
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -101,22 +129,18 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
     setError(null)
   }
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit() {
     if (!canSubmit) return
     setSaving(true)
     setMessage(null)
     setError(null)
 
     try {
-      await saveMyAccountProfile(supabase, {
-        fullName: String(formData.get('full_name') ?? ''),
-        phone: String(formData.get('phone') ?? ''),
-        preferredLocale: String(formData.get('preferred_locale') ?? ''),
-        timezone: String(formData.get('timezone') ?? ''),
-        avatarUrl: String(formData.get('avatar_url') ?? ''),
-      })
+      const context = await saveMyAccountProfile(supabase, normalizedForm)
+      const saved = normalizeProfile(context.profile)
+      setForm(saved)
+      setBaseline(saved)
       setMessage('Tu perfil fue actualizado correctamente.')
-      router.refresh()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'No se pudo guardar tu perfil.')
     } finally {
@@ -131,7 +155,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
           <div
             aria-hidden="true"
             className={styles.avatar}
-            style={form.avatarUrl && !avatarError ? { backgroundImage: `url(${form.avatarUrl})`, color: 'transparent' } : undefined}
+            style={avatarInspection.previewable ? { backgroundImage: `url(${form.avatarUrl})`, color: 'transparent' } : undefined}
           >
             {initials}
           </div>
@@ -142,6 +166,13 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
               <span className={styles.badge}>Cuenta activa</span>
               <span className={styles.badge}>{completionPercentage}% completado</span>
             </div>
+          </div>
+        </div>
+        <div className={styles.identityProgress} aria-label={`Perfil completado al ${completionPercentage}%`}>
+          <strong>{completionPercentage}%</strong>
+          <span>Completitud del perfil</span>
+          <div className={styles.progressTrack} aria-hidden="true">
+            <div className={styles.progressBar} style={{ width: `${completionPercentage}%` }} />
           </div>
         </div>
       </section>
@@ -155,11 +186,11 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
           </div>
         </div>
         <div className={styles.completionDetails}>
-          <h2 id="profile-completion-title">{pendingFields.length === 0 ? 'Tu información está completa' : 'Datos que puedes completar'}</h2>
+          <h2 id="profile-completion-title">{pendingFields.length === 0 ? 'Tu información está completa' : 'Datos pendientes'}</h2>
           <p>La vinculación con una ficha eclesial es opcional y no afecta este porcentaje.</p>
           {pendingFields.length > 0 ? (
             <ul className={styles.pendingList}>
-              {pendingFields.map((field) => <li key={field.label}>{field.label}</li>)}
+              {pendingFields.map((field) => <li key={field.label}><span aria-hidden="true">○</span>{field.label}</li>)}
             </ul>
           ) : null}
         </div>
@@ -179,14 +210,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
           <div className={styles.grid}>
             <label className={styles.field}>
               <span>Nombre completo</span>
-              <input
-                autoComplete="name"
-                maxLength={180}
-                name="full_name"
-                onChange={(event) => updateField('fullName', event.target.value)}
-                required
-                value={form.fullName}
-              />
+              <input autoComplete="name" maxLength={180} name="full_name" onChange={(event) => updateField('fullName', event.target.value)} required value={form.fullName} />
             </label>
             <label className={styles.field}>
               <span>Correo</span>
@@ -195,14 +219,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
             </label>
             <label className={styles.field}>
               <span>Teléfono</span>
-              <input
-                autoComplete="tel"
-                maxLength={80}
-                name="phone"
-                onChange={(event) => updateField('phone', event.target.value)}
-                type="tel"
-                value={form.phone}
-              />
+              <input autoComplete="tel" maxLength={80} name="phone" onChange={(event) => updateField('phone', event.target.value)} type="tel" value={form.phone} />
               <small>Incluye el código de país cuando corresponda.</small>
             </label>
           </div>
@@ -218,11 +235,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
           <div className={styles.grid}>
             <label className={styles.field}>
               <span>Idioma</span>
-              <select
-                name="preferred_locale"
-                onChange={(event) => updateField('preferredLocale', event.target.value)}
-                value={form.preferredLocale}
-              >
+              <select name="preferred_locale" onChange={(event) => updateField('preferredLocale', event.target.value)} value={form.preferredLocale}>
                 <option value="es-419">Español latinoamericano</option>
                 <option value="es-ES">Español</option>
                 <option value="en">English</option>
@@ -230,15 +243,7 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
             </label>
             <label className={styles.field}>
               <span>Zona horaria</span>
-              <input
-                autoComplete="off"
-                list="account-timezones"
-                maxLength={80}
-                name="timezone"
-                onChange={(event) => updateField('timezone', event.target.value)}
-                required
-                value={form.timezone}
-              />
+              <input autoComplete="off" list="account-timezones" maxLength={80} name="timezone" onChange={(event) => updateField('timezone', event.target.value)} required value={form.timezone} />
               <datalist id="account-timezones">
                 {TIMEZONE_OPTIONS.map((timezone) => <option key={timezone} value={timezone} />)}
               </datalist>
@@ -255,47 +260,28 @@ export default function AccountProfileForm({ profile }: { profile: AccountProfil
             </div>
           </div>
           <div className={styles.photoGrid}>
-            <div
-              aria-label={form.avatarUrl && !avatarError ? 'Vista previa de la fotografía de perfil' : 'Vista previa con iniciales'}
-              className={styles.photoPreview}
-              role="img"
-              style={form.avatarUrl && !avatarError ? { backgroundImage: `url(${form.avatarUrl})`, color: 'transparent' } : undefined}
-            >
-              {initials}
-            </div>
+            <div aria-label={avatarInspection.previewable ? 'Vista previa de la fotografía de perfil' : 'Vista previa con iniciales'} className={styles.photoPreview} role="img" style={avatarInspection.previewable ? { backgroundImage: `url(${form.avatarUrl})`, color: 'transparent' } : undefined}>{initials}</div>
             <div className={styles.photoActions}>
               <label className={styles.field}>
                 <span>URL de la fotografía</span>
-                <input
-                  aria-describedby="avatar-help avatar-error"
-                  aria-invalid={Boolean(avatarError)}
-                  name="avatar_url"
-                  onChange={(event) => updateField('avatarUrl', event.target.value)}
-                  placeholder="https://sitio.example/foto.webp"
-                  type="url"
-                  value={form.avatarUrl}
-                />
-                <small id="avatar-help">Debe ser una URL HTTPS que apunte directamente a una imagen. La carga de archivos se añadirá en una fase posterior.</small>
-                {avatarError ? <small className={styles.fieldError} id="avatar-error">{avatarError}</small> : null}
+                <input aria-describedby="avatar-help avatar-feedback" aria-invalid={Boolean(avatarInspection.error)} name="avatar_url" onChange={(event) => updateField('avatarUrl', event.target.value)} placeholder="https://sitio.example/foto.webp" type="url" value={form.avatarUrl} />
+                <small id="avatar-help">Debe ser una URL HTTPS. Para mostrar vista previa y contar como completa, debe apuntar directamente a una imagen.</small>
+                {avatarInspection.error ? <small className={styles.fieldError} id="avatar-feedback">{avatarInspection.error}</small> : null}
+                {avatarInspection.warning ? <small className={styles.fieldWarning} id="avatar-feedback">{avatarInspection.warning}</small> : null}
               </label>
-              <button
-                className={styles.removeButton}
-                disabled={!form.avatarUrl}
-                onClick={() => updateField('avatarUrl', '')}
-                type="button"
-              >
-                Retirar fotografía
-              </button>
+              <button className={styles.removeButton} disabled={!form.avatarUrl} onClick={() => updateField('avatarUrl', '')} type="button">Retirar fotografía</button>
             </div>
           </div>
         </section>
 
-        <div className={styles.actions}>
-          <p>{isDirty ? 'Tienes cambios sin guardar.' : 'No hay cambios pendientes.'}</p>
-          <button className={styles.saveButton} disabled={!canSubmit} type="submit">
-            {saving ? <><span aria-hidden="true" className={styles.spinner} />Guardando…</> : 'Guardar cambios'}
-          </button>
-        </div>
+        {(isDirty || saving) ? (
+          <div className={styles.actions}>
+            <p>{saving ? 'Guardando los cambios…' : 'Tienes cambios sin guardar.'}</p>
+            <button className={styles.saveButton} disabled={!canSubmit} type="submit">
+              {saving ? <><span aria-hidden="true" className={styles.spinner} />Guardando…</> : 'Guardar cambios'}
+            </button>
+          </div>
+        ) : null}
       </form>
     </div>
   )
