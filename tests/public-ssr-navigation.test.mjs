@@ -5,7 +5,7 @@ import test from 'node:test'
 const repoRoot = new URL('../', import.meta.url)
 const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
-test('public home renders a server shell with a bounded territorial payload', async () => {
+test('public home renders a server shell with a bounded jurisdiction payload', async () => {
   const [page, shell, explorer, model, deferredData, loader, viewsRoute, summaryRoute] = await Promise.all([
     readRepoFile('src/app/(public)/page.tsx'),
     readRepoFile('src/features/public/PublicDashboardShell.tsx'),
@@ -17,17 +17,16 @@ test('public home renders a server shell with a bounded territorial payload', as
     readRepoFile('src/app/api/dashboard/resumen/route.ts'),
   ])
 
-  assert.doesNotMatch(page, /['"]use client['"]/) 
+  assert.doesNotMatch(page, /['"]use client['"]/)
   assert.match(page, /loadPublicTerritorialDashboardBundle/)
-  assert.match(page, /loadPublicDashboardBundle/)
-  assert.match(page, /const initialDataComplete = initialView !== 'territorial'/)
-  assert.match(page, /initialDataComplete\s*\?\s*await loadPublicDashboardBundle\(\)\s*:\s*await loadPublicTerritorialDashboardBundle\(\)/)
+  assert.doesNotMatch(page, /loadPublicDashboardBundle\(\)/)
+  assert.match(page, /const initialView: PublicView = 'territorial'/)
   assert.match(page, /<PublicDashboardShell/)
   assert.match(page, /initialData=\{initialData\}/)
-  assert.match(page, /initialDataComplete=\{initialDataComplete\}/)
+  assert.match(page, /initialDataComplete=\{false\}/)
   assert.match(page, /initialSummary=\{initialSummary\}/)
 
-  assert.doesNotMatch(shell, /['"]use client['"]/) 
+  assert.doesNotMatch(shell, /['"]use client['"]/)
   assert.match(shell, /<PublicDashboardExplorer \{\.\.\.props\} \/>/)
   assert.match(shell, /public-mobile-header/)
   assert.match(shell, /public-sidebar/)
@@ -39,7 +38,8 @@ test('public home renders a server shell with a bounded territorial payload', as
   assert.match(explorer, /deferredDataPending/)
   assert.match(explorer, /deferredDataError/)
   assert.match(explorer, /onClick=|onChange=/)
-  assert.match(model, /useState<PublicView>\(initialView\)/)
+  assert.match(model, /useReducer\(/)
+  assert.match(model, /publicDashboardHierarchyReducer/)
   assert.match(model, /useDeferredPublicDashboardData/)
   assert.doesNotMatch(model, /fetch\(|AbortController|setDashboardData|setDashboardSummary/)
   assert.match(deferredData, /fetch\('\/api\/dashboard\/vistas'/)
@@ -99,7 +99,7 @@ test('every secondary dashboard view has its own React lazy chunk while territor
   await assert.rejects(access(new URL('src/features/public/PublicOrganizationViews.tsx', repoRoot)))
 })
 
-test('public dashboard validates and preserves shareable scope state without server navigation', async () => {
+test('public jurisdiction portal validates server discovery scope and preserves client URL state', async () => {
   const [page, shared, model, deferredData, urlState] = await Promise.all([
     readRepoFile('src/app/(public)/page.tsx'),
     readRepoFile('src/features/public/PublicDashboardShared.tsx'),
@@ -108,14 +108,19 @@ test('public dashboard validates and preserves shareable scope state without ser
     readRepoFile('src/features/public/PublicDashboardUrlState.ts'),
   ])
 
-  for (const parameter of ['vista', 'pais', 'provincia', 'jurisdiccion']) {
+  for (const parameter of ['pais', 'provincia', 'jurisdiccion']) {
     assert.match(page, new RegExp(`params\\.${parameter}`))
   }
+  for (const retiredServerParameter of ['vista', 'nodo', 'parroquia']) {
+    assert.doesNotMatch(page, new RegExp(`params\\.${retiredServerParameter}`))
+  }
   assert.match(page, /initialData\.countries\.some/)
-  assert.match(page, /const countryDioceses = initialData\.dioceses\.filter/)
+  assert.match(page, /const countryJurisdictions = initialData\.dioceses\.filter/)
   assert.match(page, /item\.id === requestedJurisdictionId/)
   assert.match(page, /initialCountry=\{initialCountry\}/)
   assert.match(page, /initialJurisdictionId=\{initialJurisdictionId\}/)
+  assert.match(page, /initialStructureNodeId=""/)
+  assert.match(page, /initialParishId=""/)
   assert.match(shared, /initialCountry: string/)
   assert.match(shared, /initialDataComplete: boolean/)
   assert.match(shared, /initialJurisdictionId: string/)
@@ -130,7 +135,7 @@ test('public dashboard validates and preserves shareable scope state without ser
   assert.match(model, /useMemo<PersonCard\[\]>/)
   assert.match(model, /const \{ administrativeUnits, collegialUnits \} = useMemo/)
 
-  for (const parameter of ['vista', 'pais', 'provincia', 'jurisdiccion']) {
+  for (const parameter of ['vista', 'pais', 'provincia', 'jurisdiccion', 'nodo', 'parroquia']) {
     assert.match(urlState, new RegExp(`setOptionalParam\\(params, '${parameter}'`))
   }
   assert.doesNotMatch(urlState, /window\.|document\./)
@@ -164,7 +169,7 @@ test('public directory pages are server rendered and filter through URLs', async
   ])
 
   for (const page of [dioceses, people]) {
-    assert.doesNotMatch(page, /['"]use client['"]/) 
+    assert.doesNotMatch(page, /['"]use client['"]/)
     assert.doesNotMatch(page, /useEffect|window\.history|fetch\(/)
     assert.match(page, /searchParams: Promise/)
   }
