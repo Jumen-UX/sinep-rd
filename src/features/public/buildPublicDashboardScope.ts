@@ -19,8 +19,7 @@ export function buildPublicDashboardScope(
   const countryDioceses = country
     ? initialData.dioceses.filter((item) => (
       jurisdictionIdsForCountry.has(item.id)
-      || (!jurisdictionsWithExplicitCoverage.has(item.id)
-        && (item.country_iso2 ? item.country_iso2 === country : country === 'DO'))
+      || (!jurisdictionsWithExplicitCoverage.has(item.id) && item.country_iso2 === country)
     ))
     : initialData.dioceses
   const provinceMap = new Map<string, number>()
