@@ -14,7 +14,7 @@ test('public dashboard loads explicit jurisdiction geographic coverages', async 
   assert.match(source, /public-territorial-dashboard-data-v2/)
 })
 
-test('country filtering prefers explicit coverage and only falls back for uncovered jurisdictions', async () => {
+test('country filtering resolves jurisdictions through explicit coverage', async () => {
   const [scope, page] = await Promise.all([
     read('src/features/public/buildPublicDashboardScope.ts'),
     read('src/app/(public)/page.tsx'),
@@ -24,18 +24,18 @@ test('country filtering prefers explicit coverage and only falls back for uncove
     assert.match(source, /jurisdictionsWithExplicitCoverage/)
     assert.match(source, /jurisdictionIdsForCountry/)
     assert.match(source, /jurisdictionIdsForCountry\.has\(item\.id\)/)
-    assert.match(source, /!jurisdictionsWithExplicitCoverage\.has\(item\.id\)/)
   }
 
-  assert.doesNotMatch(scope, /item\.country_iso2 \? item\.country_iso2 === country : country === 'DO'\s*\)\s*\)/)
+  assert.doesNotMatch(scope, /country === 'DO'/)
+  assert.doesNotMatch(page, /initialCountry === 'DO'/)
 })
 
 test('country remains a discovery dimension rather than a canonical parent', async () => {
   const architecture = await read('docs/architecture/MOTOR_CONTEXTO_ECLESIAL_Y_COBERTURA.md')
   const migration = await read('supabase/migrations/20260805121500_add_jurisdiction_geographic_coverages.sql')
 
-  assert.match(architecture, /puerta de entrada/i)
-  assert.match(architecture, /no.*padre/i)
+  assert.match(architecture, /entrada comprensible/i)
+  assert.match(architecture, /no.*padre canónico/i)
   assert.match(migration, /Countries are discovery dimensions, not canonical parents/)
   assert.match(migration, /coverage_kind,\n  is_current/)
   assert.match(migration, /'seat'/)
