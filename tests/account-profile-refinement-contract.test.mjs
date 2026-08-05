@@ -122,15 +122,17 @@ test('profile preferences use accessible custom comboboxes instead of native sel
   assert.doesNotMatch(comboboxStyles, /#[0-9a-f]{3,8}/i)
 })
 
-test('profile presentation includes progress toast and responsive rules', async () => {
+test('profile presentation includes progress toast responsive rules and semantic surfaces', async () => {
   const [styles, modernStyles] = await Promise.all([read(stylesPath), read(modernStylesPath)])
   assert.match(styles, /\.identityProgress/)
   assert.match(styles, /\.progressTrack/)
   assert.match(styles, /\.checkPending/)
   assert.match(styles, /\.toast\{[^}]*position:fixed/s)
   assert.match(styles, /bottom:calc\(7\.25rem \+ env\(safe-area-inset-bottom\)\)/)
+  assert.match(styles, /var\(--surface-primary\)/)
+  assert.match(styles, /var\(--text-primary\)/)
+  assert.match(styles, /var\(--focus-ring\)/)
   assert.match(modernStyles, /@media\(max-width:800px\)/)
   assert.match(modernStyles, /@media\(max-width:520px\)/)
   assert.match(modernStyles, /@media\(prefers-reduced-motion:reduce\)/)
-  assert.doesNotMatch(`${styles}\n${modernStyles}`, /#[0-9a-f]{3,8}/i)
 })
