@@ -7,14 +7,16 @@
 
 ## Objetivo
 
-Definir cómo se modifica el organigrama jurisdiccional sin mezclar hechos históricos, operaciones organizativas y correcciones editoriales.
+Definir cómo se modifica el organigrama jurisdiccional vigente sin mezclar hechos históricos, operaciones organizativas y correcciones editoriales.
 
-El motor debe permitir reconstruir:
+El motor debe sostener:
 
 - el organigrama vigente;
-- el organigrama en una fecha histórica;
 - la cronología pública de cada jurisdicción;
+- las referencias a jurisdicciones, relaciones y estados que dejaron de estar vigentes;
 - la auditoría completa de acciones administrativas.
+
+La reconstrucción visual del organigrama para una fecha histórica queda diferida a una segunda fase. El modelo conservará fechas y relaciones cerradas para no impedir esa capacidad futura, pero la primera versión no ofrecerá selector temporal, snapshots ni comparación de árboles por fecha.
 
 ## Clasificación obligatoria de una operación
 
@@ -46,7 +48,7 @@ Requisitos mínimos:
 - efectos estructurales declarados;
 - estado editorial: borrador, revisado o publicado.
 
-Un evento histórico puede generar múltiples efectos atómicos sobre cuentas y relaciones.
+Un evento histórico puede generar múltiples efectos atómicos sobre cuentas y relaciones. Solo los eventos aplicados y publicados forman parte de la historia pública.
 
 ### 2. Cambio organizativo
 
@@ -55,10 +57,10 @@ Modifica el organigrama vigente mediante una operación administrativa controlad
 Ejemplos:
 
 - completar una relación faltante;
-- preparar una reorganización pendiente de documentación;
 - ajustar el orden visual sin cambiar dependencia canónica;
 - corregir una relación importada provisionalmente;
-- establecer visibilidad o estado operativo.
+- establecer visibilidad o estado operativo;
+- cerrar una relación organizativa incorrecta.
 
 Requisitos mínimos:
 
@@ -99,8 +101,12 @@ type JurisdictionChangeOperation = {
   id: string
   origin: 'historical_event' | 'organizational_change' | 'administrative_correction'
   status: 'draft' | 'validated' | 'applied' | 'rejected' | 'reverted'
+  publicationStatus: 'internal' | 'draft' | 'reviewed' | 'published'
+  primaryAccountId: string
+  eventTypeId: string | null
   effectiveDate: string | null
   reason: string
+  publicTitle: string | null
   publicSummary: string | null
   sourceDocumentId: string | null
   createdBy: string
@@ -121,11 +127,10 @@ type JurisdictionChangeEffect = {
   targetType: 'account' | 'edge'
   targetId: string | null
   action:
-    | 'create'
-    | 'update'
-    | 'activate'
-    | 'deactivate'
-    | 'close_validity'
+    | 'create_account'
+    | 'update_account'
+    | 'activate_account'
+    | 'deactivate_account'
     | 'create_dependency'
     | 'close_dependency'
   beforeState: Record<string, unknown> | null
@@ -133,9 +138,22 @@ type JurisdictionChangeEffect = {
 }
 ```
 
+### Jurisdicciones afectadas
+
+Una operación puede relacionar varias cuentas con roles explícitos:
+
+- principal;
+- origen;
+- destino;
+- antecedente;
+- sucesora;
+- relacionada.
+
+La jurisdicción principal es la que recibe el evento en su cronología. Las demás permiten explicar divisiones, uniones, traslados y sucesiones sin confundir dependencia vigente con relación histórica.
+
 ### Evento público
 
-Solo las operaciones históricas publicadas alimentan la cronología pública.
+Solo las operaciones de origen `historical_event`, estado `applied` y publicación `published` alimentan la cronología pública.
 
 ```ts
 type PublishedJurisdictionEvent = {
@@ -154,14 +172,14 @@ type PublishedJurisdictionEvent = {
 1. El editor inicia una operación desde el organigrama o desde la ficha de jurisdicción.
 2. Selecciona el origen del cambio.
 3. El sistema adapta el formulario:
-   - evento histórico: exige fecha efectiva, fuente y resumen público;
+   - evento histórico: exige fecha efectiva, fuente, título y resumen público;
    - cambio organizativo: exige motivo interno;
    - corrección administrativa: exige justificación y comparación de valores.
 4. Se generan efectos atómicos en estado borrador.
 5. El backend valida reglas padre/hijo, ciclos, vigencias, duplicados y permisos.
 6. Una función transaccional aplica todos los efectos o ninguno.
 7. Se registra auditoría de la operación y de cada efecto.
-8. Si la operación es histórica y está publicada, se proyecta en la cronología pública.
+8. Si la operación es histórica, está aplicada y publicada, se proyecta en la cronología pública.
 
 ## Casos principales
 
@@ -175,9 +193,9 @@ type PublishedJurisdictionEvent = {
 
 ### Elevación
 
-- cierra la clasificación anterior en la fecha efectiva;
-- actualiza o versiona el tipo correspondiente según el modelo definitivo;
 - conserva identidad estable;
+- actualiza la clasificación canónica mediante un efecto controlado;
+- registra antecedentes cuando corresponda;
 - publica evento de elevación.
 
 ### Cambio de dependencia
@@ -197,7 +215,8 @@ type PublishedJurisdictionEvent = {
 
 - cierra relaciones vigentes;
 - cambia estado canónico y operativo;
-- conserva la cuenta para consultas históricas;
+- conserva la cuenta para consultas y referencias históricas;
+- la retira del organigrama vigente;
 - publica evento de supresión.
 
 ## Integridad transaccional
@@ -213,6 +232,7 @@ Validaciones mínimas:
 - intervalos de vigencia coherentes;
 - fuente obligatoria para eventos históricos;
 - fecha efectiva obligatoria para eventos históricos;
+- título y resumen obligatorios para publicación histórica;
 - `beforeState` coincidente con el estado actual para evitar sobrescrituras concurrentes.
 
 ## Auditoría
@@ -232,14 +252,16 @@ La auditoría nunca debe presentarse como historia pública de la jurisdicción.
 
 ## Proyecciones de lectura
 
-El motor debe alimentar vistas separadas:
+La primera fase debe alimentar vistas separadas:
 
 - organigrama vigente;
-- organigrama a una fecha;
 - cronología pública;
+- referencias históricas de antecedentes y sucesoras;
 - operaciones administrativas;
 - auditoría técnica;
 - cambios pendientes de validación.
+
+La proyección del organigrama a una fecha histórica queda fuera de esta fase.
 
 ## Experiencia administrativa moderna
 
@@ -259,16 +281,26 @@ Antes de guardar, el sistema mostrará una vista previa del impacto:
 - relación que se cierra;
 - relación que se crea;
 - fecha desde la que aplica;
-- contenido que aparecerá públicamente.
+- contenido que aparecerá públicamente;
+- contenido que permanecerá solo en auditoría.
 
 ## Alcance de la primera implementación
 
 1. contrato de operación y efectos;
 2. tablas y restricciones;
-3. RPC transaccional de aplicación;
+3. catálogo de tipos de eventos;
 4. vista de cronología pública;
 5. vista administrativa de operaciones;
-6. pruebas de integridad y concurrencia;
-7. integración con el organigrama administrativo.
+6. RPC transaccional de aplicación;
+7. pruebas de integridad y concurrencia;
+8. integración con el organigrama administrativo vigente.
+
+## Segunda fase diferida
+
+- regresión histórica del árbol;
+- selector libre de fecha;
+- comparación entre dos fechas;
+- animación de evolución jurisdiccional;
+- snapshots o materializaciones históricas, solo si fueran necesarias por rendimiento.
 
 No se reincorporan personas, parroquias, organismos ni instituciones durante esta fase.
