@@ -4,35 +4,32 @@ import test from 'node:test'
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')
 
-test('public dashboard persists node and parish scope in the shareable URL', async () => {
+test('public jurisdiction portal preserves only active discovery scope on the server', async () => {
   const [urlState, model, page] = await Promise.all([
     read('src/features/public/PublicDashboardUrlState.ts'),
     read('src/features/public/usePublicDashboardModel.ts'),
     read('src/app/(public)/page.tsx'),
   ])
 
-  assert.match(urlState, /setOptionalParam\(params, 'nodo', structureNodeId\)/)
-  assert.match(urlState, /setOptionalParam\(params, 'parroquia', parishId\)/)
-  assert.match(model, /structureNodeId,\s*parishId/)
-  assert.match(model, /buildPublicDashboardScope\(dashboardData, country, province, jurisdictionId, parishId\)/)
-  assert.match(page, /params\.nodo/)
-  assert.match(page, /params\.parroquia/)
-  assert.match(page, /item\.id === requestedParishId && item\.diocese_id === initialJurisdictionId/)
+  assert.match(urlState, /setOptionalParam\(params, 'pais', country, defaultCountry\)/)
+  assert.match(urlState, /setOptionalParam\(params, 'provincia', province\)/)
+  assert.match(urlState, /setOptionalParam\(params, 'jurisdiccion', jurisdictionId\)/)
+  assert.match(model, /publicDashboardHierarchyReducer/)
+  assert.match(model, /setJurisdictionId: \(value: string\) => dispatchHierarchy/)
+  assert.match(page, /params\.pais/)
+  assert.match(page, /params\.provincia/)
+  assert.match(page, /params\.jurisdiccion/)
+  assert.doesNotMatch(page, /params\.nodo|params\.parroquia/)
+  assert.match(page, /initialStructureNodeId=""/)
+  assert.match(page, /initialParishId=""/)
 })
 
-test('parish selection is progressive and scoped to the selected jurisdiction', async () => {
-  const [explorer, scope, hierarchy] = await Promise.all([
-    read('src/features/public/PublicDashboardExplorer.tsx'),
-    read('src/features/public/buildPublicDashboardScope.ts'),
-    read('src/features/public/PublicDashboardHierarchyState.ts'),
+test('internal territorial depth remains frozen outside the public product scope', async () => {
+  const [page, navigation] = await Promise.all([
+    read('src/app/(public)/page.tsx'),
+    read('src/features/public/PublicDashboardNavigation.ts'),
   ])
 
-  assert.match(explorer, /disabled=\{!jurisdictionId\}\s*label="Parroquia"/)
-  assert.match(explorer, /jurisdictionParishes/)
-  assert.match(explorer, /onChange=\{setParishId\}/)
-  assert.match(scope, /selectedParish/)
-  assert.match(scope, /selectedParish \? \[selectedParish\] : jurisdictionParishes/)
-  assert.match(scope, /effectiveSlugs/)
-  assert.match(hierarchy, /case 'set_jurisdiction':[\s\S]*parishId: ''/)
-  assert.match(hierarchy, /case 'set_structure_node':[\s\S]*parishId: ''/)
+  assert.doesNotMatch(page, /requestedStructureNodeId|requestedParishId/)
+  assert.doesNotMatch(navigation, /personas|pastoral|administrativa|colegial/i)
 })
