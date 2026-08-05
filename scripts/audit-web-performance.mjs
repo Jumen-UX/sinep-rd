@@ -190,10 +190,11 @@ if (!dashboardExplorer.includes('styles.loadingPanel') || !/\.loadingPanel\s*\{[
   findings.push({ rule: 'public-dashboard-lazy-view-stability', severity: 'new', path: 'src/features/public/PublicDashboardExplorer.module.css' })
 }
 
-const scopeParameters = ['vista', 'pais', 'provincia', 'jurisdiccion']
+const scopeParameters = ['pais', 'provincia', 'jurisdiccion']
 if (scopeParameters.some((parameter) => !dashboardPage.includes(`params.${parameter}`))
   || !dashboardPage.includes('initialCountry={initialCountry}')
-  || !dashboardPage.includes('initialJurisdictionId={initialJurisdictionId}')) {
+  || !dashboardPage.includes('initialJurisdictionId={initialJurisdictionId}')
+  || !dashboardPage.includes("const initialView: PublicView = 'territorial'")) {
   findings.push({ rule: 'public-dashboard-url-scope-validation', severity: 'new', path: 'src/app/(public)/page.tsx' })
 }
 
