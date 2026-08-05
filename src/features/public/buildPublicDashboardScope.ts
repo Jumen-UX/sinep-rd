@@ -8,9 +8,19 @@ export function buildPublicDashboardScope(
   jurisdictionId: string,
   parishId = '',
 ) {
+  const jurisdictionsWithExplicitCoverage = new Set(
+    initialData.jurisdiction_coverages.map((coverage) => coverage.jurisdiction_id),
+  )
+  const jurisdictionIdsForCountry = new Set(
+    initialData.jurisdiction_coverages
+      .filter((coverage) => coverage.country_iso2 === country)
+      .map((coverage) => coverage.jurisdiction_id),
+  )
   const countryDioceses = country
     ? initialData.dioceses.filter((item) => (
-      item.country_iso2 ? item.country_iso2 === country : country === 'DO'
+      jurisdictionIdsForCountry.has(item.id)
+      || (!jurisdictionsWithExplicitCoverage.has(item.id)
+        && (item.country_iso2 ? item.country_iso2 === country : country === 'DO'))
     ))
     : initialData.dioceses
   const provinceMap = new Map<string, number>()
