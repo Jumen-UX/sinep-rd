@@ -39,9 +39,19 @@ export default async function HomePage({ searchParams }: PageProps) {
     const initialCountry = requestedCountry && initialData.countries.some((item) => item.key === requestedCountry)
       ? requestedCountry
       : ''
+    const jurisdictionsWithExplicitCoverage = new Set(
+      initialData.jurisdiction_coverages.map((coverage) => coverage.jurisdiction_id),
+    )
+    const jurisdictionIdsForCountry = new Set(
+      initialData.jurisdiction_coverages
+        .filter((coverage) => coverage.country_iso2 === initialCountry)
+        .map((coverage) => coverage.jurisdiction_id),
+    )
     const countryDioceses = initialData.dioceses.filter((item) => (
       !initialCountry
-      || (item.country_iso2 ? item.country_iso2 === initialCountry : initialCountry === 'DO')
+      || jurisdictionIdsForCountry.has(item.id)
+      || (!jurisdictionsWithExplicitCoverage.has(item.id)
+        && (item.country_iso2 ? item.country_iso2 === initialCountry : initialCountry === 'DO'))
     ))
     const initialProvince = countryDioceses.find((item) => {
       const provinceName = item.ecclesiastical_province_name
