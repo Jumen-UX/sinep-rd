@@ -5,7 +5,7 @@ import test from 'node:test'
 const repoRoot = new URL('../', import.meta.url)
 const read = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
-test('public landing explains international scope before the explorer', async () => {
+test('public landing explains jurisdiction scope before discovery', async () => {
   const [intro, shell, explorer] = await Promise.all([
     read('src/features/public/PublicLandingIntro.tsx'),
     read('src/features/public/PublicDashboardShell.tsx'),
@@ -13,12 +13,11 @@ test('public landing explains international scope before the explorer', async ()
   ])
 
   assert.match(intro, /<h1 id="public-landing-title">/)
-  assert.match(intro, /organizada por país, jurisdicción y servicio pastoral/)
-  assert.match(intro, /La base inicial corresponde a República Dominicana/)
-  assert.match(intro, /preparada para incorporar otros países y equipos editoriales nacionales/)
+  assert.match(intro, /Santa Sede/)
+  assert.match(intro, /provincias eclesiásticas, arquidiócesis, diócesis, ordinariatos y otras jurisdicciones/)
+  assert.match(intro, /href="#plan-jurisdicciones"/)
   assert.match(intro, /href="#explorador"/)
-  assert.match(intro, /href="\/diocesis"/)
-  assert.match(intro, /href="\/personas"/)
+  assert.doesNotMatch(intro, /servicio pastoral|href="\/personas"|href="\/diocesis"/i)
 
   assert.match(shell, /<PublicLandingIntro \/>/)
   assert.match(shell, /<PublicDashboardExplorer \{\.\.\.props\} \/>/)
@@ -26,6 +25,6 @@ test('public landing explains international scope before the explorer', async ()
   assert.doesNotMatch(shell, /Entorno de desarrollo|Sistema de Información<br \/>Eclesial Pastoral/)
 
   assert.match(explorer, /id="explorador"/)
-  assert.match(explorer, /<h2 id="ambito-title">Explorador eclesial<\/h2>/)
+  assert.match(explorer, /<h2 id="ambito-title">/)
   assert.doesNotMatch(explorer, /<h1/)
 })
