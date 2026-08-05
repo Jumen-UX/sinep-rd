@@ -19,6 +19,18 @@ export type Diocese = {
   country_name: string | null
 }
 
+export type JurisdictionGeographicCoverage = {
+  id: string
+  jurisdiction_id: string
+  country_iso2: string
+  country_name: string
+  flag_emoji: string | null
+  coverage_kind: 'full' | 'partial' | 'personal' | 'specialized' | 'seat' | 'historical'
+  coverage_percentage: number | null
+  valid_from: string | null
+  valid_to: string | null
+}
+
 export type Parish = {
   id: string
   name?: string | null
@@ -98,6 +110,7 @@ export type OrganizationUnit = {
 export type PublicDashboardData = {
   countries: { key: string; name: string }[]
   dioceses: Diocese[]
+  jurisdiction_coverages: JurisdictionGeographicCoverage[]
   parishes: Parish[]
   people: Person[]
   assignments: Assignment[]
@@ -195,15 +208,17 @@ function buildDashboardSummary(dioceses: Diocese[], parishCount: number, people:
 }
 
 async function loadPublicTerritorialDashboardDataUncached(): Promise<PublicDashboardData> {
-  const [countries, dioceses, parishes] = await Promise.all([
+  const [countries, dioceses, jurisdictionCoverages, parishes] = await Promise.all([
     safeFetch<{ key: string; name: string }>('public_countries', { select: 'key,name', order: 'name.asc' }),
     fetchSupabaseJson<Diocese[]>('public_dioceses', { select: 'id,slug,name,entity_type_name,ecclesiastical_province_name,current_ordinary_name,current_ordinary_title,population_total,catholics_total,parishes_count,country_iso2,country_name', order: 'name.asc' }),
+    safeFetch<JurisdictionGeographicCoverage>('public_jurisdiction_geographic_coverages', { select: 'id,jurisdiction_id,country_iso2,country_name,flag_emoji,coverage_kind,coverage_percentage,valid_from,valid_to', order: 'country_name.asc,jurisdiction_name.asc' }),
     safeFetch<Parish>('public_parishes', { select: 'id,name,slug,diocese_id,diocese_name,diocese_slug', status: 'eq.active', visibility: 'eq.public', order: 'name.asc' }),
   ])
 
   return {
     countries: countries.length > 0 ? countries : [{ key: 'DO', name: 'República Dominicana' }],
     dioceses,
+    jurisdiction_coverages: jurisdictionCoverages,
     parishes,
     people: [],
     assignments: [],
@@ -265,7 +280,7 @@ async function loadPublicDashboardBundleUncached(): Promise<PublicDashboardBundl
 
 const getCachedPublicTerritorialDashboardData = unstable_cache(
   loadPublicTerritorialDashboardDataUncached,
-  ['public-territorial-dashboard-data-v1'],
+  ['public-territorial-dashboard-data-v2'],
   {
     revalidate: PUBLIC_CACHE_REVALIDATE_SECONDS,
     tags: [PUBLIC_CACHE_TAGS.dashboard, PUBLIC_CACHE_TAGS.directories],
@@ -274,7 +289,7 @@ const getCachedPublicTerritorialDashboardData = unstable_cache(
 
 const getCachedPublicDashboardData = unstable_cache(
   loadPublicDashboardDataUncached,
-  ['public-dashboard-data-v1'],
+  ['public-dashboard-data-v2'],
   {
     revalidate: PUBLIC_CACHE_REVALIDATE_SECONDS,
     tags: [PUBLIC_CACHE_TAGS.dashboard, PUBLIC_CACHE_TAGS.directories, PUBLIC_CACHE_TAGS.registry],
@@ -292,7 +307,7 @@ const getCachedDashboardSummary = unstable_cache(
 
 const getCachedPublicTerritorialDashboardBundle = unstable_cache(
   loadPublicTerritorialDashboardBundleUncached,
-  ['public-territorial-dashboard-bundle-v1'],
+  ['public-territorial-dashboard-bundle-v2'],
   {
     revalidate: PUBLIC_CACHE_REVALIDATE_SECONDS,
     tags: [PUBLIC_CACHE_TAGS.dashboard, PUBLIC_CACHE_TAGS.directories],
@@ -301,7 +316,7 @@ const getCachedPublicTerritorialDashboardBundle = unstable_cache(
 
 const getCachedPublicDashboardBundle = unstable_cache(
   loadPublicDashboardBundleUncached,
-  ['public-dashboard-bundle-v1'],
+  ['public-dashboard-bundle-v2'],
   {
     revalidate: PUBLIC_CACHE_REVALIDATE_SECONDS,
     tags: [PUBLIC_CACHE_TAGS.dashboard, PUBLIC_CACHE_TAGS.directories, PUBLIC_CACHE_TAGS.registry],
