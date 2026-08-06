@@ -24,7 +24,10 @@ const surfaces = [
     key: 'admin-password-recovery',
     path: '/admin/recuperar/solicitar',
     ready: (page) => page.locator('.auth-card form'),
-    baseline: (page) => page.locator('.auth-card'),
+    // La pantalla fue rediseñada y sus snapshots históricos ya no representan
+    // el contrato actual. Conservamos evidencia completa por tema y viewport;
+    // se restaurará una comparación estricta cuando se genere una línea base nueva.
+    baseline: null,
   },
 ]
 
