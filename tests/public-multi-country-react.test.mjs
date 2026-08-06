@@ -5,7 +5,7 @@ import test from 'node:test'
 const repoRoot = new URL('../', import.meta.url)
 const readRepoFile = (path) => readFile(new URL(path, repoRoot), 'utf8')
 
-test('multi-country territorial rendering stays inside the typed React dashboard', async () => {
+test('multi-country jurisdiction rendering stays inside the typed React dashboard', async () => {
   const [layout, scopeBuilder, dashboardModel, territorialView] = await Promise.all([
     readRepoFile('src/app/layout.tsx'),
     readRepoFile('src/features/public/buildPublicDashboardScope.ts'),
@@ -21,11 +21,14 @@ test('multi-country territorial rendering stays inside the typed React dashboard
   assert.match(territorialView, /scopedDioceses\.filter\(isSpecial\)/)
   assert.match(territorialView, /aria-label=\{`Resumen territorial de \$\{scopeTitle\}`\}/)
 
-  assert.match(scopeBuilder, /item\.country_iso2 \? item\.country_iso2 === country : country === 'DO'/)
+  assert.match(scopeBuilder, /jurisdictionsWithExplicitCoverage/)
+  assert.match(scopeBuilder, /jurisdictionIdsForCountry/)
+  assert.match(scopeBuilder, /item\.country_iso2 === country/)
+  assert.doesNotMatch(scopeBuilder, /country === 'DO'|item\.country_iso2 \? item\.country_iso2 === country/)
   assert.match(scopeBuilder, /const inTerritorialScope/)
-  assert.match(scopeBuilder, /scopedParishes = initialData\.parishes\.filter\(\(item\) => inTerritorialScope/)
-  assert.match(scopeBuilder, /scopedPastoral = initialData\.organization_units\.filter\(\(item\) => inTerritorialScope/)
-  assert.match(scopeBuilder, /\.filter\(\(item\) => assignmentMatches\(item, scopedSlugs\)\)/)
+  assert.match(scopeBuilder, /const jurisdictionParishes = initialData\.parishes\.filter/)
+  assert.match(scopeBuilder, /scopedPastoral = initialData\.organization_units\.filter/)
+  assert.match(scopeBuilder, /assignmentMatches\(item, effectiveSlugs\)/)
 
   assert.match(dashboardModel, /const defaultCountry = ''/)
   assert.match(dashboardModel, /: 'Todos los países'/)
