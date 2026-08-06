@@ -40,7 +40,7 @@ export default async function HomePage({ searchParams }: PageProps) {
       !initialCountry
       || jurisdictionIdsForCountry.has(item.id)
       || (!jurisdictionsWithExplicitCoverage.has(item.id)
-        && (item.country_iso2 ? item.country_iso2 === initialCountry : initialCountry === 'DO'))
+        && item.country_iso2 === initialCountry)
     ))
     const initialProvince = countryJurisdictions.find((item) => {
       const provinceName = item.ecclesiastical_province_name
