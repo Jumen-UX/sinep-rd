@@ -63,16 +63,20 @@ begin
   from public.ecclesiastical_entities
   where id = v_parent.ecclesiastical_entity_id;
 
-  select edge.*, parent_entity.name
-  into v_current_edge, v_current_parent_name
-  from public.jurisdiction_account_edges edge
-  join public.jurisdiction_accounts parent_account on parent_account.id = edge.parent_account_id
-  join public.ecclesiastical_entities parent_entity on parent_entity.id = parent_account.ecclesiastical_entity_id
-  where edge.child_account_id = p_child_account_id
-    and edge.is_current
-    and edge.status = 'active'
-  order by edge.created_at desc
+  select * into v_current_edge
+  from public.jurisdiction_account_edges
+  where child_account_id = p_child_account_id
+    and is_current
+    and status = 'active'
+  order by created_at desc
   limit 1;
+
+  if v_current_edge.id is not null then
+    select entity.name into v_current_parent_name
+    from public.jurisdiction_accounts account
+    join public.ecclesiastical_entities entity on entity.id = account.ecclesiastical_entity_id
+    where account.id = v_current_edge.parent_account_id;
+  end if;
 
   select * into v_rule
   from public.jurisdiction_account_type_rules
@@ -201,7 +205,6 @@ begin
     raise exception 'No autorizado para modificar el organigrama jurisdiccional' using errcode = '42501';
   end if;
 
-  -- Lock the affected accounts before recomputing validation.
   select * into v_child
   from public.jurisdiction_accounts
   where id = p_child_account_id
