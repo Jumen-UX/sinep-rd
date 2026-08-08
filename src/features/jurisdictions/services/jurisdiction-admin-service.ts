@@ -27,11 +27,7 @@ export type JurisdictionDependencyPreview = {
   valid: boolean
   errors: string[]
   warnings: string[]
-  child: {
-    account_id: string
-    account_code: string
-    name: string
-  }
+  child: { account_id: string; account_code: string; name: string }
   current_dependency: null | {
     edge_id: string
     parent_account_id: string
@@ -69,6 +65,53 @@ export type JurisdictionDependencyApplyResult = {
   preview: JurisdictionDependencyPreview
 }
 
+export type JurisdictionCreationInput = {
+  entityTypeKey: string
+  name: string
+  officialName?: string | null
+  latinName?: string | null
+  slug: string
+  parentAccountId: string
+  relationshipType: string
+  effectiveDate: string
+  visibility: 'public' | 'internal' | 'private' | 'confidential'
+  reason: string
+  sourceDocumentId?: string | null
+}
+
+export type JurisdictionCreationPreview = {
+  valid: boolean
+  errors: string[]
+  jurisdiction: {
+    entity_type_key: string
+    entity_type_name: string | null
+    name: string
+    official_name: string | null
+    latin_name: string | null
+    slug: string
+    effective_date: string
+    visibility: string
+  }
+  dependency: null | {
+    parent_account_id: string
+    parent_name: string
+    relationship_type: string
+  }
+  requires_source: boolean
+  source_document_id: string | null
+}
+
+export type JurisdictionCreationResult = {
+  status: 'applied'
+  entity_id: string
+  account_id: string
+  account_code: string
+  edge_id: string
+  operation_id: string
+  audit_id: string
+  preview: JurisdictionCreationPreview
+}
+
 function throwIfError(error: { message: string } | null, fallback: string) {
   if (error) throw new Error(error.message || fallback)
 }
@@ -85,7 +128,6 @@ export async function correctJurisdiction(
     p_reason: options.reason ?? null,
     p_expected_updated_at: options.expectedUpdatedAt ?? null,
   })
-
   throwIfError(error, 'No se pudo guardar la corrección jurisdiccional.')
   return data as JurisdictionCorrectionResult
 }
@@ -102,7 +144,6 @@ export async function previewJurisdictionDependencyChange(
     p_reason: input.reason,
     p_source_document_id: input.sourceDocumentId ?? null,
   })
-
   throwIfError(error, 'No se pudo validar el cambio de dependencia.')
   return data as JurisdictionDependencyPreview
 }
@@ -121,7 +162,40 @@ export async function applyJurisdictionDependencyChange(
     p_source_document_id: input.sourceDocumentId ?? null,
     p_expected_current_edge_id: expectedCurrentEdgeId,
   })
-
   throwIfError(error, 'No se pudo aplicar el cambio de dependencia.')
   return data as JurisdictionDependencyApplyResult
+}
+
+function creationRpcPayload(input: JurisdictionCreationInput) {
+  return {
+    p_entity_type_key: input.entityTypeKey,
+    p_name: input.name,
+    p_official_name: input.officialName ?? null,
+    p_latin_name: input.latinName ?? null,
+    p_slug: input.slug,
+    p_parent_account_id: input.parentAccountId,
+    p_relationship_type: input.relationshipType,
+    p_effective_date: input.effectiveDate,
+    p_visibility: input.visibility,
+    p_reason: input.reason,
+    p_source_document_id: input.sourceDocumentId ?? null,
+  }
+}
+
+export async function previewJurisdictionCreation(
+  supabase: SupabaseClient,
+  input: JurisdictionCreationInput,
+): Promise<JurisdictionCreationPreview> {
+  const { data, error } = await supabase.rpc('admin_preview_jurisdiction_creation', creationRpcPayload(input))
+  throwIfError(error, 'No se pudo validar la creación de la jurisdicción.')
+  return data as JurisdictionCreationPreview
+}
+
+export async function applyJurisdictionCreation(
+  supabase: SupabaseClient,
+  input: JurisdictionCreationInput,
+): Promise<JurisdictionCreationResult> {
+  const { data, error } = await supabase.rpc('admin_apply_jurisdiction_creation', creationRpcPayload(input))
+  throwIfError(error, 'No se pudo crear la jurisdicción.')
+  return data as JurisdictionCreationResult
 }
