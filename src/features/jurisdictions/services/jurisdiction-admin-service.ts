@@ -112,6 +112,86 @@ export type JurisdictionCreationResult = {
   preview: JurisdictionCreationPreview
 }
 
+export type JurisdictionSuppressionInput = {
+  accountId: string
+  effectiveDate: string
+  reason: string
+  sourceDocumentId?: string | null
+}
+
+export type JurisdictionSuppressionPreview = {
+  valid: boolean
+  errors: string[]
+  warnings: string[]
+  jurisdiction: {
+    account_id: string
+    account_code: string
+    entity_id: string
+    name: string
+    canonical_status: string
+    valid_from: string | null
+  }
+  current_dependency: null | {
+    edge_id: string
+    parent_account_id: string
+    parent_name: string
+    relationship_type: string
+    valid_from: string
+  }
+  active_children_count: number
+  effective_date: string
+  source_document_id: string | null
+}
+
+export type JurisdictionSuppressionResult = {
+  status: 'applied'
+  operation_id: string
+  audit_id: string
+  account_id: string
+  closed_edge_id: string | null
+  preview: JurisdictionSuppressionPreview
+}
+
+export type JurisdictionRestorationInput = {
+  accountId: string
+  parentAccountId: string
+  relationshipType: string
+  effectiveDate: string
+  reason: string
+  sourceDocumentId?: string | null
+}
+
+export type JurisdictionRestorationPreview = {
+  valid: boolean
+  errors: string[]
+  warnings: string[]
+  jurisdiction: {
+    account_id: string
+    account_code: string
+    entity_id: string
+    name: string
+    canonical_status: string
+    valid_to: string | null
+  }
+  proposed_dependency: {
+    parent_account_id: string
+    parent_name: string
+    relationship_type: string
+    effective_date: string
+  }
+  requires_source: boolean
+  source_document_id: string | null
+}
+
+export type JurisdictionRestorationResult = {
+  status: 'applied'
+  operation_id: string
+  audit_id: string
+  account_id: string
+  current_edge_id: string
+  preview: JurisdictionRestorationPreview
+}
+
 function throwIfError(error: { message: string } | null, fallback: string) {
   if (error) throw new Error(error.message || fallback)
 }
@@ -198,4 +278,64 @@ export async function applyJurisdictionCreation(
   const { data, error } = await supabase.rpc('admin_apply_jurisdiction_creation', creationRpcPayload(input))
   throwIfError(error, 'No se pudo crear la jurisdicción.')
   return data as JurisdictionCreationResult
+}
+
+function suppressionRpcPayload(input: JurisdictionSuppressionInput) {
+  return {
+    p_account_id: input.accountId,
+    p_effective_date: input.effectiveDate,
+    p_reason: input.reason,
+    p_source_document_id: input.sourceDocumentId ?? null,
+  }
+}
+
+export async function previewJurisdictionSuppression(
+  supabase: SupabaseClient,
+  input: JurisdictionSuppressionInput,
+): Promise<JurisdictionSuppressionPreview> {
+  const { data, error } = await supabase.rpc('admin_preview_jurisdiction_suppression', suppressionRpcPayload(input))
+  throwIfError(error, 'No se pudo validar la supresión de la jurisdicción.')
+  return data as JurisdictionSuppressionPreview
+}
+
+export async function applyJurisdictionSuppression(
+  supabase: SupabaseClient,
+  input: JurisdictionSuppressionInput,
+  expectedCurrentEdgeId: string | null,
+): Promise<JurisdictionSuppressionResult> {
+  const { data, error } = await supabase.rpc('admin_apply_jurisdiction_suppression', {
+    ...suppressionRpcPayload(input),
+    p_expected_current_edge_id: expectedCurrentEdgeId,
+  })
+  throwIfError(error, 'No se pudo suprimir la jurisdicción.')
+  return data as JurisdictionSuppressionResult
+}
+
+function restorationRpcPayload(input: JurisdictionRestorationInput) {
+  return {
+    p_account_id: input.accountId,
+    p_parent_account_id: input.parentAccountId,
+    p_relationship_type: input.relationshipType,
+    p_effective_date: input.effectiveDate,
+    p_reason: input.reason,
+    p_source_document_id: input.sourceDocumentId ?? null,
+  }
+}
+
+export async function previewJurisdictionRestoration(
+  supabase: SupabaseClient,
+  input: JurisdictionRestorationInput,
+): Promise<JurisdictionRestorationPreview> {
+  const { data, error } = await supabase.rpc('admin_preview_jurisdiction_restoration', restorationRpcPayload(input))
+  throwIfError(error, 'No se pudo validar la restauración de la jurisdicción.')
+  return data as JurisdictionRestorationPreview
+}
+
+export async function applyJurisdictionRestoration(
+  supabase: SupabaseClient,
+  input: JurisdictionRestorationInput,
+): Promise<JurisdictionRestorationResult> {
+  const { data, error } = await supabase.rpc('admin_apply_jurisdiction_restoration', restorationRpcPayload(input))
+  throwIfError(error, 'No se pudo restaurar la jurisdicción.')
+  return data as JurisdictionRestorationResult
 }
