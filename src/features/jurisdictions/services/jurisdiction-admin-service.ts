@@ -1,5 +1,48 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+export type CurrentJurisdictionTreeRow = {
+  account_id: string
+  ecclesiastical_entity_id: string
+  account_code: string
+  name: string
+  official_name: string | null
+  latin_name: string | null
+  slug: string
+  account_type_key: string
+  account_type_name: string
+  parent_account_id: string | null
+  parent_name: string | null
+  relationship_type: string | null
+  current_edge_id: string | null
+  depth: number
+  path_ids: string[]
+  path_names: string[]
+  canonical_status: string
+  visibility: 'public' | 'internal' | 'private' | 'confidential'
+  sort_order: number
+  valid_from: string | null
+  updated_at: string
+  cathedral_name: string | null
+  territory_summary: string | null
+  description: string | null
+  source_name: string | null
+  source_url: string | null
+  source_checked_at: string | null
+  notes: string | null
+}
+
+export type RestorableJurisdictionRow = {
+  account_id: string
+  ecclesiastical_entity_id: string
+  account_code: string
+  name: string
+  account_type_key: string
+  account_type_name: string
+  canonical_status: string
+  valid_to: string | null
+  suppressed_at: string | null
+}
+
 export type JurisdictionCorrectionChanges = Partial<{
   name: string
   official_name: string | null
@@ -194,6 +237,18 @@ export type JurisdictionRestorationResult = {
 
 function throwIfError(error: { message: string } | null, fallback: string) {
   if (error) throw new Error(error.message || fallback)
+}
+
+export async function loadCurrentJurisdictionTree(supabase: SupabaseClient): Promise<CurrentJurisdictionTreeRow[]> {
+  const { data, error } = await supabase.rpc('admin_list_current_jurisdiction_tree')
+  throwIfError(error, 'No se pudo cargar el organigrama jurisdiccional vigente.')
+  return (data ?? []) as CurrentJurisdictionTreeRow[]
+}
+
+export async function loadRestorableJurisdictions(supabase: SupabaseClient): Promise<RestorableJurisdictionRow[]> {
+  const { data, error } = await supabase.rpc('admin_list_restorable_jurisdictions')
+  throwIfError(error, 'No se pudieron cargar las jurisdicciones históricas restaurables.')
+  return (data ?? []) as RestorableJurisdictionRow[]
 }
 
 export async function correctJurisdiction(
