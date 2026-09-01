@@ -46,7 +46,7 @@ test('new request workflow progressively discloses optional details', async () =
   assert.match(manager, /Opcional/)
   assert.match(manager, /REQUEST_HELP/)
   assert.match(manager, /Mínimo 20 caracteres/)
-  assert.match(manager, /La solicitud será revisada por un administrador autorizado/)
+  assert.match(manager, /La solicitud será revisada por un administrador con permiso y alcance territorial válidos/)
 })
 
 test('personal request controls remain keyboard visible and mobile touch accessible', async () => {
