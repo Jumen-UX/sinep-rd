@@ -8,14 +8,47 @@ export type AccountRole = {
   scope_entity_id: string | null
 }
 
+export type AccountScopeType =
+  | 'national'
+  | 'diocese'
+  | 'vicariate'
+  | 'zone'
+  | 'parish'
+  | 'pastoral_area'
+  | 'organization_unit'
+  | 'entity'
+
+export type AccountRequestCountry = {
+  iso2: string
+  name: string
+  flag_emoji: string | null
+}
+
+export type AccountRequestRoleOption = {
+  id: string
+  key: string
+  name: string
+}
+
+export type AccountRequestOptions = {
+  countries: AccountRequestCountry[]
+  roles: AccountRequestRoleOption[]
+}
+
+export type AccountRequestScopeOption = {
+  id: string
+  name: string
+}
+
 export type AccountAccessRequest = {
   id: string
   request_type: 'initial_access' | 'person_link' | 'scope_change' | 'role_change' | 'account_closure'
   status: 'draft' | 'submitted' | 'under_review' | 'information_required' | 'approved' | 'rejected' | 'cancelled'
   requested_person_id: string | null
   requested_country_entity_id: string | null
+  requested_country_iso2: string | null
   requested_role_id: string | null
-  requested_scope_type: string | null
+  requested_scope_type: AccountScopeType | null
   requested_scope_id: string | null
   justification: string | null
   requester_notes: string | null
@@ -50,6 +83,7 @@ export type AccountContext = {
   profile: AccountProfile
   roles: AccountRole[]
   access_requests: AccountAccessRequest[]
+  request_options: AccountRequestOptions
 }
 
 export type AccountProfileInput = {
@@ -63,6 +97,10 @@ export type AccountProfileInput = {
 export type AccountRequestInput = {
   requestId?: string
   requestType: Exclude<AccountAccessRequest['request_type'], 'person_link'>
+  countryIso2: string
+  requestedRoleId?: string | null
+  requestedScopeType?: AccountScopeType | null
+  requestedScopeId?: string | null
   justification: string
   requesterNotes: string
 }
@@ -205,6 +243,20 @@ export async function removeMyProfileAvatar(
   if (error) throw new Error(error.message || 'No se pudo eliminar la fotografía.')
 }
 
+export async function listAccountRequestScopes(
+  supabase: SupabaseClient,
+  countryIso2: string,
+  scopeType: Exclude<AccountScopeType, 'national'>,
+): Promise<AccountRequestScopeOption[]> {
+  const { data, error } = await supabase.rpc('list_account_request_scopes', {
+    p_country_iso2: countryIso2.trim().toUpperCase(),
+    p_scope_type: scopeType,
+  })
+
+  if (error) throw new Error(error.message || 'No se pudieron cargar los ámbitos disponibles.')
+  return (data ?? []) as AccountRequestScopeOption[]
+}
+
 export async function submitMyAccessRequest(
   supabase: SupabaseClient,
   input: AccountRequestInput,
@@ -213,6 +265,10 @@ export async function submitMyAccessRequest(
     payload: {
       request_id: input.requestId || null,
       request_type: input.requestType,
+      requested_country_iso2: input.countryIso2.trim().toUpperCase(),
+      requested_role_id: input.requestedRoleId || null,
+      requested_scope_type: input.requestedScopeType || null,
+      requested_scope_id: input.requestedScopeId || null,
       justification: input.justification.trim(),
       requester_notes: input.requesterNotes.trim() || null,
     },

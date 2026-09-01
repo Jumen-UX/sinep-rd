@@ -32,7 +32,12 @@ export default async function AccountRequestsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login?next=/cuenta/solicitudes')
 
-  const { access_requests: requests, roles } = await loadMyAccountContext(supabase)
+  const {
+    access_requests: requests,
+    roles,
+    request_options: requestOptions,
+  } = await loadMyAccountContext(supabase)
+  const countryLabels = new Map(requestOptions.countries.map((country) => [country.iso2, country.name]))
   const openCount = requests.filter((request) => ['submitted', 'under_review', 'information_required'].includes(request.status)).length
   const informationRequiredCount = requests.filter((request) => request.status === 'information_required').length
   const finalizedCount = requests.filter((request) => ['approved', 'rejected', 'cancelled'].includes(request.status)).length
@@ -78,7 +83,7 @@ export default async function AccountRequestsPage() {
         </article>
       </section>
 
-      <AccountRequestManager requests={requests} roles={roles} />
+      <AccountRequestManager requests={requests} roles={roles} requestOptions={requestOptions} />
 
       <section className={styles.panel} aria-labelledby="request-history-title">
         <div className={styles.panelHeader}>
@@ -101,6 +106,7 @@ export default async function AccountRequestsPage() {
                   <span className={styles.requestStatus}>{STATUS_LABELS[request.status] ?? request.status}</span>
                 </div>
                 <dl className={styles.requestMetadata}>
+                  <div><dt>País</dt><dd>{request.requested_country_iso2 ? countryLabels.get(request.requested_country_iso2) ?? request.requested_country_iso2 : 'Solicitud histórica sin país'}</dd></div>
                   <div><dt>Creada</dt><dd>{formatDate(request.created_at)}</dd></div>
                   <div><dt>Enviada</dt><dd>{formatDate(request.submitted_at)}</dd></div>
                   <div><dt>Revisada</dt><dd>{formatDate(request.reviewed_at)}</dd></div>
