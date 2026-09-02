@@ -1,7 +1,7 @@
 # Documentación de SINEP RD
 
 > Estado: vigente
-> Última revisión: 2026-08-01
+> Última revisión: 2026-09-02
 
 Este índice apunta a documentación canónica y activa. Los cierres y resultados históricos se conservan bajo `archive` y no definen el estado actual.
 
@@ -17,6 +17,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 | Crear o mover módulos | [Convención de módulos](./architecture/CONVENCION_MODULOS.md) |
 | Implementar estructuras | [Modelo estructural canónico](./architecture/MODELO_ESTRUCTURAL_CANONICO.md) |
 | Revisar compatibilidad estructural | [Deprecaciones estructurales](./architecture/DEPRECACIONES_ESTRUCTURALES.md) |
+| Consultar la línea base jurisdiccional dominicana | [Línea base jurisdiccional RD](./operations/DOMINICAN_JURISDICTION_BASELINE.md) |
 | Cambiar PostgreSQL o Supabase | [Reglas de base de datos](./architecture/REGLAS_BASE_DATOS.md) |
 | Revisar privacidad o RLS | [Seguridad de datos](./architecture/SEGURIDAD_DATOS.md) |
 | Revisar permisos, alcance o auditoría | [Autorización y auditoría](./architecture/AUTORIZACION_Y_AUDITORIA.md) |
@@ -64,6 +65,7 @@ Este índice apunta a documentación canónica y activa. Los cierres y resultado
 ### Operación y pruebas
 
 - [Acceso administrativo](./operations/ACCESO_ADMINISTRATIVO.md).
+- [Línea base jurisdiccional RD](./operations/DOMINICAN_JURISDICTION_BASELINE.md).
 - [Guía de despliegue, migración y restauración](./operations/DESPLIEGUE_MIGRACION_RESTAURACION.md).
 - [Operación y recuperación](./OPERACION_Y_RECUPERACION.md).
 - [Manuales](./manuales/README.md).
