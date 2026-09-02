@@ -72,7 +72,8 @@ test('baseline documentation declares source hierarchy, scope and verified invar
 
   assert.match(documentation, /> Estado: vigente/)
   assert.match(documentation, /> Fecha de corte: 2026-09-02/)
-  assert.match(documentation, /Fuentes primarias/i)
+  assert.match(documentation, /## Fuentes/)
+  assert.match(documentation, /### Primarias/)
   assert.match(documentation, /Secundarias de contraste estructural/i)
   assert.match(documentation, /República Dominicana es una dimensión de cobertura geográfica y de descubrimiento, no el padre canónico/)
   assert.match(documentation, /circunscripciones públicas `DO`: \*\*13\*\*/)
