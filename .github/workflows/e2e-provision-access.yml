@@ -121,7 +121,7 @@ jobs:
         run: pnpm exec playwright test e2e/admin-access-matrix.spec.mjs
 
       - name: Upload Playwright diagnostics
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-admin-access-${{ github.run_id }}
@@ -130,7 +130,7 @@ jobs:
             test-results/
             ${{ env.E2E_APP_LOG }}
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7
 
       - name: Stop application
         if: always()
